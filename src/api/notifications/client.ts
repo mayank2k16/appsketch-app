@@ -3,12 +3,19 @@ import { authenticatedClient } from '@/api/common/client';
 import type {
   CustomVariable,
   CustomVariablePayload,
+  EmailTemplate,
+  EmailTemplatePayload,
   NotificationConfig,
   NotificationConfigPayload,
   NotificationCustomer,
   NotificationCustomerFilters,
+  NotificationEvent,
   NotificationLog,
   NotificationLogFilters,
+  NotificationRule,
+  NotificationRulePayload,
+  SmsTemplate,
+  SmsTemplatePayload,
   SystemVariable,
 } from './types';
 
@@ -76,4 +83,72 @@ export async function updateCustomVariable(
 
 export async function deleteCustomVariable(id: number): Promise<void> {
   await authenticatedClient.delete(`api/notifications/variables/custom/${id}/`);
+}
+
+export async function fetchEmailTemplates(): Promise<EmailTemplate[]> {
+  const { data } = await authenticatedClient.get<{ templates: EmailTemplate[] }>(
+    'api/notifications/templates/email/'
+  );
+  return data.templates ?? [];
+}
+
+export async function createEmailTemplate(payload: EmailTemplatePayload): Promise<EmailTemplate> {
+  const { data } = await authenticatedClient.post<EmailTemplate>('api/notifications/templates/email/', payload);
+  return data;
+}
+
+export async function updateEmailTemplate(id: number, payload: EmailTemplatePayload): Promise<EmailTemplate> {
+  const { data } = await authenticatedClient.put<EmailTemplate>(
+    `api/notifications/templates/email/${id}/`,
+    payload
+  );
+  return data;
+}
+
+export async function deleteEmailTemplate(id: number): Promise<void> {
+  await authenticatedClient.delete(`api/notifications/templates/email/${id}/`);
+}
+
+export async function fetchSMSTemplates(): Promise<SmsTemplate[]> {
+  const { data } = await authenticatedClient.get<{ templates: SmsTemplate[] }>(
+    'api/notifications/templates/sms/'
+  );
+  return data.templates ?? [];
+}
+
+export async function createSMSTemplate(payload: SmsTemplatePayload): Promise<SmsTemplate> {
+  const { data } = await authenticatedClient.post<SmsTemplate>('api/notifications/templates/sms/', payload);
+  return data;
+}
+
+export async function updateSMSTemplate(id: number, payload: SmsTemplatePayload): Promise<SmsTemplate> {
+  const { data } = await authenticatedClient.put<SmsTemplate>(`api/notifications/templates/sms/${id}/`, payload);
+  return data;
+}
+
+export async function deleteSMSTemplate(id: number): Promise<void> {
+  await authenticatedClient.delete(`api/notifications/templates/sms/${id}/`);
+}
+
+export async function fetchNotificationEvents(): Promise<NotificationEvent[]> {
+  const { data } = await authenticatedClient.get<{ events: NotificationEvent[] }>(
+    'api/notifications/events/'
+  );
+  return data.events ?? [];
+}
+
+export async function fetchNotificationRules(): Promise<NotificationRule[]> {
+  const { data } = await authenticatedClient.get<{ rules: NotificationRule[] }>(
+    'api/notifications/rules/'
+  );
+  return data.rules ?? [];
+}
+
+export async function upsertNotificationRule(payload: NotificationRulePayload): Promise<NotificationRule> {
+  const { data } = await authenticatedClient.post<NotificationRule>('api/notifications/rules/', payload);
+  return data;
+}
+
+export async function deleteNotificationRule(id: number): Promise<void> {
+  await authenticatedClient.delete(`api/notifications/rules/${id}/`);
 }

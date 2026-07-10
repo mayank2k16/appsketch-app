@@ -101,10 +101,10 @@ const _useAuth = create<AuthState>((set, get) => ({
 
 export const useAuth = createSelectors(_useAuth);
 
-export const signOut       = () => _useAuth.getState().signOut();
-export const signIn        = (token: TokenType, user?: AuthUser) => _useAuth.getState().signIn(token, user);
+export const signOut = () => _useAuth.getState().signOut();
+export const signIn = (token: TokenType, user?: AuthUser) => _useAuth.getState().signIn(token, user);
 export const signInAsGuest = () => _useAuth.getState().signInAsGuest();
-export const hydrateAuth   = () => _useAuth.getState().hydrate();
+export const hydrateAuth = () => _useAuth.getState().hydrate();
 
 /** True when the user is browsing without an account */
 export const isGuest = () => _useAuth.getState().status === 'guest';
@@ -120,7 +120,7 @@ function signInAfterVerify(response: VerifyOtpResponse): void {
   const pendingItems = getItem<{ id: number; quantity: number }[]>('pending_cart_sync') ?? [];
 
   signIn({
-    access:  response.token.access,
+    access: response.token.access,
     refresh: response.token.refresh,
   }, response.user);
 
@@ -174,15 +174,15 @@ function showErrorFlash(err: unknown, fallback: string) {
  * can't drift out of sync (e.g. one having session_id handling and the other not).
  */
 export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
-  const [step,          setStep]          = React.useState<Step>(initialStep);
-  const [loading,       setLoading]       = React.useState(false);
+  const [step, setStep] = React.useState<Step>(initialStep);
+  const [loading, setLoading] = React.useState(false);
   const [resendLoading, setResendLoading] = React.useState(false);
   const [resendCooldown, setResendCooldown] = React.useState(0);
   const [authState, setAuthState] = React.useState<AuthFlowState | null>(null);
 
   const [contact, setContact] = React.useState('');
-  const [name,    setName]    = React.useState('');
-  const [otp,     setOtp]     = React.useState('');
+  const [name, setName] = React.useState('');
+  const [otp, setOtp] = React.useState('');
 
   const stepAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -310,13 +310,16 @@ export function useGoogleSignIn(onSuccess: () => void) {
   const [loading, setLoading] = React.useState(false);
   const isConfigured = Boolean(Env.GOOGLE_OAUTH_CLIENT_ID);
 
+  const redirectUri = AuthSession.makeRedirectUri();
+
+  console.log("Redirect URI:", redirectUri);
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: Env.GOOGLE_OAUTH_CLIENT_ID || 'unconfigured',
       scopes: ['openid', 'email', 'profile'],
       responseType: AuthSession.ResponseType.Token,
       usePKCE: false,
-      redirectUri: AuthSession.makeRedirectUri(),
+      redirectUri: redirectUri,
     },
     { authorizationEndpoint: GOOGLE_AUTHORIZATION_ENDPOINT }
   );

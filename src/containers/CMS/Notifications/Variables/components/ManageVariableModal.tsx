@@ -101,7 +101,7 @@ export const ManageVariableModal = React.forwardRef<BottomSheetModal, Props>(
     }
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['75%']} title={isEdit ? 'Edit Variable' : 'Add Variable'}>
+      <CmsModal ref={ref} colors={colors} snapPoints={['85%']} title={isEdit ? 'Edit Variable' : 'Add Variable'}>
         <BottomSheetScrollView
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={st.scroll}

@@ -70,7 +70,7 @@ export function LogsScreen() {
 }
 
 const st = StyleSheet.create({
-  filterRow: { flexGrow: 1, marginBottom: 10, flexShrink: 0 },
+  filterRow: { flexGrow: 0, marginBottom: 10, flexShrink: 0 },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,

@@ -7,3 +7,4 @@ export * from './CmsStatusBadge';
 export * from './CmsSummaryRow';
 export * from './CmsSwitch';
 export * from './CmsInput';
+export * from './CmsVariableInput';

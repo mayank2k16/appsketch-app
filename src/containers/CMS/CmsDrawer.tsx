@@ -21,7 +21,7 @@ import type { CmsTab, CmsTabKey } from './tabs';
 // this is a generic re-implementation driven by the CMS tab registry instead,
 // themed with CMS colors rather than the app's storefront brand colors.
 const { width: SCREEN_W } = Dimensions.get('window');
-const DRAWER_W = Math.min(SCREEN_W * 0.72, 300);
+const DRAWER_W = Math.min(SCREEN_W * 0.75, 320);
 
 type CmsDrawerProps = {
   visible: boolean;
@@ -117,7 +117,7 @@ const st = StyleSheet.create({
     paddingHorizontal: 16,
   },
   brand: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: 2,
   },
