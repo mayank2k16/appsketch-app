@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import type { Ionicons } from '@expo/vector-icons';
 
+import { AnalyticsScreen } from './Analytics';
 import { InventoryScreen } from './Inventory';
 import { NotificationsScreen } from './Notifications';
 import { OrdersScreen } from './Orders';
@@ -17,7 +18,7 @@ import { WalletsScreen } from './Wallets';
  * data-fetching effects run) rather than code-split with `React.lazy` — see
  * the CMS shell architecture plan for why.
  */
-export type CmsTabKey = 'orders' | 'inventory' | 'notifications' | 'wallets';
+export type CmsTabKey = 'orders' | 'inventory' | 'notifications' | 'wallets' | 'analytics';
 
 export type CmsTab = {
   key: CmsTabKey;
@@ -31,4 +32,5 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'inventory', label: 'Inventory', icon: 'cube-outline', Component: InventoryScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },
+  { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
 ];
