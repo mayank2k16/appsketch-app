@@ -1,0 +1,5 @@
+
+> obytesapp@8.0.0 android /Users/mayankoli/Documents/appsketch/react-native-template-obytes
+> cross-env EXPO_NO_DOTENV=1 expo run:android
+
+› Building app...

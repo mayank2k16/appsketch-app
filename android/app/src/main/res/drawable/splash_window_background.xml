@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shown as android:windowBackground during the gap between the native splash
+     screen dismissing and expo-splash-screen taking control. Prevents black flash. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- White background -->
+  <item android:drawable="@color/splashscreen_background"/>
+  <!-- Centered logo, scaled to 40% of screen width -->
+  <item>
+    <bitmap
+      android:src="@drawable/splashscreen_logo"
+      android:gravity="center"
+      android:tileMode="disabled"/>
+  </item>
+</layer-list>

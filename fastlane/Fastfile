@@ -1,0 +1,181 @@
+default_platform(:ios)
+
+# ─── Shared helpers ────────────────────────────────────────────────────────────
+
+BUNDLE_ID   = "com.chinesecorner.app"
+TEAM_ID     = "SU6UH5H6N9"
+APPLE_ID    = "akash@appsketch.ai"
+WORKSPACE   = "ios/Zorviaa.xcworkspace"
+XCODEPROJ   = "ios/Zorviaa.xcodeproj"
+SCHEME      = "Zorviaa"
+ANDROID_DIR = "android"
+
+# ─── iOS ───────────────────────────────────────────────────────────────────────
+platform :ios do
+
+  # ── beta: build + upload to TestFlight ──────────────────────────────────────
+  desc "Build release IPA and upload to TestFlight"
+  lane :beta do
+    # Install the local App Store profile (already downloaded, valid until Apr 2027)
+    install_provisioning_profile(
+      path: "./fastlane/profiles/AppStore_com.chinesecorner.app.mobileprovision"
+    )
+
+    # Auto-increment build number locally
+    increment_build_number(
+      xcodeproj: XCODEPROJ
+    )
+
+    # Build release IPA
+    build_app(
+      workspace:      WORKSPACE,
+      scheme:         SCHEME,
+      configuration:  "Release",
+      export_method:  "app-store",
+      xcargs: [
+        "DEVELOPMENT_TEAM=#{TEAM_ID}",
+        "CODE_SIGN_STYLE=Manual",
+        "CODE_SIGN_IDENTITY='Apple Distribution'",
+        "PROVISIONING_PROFILE_SPECIFIER='Chinese Corner AppStore'",
+        "OTHER_CODE_SIGN_FLAGS='--keychain /Users/mayankoli/Library/Keychains/login.keychain-db'"
+      ].join(" "),
+      export_options: {
+        method:               "app-store",
+        teamID:               TEAM_ID,
+        signingStyle:         "manual",
+        provisioningProfiles: { BUNDLE_ID => "Chinese Corner AppStore" }
+      },
+      output_directory: "./build",
+      output_name:      "ChineseCorner.ipa",
+      clean:            true
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      username:                         APPLE_ID,
+      skip_waiting_for_build_processing: true
+    )
+
+    UI.success("✅  iOS build uploaded to TestFlight!")
+  end
+
+  # ── release: beta + screenshots + App Store review submission ───────────────
+  desc "Build, upload to TestFlight, upload screenshots, and submit for App Store Review"
+  lane :release do
+    beta
+
+    deliver(
+      submit_for_review:    true,
+      automatic_release:    false,
+      force:                true,
+      skip_binary_upload:   true,
+      skip_screenshots:     false,
+      screenshots_path:     "./fastlane/screenshots",
+      overwrite_screenshots: true,
+      skip_metadata:        true,
+      submission_information: {
+        export_compliance_uses_encryption: false,
+        add_id_info_uses_idfa:             false,
+      }
+    )
+
+    UI.success("✅  Submitted to App Store Review!")
+  end
+
+  # ── upload_screenshots: screenshots only, no build ──────────────────────────
+  desc "Upload screenshots to App Store Connect (no build)"
+  lane :upload_screenshots do
+    deliver(
+      submit_for_review:    false,
+      force:                true,
+      skip_binary_upload:   true,
+      skip_metadata:        true,
+      skip_screenshots:     false,
+      screenshots_path:     "./fastlane/screenshots",
+      overwrite_screenshots: true
+    )
+    UI.success("✅  Screenshots uploaded!")
+  end
+
+  # ── profile: sync provisioning profile only ─────────────────────────────────
+  desc "Download / refresh provisioning profile"
+  lane :profile do
+    sigh(
+      app_identifier:               BUNDLE_ID,
+      username:                     APPLE_ID,
+      team_id:                      TEAM_ID,
+      provisioning_name:            "Chinese Corner AppStore",
+      force:                        true,
+      output_path:                  "./fastlane/profiles",
+      skip_certificate_verification: true
+    )
+  end
+
+end
+
+# ─── Android ───────────────────────────────────────────────────────────────────
+platform :android do
+
+  # ── beta: build AAB + upload to Play Store internal track ───────────────────
+  desc "Build release AAB and upload to Play Store internal track"
+  lane :beta do
+    # Bump versionCode automatically
+    android_set_version_code(
+      version_code: (google_play_track_version_codes(
+        track: "internal",
+        json_key: "./fastlane/play-store-key.json"
+      ).max || 0) + 1
+    ) rescue UI.message("Could not fetch Play Store version codes — skipping auto-increment")
+
+    gradle(
+      task:             "bundle",
+      build_type:       "Release",
+      project_dir:      ANDROID_DIR,
+      properties: {
+        "android.injected.signing.store.file"     => ENV["ANDROID_KEYSTORE_PATH"] || "#{Dir.home}/zorviaa-release.keystore",
+        "android.injected.signing.store.password" => ENV["ANDROID_STORE_PASSWORD"] || "Mayank@7278",
+        "android.injected.signing.key.alias"      => ENV["ANDROID_KEY_ALIAS"]      || "zorviaa",
+        "android.injected.signing.key.password"   => ENV["ANDROID_KEY_PASSWORD"]   || "Mayank@7278",
+      }
+    )
+
+    upload_to_play_store(
+      track:            "internal",
+      release_status:   "draft",
+      json_key:         "./fastlane/play-store-key.json",
+      aab:              lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH]
+    )
+
+    UI.success("✅  Android AAB uploaded to Play Store internal track!")
+  end
+
+  # ── apk: build debug/staging APK for direct install ─────────────────────────
+  desc "Build a signed Release APK (for direct distribution / staging)"
+  lane :apk do
+    gradle(
+      task:        "assemble",
+      build_type:  "Release",
+      project_dir: ANDROID_DIR,
+      properties: {
+        "android.injected.signing.store.file"     => ENV["ANDROID_KEYSTORE_PATH"] || File.expand_path("app/my-release-key.keystore", ANDROID_DIR),
+        "android.injected.signing.store.password" => ENV["ANDROID_STORE_PASSWORD"] || "Mayank@123",
+        "android.injected.signing.key.alias"      => ENV["ANDROID_KEY_ALIAS"]      || "my-key-alias",
+        "android.injected.signing.key.password"   => ENV["ANDROID_KEY_PASSWORD"]   || "Mayank@123",
+      }
+    )
+
+    UI.success("✅  APK built: #{lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]}")
+  end
+
+  # ── release: promote internal → production ───────────────────────────────────
+  desc "Promote Play Store internal track to production"
+  lane :release do
+    upload_to_play_store(
+      track:        "internal",
+      track_promote_to: "production",
+      json_key:     "./fastlane/play-store-key.json"
+    )
+    UI.success("✅  Promoted to Play Store production!")
+  end
+
+end
