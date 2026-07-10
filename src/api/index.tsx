@@ -7,3 +7,4 @@ export * from './orders';
 export * from './posts';
 export * from './studio';
 export * from './types';
+export * from './wallets';
