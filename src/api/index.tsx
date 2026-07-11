@@ -6,6 +6,7 @@ export * from './inventory';
 export * from './notifications';
 export * from './orders';
 export * from './posts';
+export * from './products';
 export * from './studio';
 export * from './types';
 export * from './wallets';
