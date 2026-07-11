@@ -1,8 +1,9 @@
 /**
- * Shared form primitives for the auth flow — used by both the full-page
- * LoginScreen and the AuthSheet modal so the two can't visually drift apart.
- * Extracted out of what used to be duplicated between them.
+ * Shared form primitives for the auth flow — used by the AuthSheet modal.
+ * Theme-aware: colours come from sheetTheme[scheme] so the controls flip
+ * dark/light with the app, while layout stays in the StyleSheets below.
  */
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -16,9 +17,12 @@ import {
 
 import { F } from '@/lib/fonts';
 
-import { authColors } from './AuthTheme';
+import { sheetTheme } from './AuthTheme';
 
-const { RED, DARK } = authColors.dark;
+function useSheetColors() {
+  const { colorScheme } = useColorScheme();
+  return sheetTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+}
 
 // ─── Step input ───────────────────────────────────────────────────────────────
 export function StepInput({
@@ -30,21 +34,22 @@ export function StepInput({
   keyboardType?: any; maxLength?: number;
   autoCapitalize?: any; autoFocus?: boolean; secureTextEntry?: boolean;
 }) {
+  const c = useSheetColors();
   return (
     <View style={inp.group}>
-      <Text style={inp.label}>{label}</Text>
+      <Text style={[inp.label, { color: c.label }]}>{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="rgba(17,17,17,0.28)"
+        placeholderTextColor={c.placeholder}
         keyboardType={keyboardType}
         maxLength={maxLength}
         autoCapitalize={autoCapitalize ?? 'none'}
         autoFocus={autoFocus}
         secureTextEntry={secureTextEntry}
-        style={inp.field}
-        selectionColor={RED}
+        style={[inp.field, { backgroundColor: c.inputBg, borderColor: c.inputBorder, color: c.inputText }]}
+        selectionColor={c.selection}
         returnKeyType="go"
         onSubmitEditing={onSubmit}
         blurOnSubmit={false}
@@ -57,18 +62,15 @@ const inp = StyleSheet.create({
   group: { gap: 6 },
   label: {
     fontSize: 10, fontFamily: F.sans800,
-    color: 'rgba(17,17,17,0.45)', letterSpacing: 1.4, textTransform: 'uppercase',
+    letterSpacing: 1.4, textTransform: 'uppercase',
   },
   field: {
-    backgroundColor: '#FFF5F7',
     borderWidth: 1.5,
-    borderColor: 'rgba(196,18,48,0.20)',
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: Platform.OS === 'android' ? 14 : 16,
     fontSize: 16,
     fontFamily: F.sans500,
-    color: DARK,
   },
 });
 
@@ -80,18 +82,19 @@ export function OtpInput({
 }: {
   value: string; onChangeText: (v: string) => void; onSubmit?: () => void;
 }) {
+  const c = useSheetColors();
   return (
     <View style={otpSt.group}>
-      <Text style={inp.label}>Verification code</Text>
+      <Text style={[inp.label, { color: c.label }]}>Verification code</Text>
       <TextInput
         value={value}
         onChangeText={(t) => onChangeText(t.replace(/[^0-9]/g, ''))}
         placeholder="Enter code"
-        placeholderTextColor="rgba(17,17,17,0.28)"
+        placeholderTextColor={c.placeholder}
         keyboardType="number-pad"
         autoFocus
-        style={otpSt.field}
-        selectionColor={RED}
+        style={[otpSt.field, { backgroundColor: c.inputBg, borderColor: c.inputBorder, color: c.inputText }]}
+        selectionColor={c.selection}
         returnKeyType="done"
         onSubmitEditing={onSubmit}
       />
@@ -102,15 +105,12 @@ export function OtpInput({
 const otpSt = StyleSheet.create({
   group: { gap: 6 },
   field: {
-    backgroundColor: '#FFF5F7',
     borderWidth: 1.5,
-    borderColor: 'rgba(196,18,48,0.20)',
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: Platform.OS === 'android' ? 14 : 16,
     fontSize: 20,
     fontFamily: F.sans800,
-    color: DARK,
     letterSpacing: 3,
     textAlign: 'center',
   },
@@ -118,11 +118,12 @@ const otpSt = StyleSheet.create({
 
 // ─── CTA button ───────────────────────────────────────────────────────────────
 export function CtaButton({ label, onPress, loading }: { label: string; onPress: () => void; loading?: boolean }) {
+  const c = useSheetColors();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={cta.btn}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={[cta.btn, { backgroundColor: c.ctaBg }]}>
       {loading
-        ? <ActivityIndicator color="#fff" size="small" />
-        : <Text style={cta.label}>{label}</Text>}
+        ? <ActivityIndicator color={c.ctaText} size="small" />
+        : <Text style={[cta.label, { color: c.ctaText }]}>{label}</Text>}
     </TouchableOpacity>
   );
 }
@@ -131,38 +132,33 @@ export function CtaButton({ label, onPress, loading }: { label: string; onPress:
 export function GhostButton({
   label, onPress, loading, disabled,
 }: { label: string; onPress: () => void; loading?: boolean; disabled?: boolean }) {
+  const c = useSheetColors();
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      style={[cta.ghost, disabled && { opacity: 0.5 }]}
+      style={[cta.ghost, { borderColor: c.ghostBorder }, disabled && { opacity: 0.5 }]}
       disabled={disabled}
     >
       {loading
-        ? <ActivityIndicator color={RED} size="small" />
-        : <Text style={cta.ghostLabel}>{label}</Text>}
+        ? <ActivityIndicator color={c.ghostText} size="small" />
+        : <Text style={[cta.ghostLabel, { color: c.ghostText }]}>{label}</Text>}
     </TouchableOpacity>
   );
 }
 
 const cta = StyleSheet.create({
   btn: {
-    backgroundColor: RED,
     borderRadius: 50,
     paddingVertical: 15,
     alignItems: 'center', justifyContent: 'center',
-    ...Platform.select({
-      ios:     { shadowColor: RED, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 14 },
-      android: { elevation: 6 },
-    }),
   },
-  label:      { color: '#FFFFFF', fontSize: 15, fontFamily: F.sans800, letterSpacing: 0.4 },
+  label:      { fontSize: 15, fontFamily: F.sans800, letterSpacing: 0.4 },
   ghost: {
     borderWidth: 1.5,
-    borderColor: 'rgba(196,18,48,0.45)',
     borderRadius: 50,
     paddingVertical: 12,
     alignItems: 'center', justifyContent: 'center',
   },
-  ghostLabel: { color: 'rgba(17,17,17,0.55)', fontSize: 14, fontFamily: F.sans600 },
+  ghostLabel: { fontSize: 14, fontFamily: F.sans600 },
 });
