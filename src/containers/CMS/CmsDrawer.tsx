@@ -15,13 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCmsTheme } from './theme';
 import type { CmsTab, CmsTabKey } from './tabs';
 
-// Same slide-in-from-right recipe as `src/components/drawer-menu.tsx` (Modal +
-// Animated, dimming backdrop, tap-outside-to-close, staggered item entrance)
-// — that component's content is storefront-specific (hardcoded routes), so
-// this is a generic re-implementation driven by the CMS tab registry instead,
-// themed with CMS colors rather than the app's storefront brand colors.
 const { width: SCREEN_W } = Dimensions.get('window');
-const DRAWER_W = Math.min(SCREEN_W * 0.72, 300);
+const DRAWER_W = Math.min(SCREEN_W * 0.75, 320);
 
 type CmsDrawerProps = {
   visible: boolean;
@@ -75,7 +70,10 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
           { backgroundColor: colors.sidebarBg, paddingTop: insets.top + 16, transform: [{ translateX }] },
         ]}
       >
-        <Text style={[st.brand, { color: colors.sidebarText }]}>CMS</Text>
+        <View style={st.header}>
+          <Text style={[st.brand, { color: colors.sidebarText }]}>CMS</Text>
+          <Ionicons name="close" size={24} color={colors.sidebarText} onPress={onClose} />
+        </View>
 
         <View style={{ marginTop: 16 }}>
           {tabs.map((tab, idx) => {
@@ -116,8 +114,12 @@ const st = StyleSheet.create({
     width: DRAWER_W,
     paddingHorizontal: 16,
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
   brand: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: 2,
   },

@@ -100,3 +100,74 @@ export type CustomVariable = {
 };
 
 export type CustomVariablePayload = Omit<CustomVariable, 'id'>;
+
+/** Templates — `tenant === null` means a platform default (read-only in the
+ * UI, not editable/deletable), matching the Vite reference exactly. */
+export type EmailTemplate = {
+  id: number;
+  name: string;
+  subject: string;
+  html_body: string;
+  tenant: number | null;
+  updated_on: string;
+};
+
+export type EmailTemplatePayload = {
+  name: string;
+  subject: string;
+  html_body: string;
+};
+
+export type SmsTemplate = {
+  id: number;
+  title: string;
+  body: string;
+  provider_template_id: string | null;
+  tenant: number | null;
+  updated_on: string;
+};
+
+export type SmsTemplatePayload = {
+  title: string;
+  body: string;
+  provider_template_id: string | null;
+};
+
+/** Event registry — the catalog of things a Rule can trigger on. */
+export type NotificationEvent = {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  allowed_channels: NotificationChannel[];
+};
+
+/**
+ * Rules — event -> channel -> template routing. Vite's reference channel
+ * picker only ever offers EMAIL/SMS/FCM here (no WhatsApp slot in the rule
+ * shape itself), so the RN port matches that rather than inventing a
+ * whatsapp_template field that doesn't exist on the backend.
+ */
+export type NotificationRule = {
+  id: number;
+  event_code: string;
+  channel: NotificationChannel;
+  email_template: number | null;
+  sms_template: number | null;
+  fcm_title_template: string | null;
+  fcm_body_template: string | null;
+  is_active: boolean;
+};
+
+/** Same endpoint handles create and update (Vite calls it "upsert") — pass
+ * `id` when editing an existing rule, omit it when creating one. */
+export type NotificationRulePayload = {
+  id?: number;
+  event: string;
+  channel: NotificationChannel;
+  email_template: number | null;
+  sms_template: number | null;
+  fcm_title_template: string | null;
+  fcm_body_template: string | null;
+  is_active: boolean;
+};
