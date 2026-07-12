@@ -17,9 +17,7 @@ import { loginTheme } from '@/components/AuthForm/AuthTheme';
 
 const { width, height } = Dimensions.get('window');
 
-// ─────────────────────────────────────────────────────────────
-// appsketch.ai — showcase templates for the drifting montage
-// ─────────────────────────────────────────────────────────────
+
 const IMGS = [
   'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/an-elegant-and-sleek-layout-for-chinese-restaurants.webp?w=400', // 0 warm
   'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/a-website-template-for-grocery-and-supermarts.webp?w=400',        // 1 green
@@ -246,7 +244,7 @@ export default function Login() {
 const s = StyleSheet.create({
   root: { flex: 1, overflow: "hidden" },
 
-  montage: { flex: 1, overflow: 'hidden' },
+  montage: { flex: 1, overflow: 'hidden', position: "absolute", top: 0, width: '100%', height: "70%" },
   gridWrap: {
     position: 'absolute',
     top: -0.18 * height,

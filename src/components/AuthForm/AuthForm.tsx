@@ -28,7 +28,7 @@ export function AuthForm() {
   const { colorScheme } = useColorScheme();
   const t = loginTheme[colorScheme === 'dark' ? 'dark' : 'light'];
 
-  const goHome = React.useCallback(() => router.replace('/storefront'), [router]);
+  const goHome = React.useCallback(() => router.replace('/home'), [router]);
 
   const [sheetVisible, setSheetVisible] = React.useState(false);
   const [method, setMethod] = React.useState<'email' | 'phone'>('phone');
@@ -124,19 +124,21 @@ const s = StyleSheet.create({
   panel: {
     paddingVertical: 26,
     paddingHorizontal: 26,
+    marginTop: "auto",
+    backgroundColor: "rgb(21, 21, 23)"
   },
   heading: {
-    fontSize: 34,
+    fontSize: 30,
     fontFamily: F.display900,
     letterSpacing: -0.6,
-    lineHeight: 35,
+    lineHeight: 33,
     paddingLeft: 5,
     textAlign: "center",
   },
   sub: {
     fontSize: 14,
     fontFamily: F.sans400,
-    marginTop: 4,
+    marginTop: 10,
     marginBottom: 22,
     paddingLeft: 5,
     textAlign: "center",

@@ -29,7 +29,7 @@ import Svg, {
 } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
-import { hydrateAuth, useAuth } from '@/hooks/useAuth';
+import { hydrateAuth } from '@/hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -201,10 +201,8 @@ function Dot({ index }: { index: number }) {
 // Screen
 // ─────────────────────────────────────────────────────────────
 export default function BrandSplashScreen() {
-  const router = useRouter();
-  const status = useAuth.use.status();
-
-  const stars = React.useMemo(() => makeStars(46), []);
+  const router    = useRouter();
+  const stars     = React.useMemo(() => makeStars(46), []);
   const navigated = React.useRef(false);
 
   // intro shared values
@@ -281,14 +279,10 @@ export default function BrandSplashScreen() {
     if (navigated.current) return;
     navigated.current = true;
 
-    // quick amber bloom, then navigate
+    // quick amber bloom, then navigate — always land on home (login optional from drawer)
     flashOp.value = withTiming(1, { duration: 360, easing: Easing.in(Easing.quad) });
     setTimeout(() => {
-      if (status === 'signIn') {
-        router.replace('/storefront');
-      } else {
-        router.replace('/login');
-      }
+      router.replace('/home');
     }, 340);
   };
 
