@@ -7,15 +7,7 @@ import { F } from '@/lib/fonts';
 import { useAppTheme } from '@/lib/theme';
 
 import { CipherField } from './CipherField';
-import {
-  buildRoundedRectOrbit,
-  ORBIT_DURATION_BLUE,
-  ORBIT_DURATION_ORANGE,
-  ORBIT_OUTSET,
-  PROMPT_CARD_RADIUS,
-  type Orbit,
-  type Rect,
-} from './orbits';
+import { buildRoundedRectOrbit, ORBIT_DURATION, ORBIT_OUTSET, PROMPT_CARD_RADIUS, type Orbit, type Rect } from './orbits';
 import { PromptBar } from './PromptBar';
 
 export function AgentScreen() {
@@ -23,6 +15,7 @@ export function AgentScreen() {
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
 
+  const fieldRef = React.useRef<View>(null);
   const [fieldSize, setFieldSize] = React.useState<{ width: number; height: number } | null>(null);
 
   function handleLayout(e: LayoutChangeEvent) {
@@ -30,17 +23,27 @@ export function AgentScreen() {
     setFieldSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
   }
 
-  // The PromptBar reports its own measured position/size here (relative to
-  // this same `field` container) so the orbits can trace ITS boundary
-  // instead of an arbitrary point in the field.
+  // The PromptBar reports its own on-screen (window) rect; we measure `field`'s
+  // own window position too and subtract, so `cardRect` ends up genuinely
+  // relative to `field` regardless of how RN resolves padding vs. absolute
+  // positioning internally — sidesteps that ambiguity entirely instead of
+  // relying on nested onLayout values from different ancestors.
   const [cardRect, setCardRect] = React.useState<Rect | null>(null);
 
-  function handleCardLayout(rect: Rect) {
-    setCardRect((prev) =>
-      prev && prev.x === rect.x && prev.y === rect.y && prev.width === rect.width && prev.height === rect.height
-        ? prev
-        : rect
-    );
+  function handleCardWindowRect(windowRect: Rect) {
+    fieldRef.current?.measureInWindow((fx, fy) => {
+      const rect: Rect = {
+        x: windowRect.x - fx,
+        y: windowRect.y - fy,
+        width: windowRect.width,
+        height: windowRect.height,
+      };
+      setCardRect((prev) =>
+        prev && prev.x === rect.x && prev.y === rect.y && prev.width === rect.width && prev.height === rect.height
+          ? prev
+          : rect
+      );
+    });
   }
 
   // Owned here (not inside CipherField) so PromptBar's border can react to
@@ -67,7 +70,7 @@ export function AgentScreen() {
     const orangeLoop = Animated.loop(
       Animated.timing(orangeClock, {
         toValue: 1,
-        duration: ORBIT_DURATION_ORANGE,
+        duration: ORBIT_DURATION,
         easing: Easing.linear,
         useNativeDriver: true,
         isInteraction: false,
@@ -76,7 +79,7 @@ export function AgentScreen() {
     const blueLoop = Animated.loop(
       Animated.timing(blueClock, {
         toValue: 1,
-        duration: ORBIT_DURATION_BLUE,
+        duration: ORBIT_DURATION,
         easing: Easing.linear,
         useNativeDriver: true,
         isInteraction: false,
@@ -93,7 +96,7 @@ export function AgentScreen() {
   return (
     <View style={[s.root, { backgroundColor: t.bg }]}>
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
-      <View style={[s.field, { backgroundColor: t.bg }]} onLayout={handleLayout}>
+      <View ref={fieldRef} style={[s.field, { backgroundColor: t.bg }]} onLayout={handleLayout}>
         {fieldSize ? (
           <CipherField
             width={fieldSize.width}
@@ -113,7 +116,9 @@ export function AgentScreen() {
         >
           <PromptBar
             t={t}
-            onCardLayout={handleCardLayout}
+            onCardWindowRect={handleCardWindowRect}
+            orangeClock={orangeClock}
+            blueClock={blueClock}
           />
         </KeyboardAvoidingView>
       </View>

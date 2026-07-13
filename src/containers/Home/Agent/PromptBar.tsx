@@ -1,45 +1,80 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
-import { LayoutChangeEvent, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, LayoutChangeEvent, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import Svg, { Defs, FeGaussianBlur, Filter, Rect } from 'react-native-svg';
 
 import type { AppColors } from '@/lib/theme';
 
-import { PROMPT_BORDER_W, PROMPT_CARD_RADIUS, type Rect } from './orbits';
+import { PROMPT_BORDER_W, PROMPT_CARD_RADIUS, type Rect as RectType, roundedRectPerimeter } from './orbits';
 
 /**
  * PromptBar — the floating "Ask anything..." card over the CipherField.
  *
- * The card itself just has a plain neutral border. The "border lights up as
- * the glow passes" look isn't drawn here at all — it's `CipherField`'s soft
- * glow orbs (built from this card's own measured rect, see `onCardLayout`)
- * naturally bleeding their halo into the area around the edge as they orbit
- * past, the same way the reference's ambient glow works.
+ * The border carries a travelling rim-light cloned from the validated
+ * prototype: a soft blurred glow arc plus a crisp light-tint core arc per
+ * colour, each following the exact same clocks as the background orbs (see
+ * `./orbits`) as a fraction of this card's own perimeter — so the lit segment
+ * is always exactly under wherever each orb currently is. Orange starts at the
+ * top; blue is offset half a lap so it tracks the blue orb.
  *
- * For this pass the input and buttons are static: no submit wiring, no mode
- * picker. The middle spacer in the button row is intentional — a future
- * Normal/DeepThink/Research row will sit ABOVE this one (not inline with it),
- * so the spacer just keeps + and send pinned to the card edges like the
- * reference and needs no relayout when that row is added.
+ * Only the attachment (+) and send buttons live in the control row — no mode
+ * picker for this pass.
  */
 const RADIUS = PROMPT_CARD_RADIUS;
 const BORDER_W = PROMPT_BORDER_W;
+const RIM_INSET = 1.25;
+const RIM_DASH_FRACTION = 0.16;
+
+// Rim tints, cloned from the prototype: soft blurred glow + brighter crisp core.
+const RIM_GLOW_ORANGE = '#FF8A4D';
+const RIM_GLOW_BLUE = '#5FA0FF';
+const RIM_CORE_ORANGE = '#FFC79A';
+const RIM_CORE_BLUE = '#BFDBFF';
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 type Props = {
   t: AppColors;
-  onCardLayout: (rect: Rect) => void;
+  onCardWindowRect: (rect: RectType) => void;
+  orangeClock: Animated.Value;
+  blueClock: Animated.Value;
   onAttachPress?: () => void;
   onSendPress?: () => void;
 };
 
-export function PromptBar({ t, onCardLayout, onAttachPress, onSendPress }: Props) {
+export function PromptBar({ t, onCardWindowRect, orangeClock, blueClock, onAttachPress, onSendPress }: Props) {
+  const cardRef = React.useRef<View>(null);
+  const [size, setSize] = React.useState<{ width: number; height: number } | null>(null);
+
   function handleLayout(e: LayoutChangeEvent) {
-    const { x, y, width, height } = e.nativeEvent.layout;
-    onCardLayout({ x, y, width, height });
+    const { width, height } = e.nativeEvent.layout;
+    setSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
+    cardRef.current?.measureInWindow((x, y, w, h) => {
+      onCardWindowRect({ x, y, width: w, height: h });
+    });
   }
+
+  const rimW = size ? size.width - RIM_INSET * 2 : 0;
+  const rimH = size ? size.height - RIM_INSET * 2 : 0;
+  const rimR = Math.max(0, RADIUS - RIM_INSET);
+  const perimeter = size ? roundedRectPerimeter(rimW, rimH, rimR) : 0;
+  const dashLen = perimeter * RIM_DASH_FRACTION;
+  const dashArray = `${dashLen} ${Math.max(perimeter - dashLen, 0)}`;
+
+  // Orange tracks its orb from the top; blue's orb is half a lap ahead, so its
+  // rim segment starts half the perimeter along.
+  const orangeOffset = orangeClock.interpolate({ inputRange: [0, 1], outputRange: [0, -perimeter] });
+  const blueOffset = blueClock.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-perimeter * 0.5, -perimeter * 1.5],
+  });
+
+  const rimBase = { x: RIM_INSET, y: RIM_INSET, width: rimW, height: rimH, rx: rimR, ry: rimR, fill: 'none' as const, strokeLinecap: 'round' as const, strokeDasharray: dashArray };
 
   return (
     <View
+      ref={cardRef}
       style={[
         s.shadowWrap,
         Platform.select({
@@ -82,6 +117,37 @@ export function PromptBar({ t, onCardLayout, onAttachPress, onSendPress }: Props
           </TouchableOpacity>
         </View>
       </View>
+
+      {size ? (
+        <Svg
+          width={size.width}
+          height={size.height}
+          style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
+        >
+          <Defs>
+            <Filter id="rimBlur" x="-60%" y="-60%" width="220%" height="220%">
+              <FeGaussianBlur stdDeviation="3.2" />
+            </Filter>
+          </Defs>
+
+          {/* Soft blurred glow (behind), then crisp core (in front) — glows first
+              so the bright cores sit on top. */}
+          <AnimatedRect
+            {...rimBase} stroke={RIM_GLOW_ORANGE} strokeWidth={7} strokeOpacity={0.55}
+            filter="url(#rimBlur)" strokeDashoffset={orangeOffset}
+          />
+          <AnimatedRect
+            {...rimBase} stroke={RIM_GLOW_BLUE} strokeWidth={7} strokeOpacity={0.55}
+            filter="url(#rimBlur)" strokeDashoffset={blueOffset}
+          />
+          <AnimatedRect
+            {...rimBase} stroke={RIM_CORE_ORANGE} strokeWidth={2.5} strokeDashoffset={orangeOffset}
+          />
+          <AnimatedRect
+            {...rimBase} stroke={RIM_CORE_BLUE} strokeWidth={2.5} strokeDashoffset={blueOffset}
+          />
+        </Svg>
+      ) : null}
     </View>
   );
 }

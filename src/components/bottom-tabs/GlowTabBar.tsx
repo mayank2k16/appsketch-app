@@ -129,8 +129,8 @@ export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root: {
-    paddingTop: 10,
-    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingHorizontal: 10,
   },
 
   row: {

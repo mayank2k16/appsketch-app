@@ -1,26 +1,46 @@
 import * as React from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
-import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
 
 import { CHAR_INFLUENCE_RADIUS, ORB_SIZE, type Orbit, proximityCurve } from './orbits';
 
 /**
- * CipherField — dark backdrop scattered with cipher-like characters, with two
- * soft glow orbs (orange + blue) that drift slowly clockwise. Characters are
- * invisible by default and only fade in when a glow actually passes near them
- * — there is no always-on dim layer.
+ * CipherField — dark backdrop scattered with monospace cipher characters, with
+ * two soft glow orbs (orange + blue) travelling around the prompt card. Every
+ * character is invisible by default; it fades in — orange or blue — only while
+ * an orb's glow is close to it, so the SAME character can light orange when the
+ * orange orb passes and blue when the blue orb passes half a lap later.
  *
- * Motion + highlight are both precomputed once (useMemo) as ~32-point orbit
- * checkpoints, then driven by a single looping `Animated.Value` per orb (owned
- * by `AgentScreen`, passed in as props so `PromptBar` can react to the same
- * clocks) via `interpolate` — entirely on the native thread, no per-frame JS
- * work.
+ * Each near-path cell renders two overlaid glyphs (one per orb), each driven by
+ * that orb's own looping clock (owned by `AgentScreen`) over a precomputed
+ * distance curve — all native-driver opacity, no per-frame JS. This mirrors the
+ * validated HTML prototype exactly.
  */
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
+
+const CHAR_ORANGE = '#FF8A5C';
+const CHAR_BLUE = '#78AAFF';
+
+// Orb radial-gradient stops, cloned from the prototype — a hot bright core that
+// reddens / deepens toward the transparent edge.
+const ORANGE_STOPS = [
+  { offset: '0%', color: '#FF783C', opacity: 0.98 },
+  { offset: '16%', color: '#FF5A28', opacity: 0.75 },
+  { offset: '36%', color: '#FF461E', opacity: 0.4 },
+  { offset: '62%', color: '#FF3C19', opacity: 0.14 },
+  { offset: '100%', color: '#FF3C19', opacity: 0 },
+] as const;
+const BLUE_STOPS = [
+  { offset: '0%', color: '#6EAAFF', opacity: 0.98 },
+  { offset: '16%', color: '#5096FF', opacity: 0.75 },
+  { offset: '36%', color: '#3C82FF', opacity: 0.4 },
+  { offset: '62%', color: '#3C78FF', opacity: 0.14 },
+  { offset: '100%', color: '#3C78FF', opacity: 0 },
+] as const;
 
 // Deterministic PRNG so the character field layout is stable across
 // re-renders / theme toggles (only regenerates when the field is resized).
@@ -41,38 +61,33 @@ type Cell = {
   y: number;
   char: string;
   fontSize: number;
-  glow: 'orange' | 'blue' | null;
-  curve: number[] | null;
+  orangeCurve: number[];
+  blueCurve: number[];
 };
 
 // ─── Glow orb ─────────────────────────────────────────────────────────────────
 function GlowOrb({
   gradientId,
-  color,
+  stops,
   tx,
   ty,
 }: {
   gradientId: string;
-  color: string;
+  stops: readonly { offset: string; color: string; opacity: number }[];
   tx: Animated.AnimatedInterpolation<number>;
   ty: Animated.AnimatedInterpolation<number>;
 }) {
   return (
     <Animated.View
       pointerEvents="none"
-      style={[
-        s.orb,
-        { transform: [{ translateX: tx }, { translateY: ty }] },
-      ]}
+      style={[s.orb, { transform: [{ translateX: tx }, { translateY: ty }] }]}
     >
       <Svg width={ORB_SIZE} height={ORB_SIZE}>
         <Defs>
           <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={color} stopOpacity={0.55} />
-            <Stop offset="22%" stopColor={color} stopOpacity={0.42} />
-            <Stop offset="48%" stopColor={color} stopOpacity={0.24} />
-            <Stop offset="75%" stopColor={color} stopOpacity={0.09} />
-            <Stop offset="100%" stopColor={color} stopOpacity={0} />
+            {stops.map((st) => (
+              <Stop key={st.offset} offset={st.offset} stopColor={st.color} stopOpacity={st.opacity} />
+            ))}
           </RadialGradient>
         </Defs>
         <Circle cx={ORB_SIZE / 2} cy={ORB_SIZE / 2} r={ORB_SIZE / 2} fill={`url(#${gradientId})`} />
@@ -96,41 +111,29 @@ export function CipherField({ width, height, t, orangeOrbit, blueOrbit, orangeCl
   const cells = React.useMemo<Cell[]>(() => {
     if (width <= 0 || height <= 0 || !orangeOrbit || !blueOrbit) return [];
 
-    const spacing = 34;
+    const spacing = 20;
     const cols = Math.max(1, Math.ceil(width / spacing));
     const rows = Math.max(1, Math.ceil(height / spacing));
     const rand = mulberry32(20260711);
-    const density = 0.62;
+    const density = 0.65;
 
     const arr: Cell[] = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (rand() > density) continue;
-        const x = c * spacing + spacing * 0.5 + (rand() - 0.5) * spacing * 0.7;
-        const y = r * spacing + spacing * 0.5 + (rand() - 0.5) * spacing * 0.7;
+        const x = c * spacing + spacing * 0.5 + (rand() - 0.5) * spacing * 0.6;
+        const y = r * spacing + spacing * 0.5 + (rand() - 0.5) * spacing * 0.6;
         const char = CHARS[Math.floor(rand() * CHARS.length)];
-        const fontSize = 11 + rand() * 3;
+        const fontSize = 10;
 
         const oCurve = proximityCurve(x, y, orangeOrbit, CHAR_INFLUENCE_RADIUS);
         const bCurve = proximityCurve(x, y, blueOrbit, CHAR_INFLUENCE_RADIUS);
 
-        let glow: Cell['glow'] = null;
-        let curve: number[] | null = null;
-        if (oCurve.minDist < CHAR_INFLUENCE_RADIUS || bCurve.minDist < CHAR_INFLUENCE_RADIUS) {
-          if (oCurve.minDist <= bCurve.minDist) {
-            glow = 'orange';
-            curve = oCurve.curve;
-          } else {
-            glow = 'blue';
-            curve = bCurve.curve;
-          }
-        }
+        // Keep only cells an orb actually reaches; store BOTH curves so the
+        // glyph can light for whichever orb is currently near it.
+        if (oCurve.minDist >= CHAR_INFLUENCE_RADIUS && bCurve.minDist >= CHAR_INFLUENCE_RADIUS) continue;
 
-        // Cells no orbit ever comes near are skipped entirely — nothing is
-        // drawn there, matching "only visible when the glow hits it".
-        if (!glow) continue;
-
-        arr.push({ key: `${r}-${c}`, x, y, char, fontSize, glow, curve });
+        arr.push({ key: `${r}-${c}`, x, y, char, fontSize, orangeCurve: oCurve.curve, blueCurve: bCurve.curve });
       }
     }
 
@@ -146,33 +149,21 @@ export function CipherField({ width, height, t, orangeOrbit, blueOrbit, orangeCl
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: t.bg, overflow: 'hidden' }]} pointerEvents="none">
-      <GlowOrb gradientId="agentGlowOrange" color={t.agentGlowOrange} tx={orangeX} ty={orangeY} />
-      <GlowOrb gradientId="agentGlowBlue" color={t.agentGlowBlue} tx={blueX} ty={blueY} />
+      <GlowOrb gradientId="agentGlowOrange" stops={ORANGE_STOPS} tx={orangeX} ty={orangeY} />
+      <GlowOrb gradientId="agentGlowBlue" stops={BLUE_STOPS} tx={blueX} ty={blueY} />
 
-      {/* Characters only exist where a glow can reach them, and their
-          opacity is driven entirely by that glow's own clock — nothing is
-          visible until the orb actually approaches. */}
       {cells.map((cell) => {
-        const clock = cell.glow === 'orange' ? orangeClock : blueClock;
-        const orbit = cell.glow === 'orange' ? orangeOrbit : blueOrbit;
-        const color = cell.glow === 'orange' ? t.agentGlowOrange : t.agentGlowBlue;
-        const opacity = clock.interpolate({ inputRange: orbit.input, outputRange: cell.curve! });
+        const orangeOpacity = orangeClock.interpolate({ inputRange: orangeOrbit.input, outputRange: cell.orangeCurve });
+        const blueOpacity = blueClock.interpolate({ inputRange: blueOrbit.input, outputRange: cell.blueCurve });
         return (
-          <Animated.Text
-            key={cell.key}
-            style={[
-              s.char,
-              {
-                left: cell.x,
-                top: cell.y,
-                fontSize: cell.fontSize,
-                color,
-                opacity,
-              },
-            ]}
-          >
-            {cell.char}
-          </Animated.Text>
+          <React.Fragment key={cell.key}>
+            <Animated.Text style={[s.char, { left: cell.x, top: cell.y, fontSize: cell.fontSize, color: CHAR_ORANGE, opacity: orangeOpacity }]}>
+              {cell.char}
+            </Animated.Text>
+            <Animated.Text style={[s.char, { left: cell.x, top: cell.y, fontSize: cell.fontSize, color: CHAR_BLUE, opacity: blueOpacity }]}>
+              {cell.char}
+            </Animated.Text>
+          </React.Fragment>
         );
       })}
     </View>
@@ -187,6 +178,6 @@ const s = StyleSheet.create({
   },
   char: {
     position: 'absolute',
-    fontFamily: F.sans700,
+    fontFamily: MONO,
   },
 });

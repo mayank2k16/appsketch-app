@@ -1,15 +1,18 @@
 /**
  * Shared orbit math for the Agent glow system. `AgentScreen` owns the actual
  * clocks (Animated.Value loops) and orbit paths; `CipherField` draws the two
- * soft glow orbs along them (and lights nearby characters as they pass).
+ * soft glow orbs along them (and lights nearby characters as they pass);
+ * `PromptBar` draws a matching border rim-light at the same live position.
  *
  * The orbit path is the PromptBar card's own measured rounded-rect boundary,
  * inflated outward by `ORBIT_OUTSET` — so the glow visibly hugs the input's
- * edge (steadily travelling all the way around it) instead of floating
- * around an unrelated point in the field. The card's border itself stays
- * plain; the "border lighting up" is just the soft orb's own halo bleeding
- * into the area right around the edge as it passes, the same way the
- * reference's glow works.
+ * edge, steadily travelling all the way around it, instead of floating
+ * around an unrelated point in the field.
+ *
+ * Both orbits share one clock duration (`ORBIT_DURATION`) with a fixed
+ * half-lap phase offset baked into the path itself — if the two ran on
+ * different durations they'd drift in and out of alignment and periodically
+ * collide as they pass the same side of the (small, wide) card.
  */
 
 export const STEPS = 32;
@@ -21,15 +24,19 @@ export type Rect = { x: number; y: number; width: number; height: number };
 // same shape (offset outward for the orbit).
 export const PROMPT_CARD_RADIUS = 26;
 export const PROMPT_BORDER_W = 1.5;
-export const ORBIT_OUTSET = 16;
+export const ORBIT_OUTSET = 8;
 
-export const ORB_SIZE = 220;
+export const ORB_SIZE = 160;
 export const CHAR_INFLUENCE_RADIUS = 130;
-export const ORBIT_DURATION_ORANGE = 22000;
-export const ORBIT_DURATION_BLUE = 27000;
+export const ORBIT_DURATION = 14000;
 
 function clampRadius(r: number, w: number, h: number) {
   return Math.max(0, Math.min(r, w / 2, h / 2));
+}
+
+export function roundedRectPerimeter(width: number, height: number, radius: number) {
+  const r = clampRadius(radius, width, height);
+  return 2 * (width - 2 * r) + 2 * (height - 2 * r) + 2 * Math.PI * r;
 }
 
 /**

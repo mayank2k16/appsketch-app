@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { homeTheme } from '../theme/HomeTheme';
 
-const LOGO = require('../../../../assets/chinese_corner.png');
+const LOGO = require('../../../../assets/logo.png');
 
 type Props = {
   onMenuPress: () => void;
@@ -133,7 +133,7 @@ const s = StyleSheet.create({
   left: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
+    gap: 7,
     flex: 1,
   },
   logoWrap: {
@@ -141,10 +141,12 @@ const s = StyleSheet.create({
     height: 40,
     borderRadius: 10,
     overflow: 'hidden',
+    transform: [{ scale: 2.3 }],
   },
   logo: {
     width: 40,
     height: 40,
+    marginTop: 1
   },
   brandBlock: {
     flex: 1,
