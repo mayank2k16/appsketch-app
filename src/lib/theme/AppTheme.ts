@@ -104,23 +104,18 @@ export const appTheme = {
     drawerCloseIconText: 'rgba(255,255,255,0.45)',
     drawerShadow:        '#C41230',
 
-    // ── Bottom tab bar (GlowTabBar — flat tab, icon-only glow, gradient label) ─
+    // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
     tabBarBg:            '#0A0A0C',                 // bar background behind the tabs
-    tabCardFill:         '#0E0E13',                 // plain, unbordered tab fill
-    tabLabelGradient:    ['#F1552F', '#C41230'],    // brand gradient — active label text only
-    tabGlow:             '#F1552F',                 // active icon glow colour
+    tabLabelGradient:    ['#FF9E56', '#F1552F', '#C41230', '#8B2DDC'],   // orange → red → violet aura — active icon + label
     tabIconInactive:     'rgba(255,255,255,0.50)',
-    tabIconActive:       '#FFFFFF',
     tabLabelInactive:    'rgba(255,255,255,0.45)',
-    tabLabelActive:      '#F1552F',
 
     // ── Agent screen (CipherField + PromptBar) ────────────────────────────────
     // Backdrop fill uses the shared `bg` token (not a separate one) so the
     // Agent section sits seamlessly between Home's other sections (Hero,
     // Gallery) with zero colour seam when scrolled together.
-    agentCipherColor:    'rgba(255,255,255,0.16)',  // dim base character colour
-    agentGlowOrange:     '#F1552F',
-    agentGlowBlue:        '#3B82F6',
+    agentGlowOrange:     '#FF6A33',
+    agentGlowBlue:        '#4C8BFF',
     agentInputBg:        'rgba(20,20,24,0.92)',
     agentInputBorder:    'rgba(255,255,255,0.10)',
     agentInputText:      '#FFFFFF',
@@ -223,20 +218,15 @@ export const appTheme = {
     drawerCloseIconText: 'rgba(17,17,17,0.45)',
     drawerShadow:        'rgba(0,0,0,0.12)',
 
-    // ── Bottom tab bar (GlowTabBar — flat tab, icon-only glow, gradient label) ─
+    // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
     tabBarBg:            '#F7F7F9',
-    tabCardFill:         '#FFFFFF',
-    tabLabelGradient:    ['#F1552F', '#C41230'],
-    tabGlow:             'rgba(196,18,48,0.55)',
+    tabLabelGradient:    ['#FF9E56', '#F1552F', '#C41230', '#8B2DDC'],
     tabIconInactive:     'rgba(17,17,17,0.42)',
-    tabIconActive:       '#F1552F',
     tabLabelInactive:    'rgba(17,17,17,0.45)',
-    tabLabelActive:      '#C41230',
 
     // ── Agent screen (CipherField + PromptBar) ────────────────────────────────
-    agentCipherColor:    'rgba(17,17,17,0.14)',
-    agentGlowOrange:     'rgba(241,85,47,0.75)',
-    agentGlowBlue:        'rgba(59,130,246,0.70)',
+    agentGlowOrange:     '#FF6A33',
+    agentGlowBlue:        '#4C8BFF',
     agentInputBg:        '#FFFFFF',
     agentInputBorder:    'rgba(17,17,17,0.10)',
     agentInputText:      '#111111',
@@ -249,7 +239,7 @@ export const appTheme = {
 } as const;
 
 export type AppScheme = keyof typeof appTheme;
-export type AppColors = typeof appTheme.dark;
+export type AppColors = typeof appTheme.dark | typeof appTheme.light;
 
 /** One-liner hook helper — import & call at the top of any component. */
 export function useAppTheme(colorScheme: string | null | undefined): AppColors {

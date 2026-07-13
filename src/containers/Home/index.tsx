@@ -8,6 +8,7 @@ import { HomeHeader } from './Header';
 import { HeroBanner } from './Hero';
 import { GallerySection } from './Gallery';
 import AgentScreen from './Agent';
+import { Showcase } from './Showcase';
 
 export function HomeScreen() {
   const { colorScheme } = useColorScheme();
@@ -59,6 +60,8 @@ export function HomeScreen() {
           onStartPress={handleGalleryStartPress}
           onLearnPress={handleGalleryLearnPress}
         />
+
+        <Showcase />
 
         {/* ── Future home sections slot in here ── */}
       </ScrollView>
