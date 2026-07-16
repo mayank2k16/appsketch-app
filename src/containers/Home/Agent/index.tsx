@@ -67,12 +67,16 @@ export function AgentScreen() {
     orangeClock.setValue(0);
     blueClock.setValue(0);
 
+    // JS-driven (not native): PromptBar feeds these clocks into an SVG
+    // `strokeDashoffset`, a custom react-native-svg attribute the native
+    // driver can't animate under Fabric — using it there hangs the native
+    // render commit for the whole screen (seen as a black screen on device).
     const orangeLoop = Animated.loop(
       Animated.timing(orangeClock, {
         toValue: 1,
         duration: ORBIT_DURATION,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
         isInteraction: false,
       })
     );
@@ -81,7 +85,7 @@ export function AgentScreen() {
         toValue: 1,
         duration: ORBIT_DURATION,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
         isInteraction: false,
       })
     );
@@ -136,7 +140,7 @@ const s = StyleSheet.create({
   field: {
     flex: 1,
     paddingTop: 100,
-    paddingBottom: 50,
+    paddingBottom: 60,
   },
   promptWrap: {
     flex: 1,

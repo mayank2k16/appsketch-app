@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as SplashScreen from 'expo-splash-screen';
 import * as React from 'react';
 import {
   Dimensions,
@@ -219,6 +220,13 @@ export default function BrandSplashScreen() {
 
   React.useEffect(() => {
     hydrateAuth();
+
+    // The root layout calls preventAutoHideAsync(); nothing on the
+    // splash -> home route ever dismissed it, so Expo's native splash
+    // overlay stayed on top of the app forever (looked like a black
+    // screen once JS took over). Hide it now that this custom splash
+    // is mounted and ready to render in its place.
+    SplashScreen.hideAsync().catch(() => {});
 
     // 1. sky fades up
     skyOp.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.quad) });

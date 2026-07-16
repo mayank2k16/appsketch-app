@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { fetchTenantConfig } from '@/api/tenants';
 import { getItem, setItem } from '@/lib/storage';
 import type {
   TenantApiResponse,
@@ -16,7 +15,6 @@ type TenantContextType = {
   error: Error | null;
   setTenant: (tenant: TenantInfo) => Promise<void>;
   setTenantData: (data: TenantApiResponse) => Promise<void>;
-  fetchAndSetTenant: () => Promise<TenantApiResponse>;
   loadTenantConfig: (tenantId: string) => Promise<void>;
   clearTenant: () => void;
 };
@@ -79,30 +77,6 @@ export function TenantProvider({ children }: TenantProviderProps) {
     };
   }
 
-  async function fetchAndSetTenant(): Promise<TenantApiResponse> {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const data = await fetchTenantConfig();
-      await setTenantData(data);
-      return data;
-    } catch (err) {
-      const storedData = getItem<TenantApiResponse>(TENANT_DATA_STORAGE_KEY);
-      if (storedData) {
-        setTenantDataState(storedData);
-        setCurrentTenant(convertToTenantInfo(storedData));
-        return storedData;
-      }
-      const error =
-        err instanceof Error ? err : new Error('Failed to fetch tenant');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   async function setTenantData(data: TenantApiResponse): Promise<void> {
     try {
       await setItem(TENANT_DATA_STORAGE_KEY, data);
@@ -153,24 +127,12 @@ export function TenantProvider({ children }: TenantProviderProps) {
         return;
       }
 
-      const tenant = currentTenant || getItem<TenantInfo>(TENANT_STORAGE_KEY);
-      if (tenant?.configUrl) {
-        const response = await fetch(tenant.configUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch config: ${response.statusText}`);
-        }
-        const config: TenantConfig = await response.json();
-        await setItem(`${TENANT_CONFIG_STORAGE_KEY}_${tenantId}`, config);
-        setTenantConfig(config);
-      } else {
-        const { loadDefaultConfig } = await import('./utils');
-        const defaultConfig = await loadDefaultConfig();
-        await setItem(
-          `${TENANT_CONFIG_STORAGE_KEY}_${tenantId}`,
-          defaultConfig
-        );
-        setTenantConfig(defaultConfig);
-      }
+      // Config fetching over the network was removed for now — always
+      // resolve from the local bundled default config.
+      const { loadDefaultConfig } = await import('./utils');
+      const defaultConfig = await loadDefaultConfig();
+      await setItem(`${TENANT_CONFIG_STORAGE_KEY}_${tenantId}`, defaultConfig);
+      setTenantConfig(defaultConfig);
     } catch (err) {
       setError(
         err instanceof Error ? err : new Error('Failed to load tenant config')
@@ -200,7 +162,6 @@ export function TenantProvider({ children }: TenantProviderProps) {
         error,
         setTenant,
         setTenantData,
-        fetchAndSetTenant,
         loadTenantConfig,
         clearTenant,
       }}

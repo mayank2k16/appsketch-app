@@ -131,7 +131,7 @@ export function HeroBanner({
 const s = StyleSheet.create({
   hero: {
     width: W,
-    height: H / 1.5,
+    height: H / 1.7,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
@@ -140,8 +140,8 @@ const s = StyleSheet.create({
   content: {
     width: '100%',
     paddingHorizontal: 28,
-    paddingTop: 70,
-    paddingBottom: 60,
+    paddingTop: 40,
+    paddingBottom: 50,
     alignItems: 'center',
     zIndex: 2,
   },

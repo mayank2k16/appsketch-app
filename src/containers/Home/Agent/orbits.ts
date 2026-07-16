@@ -28,7 +28,7 @@ export const ORBIT_OUTSET = 8;
 
 export const ORB_SIZE = 160;
 export const CHAR_INFLUENCE_RADIUS = 130;
-export const ORBIT_DURATION = 14000;
+export const ORBIT_DURATION = 25000;
 
 function clampRadius(r: number, w: number, h: number) {
   return Math.max(0, Math.min(r, w / 2, h / 2));

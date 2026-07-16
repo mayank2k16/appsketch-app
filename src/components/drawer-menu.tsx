@@ -22,13 +22,6 @@ import {
 const HEADER_LOGO = require('../../assets/chinese_corner.png');
 
 import { Text } from '@/components/ui';
-import {
-  Cart as CartIcon,
-  Category as CategoryIcon,
-  Feed as ProductsIcon,
-  Settings as SettingsIcon,
-  User as UserIcon,
-} from '@/components/ui/icons';
 import { signOut, useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/lib/tenant';
 import { F } from '@/lib/fonts';
@@ -49,22 +42,10 @@ type DrawerMenuProps = {
   onClose: () => void;
 };
 
-const AUTH_MENU_ITEMS = [
-  { id: 'profile', label: 'My Account', icon: UserIcon, route: '/storefront/profile', emoji: '👤' },
-  { id: 'products', label: 'Our Menu', icon: ProductsIcon, route: '/storefront/explore', emoji: '🥡' },
-  { id: 'cart', label: 'My Cart', icon: CartIcon, route: '/storefront/cart', emoji: '🛒' },
-  { id: 'categories', label: 'Food Categories', icon: CategoryIcon, route: '/storefront/categories', emoji: '🍜' },
-  { id: 'terms', label: 'Terms & Conditions', icon: SettingsIcon, route: '/storefront/terms', emoji: '📋' },
-  { id: 'privacy', label: 'Privacy Policy', icon: SettingsIcon, route: '/storefront/privacy', emoji: '🔒' },
-];
+// Storefront routes were removed for now — no menu items until they're back.
+const AUTH_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [];
 
-const GUEST_MENU_ITEMS = [
-  { id: 'products', label: 'Our Menu', icon: ProductsIcon, route: '/storefront/explore', emoji: '🥡' },
-  { id: 'cart', label: 'My Cart', icon: CartIcon, route: '/storefront/cart', emoji: '🛒' },
-  { id: 'categories', label: 'Food Categories', icon: CategoryIcon, route: '/storefront/categories', emoji: '🍜' },
-  { id: 'terms', label: 'Terms & Conditions', icon: SettingsIcon, route: '/storefront/terms', emoji: '📋' },
-  { id: 'privacy', label: 'Privacy Policy', icon: SettingsIcon, route: '/storefront/privacy', emoji: '🔒' },
-];
+const GUEST_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [];
 
 // ─── Shimmer wordmark ──────────────────────────────────────────────────────────
 function ShimmerWordmark({ wordmarkColor, shimmerMid }: { wordmarkColor: string; shimmerMid: string }) {
@@ -183,8 +164,11 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   // ── Animation values ────────────────────────────────────────────────────────
   const translateX = React.useRef(new Animated.Value(DRAWER_W)).current;
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
-  // Always allocate for the largest list (AUTH) so the ref never runs short when status changes
-  const itemAnims = React.useRef(AUTH_MENU_ITEMS.map(() => new Animated.Value(0))).current;
+  // Always allocate for the largest list (AUTH), plus 1 reserved for the
+  // sign-in/logout row's own animation — kept at length >= 1 even with no menu items.
+  const itemAnims = React.useRef(
+    Array.from({ length: Math.max(AUTH_MENU_ITEMS.length, 1) }, () => new Animated.Value(0))
+  ).current;
   const logoBrandAnim = React.useRef(new Animated.Value(0)).current;
   const headerLineAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -213,9 +197,11 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           toValue: 1, duration: 400, delay: 220,
           easing: Easing.out(Easing.ease), useNativeDriver: false,
         }),
+        // Always includes the last slot, reserved for the sign-in/logout row —
+        // it must animate even when MENU_ITEMS is empty.
         Animated.stagger(
           50,
-          itemAnims.slice(0, MENU_ITEMS.length).map(a =>
+          itemAnims.slice(0, Math.max(MENU_ITEMS.length, 1)).map(a =>
             Animated.spring(a, {
               toValue: 1, tension: 95, friction: 13, useNativeDriver: true,
             })

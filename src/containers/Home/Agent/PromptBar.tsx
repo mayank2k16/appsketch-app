@@ -172,8 +172,8 @@ const s = StyleSheet.create({
   input: {
     fontSize: 15,
     lineHeight: 20,
-    minHeight: 22,
-    maxHeight: 90,
+    minHeight: 80,
+    maxHeight: 100,
     paddingHorizontal: 4,
   },
   row: {

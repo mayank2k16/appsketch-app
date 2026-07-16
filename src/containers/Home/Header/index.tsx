@@ -4,6 +4,7 @@ import * as React from 'react';
 import {
   Animated,
   Easing,
+  LayoutChangeEvent,
   Platform,
   StyleSheet,
   Text,
@@ -14,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { TwinkleDots } from '../Hero/TwinkleDots';
 import { homeTheme } from '../theme/HomeTheme';
 
 const LOGO = require('../../../../assets/logo.png');
@@ -43,7 +45,8 @@ const hb = StyleSheet.create({
 export function HomeHeader({ onMenuPress }: Props) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const t = homeTheme[isDark ? 'dark' : 'light'];
   const user = useAuth.use.user();
   const userName = typeof user?.name === 'string' ? user.name : undefined;
   const userEmail = typeof user?.email === 'string' ? user.email : undefined;
@@ -52,6 +55,13 @@ export function HomeHeader({ onMenuPress }: Props) {
     : userEmail
       ? userEmail.split('@')[0]
       : null;
+
+  // Measured so TwinkleDots can size its dot grid to the header's own bounds.
+  const [size, setSize] = React.useState<{ width: number; height: number } | null>(null);
+  function handleHeaderLayout(e: LayoutChangeEvent) {
+    const { width, height } = e.nativeEvent.layout;
+    setSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
+  }
 
   // Entrance slide-down
   const enterAnim = React.useRef(new Animated.Value(0)).current;
@@ -73,6 +83,7 @@ export function HomeHeader({ onMenuPress }: Props) {
 
   return (
     <Animated.View
+      onLayout={handleHeaderLayout}
       style={[
         s.header,
         {
@@ -81,6 +92,18 @@ export function HomeHeader({ onMenuPress }: Props) {
         headerStyle,
       ]}
     >
+      {size ? (
+        <TwinkleDots
+          width={size.width}
+          height={size.height}
+          color={t.dotColor}
+          spacing={26}
+          radius={1.4}
+          baseOpacity={isDark ? 0.05 : 0.04}
+          peakOpacity={isDark ? 0.24 : 0.16}
+        />
+      ) : null}
+
       {/* ── Left: logo + brand + greeting ── */}
       <View style={s.left}>
         <View style={s.logoWrap}>
@@ -125,10 +148,6 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 18,
     paddingBottom: 14,
-    // position: "absolute",
-    // top: 0,
-    // width: "100%",
-    // zIndex: 10,
   },
   left: {
     flexDirection: 'row',

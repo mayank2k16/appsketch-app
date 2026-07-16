@@ -223,7 +223,7 @@ const s = StyleSheet.create({
   },
 
   hole: {
-    width: '95%',
+    width: '100%',
     borderRadius: 20,
     paddingVertical: 40,
     paddingHorizontal: 12,

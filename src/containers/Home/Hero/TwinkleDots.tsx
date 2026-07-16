@@ -47,9 +47,9 @@ export function TwinkleDots({
   color,
   spacing = 26,
   radius = 1.4,
-  baseOpacity = 0.2,
-  peakOpacity = 0.25,
-  density = 0.14,
+  baseOpacity = 0.3,
+  peakOpacity = 0.4,
+  density = 0.15,
 }: Props) {
   const cols = Math.max(1, Math.ceil(width / spacing) + 1);
   const rows = Math.max(1, Math.ceil(height / spacing) + 1);
