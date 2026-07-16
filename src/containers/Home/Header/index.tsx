@@ -2,8 +2,6 @@ import { Image as ExpoImage } from 'expo-image';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
-  Animated,
-  Easing,
   LayoutChangeEvent,
   Platform,
   StyleSheet,
@@ -63,33 +61,16 @@ export function HomeHeader({ onMenuPress }: Props) {
     setSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
   }
 
-  // Entrance slide-down
-  const enterAnim = React.useRef(new Animated.Value(0)).current;
-  React.useEffect(() => {
-    Animated.timing(enterAnim, {
-      toValue: 1, duration: 420, delay: 100,
-      easing: Easing.out(Easing.cubic), useNativeDriver: true,
-    }).start();
-  }, []);
-
-  const headerStyle = {
-    opacity: enterAnim,
-    transform: [{
-      translateY: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }),
-    }],
-  };
-
-  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 15 : 30);
+  const topPad = Math.max(insets.top + 10, Platform.OS === 'android' ? 15 : 30);
 
   return (
-    <Animated.View
+    <View
       onLayout={handleHeaderLayout}
       style={[
         s.header,
         {
           paddingTop: topPad,
         },
-        headerStyle,
       ]}
     >
       {size ? (
@@ -137,7 +118,7 @@ export function HomeHeader({ onMenuPress }: Props) {
       >
         <HamburgerIcon color={t.accent} />
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -147,7 +128,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 18,
-    paddingBottom: 14,
+    paddingBottom: 18,
   },
   left: {
     flexDirection: 'row',

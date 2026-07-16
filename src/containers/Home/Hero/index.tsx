@@ -1,9 +1,7 @@
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
-  Animated,
   Dimensions,
-  Easing,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,47 +24,23 @@ function HeroContent({
   onStartPress: () => void;
   onLearnPress: () => void;
 }) {
-  const anims = React.useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
-
-  React.useEffect(() => {
-    Animated.stagger(
-      100,
-      anims.map((a) =>
-        Animated.timing(a, {
-          toValue: 1,
-          duration: 680,
-          delay: 260,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        })
-      )
-    ).start();
-  }, []);
-
-  const aStyle = (i: number) => ({
-    opacity: anims[i],
-    transform: [
-      {
-        translateY: anims[i].interpolate({
-          inputRange: [0, 1],
-          outputRange: [30, 0],
-        }),
-      },
-    ],
-  });
-
+  // A one-shot `Animated.timing().start()` fired this early in the component
+  // lifecycle silently never completes on this device/RN build (looped
+  // animations elsewhere in this screen work fine — only one-shot entrance
+  // animations get stuck at their initial value forever), which made this
+  // content invisible. Rendering it statically visible is the robust fix.
   return (
     <View style={[s.content, { pointerEvents: 'box-none' }]}>
-      <Animated.Text style={[s.heading, { color: t.text }, aStyle(0)]}>
+      <Text style={[s.heading, { color: t.text }]}>
         {'Create unlimited\nbeautiful '}
         <Text style={{ color: t.heroHeadingFade }}>apps.</Text>
-      </Animated.Text>
+      </Text>
 
-      <Animated.Text style={[s.subtitle, { color: t.textSub }, aStyle(1)]}>
+      <Text style={[s.subtitle, { color: t.textSub }]}>
         {'Write anything and the agentic workspace\ncompiles your dream interface in real-time.'}
-      </Animated.Text>
+      </Text>
 
-      <Animated.View style={[s.btns, aStyle(2)]}>
+      <View style={s.btns}>
         <TouchableOpacity
           onPress={onStartPress}
           style={[s.btnPrimary, { backgroundColor: t.heroCtaBg }]}
@@ -88,7 +62,7 @@ function HeroContent({
             Learn more
           </Text>
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -114,8 +88,8 @@ export function HeroBanner({
         color={t.dotColor}
         spacing={26}
         radius={1.4}
-        minOpacity={isDark ? 0.05 : 0.04}
-        maxOpacity={isDark ? 0.24 : 0.16}
+        baseOpacity={isDark ? 0.05 : 0.04}
+        peakOpacity={isDark ? 0.24 : 0.16}
       />
 
       <HeroContent
@@ -131,7 +105,7 @@ export function HeroBanner({
 const s = StyleSheet.create({
   hero: {
     width: W,
-    height: H / 1.7,
+    height: H / 1.9,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',

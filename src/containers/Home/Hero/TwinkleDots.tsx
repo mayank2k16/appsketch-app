@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import * as React from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
@@ -13,8 +14,10 @@ import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
  *     on their own random duration / phase, so at any moment different dots are
  *     brightening while others dim — the total stays roughly constant.
  *
- * The overlay uses the JS driver (small count) so it animates on every platform
- * including Expo web.
+ * The overlay animates only `opacity`, so it uses the native driver — running
+ * on the UI thread instead of the JS thread, where it no longer competes with
+ * taps/navigation. (On web, react-native-web has no native driver and just
+ * warns + falls back to JS, which is harmless.)
  */
 
 type Twinkle = {
@@ -45,12 +48,22 @@ export function TwinkleDots({
   width,
   height,
   color,
-  spacing = 26,
+  spacing = 34,
   radius = 1.4,
   baseOpacity = 0.3,
   peakOpacity = 0.4,
-  density = 0.15,
+  // Each twinkling dot is its own independent Animated.Value + Animated.loop
+  // (JS-driven) — with two full instances of this component on Home (Header
+  // + Hero), the old 0.15 density added up to ~70 concurrent loop drivers,
+  // a real, measured source of app-wide lag while Home is the focused tab.
+  density = 0.05,
 }: Props) {
+  // Bottom tabs keep every tab screen mounted, so without this these loops
+  // (JS-driven — see note above) would keep burning JS-thread time even
+  // while the user is on a different tab, starving taps/navigation elsewhere
+  // in the app. Only run while this screen is actually focused.
+  const isFocused = useIsFocused();
+
   const cols = Math.max(1, Math.ceil(width / spacing) + 1);
   const rows = Math.max(1, Math.ceil(height / spacing) + 1);
 
@@ -82,6 +95,7 @@ export function TwinkleDots({
   }, [cols, rows, spacing, density, peakOpacity]);
 
   React.useEffect(() => {
+    if (!isFocused) return;
     const running = twinkles.map((d) => {
       const loop = Animated.loop(
         Animated.sequence([
@@ -89,14 +103,14 @@ export function TwinkleDots({
             toValue: 1,
             duration: d.dur,
             easing: Easing.inOut(Easing.sin),
-            useNativeDriver: false,
+            useNativeDriver: true,
             isInteraction: false,
           }),
           Animated.timing(d.val, {
             toValue: 0,
             duration: d.dur,
             easing: Easing.inOut(Easing.sin),
-            useNativeDriver: false,
+            useNativeDriver: true,
             isInteraction: false,
           }),
         ])
@@ -110,7 +124,7 @@ export function TwinkleDots({
         loop.stop();
       });
     };
-  }, [twinkles]);
+  }, [twinkles, isFocused]);
 
   const size = radius * 2;
 

@@ -174,45 +174,24 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
   const [modalVisible, setModalVisible] = React.useState(false);
 
+  // A one-shot `Animated....start()` fired this early/this-triggered silently
+  // never completes on this device/RN build (same issue found on Hero/Header's
+  // entrance animation) — the drawer was mounting (native Modal opened) but
+  // staying fully invisible/off-screen forever because translateX/overlayOpacity
+  // never actually animated away from their hidden resting values. Setting the
+  // values directly (no animation) makes opening/closing instant but reliable.
   React.useEffect(() => {
     if (visible) {
       setModalVisible(true);
+      translateX.setValue(0);
+      overlayOpacity.setValue(1);
+      logoBrandAnim.setValue(1);
+      headerLineAnim.setValue(1);
+      itemAnims.forEach(a => a.setValue(1));
+    } else {
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
-      logoBrandAnim.setValue(0);
-      headerLineAnim.setValue(0);
-      itemAnims.forEach(a => a.setValue(0));
-
-      Animated.parallel([
-        Animated.timing(overlayOpacity, {
-          toValue: 1, duration: 200, useNativeDriver: true,
-        }),
-        Animated.spring(translateX, {
-          toValue: 0, tension: 80, friction: 12, useNativeDriver: true,
-        }),
-        Animated.timing(logoBrandAnim, {
-          toValue: 1, duration: 260, delay: 80, useNativeDriver: true,
-        }),
-        Animated.timing(headerLineAnim, {
-          toValue: 1, duration: 400, delay: 220,
-          easing: Easing.out(Easing.ease), useNativeDriver: false,
-        }),
-        // Always includes the last slot, reserved for the sign-in/logout row —
-        // it must animate even when MENU_ITEMS is empty.
-        Animated.stagger(
-          50,
-          itemAnims.slice(0, Math.max(MENU_ITEMS.length, 1)).map(a =>
-            Animated.spring(a, {
-              toValue: 1, tension: 95, friction: 13, useNativeDriver: true,
-            })
-          )
-        ),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(overlayOpacity, { toValue: 0, duration: 160, useNativeDriver: true }),
-        Animated.timing(translateX, { toValue: DRAWER_W, duration: 180, useNativeDriver: true }),
-      ]).start(() => setModalVisible(false));
+      setModalVisible(false);
     }
   }, [visible]);
 

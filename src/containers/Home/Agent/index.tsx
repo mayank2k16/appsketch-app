@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Animated, Easing, KeyboardAvoidingView, LayoutChangeEvent, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
@@ -14,6 +15,11 @@ export function AgentScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  // Bottom tabs keep every tab screen mounted, so without this the orbit
+  // clock (JS-driven — see note below) would keep burning JS-thread time
+  // even while the user is on a different tab, starving taps/navigation
+  // elsewhere in the app. Only run while this screen is actually focused.
+  const isFocused = useIsFocused();
 
   const fieldRef = React.useRef<View>(null);
   const [fieldSize, setFieldSize] = React.useState<{ width: number; height: number } | null>(null);
@@ -62,7 +68,7 @@ export function AgentScreen() {
   }, [cardRect]);
 
   React.useEffect(() => {
-    if (!orangeOrbit || !blueOrbit) return;
+    if (!orangeOrbit || !blueOrbit || !isFocused) return;
 
     orangeClock.setValue(0);
     blueClock.setValue(0);
@@ -76,7 +82,7 @@ export function AgentScreen() {
         toValue: 1,
         duration: ORBIT_DURATION,
         easing: Easing.linear,
-        useNativeDriver: false,
+        useNativeDriver: true,
         isInteraction: false,
       })
     );
@@ -85,7 +91,7 @@ export function AgentScreen() {
         toValue: 1,
         duration: ORBIT_DURATION,
         easing: Easing.linear,
-        useNativeDriver: false,
+        useNativeDriver: true,
         isInteraction: false,
       })
     );
@@ -95,7 +101,7 @@ export function AgentScreen() {
       orangeLoop.stop();
       blueLoop.stop();
     };
-  }, [orangeOrbit, blueOrbit, orangeClock, blueClock]);
+  }, [orangeOrbit, blueOrbit, orangeClock, blueClock, isFocused]);
 
   return (
     <View style={[s.root, { backgroundColor: t.bg }]}>
@@ -121,8 +127,6 @@ export function AgentScreen() {
           <PromptBar
             t={t}
             onCardWindowRect={handleCardWindowRect}
-            orangeClock={orangeClock}
-            blueClock={blueClock}
           />
         </KeyboardAvoidingView>
       </View>
@@ -139,14 +143,14 @@ const s = StyleSheet.create({
   },
   field: {
     flex: 1,
-    paddingTop: 100,
-    paddingBottom: 60,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   promptWrap: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 18,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
 });
 

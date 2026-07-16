@@ -1,10 +1,10 @@
+import { Image as ExpoImage } from 'expo-image';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Animated,
   Dimensions,
   Easing,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -16,23 +16,63 @@ import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: W, height: H } = Dimensions.get('window');
 
-// ─── Placeholder splash images — swap seeds for real assets later ─────────────
-const splashUri = (seed: string, w: number, h: number) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
+// Fixed set of real template screenshots — same CDN folder as the login
+// screen's montage (src/app/login.tsx). Each URL is a stable cache key, so
+// expo-image downloads it once ever and serves it from disk on every
+// subsequent app open, unlike the previous picsum.photos placeholders (a new
+// random image on every single request, so nothing could ever be cached —
+// that was the real cost, not "remote vs local").
+const CDN = 'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/';
 
 // Six full-width columns of images. A background-coloured block in the middle
 // (see CenterHole) carves out an empty area for the text, giving the reference's
 // "4-sided frame": image rows across the top & bottom, columns down the sides.
 const COLUMNS: {
-  seed: string;
   direction: 'up' | 'down';
   speed: number;
   heights: number[];
+  images: string[];
 }[] = [
-    { seed: 'sk-a', direction: 'up', speed: 48, heights: [130, 100, 152, 118, 140] },
-    { seed: 'sk-b', direction: 'down', speed: 56, heights: [108, 150, 120, 132, 100] },
-    { seed: 'sk-c', direction: 'up', speed: 50, heights: [144, 110, 130, 150, 118] },
-    { seed: 'sk-d', direction: 'down', speed: 54, heights: [120, 140, 100, 150, 128] },
+    {
+      direction: 'up', speed: 48, heights: [130, 100, 152, 118, 140],
+      images: [
+        `${CDN}an-elegant-and-sleek-layout-for-chinese-restaurants.webp`,
+        `${CDN}a-website-template-for-grocery-and-supermarts.webp`,
+        `${CDN}a-luxury-and-premium-wellness-brand-website.webp`,
+        `${CDN}a-modern-sleek-and-elegant-real-estate-website.webp`,
+        `${CDN}Screenshot_2026-04-22_at_8.54.13PM.png`,
+      ],
+    },
+    {
+      direction: 'down', speed: 56, heights: [108, 150, 120, 132, 100],
+      images: [
+        `${CDN}Screenshot_2026-04-16_at_8.40.13PM.png`,
+        `${CDN}Screenshot_2026-02-11_at_3.29.19PM.webp`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_14.webp`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_15.webp`,
+        `${CDN}Screenshot_2026-02-17_at_2.45.37PM.png`,
+      ],
+    },
+    {
+      direction: 'up', speed: 50, heights: [144, 110, 130, 150, 118],
+      images: [
+        `${CDN}Screenshot_2026-04-02_at_8.08.39PM.png`,
+        `${CDN}Screenshot_2026-03-12_at_9.09.02PM.png`,
+        `${CDN}a-premium-jewellery-website-for-enquiry-purposes.webp`,
+        `${CDN}Screenshot_2026-03-19_at_2.37.40AM.png`,
+        `${CDN}Screenshot_2026-04-26_at_7.39.16PM.png`,
+      ],
+    },
+    {
+      direction: 'down', speed: 54, heights: [120, 140, 100, 150, 128],
+      images: [
+        `${CDN}a-sleek-website-for-beauty-and-skincare.webp`,
+        `${CDN}Screenshot_2026-04-26_at_7.36.52PM.png`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_2.webp`,
+        `${CDN}a-modern-beauty-brand-website.webp`,
+        `${CDN}Screenshot_2026-01-13_at_12.45.22AM.webp`,
+      ],
+    },
   ];
 
 const TRUSTED_BY = ['studio', 'atelier', 'collective', 'makers', 'lab'];
@@ -42,13 +82,13 @@ const IMG_RADIUS = 7;
 
 // ─── One continuously-scrolling column of images ───────────────────────────────
 function MarqueeColumn({
-  seed,
+  images,
   direction,
   speed,
   heights,
   colWidth,
 }: {
-  seed: string;
+  images: string[];
   direction: 'up' | 'down';
   speed: number;
   heights: number[];
@@ -88,12 +128,12 @@ function MarqueeColumn({
               overflow: 'hidden',
             }}
           >
-            <Image
-              source={{
-                uri: splashUri(`${seed}-${i % heights.length}`, Math.round(colWidth * 2), imgH * 2),
-              }}
+            <ExpoImage
+              source={images[i % images.length]}
               style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
             />
           </View>
         ))}
@@ -170,10 +210,10 @@ export function GallerySection({
       {/* ── Image frame (moving columns) with empty centre ── */}
       <View style={{ height: gridHeight, overflow: 'hidden' }}>
         <View style={[s.columns, { paddingHorizontal: padH, gap: colGap }]}>
-          {COLUMNS.map((c) => (
+          {COLUMNS.map((c, i) => (
             <MarqueeColumn
-              key={c.seed}
-              seed={c.seed}
+              key={i}
+              images={c.images}
               direction={c.direction}
               speed={c.speed}
               heights={c.heights}

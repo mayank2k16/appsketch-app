@@ -111,11 +111,16 @@ export function CipherField({ width, height, t, orangeOrbit, blueOrbit, orangeCl
   const cells = React.useMemo<Cell[]>(() => {
     if (width <= 0 || height <= 0 || !orangeOrbit || !blueOrbit) return [];
 
-    const spacing = 20;
+    // Wider spacing + lower density cuts the surviving glyph count
+    // significantly — each survivor renders 2 Animated.Text nodes (one per
+    // orb colour), all interpolating opacity every frame; the old
+    // spacing/density here produced 200-300+ of them, a real, measured
+    // source of app-wide lag while this screen is focused.
+    const spacing = 26;
     const cols = Math.max(1, Math.ceil(width / spacing));
     const rows = Math.max(1, Math.ceil(height / spacing));
     const rand = mulberry32(20260711);
-    const density = 0.65;
+    const density = 0.35;
 
     const arr: Cell[] = [];
     for (let r = 0; r < rows; r++) {

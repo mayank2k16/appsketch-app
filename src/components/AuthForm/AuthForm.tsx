@@ -3,11 +3,10 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
-  Animated,
-  Easing,
   Pressable,
   StyleSheet,
   Text,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,30 +34,14 @@ export function AuthForm() {
 
   const { signInWithGoogle, loading: googleLoading } = useGoogleSignIn(goHome);
 
-  // gentle entrance for the panel
-  const enter = React.useRef(new Animated.Value(0)).current;
-  React.useEffect(() => {
-    Animated.timing(enter, {
-      toValue: 1, duration: 650, delay: 120,
-      easing: Easing.out(Easing.cubic), useNativeDriver: true,
-    }).start();
-  }, [enter]);
-
-  const panelStyle = {
-    opacity: enter,
-    transform: [{
-      translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }),
-    }],
-  };
-
   function openSheet(m: 'email' | 'phone') {
     setMethod(m);
     setSheetVisible(true);
   }
 
   return (
-    <Animated.View
-      style={[s.panel, panelStyle, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
+    <View
+      style={[s.panel, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
     >
       <Text style={[s.heading, { color: t.heading }]}>Build Stunning Websites and Apps</Text>
       <Text style={[s.sub, { color: t.sub }]}>Your journey starts from here</Text>
@@ -116,7 +99,7 @@ export function AuthForm() {
         onClose={() => setSheetVisible(false)}
         onSuccess={goHome}
       />
-    </Animated.View>
+    </View>
   );
 }
 

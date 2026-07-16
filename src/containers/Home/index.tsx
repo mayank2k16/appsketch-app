@@ -1,6 +1,6 @@
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { Dimensions, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 
 import { DrawerMenu } from '@/components/drawer-menu';
 import { homeTheme } from './theme/HomeTheme';
@@ -9,6 +9,15 @@ import { HeroBanner } from './Hero';
 import { GallerySection } from './Gallery';
 import AgentScreen from './Agent';
 import { Showcase } from './Showcase';
+
+const { height: H } = Dimensions.get('window');
+// AgentScreen's own root is `flex: 1`, correct for its other use as a full
+// standalone tab screen ((tabs)/agent.tsx renders it directly). Nested here
+// inside a ScrollView there's no bounded parent for that flex to fill against,
+// so it was expanding to an oversized height — bloating CipherField's glyph
+// grid (which sizes itself off the measured height) and pushing Hero out of
+// the way the scroll content laid out. Give it a fixed height instead.
+const AGENT_PREVIEW_HEIGHT = H * 0.4;
 
 export function HomeScreen() {
   const { colorScheme } = useColorScheme();
@@ -54,7 +63,9 @@ export function HomeScreen() {
           onStartPress={handleStartPress}
           onLearnPress={handleLearnPress}
         />
-        <AgentScreen />
+        <View style={{ height: AGENT_PREVIEW_HEIGHT }}>
+          <AgentScreen />
+        </View>
 
         <GallerySection
           onStartPress={handleGalleryStartPress}

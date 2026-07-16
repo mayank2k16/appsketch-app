@@ -2,7 +2,6 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Animated,
-  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -43,21 +42,26 @@ export function AuthSheet({
     handleContinueContact, handleSubmitName, handleVerifyOtp, handleResendOtp,
   } = useContinueAuthFlow('contact', () => { onClose(); onSuccess?.(); });
 
+  // Set the slide position directly rather than animating it. A one-shot
+  // `Animated.spring/timing().start()` triggered on a visibility change
+  // silently never completes on this device/RN build (same bug seen on the
+  // drawer and the login panel) — the sheet would mount but stay translated
+  // 600px off-screen forever, and close() depended on an animation callback
+  // that never fired, so it wouldn't dismiss either. setValue is instant but
+  // reliable. `!visible` already returns null below, so hide is handled there.
   const sheetAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     if (visible) {
       reset();
-      Animated.spring(sheetAnim, { toValue: 1, tension: 60, friction: 13, useNativeDriver: true }).start();
-    } else {
-      Animated.timing(sheetAnim, { toValue: 0, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
+      sheetAnim.setValue(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   function close() {
-    Animated.timing(sheetAnim, { toValue: 0, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true })
-      .start(() => { reset(); onClose(); });
+    reset();
+    onClose();
   }
 
   const sheetBottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 24);
