@@ -10,9 +10,9 @@ import {
 
 import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
-import { TwinkleDots } from './TwinkleDots';
 
 const { width: W, height: H } = Dimensions.get('window');
+const HERO_H = H / 1.9;
 
 // ─── Hero content with staggered entrance ─────────────────────────────────────
 function HeroContent({
@@ -77,21 +77,12 @@ export function HeroBanner({
 }) {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
-  const isDark = colorScheme === 'dark';
 
   return (
-    <View style={[s.hero, { backgroundColor: t.bg }]}>
-      {/* Independent per-dot twinkle — the shimmer from the video */}
-      <TwinkleDots
-        width={W}
-        height={H}
-        color={t.dotColor}
-        spacing={26}
-        radius={1.4}
-        baseOpacity={isDark ? 0.05 : 0.04}
-        peakOpacity={isDark ? 0.24 : 0.16}
-      />
-
+    // No background colour here (and no owned TwinkleDots any more) — Home
+    // now renders a single shared dotted backdrop behind Header+Hero+AgentV2
+    // instead of each section owning its own animated instance.
+    <View style={s.hero}>
       <HeroContent
         t={t}
         onStartPress={onStartPress ?? (() => { })}
@@ -105,7 +96,7 @@ export function HeroBanner({
 const s = StyleSheet.create({
   hero: {
     width: W,
-    height: H / 1.9,
+    height: HERO_H,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',

@@ -5,6 +5,7 @@ import { AnalyticsScreen } from './Analytics';
 import { InventoryScreen } from './Inventory';
 import { NotificationsScreen } from './Notifications';
 import { OrdersScreen } from './Orders';
+import { PaymentsScreen } from './Payments';
 import { ProductsScreen } from './Products';
 import { WalletsScreen } from './Wallets';
 
@@ -19,7 +20,7 @@ import { WalletsScreen } from './Wallets';
  * data-fetching effects run) rather than code-split with `React.lazy` — see
  * the CMS shell architecture plan for why.
  */
-export type CmsTabKey = 'orders' | 'inventory' | 'notifications' | 'wallets' | 'analytics' | 'products';
+export type CmsTabKey = 'orders' | 'inventory' | 'notifications' | 'payments' | 'wallets' | 'analytics' | 'products';
 
 export type CmsTab = {
   key: CmsTabKey;
@@ -32,6 +33,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'orders', label: 'Orders', icon: 'receipt-outline', Component: OrdersScreen },
   { key: 'inventory', label: 'Inventory', icon: 'cube-outline', Component: InventoryScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
+  { key: 'payments', label: 'Payments', icon: 'card-outline', Component: PaymentsScreen },
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },
   { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },

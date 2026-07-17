@@ -12,17 +12,17 @@ const FEATURES: {
   title: string;
   desc: string;
 }[] = [
-  {
-    icon: 'globe-outline',
-    title: 'Generate high-quality images',
-    desc: 'Lorem ipsum dolor sit amet consectetur in quisque varius eget turpis sollicitudin purus arcu in tellus dolor eget.',
-  },
-  {
-    icon: 'create-outline',
-    title: 'Edit and upscale images',
-    desc: 'Amet lorem ipsum egestas habitasse mauris lacus ante augue sit id sodales lectus neque gravida ac nulla.',
-  },
-];
+    {
+      icon: 'globe-outline',
+      title: 'Generate high-quality images',
+      desc: 'Lorem ipsum dolor sit amet consectetur in quisque varius eget turpis sollicitudin purus arcu in tellus dolor eget.',
+    },
+    {
+      icon: 'create-outline',
+      title: 'Edit and upscale images',
+      desc: 'Amet lorem ipsum egestas habitasse mauris lacus ante augue sit id sodales lectus neque gravida ac nulla.',
+    },
+  ];
 
 export function Showcase() {
   const { colorScheme } = useColorScheme();

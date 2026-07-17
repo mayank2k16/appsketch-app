@@ -22,6 +22,12 @@ const { width: W, height: H } = Dimensions.get('window');
 // subsequent app open, unlike the previous picsum.photos placeholders (a new
 // random image on every single request, so nothing could ever be cached —
 // that was the real cost, not "remote vs local").
+//
+// Picked only the CDN's pre-compressed/descriptive-slug variants (23-165KB) —
+// the plain "Screenshot_...png" originals in this same folder are full-res,
+// unoptimized captures (1-6MB each); 8 of the first 20 picks turned out to be
+// that heavy, ~25MB combined for decorative marquee thumbnails, a real,
+// measured source of slow loading on mobile data.
 const CDN = 'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/';
 
 // Six full-width columns of images. A background-coloured block in the middle
@@ -40,34 +46,34 @@ const COLUMNS: {
         `${CDN}a-website-template-for-grocery-and-supermarts.webp`,
         `${CDN}a-luxury-and-premium-wellness-brand-website.webp`,
         `${CDN}a-modern-sleek-and-elegant-real-estate-website.webp`,
-        `${CDN}Screenshot_2026-04-22_at_8.54.13PM.png`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_7.webp`,
       ],
     },
     {
       direction: 'down', speed: 56, heights: [108, 150, 120, 132, 100],
       images: [
-        `${CDN}Screenshot_2026-04-16_at_8.40.13PM.png`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_10.webp`,
         `${CDN}Screenshot_2026-02-11_at_3.29.19PM.webp`,
         `${CDN}compressed_Screenshot_2026-01-12_at_10_14.webp`,
         `${CDN}compressed_Screenshot_2026-01-12_at_10_15.webp`,
-        `${CDN}Screenshot_2026-02-17_at_2.45.37PM.png`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_11.webp`,
       ],
     },
     {
       direction: 'up', speed: 50, heights: [144, 110, 130, 150, 118],
       images: [
-        `${CDN}Screenshot_2026-04-02_at_8.08.39PM.png`,
-        `${CDN}Screenshot_2026-03-12_at_9.09.02PM.png`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_16.webp`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_3.webp`,
         `${CDN}a-premium-jewellery-website-for-enquiry-purposes.webp`,
-        `${CDN}Screenshot_2026-03-19_at_2.37.40AM.png`,
-        `${CDN}Screenshot_2026-04-26_at_7.39.16PM.png`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_9_69PLQM7.webp`,
+        `${CDN}compressed_Screenshot_2026-01-12_at_10_13.webp`,
       ],
     },
     {
       direction: 'down', speed: 54, heights: [120, 140, 100, 150, 128],
       images: [
         `${CDN}a-sleek-website-for-beauty-and-skincare.webp`,
-        `${CDN}Screenshot_2026-04-26_at_7.36.52PM.png`,
+        `${CDN}a-modern-and-elegant-looking-grocery-store.webp`,
         `${CDN}compressed_Screenshot_2026-01-12_at_10_2.webp`,
         `${CDN}a-modern-beauty-brand-website.webp`,
         `${CDN}Screenshot_2026-01-13_at_12.45.22AM.webp`,
@@ -155,11 +161,11 @@ function CenterContent({
   return (
     <View style={[s.hole, { backgroundColor: t.bg }]}>
       <Text style={[s.heading, { color: t.text }]}>
-        {'Create unlimited\n'}
-        <Text style={{ color: t.heroHeadingFade }}>beautiful images.</Text>
+        {'Create unlimited beautiful\n'}
+        <Text style={{ color: t.heroHeadingFade }}>apps and websites.</Text>
       </Text>
       <Text style={[s.subtitle, { color: t.textSub }]}>
-        Browse a living gallery of screens and prototypes — every idea rendered,
+        Browse a living gallery of apps and websites — every idea rendered,
         remixable, and ready to ship.
       </Text>
       <View style={s.btns}>

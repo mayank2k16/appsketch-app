@@ -5,6 +5,7 @@ export * from './home';
 export * from './inventory';
 export * from './notifications';
 export * from './orders';
+export * from './payments';
 export * from './posts';
 export * from './products';
 export * from './studio';

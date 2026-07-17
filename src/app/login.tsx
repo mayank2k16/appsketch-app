@@ -244,7 +244,7 @@ export default function Login() {
 const s = StyleSheet.create({
   root: { flex: 1, overflow: "hidden" },
 
-  montage: { flex: 1, overflow: 'hidden', position: "absolute", top: 0, width: '100%', height: "70%" },
+  montage: { flex: 1, overflow: 'hidden', position: "absolute", top: 0, width: '100%', height: "60%" },
   gridWrap: {
     position: 'absolute',
     top: -0.18 * height,

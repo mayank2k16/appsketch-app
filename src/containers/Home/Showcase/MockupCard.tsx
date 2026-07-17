@@ -1,19 +1,37 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import * as React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { F } from '@/lib/fonts';
 import type { HomeColors } from '../theme/HomeTheme';
 
-/**
- * MockupCard — the little "product screenshot" shown beside the copy in the
- * showcase section: browser chrome, a compact tool rail, a prompt bar, a
- * grid of generated images, and an author row. Purely decorative — text and
- * imagery are placeholders matching the reference, not live app UI.
- */
+// Grid tiles previously sized via `width: '48%'` inside a chain with no
+// explicit width anywhere above it (card → body → content → grid all rely on
+// default flex/content sizing) — that percentage likely wasn't resolving to
+// a real number, and expo-image never even attempted to load into a 0×0
+// view (onLoadStart never fired). Computing an explicit pixel size, the same
+// approach Gallery's columns already use successfully, is the robust fix.
+const { width: SCREEN_W } = Dimensions.get('window');
+const SECTION_PAD_H = 22 * 2;
+const CARD_BORDER = 1 * 2;
+const RAIL_W = 38 + 1;
+const CONTENT_PAD_H = 10 * 2;
+const GRID_GAP = 6;
+const CARD_CONTENT_W = SCREEN_W - SECTION_PAD_H - CARD_BORDER - RAIL_W - CONTENT_PAD_H;
+const TILE_SIZE = (CARD_CONTENT_W - GRID_GAP) / 2;
 
-const splashUri = (seed: string, w: number, h: number) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
+const CDN = 'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/';
+// Pre-compressed/descriptive-slug variants (55-108KB) — the original picks
+// here were the CDN's full-res "Screenshot_...png" captures (2-3.9MB each)
+// squeezed into a tiny thumbnail tile; on mobile data that's slow enough the
+// tiles could still be blank by the time anyone looks at this section.
+const GRID_IMAGES = [
+  `${CDN}a-website-for-healthcare-brands.webp`,
+  `${CDN}a-premium-and-elegant-beauty-store.webp`,
+  `${CDN}a-portfolio-website-for-sports-academy.webp`,
+  `${CDN}compressed_Screenshot_2026-01-12_at_10_1.webp`,
+];
 
 const TOOLS: { icon: keyof typeof Ionicons.glyphMap; active?: boolean }[] = [
   { icon: 'text-outline', active: true },
@@ -21,8 +39,6 @@ const TOOLS: { icon: keyof typeof Ionicons.glyphMap; active?: boolean }[] = [
   { icon: 'color-wand-outline' },
   { icon: 'color-palette-outline' },
 ];
-
-const GRID_SEEDS = ['showcase-a', 'showcase-b', 'showcase-c', 'showcase-d'];
 
 export function MockupCard({ t }: { t: HomeColors }) {
   return (
@@ -79,12 +95,17 @@ export function MockupCard({ t }: { t: HomeColors }) {
 
           {/* Image grid */}
           <View style={s.grid}>
-            {GRID_SEEDS.map((seed, i) => (
-              <View key={seed} style={s.tile}>
-                <Image
-                  source={{ uri: splashUri(seed, 200, 200) }}
+            {GRID_IMAGES.map((uri, i) => (
+              <View key={uri} style={[s.tile, { width: TILE_SIZE, height: TILE_SIZE }]}>
+                <ExpoImage
+                  source={uri}
                   style={StyleSheet.absoluteFill}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
+                  onLoadStart={() => console.log('[MockupCard] load start', uri)}
+                  onLoad={(e) => console.log('[MockupCard] loaded', uri, e.source)}
+                  onError={(e) => console.log('[MockupCard] ERROR', uri, e.error)}
                 />
                 {i === 1 ? (
                   <View style={[s.tileBadge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
@@ -100,12 +121,12 @@ export function MockupCard({ t }: { t: HomeColors }) {
             ))}
           </View>
 
-          {/* Author row */}
+          {/* Author row — initials badge instead of a photo: no network
+              dependency at all, so it's guaranteed to render every time. */}
           <View style={[s.authorRow, { borderTopColor: t.border }]}>
-            <Image
-              source={{ uri: splashUri('showcase-avatar', 60, 60) }}
-              style={s.avatar}
-            />
+            <View style={[s.avatar, { backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' }]}>
+              <Text style={[s.avatarInitials, { color: t.accent }]}>JC</Text>
+            </View>
             <View>
               <Text style={[s.authorName, { color: t.text }]}>John Carter</Text>
               <Text style={[s.authorRole, { color: t.textMuted }]}>AI Product Designer</Text>
@@ -221,8 +242,6 @@ const s = StyleSheet.create({
     gap: 6,
   },
   tile: {
-    width: '48%',
-    aspectRatio: 1,
     borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: '#00000020',
@@ -249,6 +268,10 @@ const s = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
+  },
+  avatarInitials: {
+    fontFamily: F.sans700,
+    fontSize: 9.5,
   },
   authorName: {
     fontFamily: F.sans700,

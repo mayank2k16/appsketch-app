@@ -41,7 +41,7 @@ export function AuthForm() {
 
   return (
     <View
-      style={[s.panel, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
+      style={[s.panel, { backgroundColor: t.panel, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
     >
       <Text style={[s.heading, { color: t.heading }]}>Build Stunning Websites and Apps</Text>
       <Text style={[s.sub, { color: t.sub }]}>Your journey starts from here</Text>
@@ -108,7 +108,6 @@ const s = StyleSheet.create({
     paddingVertical: 26,
     paddingHorizontal: 26,
     marginTop: "auto",
-    backgroundColor: "rgb(21, 21, 23)"
   },
   heading: {
     fontSize: 30,

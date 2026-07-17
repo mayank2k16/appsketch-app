@@ -14,10 +14,8 @@ import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
  *     on their own random duration / phase, so at any moment different dots are
  *     brightening while others dim — the total stays roughly constant.
  *
- * The overlay animates only `opacity`, so it uses the native driver — running
- * on the UI thread instead of the JS thread, where it no longer competes with
- * taps/navigation. (On web, react-native-web has no native driver and just
- * warns + falls back to JS, which is harmless.)
+ * The overlay uses the JS driver (small count) so it animates on every platform
+ * including Expo web.
  */
 
 type Twinkle = {
@@ -50,18 +48,10 @@ export function TwinkleDots({
   color,
   spacing = 34,
   radius = 1.4,
-  baseOpacity = 0.3,
-  peakOpacity = 0.4,
-  // Each twinkling dot is its own independent Animated.Value + Animated.loop
-  // (JS-driven) — with two full instances of this component on Home (Header
-  // + Hero), the old 0.15 density added up to ~70 concurrent loop drivers,
-  // a real, measured source of app-wide lag while Home is the focused tab.
-  density = 0.05,
+  baseOpacity = 0.4,
+  peakOpacity = 0.9,
+  density = 0.6,
 }: Props) {
-  // Bottom tabs keep every tab screen mounted, so without this these loops
-  // (JS-driven — see note above) would keep burning JS-thread time even
-  // while the user is on a different tab, starving taps/navigation elsewhere
-  // in the app. Only run while this screen is actually focused.
   const isFocused = useIsFocused();
 
   const cols = Math.max(1, Math.ceil(width / spacing) + 1);

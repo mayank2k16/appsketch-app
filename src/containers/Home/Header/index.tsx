@@ -2,7 +2,6 @@ import { Image as ExpoImage } from 'expo-image';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
-  LayoutChangeEvent,
   Platform,
   StyleSheet,
   Text,
@@ -13,7 +12,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { TwinkleDots } from '../Hero/TwinkleDots';
 import { homeTheme } from '../theme/HomeTheme';
 
 const LOGO = require('../../../../assets/logo.png');
@@ -54,18 +52,10 @@ export function HomeHeader({ onMenuPress }: Props) {
       ? userEmail.split('@')[0]
       : null;
 
-  // Measured so TwinkleDots can size its dot grid to the header's own bounds.
-  const [size, setSize] = React.useState<{ width: number; height: number } | null>(null);
-  function handleHeaderLayout(e: LayoutChangeEvent) {
-    const { width, height } = e.nativeEvent.layout;
-    setSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
-  }
-
   const topPad = Math.max(insets.top + 10, Platform.OS === 'android' ? 15 : 30);
 
   return (
     <View
-      onLayout={handleHeaderLayout}
       style={[
         s.header,
         {
@@ -73,17 +63,6 @@ export function HomeHeader({ onMenuPress }: Props) {
         },
       ]}
     >
-      {size ? (
-        <TwinkleDots
-          width={size.width}
-          height={size.height}
-          color={t.dotColor}
-          spacing={26}
-          radius={1.4}
-          baseOpacity={isDark ? 0.05 : 0.04}
-          peakOpacity={isDark ? 0.24 : 0.16}
-        />
-      ) : null}
 
       {/* ── Left: logo + brand + greeting ── */}
       <View style={s.left}>
@@ -127,7 +106,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingBottom: 18,
   },
   left: {
@@ -141,7 +120,7 @@ const s = StyleSheet.create({
     height: 40,
     borderRadius: 10,
     overflow: 'hidden',
-    transform: [{ scale: 2.3 }],
+    transform: [{ scale: 2.2 }],
   },
   logo: {
     width: 40,
