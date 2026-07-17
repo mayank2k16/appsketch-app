@@ -1,221 +1,161 @@
-import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FocusAwareStatusBar } from '@/components/ui';
-import { signInAsGuest, useContinueAuthFlow } from '@/hooks/useAuth';
+import { signInAsGuest, useGoogleSignIn } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 
-import { CtaButton, GhostButton, OtpInput, StepInput } from './FormControls';
-import { GoogleAuthButton } from "@/components/GoogleAuthButton";
-import { authColors } from './AuthTheme';
+import { AuthSheet } from './AuthSheet';
+import { loginTheme } from './AuthTheme';
 
-
-
-const { RED, DARK } = authColors.dark;
-type ContactMethod = 'email' | 'phone';
-
+// ─────────────────────────────────────────────────────────────
+// AuthForm — the bottom auth panel only (Welcome + the three
+// Continue buttons + legal/guest). The montage above lives in the
+// login screen; this component owns everything auth-related.
+// ─────────────────────────────────────────────────────────────
 export function AuthForm() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const t = loginTheme[colorScheme === 'dark' ? 'dark' : 'light'];
 
-  const {
-    step, setStep, reset,
-    loading, resendLoading, resendCooldown,
-    contact, setContact, name, setName, otp, setOtp,
-    authState,
-    handleContinueContact, handleSubmitName, handleVerifyOtp, handleResendOtp,
-  } = useContinueAuthFlow('contact', () => router.replace('/storefront'));
+  const goHome = React.useCallback(() => router.replace('/home'), [router]);
 
-  const [method, setMethod] = React.useState<ContactMethod>('email');
+  const [sheetVisible, setSheetVisible] = React.useState(false);
+  const [method, setMethod] = React.useState<'email' | 'phone'>('phone');
 
-  function switchMethod(next: ContactMethod) {
-    if (next === method) return;
-    setMethod(next);
-    setContact('');
-  }
+  const { signInWithGoogle, loading: googleLoading } = useGoogleSignIn(goHome);
 
-  function goBack() {
-    setStep('contact');
+  function openSheet(m: 'email' | 'phone') {
+    setMethod(m);
+    setSheetVisible(true);
   }
 
   return (
-    <>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <FocusAwareStatusBar />
+    <View
+      style={[s.panel, { backgroundColor: t.panel, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
+    >
+      <Text style={[s.heading, { color: t.heading }]}>Build Stunning Websites and Apps</Text>
+      <Text style={[s.sub, { color: t.sub }]}>Your journey starts from here</Text>
 
-      <KeyboardAvoidingView
-        style={s.root}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      {/* Primary — Phone */}
+      <Pressable
+        onPress={() => openSheet('phone')}
+        style={({ pressed }) => [
+          s.btn,
+          { backgroundColor: t.primaryBg },
+          pressed && s.btnPressed,
+        ]}
       >
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[s.scroll, { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24 }]}
-        >
-          {/* ── Brand ── */}
-          <View style={s.brandWrap}>
-            <Image
-              source={require('../../../assets/chinese_corner.png')}
-              style={s.logo}
-              contentFit="contain"
-            />
-            <Text style={s.heading}>Welcome to Appsketch</Text>
-            <Text style={s.subheading}>Sign in to order your favourites.</Text>
-          </View>
+        <Text style={[s.btnLabel, { color: t.primaryText }]}>Continue with Phone</Text>
+      </Pressable>
 
-          {/* ── Google ── */}
-          <GoogleAuthButton onSuccess={() => router.replace('/storefront')} />
+      {/* Secondary — Email */}
+      <Pressable
+        onPress={() => openSheet('email')}
+        style={({ pressed }) => [
+          s.btn, s.btnSecondary,
+          { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder },
+          pressed && s.btnPressed,
+        ]}
+      >
+        <Ionicons name="mail-outline" size={18} color={t.secondaryIcon} style={s.btnIcon} />
+        <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Email</Text>
+      </Pressable>
 
-          {/* ── Divider ── */}
-          <View style={s.dividerRow}>
-            <View style={s.dividerLine} />
-            <Text style={s.dividerText}>OR</Text>
-            <View style={s.dividerLine} />
-          </View>
+      {/* Secondary — Gmail / Google */}
+      {/* <Pressable
+        onPress={signInWithGoogle}
+        disabled={googleLoading}
+        style={({ pressed }) => [
+          s.btn, s.btnSecondary,
+          { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder },
+          pressed && s.btnPressed,
+          googleLoading && { opacity: 0.6 },
+        ]}
+      >
+        <Ionicons name="logo-google" size={18} color={t.secondaryIcon} style={s.btnIcon} />
+        <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Google</Text>
+      </Pressable> */}
 
-          {/* ── Method tabs ── */}
-          {step === 'contact' && (
-            <View style={s.tabRow}>
-              <Pressable onPress={() => switchMethod('email')} style={s.tab}>
-                <Text style={[s.tabText, method === 'email' && s.tabTextActive]}>Continue with Email</Text>
-                {method === 'email' && <View style={s.tabUnderline} />}
-              </Pressable>
-              <Pressable onPress={() => switchMethod('phone')} style={s.tab}>
-                <Text style={[s.tabText, method === 'phone' && s.tabTextActive]}>Continue with Phone</Text>
-                {method === 'phone' && <View style={s.tabUnderline} />}
-              </Pressable>
-            </View>
-          )}
+      <Text style={[s.footer, { color: t.footer }]}>
+        By pressing on “Continue with…” you agree to our{' '}
+        <Text style={{ color: t.footerLink, textDecorationLine: 'underline' }}>Terms of Service</Text>
+        {' '}and{' '}
+        <Text style={{ color: t.footerLink, textDecorationLine: 'underline' }}>Privacy Policy</Text>
+      </Text>
 
-          {step !== 'contact' && (
-            <Pressable onPress={goBack} style={s.backRow}>
-              <Text style={s.backText}>← Back</Text>
-            </Pressable>
-          )}
-
-          {/* ── STEP: contact ── */}
-          {step === 'contact' && (
-            <View style={s.stepWrap}>
-              <StepInput
-                label={method === 'email' ? 'Email address' : 'Phone number'}
-                placeholder={method === 'email' ? 'you@example.com' : '+91 98765 43210'}
-                value={contact}
-                onChangeText={setContact}
-                onSubmit={handleContinueContact}
-                keyboardType={method === 'email' ? 'email-address' : 'phone-pad'}
-                autoFocus
-              />
-              <View style={{ height: 20 }} />
-              <CtaButton label="Continue" onPress={handleContinueContact} loading={loading} />
-            </View>
-          )}
-
-          {/* ── STEP: name ── */}
-          {step === 'name' && (
-            <View style={s.stepWrap}>
-              <Text style={s.stepTitle}>What's your name?</Text>
-              <Text style={s.stepSub}>We'll personalise your Chinese Corner experience.</Text>
-              <View style={{ height: 16 }} />
-              <StepInput
-                label="Full name"
-                placeholder="Enter your name"
-                value={name}
-                onChangeText={setName}
-                onSubmit={handleSubmitName}
-                autoCapitalize="words"
-                autoFocus
-              />
-              <View style={{ height: 20 }} />
-              <CtaButton label="Continue" onPress={handleSubmitName} loading={loading} />
-            </View>
-          )}
-
-          {/* ── STEP: otp ── */}
-          {step === 'otp' && (
-            <View style={s.stepWrap}>
-              <Text style={s.stepTitle}>Verify it's you</Text>
-              <Text style={s.stepSub}>
-                {authState?.otpSentVia === 'email'
-                  ? `A code has been sent to ${authState?.email ?? 'your email'}.`
-                  : `You'll receive a voice call with your OTP on ${authState?.phone ?? 'your number'}.`}
-              </Text>
-              <View style={{ height: 24 }} />
-              <OtpInput value={otp} onChangeText={setOtp} onSubmit={() => handleVerifyOtp()} />
-              <View style={{ height: 20 }} />
-              <CtaButton label="Verify" onPress={() => handleVerifyOtp()} loading={loading} />
-              <View style={{ height: 12 }} />
-              <GhostButton
-                label={resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
-                onPress={handleResendOtp}
-                loading={resendLoading}
-                disabled={resendCooldown > 0}
-              />
-            </View>
-          )}
-
-          <Text style={s.footer}>
-            By continuing you agree to our Terms of Service &amp; Privacy Policy
-          </Text>
-
-          <Pressable
-            onPress={() => { reset(); signInAsGuest(); router.replace('/storefront'); }}
-            style={{ marginTop: 18 }}
-          >
-            <Text style={s.guestLink}>Browse Menu as Guest</Text>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+      <AuthSheet
+        visible={sheetVisible}
+        method={method}
+        onClose={() => setSheetVisible(false)}
+        onSuccess={goHome}
+      />
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll: { paddingHorizontal: 28, flexGrow: 1 },
-
-  brandWrap: { alignItems: 'center', marginBottom: 28 },
-  logo: { width: 140, height: 70, marginBottom: 16 },
+  panel: {
+    paddingVertical: 26,
+    paddingHorizontal: 26,
+    marginTop: "auto",
+  },
   heading: {
-    fontSize: 22, fontFamily: F.display900, color: DARK,
-    letterSpacing: -0.4, textAlign: 'center',
+    fontSize: 30,
+    fontFamily: F.display900,
+    letterSpacing: -0.6,
+    lineHeight: 33,
+    paddingLeft: 5,
+    textAlign: "center",
   },
-  subheading: {
-    fontSize: 13.5, fontFamily: F.sans400, color: 'rgba(17,17,17,0.50)',
-    marginTop: 6, textAlign: 'center',
+  sub: {
+    fontSize: 14,
+    fontFamily: F.sans400,
+    marginTop: 10,
+    marginBottom: 22,
+    paddingLeft: 5,
+    textAlign: "center",
   },
 
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(17,17,17,0.10)' },
-  dividerText: { fontSize: 11, fontFamily: F.sans700, color: 'rgba(17,17,17,0.35)', letterSpacing: 1 },
-
-  tabRow: { flexDirection: 'row', gap: 24, marginBottom: 22, justifyContent: 'center' },
-  tab: { alignItems: 'center', paddingBottom: 8 },
-  tabText: { fontSize: 13.5, fontFamily: F.sans600, color: 'rgba(17,17,17,0.40)' },
-  tabTextActive: { color: DARK },
-  tabUnderline: { height: 2, width: '100%', backgroundColor: RED, borderRadius: 1, marginTop: 6 },
-
-  backRow: { marginBottom: 16 },
-  backText: { fontSize: 14, fontFamily: F.sans600, color: 'rgba(17,17,17,0.50)' },
-
-  stepWrap: {},
-  stepTitle: { fontSize: 20, fontFamily: F.display900, color: DARK, letterSpacing: -0.4, marginBottom: 6 },
-  stepSub: { fontSize: 13.5, fontFamily: F.sans400, color: 'rgba(17,17,17,0.50)', lineHeight: 20 },
+  btn: {
+    height: 54,
+    borderRadius: 27,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  btnSecondary: {
+    borderWidth: 1,
+  },
+  btnPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.985 }],
+  },
+  btnIcon: { marginRight: 8 },
+  btnLabel: {
+    fontSize: 15,
+    fontFamily: F.sans700,
+    letterSpacing: 0.2,
+  },
 
   footer: {
-    marginTop: 28, textAlign: 'center', fontSize: 10.5,
-    fontFamily: F.sans400, color: 'rgba(17,17,17,0.32)', lineHeight: 15,
+    marginTop: 20,
+    textAlign: 'center',
+    fontSize: 11,
+    fontFamily: F.sans400,
+    lineHeight: 16,
   },
-  guestLink: { textAlign: 'center', fontSize: 13, fontFamily: F.sans600, color: RED },
+
+  guestBtn: { marginTop: 16, alignSelf: 'center' },
+  guest: { fontSize: 13, fontFamily: F.sans600 },
 });

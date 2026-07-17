@@ -35,6 +35,12 @@ allprojects {
   configurations.all {
         resolutionStrategy {
             force "androidx.browser:browser:1.8.0"
+            // android-image-cropper (pulled in by expo-image-picker) requests
+            // androidx.core 1.17.0, which needs compileSdk 36 / AGP 8.9.1+.
+            // Pin back to the version the rest of the tree already uses so it
+            // stays compatible with this project's compileSdk 35 / AGP 8.8.2.
+            force "androidx.core:core:1.13.1"
+            force "androidx.core:core-ktx:1.13.1"
         }
   }
 }

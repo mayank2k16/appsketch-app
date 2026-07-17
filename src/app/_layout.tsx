@@ -11,6 +11,14 @@ import { ToastContainer } from '@/lib/toast-container';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useFonts } from 'expo-font';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from '@expo-google-fonts/inter';
 import { APIProvider } from '@/api';
 import { loadSelectedTheme, useAppStartup } from '@/lib';
 import { hydrateAuth } from '@/hooks/useAuth';
@@ -40,9 +48,13 @@ function RootLayoutContent() {
   useAppStartup();
 
   const [fontsLoaded] = useFonts({
-    'ProximaNova-Regular': require('../../assets/fonts/ProximaNova-Regular.otf'),
-    'ProximaNova-Bold':    require('../../assets/fonts/ProximaNova-Bold.otf'),
-    'ProximaNova-Black':   require('../../assets/fonts/ProximaNova-Black.otf'),
+    // ── Inter (replaces Proxima Nova app-wide, mapped via @/lib/fonts) ──
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
   });
 
   // Keep splash until fonts ready — avoids flash of unstyled text
@@ -50,13 +62,12 @@ function RootLayoutContent() {
 
   return (
     <Stack initialRouteName="splash">
-      <Stack.Screen name="splash" options={{ headerShown: false }} />
-      <Stack.Screen name="storefront" options={{ headerShown: false }} />
-      <Stack.Screen name="(app)" options={{ headerShown: false }} />
+      <Stack.Screen name="splash"     options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
+      <Stack.Screen name="login"      options={{ headerShown: false }} />
+      <Stack.Screen name="(app)"      options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="cms" options={{ headerShown: false }} />
-      <Stack.Screen name="studio" options={{ headerShown: false }} />
+      <Stack.Screen name="cms"        options={{ headerShown: false }} />
     </Stack>
   );
 }

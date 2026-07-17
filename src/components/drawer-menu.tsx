@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Animated,
@@ -21,28 +22,17 @@ import {
 const HEADER_LOGO = require('../../assets/chinese_corner.png');
 
 import { Text } from '@/components/ui';
-import {
-  Cart as CartIcon,
-  Category as CategoryIcon,
-  Feed as ProductsIcon,
-  Settings as SettingsIcon,
-  User as UserIcon,
-} from '@/components/ui/icons';
 import { signOut, useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/lib/tenant';
 import { F } from '@/lib/fonts';
+import { drawerTheme } from '@/containers/Home/theme/HomeTheme';
+import { useSelectedTheme } from '@/lib/hooks/use-selected-theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DRAWER_W = Math.min(SCREEN_W * 0.72, 290);
 
-// ─── Brand constants ───────────────────────────────────────────────────────────
-const BLACK  = '#0C0C0C';
-const DARK   = '#141414';
-const CARD   = '#1C1C1C';
-const RED    = '#C41230';
-const DIM_RED = 'rgba(196,18,48,0.14)';
-const WHITE  = '#FFFFFF';
-const DIM    = 'rgba(255,255,255,0.45)';
+// ─── Brand constants (non-themed) ─────────────────────────────────────────────
+const RED = '#C41230';
 
 // shimmer strip width
 const SHINE_W = DRAWER_W * 0.45;
@@ -52,25 +42,13 @@ type DrawerMenuProps = {
   onClose: () => void;
 };
 
-const AUTH_MENU_ITEMS = [
-  { id: 'profile',    label: 'My Account',        icon: UserIcon,     route: '/storefront/profile',    emoji: '👤' },
-  { id: 'products',   label: 'Our Menu',           icon: ProductsIcon, route: '/storefront/explore',    emoji: '🥡' },
-  { id: 'cart',       label: 'My Cart',            icon: CartIcon,     route: '/storefront/cart',       emoji: '🛒' },
-  { id: 'categories', label: 'Food Categories',    icon: CategoryIcon, route: '/storefront/categories', emoji: '🍜' },
-  { id: 'terms',      label: 'Terms & Conditions', icon: SettingsIcon, route: '/storefront/terms',      emoji: '📋' },
-  { id: 'privacy',    label: 'Privacy Policy',     icon: SettingsIcon, route: '/storefront/privacy',    emoji: '🔒' },
-];
+// Storefront routes were removed for now — no menu items until they're back.
+const AUTH_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [];
 
-const GUEST_MENU_ITEMS = [
-  { id: 'products',   label: 'Our Menu',           icon: ProductsIcon, route: '/storefront/explore',    emoji: '🥡' },
-  { id: 'cart',       label: 'My Cart',            icon: CartIcon,     route: '/storefront/cart',       emoji: '🛒' },
-  { id: 'categories', label: 'Food Categories',    icon: CategoryIcon, route: '/storefront/categories', emoji: '🍜' },
-  { id: 'terms',      label: 'Terms & Conditions', icon: SettingsIcon, route: '/storefront/terms',      emoji: '📋' },
-  { id: 'privacy',    label: 'Privacy Policy',     icon: SettingsIcon, route: '/storefront/privacy',    emoji: '🔒' },
-];
+const GUEST_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [];
 
 // ─── Shimmer wordmark ──────────────────────────────────────────────────────────
-function ShimmerWordmark() {
+function ShimmerWordmark({ wordmarkColor, shimmerMid }: { wordmarkColor: string; shimmerMid: string }) {
   const shimX = React.useRef(new Animated.Value(-SHINE_W)).current;
 
   React.useEffect(() => {
@@ -92,14 +70,14 @@ function ShimmerWordmark() {
       <TextInput
         editable={false} caretHidden selectTextOnFocus={false} contextMenuHidden
         value="CHINESE CORNER"
-        style={st.wordmark}
+        style={[st.wordmark, { color: wordmarkColor }]}
       />
       <Animated.View
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { transform: [{ translateX: shimX }] }]}
       >
         <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.06)', 'rgba(255,255,255,0.45)', 'rgba(255,255,255,0.06)', 'transparent']}
+          colors={['transparent', 'rgba(128,128,128,0.05)', shimmerMid, 'rgba(128,128,128,0.05)', 'transparent']}
           locations={[0, 0.2, 0.5, 0.8, 1]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           style={{ width: SHINE_W, height: '100%' }}
@@ -116,7 +94,7 @@ function LiveDot() {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.7, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1,   duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     ).start();
   }, []);
@@ -128,63 +106,92 @@ function LiveDot() {
   );
 }
 
+// ─── Theme toggle pill ─────────────────────────────────────────────────────────
+function ThemeTogglePill({ isDark }: { isDark: boolean }) {
+  const anim = React.useRef(new Animated.Value(isDark ? 1 : 0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(anim, {
+      toValue: isDark ? 1 : 0,
+      duration: 220,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+  }, [isDark]);
+
+  const trackBg = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(17,17,17,0.15)', RED],
+  });
+  const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 18] });
+
+  return (
+    <Animated.View style={[pill.track, { backgroundColor: trackBg }]}>
+      <Animated.View style={[pill.thumb, { transform: [{ translateX: thumbX }] }]} />
+    </Animated.View>
+  );
+}
+
+const pill = StyleSheet.create({
+  track: {
+    width: 38, height: 22, borderRadius: 11,
+    justifyContent: 'center',
+  },
+  thumb: {
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#FFFFFF',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
+      android: { elevation: 2 },
+    }),
+  },
+});
+
 // ─── DrawerMenu ────────────────────────────────────────────────────────────────
 export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
-  const router         = useRouter();
+  const router = useRouter();
   const { tenantConfig } = useTenant();
-  const status         = useAuth.use.status();
-  const isGuest        = status === 'guest';
-  const MENU_ITEMS     = isGuest ? GUEST_MENU_ITEMS : AUTH_MENU_ITEMS;
+  const status = useAuth.use.status();
+  const isGuest = status === 'guest';
+  const MENU_ITEMS = isGuest ? GUEST_MENU_ITEMS : AUTH_MENU_ITEMS;
+  const { colorScheme }                    = useColorScheme();
+  const dt                                 = drawerTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const { selectedTheme, setSelectedTheme } = useSelectedTheme();
+  const isDark                             = colorScheme === 'dark';
 
   const logo = tenantConfig?.logo ?? tenantConfig?.branding?.logo ?? null;
 
   // ── Animation values ────────────────────────────────────────────────────────
-  const translateX     = React.useRef(new Animated.Value(DRAWER_W)).current;
+  const translateX = React.useRef(new Animated.Value(DRAWER_W)).current;
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
-  // Always allocate for the largest list (AUTH) so the ref never runs short when status changes
-  const itemAnims      = React.useRef(AUTH_MENU_ITEMS.map(() => new Animated.Value(0))).current;
-  const logoBrandAnim  = React.useRef(new Animated.Value(0)).current;
+  // Always allocate for the largest list (AUTH), plus 1 reserved for the
+  // sign-in/logout row's own animation — kept at length >= 1 even with no menu items.
+  const itemAnims = React.useRef(
+    Array.from({ length: Math.max(AUTH_MENU_ITEMS.length, 1) }, () => new Animated.Value(0))
+  ).current;
+  const logoBrandAnim = React.useRef(new Animated.Value(0)).current;
   const headerLineAnim = React.useRef(new Animated.Value(0)).current;
 
   const [modalVisible, setModalVisible] = React.useState(false);
 
+  // A one-shot `Animated....start()` fired this early/this-triggered silently
+  // never completes on this device/RN build (same issue found on Hero/Header's
+  // entrance animation) — the drawer was mounting (native Modal opened) but
+  // staying fully invisible/off-screen forever because translateX/overlayOpacity
+  // never actually animated away from their hidden resting values. Setting the
+  // values directly (no animation) makes opening/closing instant but reliable.
   React.useEffect(() => {
     if (visible) {
       setModalVisible(true);
+      translateX.setValue(0);
+      overlayOpacity.setValue(1);
+      logoBrandAnim.setValue(1);
+      headerLineAnim.setValue(1);
+      itemAnims.forEach(a => a.setValue(1));
+    } else {
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
-      logoBrandAnim.setValue(0);
-      headerLineAnim.setValue(0);
-      itemAnims.forEach(a => a.setValue(0));
-
-      Animated.parallel([
-        Animated.timing(overlayOpacity, {
-          toValue: 1, duration: 200, useNativeDriver: true,
-        }),
-        Animated.spring(translateX, {
-          toValue: 0, tension: 80, friction: 12, useNativeDriver: true,
-        }),
-        Animated.timing(logoBrandAnim, {
-          toValue: 1, duration: 260, delay: 80, useNativeDriver: true,
-        }),
-        Animated.timing(headerLineAnim, {
-          toValue: 1, duration: 400, delay: 220,
-          easing: Easing.out(Easing.ease), useNativeDriver: false,
-        }),
-        Animated.stagger(
-          50,
-          itemAnims.slice(0, MENU_ITEMS.length).map(a =>
-            Animated.spring(a, {
-              toValue: 1, tension: 95, friction: 13, useNativeDriver: true,
-            })
-          )
-        ),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(overlayOpacity, { toValue: 0, duration: 160, useNativeDriver: true }),
-        Animated.timing(translateX,     { toValue: DRAWER_W, duration: 180, useNativeDriver: true }),
-      ]).start(() => setModalVisible(false));
+      setModalVisible(false);
     }
   }, [visible]);
 
@@ -195,13 +202,23 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
   function handleLogout() {
     onClose();
-    setTimeout(() => { signOut(); router.replace('/login'); }, 80);
+    setTimeout(() => { signOut(); router.replace('/home'); }, 80);
   }
 
   function handleSignIn() {
     onClose();
     setTimeout(() => router.replace('/login'), 80);
   }
+
+  function handleThemeToggle() {
+    setSelectedTheme(isDark ? 'light' : 'dark');
+  }
+
+  const themeLabel = selectedTheme === 'dark'
+    ? 'Dark Mode'
+    : selectedTheme === 'light'
+      ? 'Light Mode'
+      : isDark ? 'Dark (System)' : 'Light (System)';
 
   const headerLineW = headerLineAnim.interpolate({
     inputRange: [0, 1], outputRange: [0, DRAWER_W],
@@ -220,19 +237,19 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
         style={[StyleSheet.absoluteFillObject, { opacity: overlayOpacity }]}
         pointerEvents="none"
       >
-        <View style={st.overlay} />
+        <View style={[st.overlay, { backgroundColor: dt.overlay }]} />
       </Animated.View>
 
       {/* Tap outside to close */}
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
 
       {/* ── Drawer panel ── */}
-      <Animated.View style={[st.drawer, { transform: [{ translateX }] }]}>
+      <Animated.View style={[st.drawer, { backgroundColor: dt.panelBg, shadowColor: dt.shadow, transform: [{ translateX }] }]}>
 
         {/* ── Brand header ── */}
-        <View style={st.brandHeader}>
-          {/* Animated orange bottom-border line grows in */}
-          <Animated.View style={[st.headerUnderline, { width: headerLineW }]} />
+        <View style={[st.brandHeader, { backgroundColor: dt.headerBg }]}>
+          {/* Animated red bottom-border line grows in */}
+          <Animated.View style={[st.headerUnderline, { width: headerLineW, backgroundColor: dt.accentLine }]} />
 
           <Animated.View
             style={[
@@ -256,36 +273,33 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
               />
             </View>
 
-            {/* Subtitle */}
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                {/* <LiveDot /> */}
-                {/* <TextInput
-                  editable={false} caretHidden selectTextOnFocus={false} contextMenuHidden
-                  value="Authentic · Fresh · Delivered"
-                  style={st.subtitle}
-                /> */}
-              </View>
-            </View>
+            {/* Shimmer wordmark — adapts to theme */}
+            <ShimmerWordmark
+              wordmarkColor={dt.wordmarkColor}
+              shimmerMid={dt.shimmerMid}
+            />
 
             {/* Close button */}
-            <TouchableOpacity onPress={onClose} style={st.closeBtn} activeOpacity={0.7}>
-              <Text style={st.closeBtnTxt}>✕</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[st.closeBtn, { backgroundColor: dt.closeIconBg, borderColor: dt.closeIconBorder }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[st.closeBtnTxt, { color: dt.closeIconText }]}>✕</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
 
-        {/* ── Decorative orange line under header ── */}
-        <View style={st.headerAccentBar} />
+        {/* ── Decorative red line under header ── */}
+        <View style={[st.headerAccentBar, { backgroundColor: dt.accentLine }]} />
 
         {/* ── Menu items ── */}
         <ScrollView
-          style={{ flex: 1, backgroundColor: DARK }}
+          style={{ flex: 1, backgroundColor: dt.scrollBg }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingTop: 10, paddingBottom: 24 }}
         >
           {MENU_ITEMS.map((item, idx) => {
-            const Icon = item.icon;
             const anim = itemAnims[idx];
             return (
               <Animated.View
@@ -301,21 +315,34 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
               >
                 <TouchableOpacity
                   onPress={() => handlePress(item.route)}
-                  style={st.menuRow}
+                  style={[st.menuRow, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder, borderWidth: 1 }]}
                   activeOpacity={0.6}
                 >
-                  <View style={st.iconWrap}>
+                  <View style={[st.iconWrap, { backgroundColor: dt.iconWrapBg }]}>
                     <Text style={{ fontSize: 16, lineHeight: 20 }}>{item.emoji}</Text>
                   </View>
-                  <Text style={st.menuLabel}>{item.label}</Text>
-                  <Text style={st.chevron}>›</Text>
+                  <Text style={[st.menuLabel, { color: dt.labelColor }]}>{item.label}</Text>
+                  <Text style={[st.chevron, { color: RED }]}>›</Text>
                 </TouchableOpacity>
               </Animated.View>
             );
           })}
 
+          {/* ── Theme toggle ── */}
+          <TouchableOpacity
+            onPress={handleThemeToggle}
+            style={[st.menuRow, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder, borderWidth: 1 }]}
+            activeOpacity={0.6}
+          >
+            <View style={[st.iconWrap, { backgroundColor: dt.iconWrapBg }]}>
+              <Text style={{ fontSize: 16, lineHeight: 20 }}>{isDark ? '🌙' : '☀️'}</Text>
+            </View>
+            <Text style={[st.menuLabel, { color: dt.labelColor }]}>{themeLabel}</Text>
+            <ThemeTogglePill isDark={isDark} />
+          </TouchableOpacity>
+
           {/* Divider */}
-          <View style={st.divider} />
+          <View style={[st.divider, { backgroundColor: `${RED}25` }]} />
 
           {/* Sign in / Log out */}
           <Animated.View
@@ -329,14 +356,22 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             }}
           >
             {isGuest ? (
-              <TouchableOpacity onPress={handleSignIn} style={st.menuRow} activeOpacity={0.6}>
+              <TouchableOpacity
+                onPress={handleSignIn}
+                style={[st.menuRow, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder, borderWidth: 1 }]}
+                activeOpacity={0.6}
+              >
                 <View style={[st.iconWrap, { backgroundColor: `${RED}20` }]}>
                   <Text style={{ fontSize: 16, lineHeight: 20 }}>🔑</Text>
                 </View>
                 <Text style={[st.menuLabel, { color: RED }]}>Sign In / Register</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity onPress={handleLogout} style={st.menuRow} activeOpacity={0.6}>
+              <TouchableOpacity
+                onPress={handleLogout}
+                style={[st.menuRow, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder, borderWidth: 1 }]}
+                activeOpacity={0.6}
+              >
                 <View style={[st.iconWrap, { backgroundColor: 'rgba(220,38,38,0.14)' }]}>
                   <Text style={{ fontSize: 16, lineHeight: 20 }}>🚪</Text>
                 </View>
@@ -348,14 +383,14 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
         {/* ── Bottom bar ── */}
         <TouchableOpacity
-          style={st.bottomBar}
+          style={[st.bottomBar, { backgroundColor: dt.bottomBg, borderColor: dt.bottomBorder }]}
           activeOpacity={0.7}
           onPress={() => Linking.openURL('https://appsketch.ai')}
         >
           <TextInput
             editable={false} caretHidden selectTextOnFocus={false} contextMenuHidden
             value="Powered by Appsketch"
-            style={st.versionText}
+            style={[st.versionText, { color: dt.bottomText }]}
           />
         </TouchableOpacity>
       </Animated.View>
@@ -367,7 +402,6 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 const st = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
   },
 
   drawer: {
@@ -376,8 +410,6 @@ const st = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: DRAWER_W,
-    backgroundColor: BLACK,
-    shadowColor: RED,
     shadowOffset: { width: -6, height: 0 },
     shadowOpacity: 0.22,
     shadowRadius: 24,
@@ -387,7 +419,6 @@ const st = StyleSheet.create({
 
   // Brand header
   brandHeader: {
-    backgroundColor: BLACK,
     paddingTop: Platform.OS === 'ios' ? 56 : 22,
     paddingBottom: 0,
   },
@@ -400,20 +431,18 @@ const st = StyleSheet.create({
     paddingBottom: 18,
   },
 
-  // Animated orange line that grows across the bottom of the header
+  // Animated red line that grows across the bottom of the header
   headerUnderline: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     height: 1.5,
-    backgroundColor: RED,
     opacity: 0.6,
   },
 
-  // 2px solid orange bar below the header
+  // 2px solid red bar below the header
   headerAccentBar: {
     height: 2,
-    backgroundColor: RED,
     ...Platform.select({
       ios: { shadowColor: RED, shadowOpacity: 0.7, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } },
     }),
@@ -440,7 +469,7 @@ const st = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: DIM_RED,
+    // backgroundColor: DIM_RED,
     borderWidth: 1.5,
     borderColor: `${RED}60`,
   },
@@ -457,7 +486,6 @@ const st = StyleSheet.create({
   wordmark: {
     fontFamily: F.sans900,
     fontSize: 13,
-    color: WHITE,
     letterSpacing: 2.5,
     padding: 0,
     margin: 0,
@@ -500,25 +528,22 @@ const st = StyleSheet.create({
     left: 3.5,
   },
 
-  // Close button
+  // Close button — bg/border/text applied inline from theme
   closeBtn: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeBtnTxt: {
     fontSize: 13,
-    color: DIM,
     fontFamily: F.sans700,
     lineHeight: 16,
   },
 
-  // Menu rows
+  // Menu rows — bg/border applied inline from theme
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -528,7 +553,6 @@ const st = StyleSheet.create({
     marginHorizontal: 8,
     marginVertical: 2,
     borderRadius: 12,
-    backgroundColor: CARD,
   },
   iconWrap: {
     width: 38,
@@ -536,42 +560,35 @@ const st = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: DIM_RED,
   },
   menuLabel: {
     flex: 1,
     fontFamily: F.sans600,
     fontSize: 14,
-    color: WHITE,
     letterSpacing: 0.1,
   },
   chevron: {
     fontSize: 20,
     lineHeight: 22,
     fontFamily: F.sans400,
-    color: RED,
     opacity: 0.7,
   },
 
   divider: {
     height: 1,
-    backgroundColor: 'rgba(196,18,48,0.15)',
     marginHorizontal: 20,
     marginVertical: 10,
   },
 
-  // Bottom bar
+  // Bottom bar — bg/border/text applied inline from theme
   bottomBar: {
     borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
     paddingVertical: 14,
     alignItems: 'center',
-    backgroundColor: BLACK,
   },
   versionText: {
     fontFamily: F.sans500,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.28)',
     letterSpacing: 0.3,
     padding: 0,
     margin: 0,
