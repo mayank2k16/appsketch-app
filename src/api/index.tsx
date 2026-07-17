@@ -3,6 +3,7 @@ export * from './auth';
 export * from './common';
 export * from './home';
 export * from './inventory';
+export * from './invoices';
 export * from './notifications';
 export * from './orders';
 export * from './payments';

@@ -103,9 +103,6 @@ export function MockupCard({ t }: { t: HomeColors }) {
                   contentFit="cover"
                   cachePolicy="memory-disk"
                   transition={200}
-                  onLoadStart={() => console.log('[MockupCard] load start', uri)}
-                  onLoad={(e) => console.log('[MockupCard] loaded', uri, e.source)}
-                  onError={(e) => console.log('[MockupCard] ERROR', uri, e.error)}
                 />
                 {i === 1 ? (
                   <View style={[s.tileBadge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
