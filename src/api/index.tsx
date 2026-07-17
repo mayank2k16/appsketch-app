@@ -1,6 +1,7 @@
 export * from './analytics';
 export * from './auth';
 export * from './common';
+export * from './discounts';
 export * from './home';
 export * from './inventory';
 export * from './invoices';
