@@ -3,6 +3,7 @@ import type { Ionicons } from '@expo/vector-icons';
 
 import { AnalyticsScreen } from './Analytics';
 import { CategoriesScreen } from './Categories';
+import { CollectionsScreen } from './Collections';
 import { DiscountsScreen } from './Discounts';
 import { InventoryScreen } from './Inventory';
 import { InvoicesScreen } from './Invoices';
@@ -28,6 +29,7 @@ export type CmsTabKey =
   | 'inventory'
   | 'invoices'
   | 'categories'
+  | 'collections'
   | 'discounts'
   | 'notifications'
   | 'payments'
@@ -47,6 +49,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'inventory', label: 'Inventory', icon: 'cube-outline', Component: InventoryScreen },
   { key: 'invoices', label: 'Invoices', icon: 'document-text-outline', Component: InvoicesScreen },
   { key: 'categories', label: 'Categories', icon: 'folder-outline', Component: CategoriesScreen },
+  { key: 'collections', label: 'Collections', icon: 'albums-outline', Component: CollectionsScreen },
   { key: 'discounts', label: 'Discount Codes', icon: 'pricetag-outline', Component: DiscountsScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
   { key: 'payments', label: 'Payments', icon: 'card-outline', Component: PaymentsScreen },
