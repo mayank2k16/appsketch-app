@@ -12,6 +12,7 @@ export * from './orders';
 export * from './payments';
 export * from './posts';
 export * from './products';
+export * from './referrals';
 export * from './studio';
 export * from './types';
 export * from './wallets';

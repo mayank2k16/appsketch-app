@@ -11,6 +11,7 @@ import { NotificationsScreen } from './Notifications';
 import { OrdersScreen } from './Orders';
 import { PaymentsScreen } from './Payments';
 import { ProductsScreen } from './Products';
+import { ReferAndEarnScreen } from './ReferAndEarn';
 import { WalletsScreen } from './Wallets';
 
 /**
@@ -35,7 +36,8 @@ export type CmsTabKey =
   | 'payments'
   | 'wallets'
   | 'analytics'
-  | 'products';
+  | 'products'
+  | 'referAndEarn';
 
 export type CmsTab = {
   key: CmsTabKey;
@@ -56,4 +58,5 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },
   { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
+  { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
 ];
