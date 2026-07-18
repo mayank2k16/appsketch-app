@@ -12,6 +12,7 @@ export * from './notifications';
 export * from './orders';
 export * from './payments';
 export * from './posts';
+export * from './product-requests';
 export * from './products';
 export * from './referrals';
 export * from './stock-history';

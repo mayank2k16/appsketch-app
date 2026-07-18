@@ -11,6 +11,7 @@ import { InvoicesScreen } from './Invoices';
 import { NotificationsScreen } from './Notifications';
 import { OrdersScreen } from './Orders';
 import { PaymentsScreen } from './Payments';
+import { ProductRequestsScreen } from './ProductRequests';
 import { ProductsScreen } from './Products';
 import { ReferAndEarnScreen } from './ReferAndEarn';
 import { StockHistoryScreen } from './StockHistory';
@@ -42,6 +43,7 @@ export type CmsTabKey =
   | 'wallets'
   | 'analytics'
   | 'products'
+  | 'productRequests'
   | 'referAndEarn'
   | 'users'
   | 'stockHistory'
@@ -68,6 +70,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },
   { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
+  { key: 'productRequests', label: 'Product Requests', icon: 'checkmark-done-outline', Component: ProductRequestsScreen },
   { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
   { key: 'users', label: 'Users', icon: 'people-outline', Component: UsersScreen },
   { key: 'stockHistory', label: 'Stock History', icon: 'time-outline', Component: StockHistoryScreen },
