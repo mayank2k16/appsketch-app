@@ -16,6 +16,7 @@ export * from './products';
 export * from './referrals';
 export * from './stock-history';
 export * from './studio';
+export * from './support';
 export * from './types';
 export * from './users';
 export * from './vendors';
