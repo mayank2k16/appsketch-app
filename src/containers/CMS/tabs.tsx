@@ -12,6 +12,7 @@ import { OrdersScreen } from './Orders';
 import { PaymentsScreen } from './Payments';
 import { ProductsScreen } from './Products';
 import { ReferAndEarnScreen } from './ReferAndEarn';
+import { StockHistoryScreen } from './StockHistory';
 import { UsersScreen } from './Users';
 import { WalletsScreen } from './Wallets';
 
@@ -39,7 +40,8 @@ export type CmsTabKey =
   | 'analytics'
   | 'products'
   | 'referAndEarn'
-  | 'users';
+  | 'users'
+  | 'stockHistory';
 
 export type CmsTab = {
   key: CmsTabKey;
@@ -62,4 +64,5 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
   { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
   { key: 'users', label: 'Users', icon: 'people-outline', Component: UsersScreen },
+  { key: 'stockHistory', label: 'Stock History', icon: 'time-outline', Component: StockHistoryScreen },
 ];

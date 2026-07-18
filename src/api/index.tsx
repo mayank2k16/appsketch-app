@@ -13,6 +13,7 @@ export * from './payments';
 export * from './posts';
 export * from './products';
 export * from './referrals';
+export * from './stock-history';
 export * from './studio';
 export * from './types';
 export * from './users';
