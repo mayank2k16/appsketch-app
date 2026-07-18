@@ -15,4 +15,5 @@ export * from './products';
 export * from './referrals';
 export * from './studio';
 export * from './types';
+export * from './users';
 export * from './wallets';
