@@ -4,6 +4,7 @@ export * from './auth';
 export * from './categories';
 export * from './collections';
 export * from './common';
+export * from './credit-debit-notes';
 export * from './discounts';
 export * from './home';
 export * from './inventory';

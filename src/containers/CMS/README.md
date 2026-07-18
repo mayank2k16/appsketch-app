@@ -33,10 +33,11 @@ Ported so far (top-level `CMS_TABS` entries in `tabs.tsx`, each with its own `sr
 | `Vendors` (marketplace-only) | `Vendors/` | `vendors` |
 | `Support` | `Support/` | `support` |
 | `ProductsRequest` (marketplace-only) | `ProductRequests/` | `product-requests` |
+| `CreditDebitNote` | `CreditDebitNotes/` | `credit-debit-notes` |
 
 **Not yet ported** (folders still under the Vite `Cms/` root with no RN counterpart — same
 "read fully, check for dead code, plan first" treatment applies to each): `AddContent`,
-`AddSellableInventory`, `AddStock`, `Bookings`, `Challan`, `CreditDebitNote`, `Dashboard`,
+`AddSellableInventory`, `AddStock`, `Bookings`, `Challan`, `Dashboard`,
 `DeliveryPincodes`, `DeliverySettings`, `Doctors`, `Ledger`, `MyCompany`,
 `RateContract`, `Ride`. None of these have been explored yet — don't assume scope or complexity
 from the name alone.

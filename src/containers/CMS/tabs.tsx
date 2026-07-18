@@ -5,6 +5,7 @@ import { AiAssistantScreen } from './AiAssistant';
 import { AnalyticsScreen } from './Analytics';
 import { CategoriesScreen } from './Categories';
 import { CollectionsScreen } from './Collections';
+import { CreditDebitNotesScreen } from './CreditDebitNotes';
 import { DiscountsScreen } from './Discounts';
 import { InventoryScreen } from './Inventory';
 import { InvoicesScreen } from './Invoices';
@@ -37,6 +38,7 @@ export type CmsTabKey =
   | 'invoices'
   | 'categories'
   | 'collections'
+  | 'creditDebitNotes'
   | 'discounts'
   | 'notifications'
   | 'payments'
@@ -64,6 +66,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'invoices', label: 'Invoices', icon: 'document-text-outline', Component: InvoicesScreen },
   { key: 'categories', label: 'Categories', icon: 'folder-outline', Component: CategoriesScreen },
   { key: 'collections', label: 'Collections', icon: 'albums-outline', Component: CollectionsScreen },
+  { key: 'creditDebitNotes', label: 'Credit/Debit Notes', icon: 'swap-horizontal-outline', Component: CreditDebitNotesScreen },
   { key: 'discounts', label: 'Discount Codes', icon: 'pricetag-outline', Component: DiscountsScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
   { key: 'payments', label: 'Payments', icon: 'card-outline', Component: PaymentsScreen },

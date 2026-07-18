@@ -5,6 +5,7 @@ import {
   Easing,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -75,7 +76,11 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
           <Ionicons name="close" size={24} color={colors.sidebarText} onPress={onClose} />
         </View>
 
-        <View style={{ marginTop: 16 }}>
+        <ScrollView
+          style={{ flex: 1, marginTop: 16 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+          showsVerticalScrollIndicator={false}
+        >
           {tabs.map((tab, idx) => {
             const active = tab.key === activeTab;
             const anim = itemAnims[idx];
@@ -99,7 +104,7 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
               </Animated.View>
             );
           })}
-        </View>
+        </ScrollView>
       </Animated.View>
     </Modal>
   );
