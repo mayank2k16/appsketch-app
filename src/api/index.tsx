@@ -1,3 +1,4 @@
+export * from './ai-assistant';
 export * from './analytics';
 export * from './auth';
 export * from './categories';

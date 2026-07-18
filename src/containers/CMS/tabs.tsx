@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import type { Ionicons } from '@expo/vector-icons';
 
+import { AiAssistantScreen } from './AiAssistant';
 import { AnalyticsScreen } from './Analytics';
 import { CategoriesScreen } from './Categories';
 import { CollectionsScreen } from './Collections';
@@ -41,7 +42,8 @@ export type CmsTabKey =
   | 'products'
   | 'referAndEarn'
   | 'users'
-  | 'stockHistory';
+  | 'stockHistory'
+  | 'aiAssistant';
 
 export type CmsTab = {
   key: CmsTabKey;
@@ -65,4 +67,5 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
   { key: 'users', label: 'Users', icon: 'people-outline', Component: UsersScreen },
   { key: 'stockHistory', label: 'Stock History', icon: 'time-outline', Component: StockHistoryScreen },
+  { key: 'aiAssistant', label: 'AI Assistant', icon: 'sparkles-outline', Component: AiAssistantScreen },
 ];

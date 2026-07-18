@@ -268,9 +268,9 @@ const st = StyleSheet.create({
     marginTop: 12,
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
-  filterScroll: { flexGrow: 0, marginTop: 10 },
+  filterScroll: { flexGrow: 0, marginTop: 10, flexShrink: 0 },
   filterScrollContent: { paddingHorizontal: 16, gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, flexShrink: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   pagerRow: {
     flexDirection: 'row',
