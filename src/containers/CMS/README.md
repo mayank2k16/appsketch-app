@@ -34,10 +34,11 @@ Ported so far (top-level `CMS_TABS` entries in `tabs.tsx`, each with its own `sr
 | `Support` | `Support/` | `support` |
 | `ProductsRequest` (marketplace-only) | `ProductRequests/` | `product-requests` |
 | `CreditDebitNote` | `CreditDebitNotes/` | `credit-debit-notes` |
+| `Bookings` (appointment-tenant only, always-visible standalone tab — see below) | `Bookings/` | `bookings` |
 
 **Not yet ported** (folders still under the Vite `Cms/` root with no RN counterpart — same
 "read fully, check for dead code, plan first" treatment applies to each): `AddContent`,
-`AddSellableInventory`, `AddStock`, `Bookings`, `Challan`, `Dashboard`,
+`AddSellableInventory`, `AddStock`, `Challan`, `Dashboard`,
 `DeliveryPincodes`, `DeliverySettings`, `Doctors`, `Ledger`, `MyCompany`,
 `RateContract`, `Ride`. None of these have been explored yet — don't assume scope or complexity
 from the name alone.
@@ -436,6 +437,14 @@ before reaching for a new package.
   request, readying the CMS ahead of marketplace support landing, with the tenant-ID gap above
   flagged as an explicit follow-up. Default to dropping marketplace-only scope unless told
   otherwise; when in doubt, ask rather than assume either way.
+- **Same gap, second tenant type: `tenantType === "appointment"`.** Vite also has an
+  appointment/healthcare-booking vertical that swaps `Orders`→`Bookings` and `Products`→`Doctors`
+  (`TenantDashboard.jsx`'s `activeComponent === "Orders" && (tenantType === "appointment" ?
+  <Bookings/> : <Dashboard/>)`, same pattern for `Product`/`Doctors`). appsketch-app can't detect
+  tenant type any more than it can for marketplace. `Bookings` was ported as its own always-visible
+  `CMS_TABS` entry rather than conditionally replacing `Orders` — same "build it standalone, ready
+  ahead of the gating concept landing" call as `Vendors`. `Doctors` (the `Products` replacement)
+  is still unported; apply the same treatment if/when it's picked up.
 
 ## Verification
 
