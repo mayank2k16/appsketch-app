@@ -15,6 +15,7 @@ import { ProductsScreen } from './Products';
 import { ReferAndEarnScreen } from './ReferAndEarn';
 import { StockHistoryScreen } from './StockHistory';
 import { UsersScreen } from './Users';
+import { VendorsScreen } from './Vendors';
 import { WalletsScreen } from './Wallets';
 
 /**
@@ -43,7 +44,8 @@ export type CmsTabKey =
   | 'referAndEarn'
   | 'users'
   | 'stockHistory'
-  | 'aiAssistant';
+  | 'aiAssistant'
+  | 'vendors';
 
 export type CmsTab = {
   key: CmsTabKey;
@@ -68,4 +70,5 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'users', label: 'Users', icon: 'people-outline', Component: UsersScreen },
   { key: 'stockHistory', label: 'Stock History', icon: 'time-outline', Component: StockHistoryScreen },
   { key: 'aiAssistant', label: 'AI Assistant', icon: 'sparkles-outline', Component: AiAssistantScreen },
+  { key: 'vendors', label: 'Vendors', icon: 'people-circle-outline', Component: VendorsScreen },
 ];

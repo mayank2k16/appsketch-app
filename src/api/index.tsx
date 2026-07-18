@@ -18,4 +18,5 @@ export * from './stock-history';
 export * from './studio';
 export * from './types';
 export * from './users';
+export * from './vendors';
 export * from './wallets';

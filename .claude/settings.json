@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "C:\\Users\\vipin\\bin\\avcs.exe hook stop",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}
