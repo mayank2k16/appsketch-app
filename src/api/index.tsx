@@ -7,7 +7,6 @@ export * from './collections';
 export * from './common';
 export * from './credit-debit-notes';
 export * from './discounts';
-export * from './home';
 export * from './inventory';
 export * from './invoices';
 export * from './notifications';
