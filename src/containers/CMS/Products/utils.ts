@@ -1,4 +1,13 @@
-import type { ProductListItem, SaveProductInput } from '@/api/products';
+import type {
+  AmenityItem,
+  FaqItem,
+  FeedbackItem,
+  IngredientsBlock,
+  KeyBenefitItem,
+  ProductListItem,
+  SaveProductInput,
+  SpecificationItem,
+} from '@/api/products';
 
 export function inr(v: number | string | undefined | null): string {
   const n = Number(v ?? 0);
@@ -43,6 +52,15 @@ export type ProductFormState = {
   features: string[];
   tags: string[];
   variants: SaveProductInput['variants'];
+  faqs: FaqItem[];
+  amenities: AmenityItem[];
+  key_benefits: KeyBenefitItem[];
+  specifications: SpecificationItem[];
+  ingredients: IngredientsBlock;
+  feedbacks: FeedbackItem[];
+  custom_html: string;
+  how_to_use: string;
+  benefits_detail: string;
 };
 
 export const EMPTY_PRODUCT_FORM: ProductFormState = {
@@ -64,6 +82,15 @@ export const EMPTY_PRODUCT_FORM: ProductFormState = {
   features: [],
   tags: [],
   variants: [],
+  faqs: [],
+  amenities: [],
+  key_benefits: [],
+  specifications: [],
+  ingredients: { heading: '', table: [], prebiotic_support: '', other_ingredients: '' },
+  feedbacks: [],
+  custom_html: '',
+  how_to_use: '',
+  benefits_detail: '',
 };
 
 export function formFromProduct(product: ProductListItem): ProductFormState {
@@ -93,6 +120,15 @@ export function formFromProduct(product: ProductListItem): ProductFormState {
     features: product.features ?? [],
     tags: product.tags ?? [],
     variants: product.variants ?? [],
+    faqs: product.faqs ?? [],
+    amenities: product.amenities ?? [],
+    key_benefits: product.attributes?.key_benefits ?? [],
+    specifications: product.attributes?.specifications ?? [],
+    ingredients: product.attributes?.ingredients ?? { heading: '', table: [], prebiotic_support: '', other_ingredients: '' },
+    feedbacks: product.feedbacks ?? [],
+    custom_html: product.attributes?.custom_html ?? '',
+    how_to_use: product.attributes?.how_to_use ?? '',
+    benefits_detail: product.attributes?.benefits_detail ?? '',
   };
 }
 
@@ -116,5 +152,14 @@ export function formToSaveInput(form: ProductFormState): SaveProductInput {
     features: form.features.filter((v) => v.trim()),
     tags: form.tags.filter((v) => v.trim()),
     variants: form.variants,
+    faqs: form.faqs,
+    amenities: form.amenities,
+    key_benefits: form.key_benefits,
+    specifications: form.specifications,
+    ingredients: form.ingredients,
+    feedbacks: form.feedbacks,
+    custom_html: form.custom_html,
+    how_to_use: form.how_to_use,
+    benefits_detail: form.benefits_detail,
   };
 }

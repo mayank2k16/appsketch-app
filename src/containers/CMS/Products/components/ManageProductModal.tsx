@@ -10,7 +10,11 @@ import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect } from '../../compone
 import type { CmsThemeColors } from '../../theme';
 import { EMPTY_PRODUCT_FORM, formFromProduct, formToSaveInput, MEDIA_PRIORITY_OPTIONS } from '../utils';
 import type { ProductFormState } from '../utils';
+import { AttributeListEditor } from './AttributeListEditor';
 import { CategoryMultiSelect } from './CategoryMultiSelect';
+import { CustomHtmlField } from './CustomHtmlField';
+import { FeedbackListEditor } from './FeedbackListEditor';
+import { IngredientsField } from './IngredientsField';
 import { ManufacturerField } from './ManufacturerField';
 import { MediaGalleryField } from './MediaGalleryField';
 import { TagListInput } from './TagListInput';
@@ -187,6 +191,84 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
             />
           </CmsCard>
 
+          <CmsCard colors={colors} title="Amenities">
+            <AttributeListEditor
+              colors={colors}
+              items={form.amenities as unknown as Record<string, string>[]}
+              onChange={(v) => set('amenities', v as unknown as ProductFormState['amenities'])}
+              displayKey="title"
+              renderSub={(a) => a.description || undefined}
+              addLabel="Add Amenity"
+              modalTitle="Amenity"
+              emptyLabel="No amenities added yet"
+              fields={[
+                { key: 'title', label: 'Title', placeholder: 'Enter title', required: true },
+                { key: 'description', label: 'Description', placeholder: 'Enter description', type: 'textarea' },
+                { key: 'image', label: 'Image', type: 'image' },
+              ]}
+            />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="FAQs">
+            <AttributeListEditor
+              colors={colors}
+              items={form.faqs as unknown as Record<string, string>[]}
+              onChange={(v) => set('faqs', v as unknown as ProductFormState['faqs'])}
+              displayKey="question"
+              renderSub={(f) => f.answer || undefined}
+              addLabel="Add FAQ"
+              modalTitle="FAQ"
+              emptyLabel="No FAQs added yet"
+              fields={[
+                { key: 'question', label: 'Question', placeholder: 'Enter question', required: true },
+                { key: 'answer', label: 'Answer', placeholder: 'Enter answer', type: 'textarea', required: true },
+              ]}
+            />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="Key Benefits">
+            <AttributeListEditor
+              colors={colors}
+              items={form.key_benefits as unknown as Record<string, string>[]}
+              onChange={(v) => set('key_benefits', v as unknown as ProductFormState['key_benefits'])}
+              renderDisplay={(b) => `${b.icon ? b.icon + '  ' : ''}${b.title || '—'}`}
+              renderSub={(b) => b.description || undefined}
+              addLabel="Add Key Benefit"
+              modalTitle="Key Benefit"
+              emptyLabel="No key benefits added yet"
+              fields={[
+                { key: 'icon', label: 'Icon (emoji)', placeholder: 'e.g. 🫘' },
+                { key: 'title', label: 'Title', placeholder: 'Enter title', required: true },
+                { key: 'description', label: 'Description', placeholder: 'Enter description', type: 'textarea' },
+              ]}
+            />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="Product Specifications">
+            <AttributeListEditor
+              colors={colors}
+              items={form.specifications as unknown as Record<string, string>[]}
+              onChange={(v) => set('specifications', v as unknown as ProductFormState['specifications'])}
+              displayKey="label"
+              renderSub={(s) => s.value || undefined}
+              addLabel="Add Specification"
+              modalTitle="Specification"
+              emptyLabel="No specifications added yet"
+              fields={[
+                { key: 'label', label: 'Label', placeholder: 'e.g. Form', required: true },
+                { key: 'value', label: 'Value', placeholder: 'e.g. Veg Capsules', required: true },
+              ]}
+            />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="Ingredients">
+            <IngredientsField colors={colors} value={form.ingredients} onChange={(v) => set('ingredients', v)} />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="Customer Feedback">
+            <FeedbackListEditor colors={colors} items={form.feedbacks} onChange={(v) => set('feedbacks', v)} />
+          </CmsCard>
+
           <CmsCard colors={colors} title="Product Variants">
             <VariantsEditor
               colors={colors}
@@ -201,6 +283,32 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
                 quantity: form.quantity,
               }}
             />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="How to Use">
+            <CmsInput
+              colors={colors}
+              placeholder="Describe how to use this product…"
+              value={form.how_to_use}
+              onChangeText={(v) => set('how_to_use', v)}
+              multiline
+              numberOfLines={4}
+            />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="Benefits (Detailed)">
+            <CmsInput
+              colors={colors}
+              placeholder="Long-form benefits copy shown in the Benefits tab…"
+              value={form.benefits_detail}
+              onChangeText={(v) => set('benefits_detail', v)}
+              multiline
+              numberOfLines={4}
+            />
+          </CmsCard>
+
+          <CmsCard colors={colors} title="Custom HTML/CSS Content">
+            <CustomHtmlField colors={colors} value={form.custom_html} onChange={(v) => set('custom_html', v)} />
           </CmsCard>
 
           <CmsButton

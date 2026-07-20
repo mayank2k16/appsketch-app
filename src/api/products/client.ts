@@ -88,7 +88,22 @@ export async function saveProduct(input: SaveProductInput): Promise<ProductListI
   formData.append('quantity', input.quantity ?? '');
   formData.append('categories', JSON.stringify(input.categories));
   formData.append('variants', JSON.stringify(input.variants));
-  formData.append('attributes', JSON.stringify({ tags: input.tags, features: input.features }));
+  formData.append(
+    'attributes',
+    JSON.stringify({
+      tags: input.tags,
+      faqs: input.faqs,
+      features: input.features,
+      amenities: input.amenities,
+      custom_html: input.custom_html,
+      key_benefits: input.key_benefits,
+      specifications: input.specifications,
+      ingredients: input.ingredients,
+      how_to_use: input.how_to_use,
+      benefits_detail: input.benefits_detail,
+      feedback: { summary: {}, reviews: input.feedbacks },
+    })
+  );
   if (input.id) {
     formData.append('id', String(input.id));
   }

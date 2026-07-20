@@ -73,9 +73,16 @@ export type InvoiceOption = {
   invoice_id: string;
 };
 
+// `address`/`dl_no`/`gstin`/`phone_number` are the same `/shop/entities/`
+// response, just fields only `CreditDebitNotes`' entity detail card reads —
+// `BulkPayments` only ever needed `title`. Same entity/endpoint, not a collision.
 export type EntityOption = {
   id: number;
   title: string;
+  address?: string;
+  dl_no?: string;
+  gstin?: string;
+  phone_number?: string;
 };
 
 // ── Bulk payments ────────────────────────────────────────────────────────

@@ -2,19 +2,13 @@ import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useAppTheme } from '@/lib/theme';
 
 import { AppsScreen } from './Apps/AppsScreen';
-
-// Uses the app's global brand palette (same RED/BLACK/WHITE used by
-// Profile/MyOrders/Auth) rather than the CMS's own switchable theme system —
-// Studio is part of the main account experience, not the CMS shell.
-const RED = '#C41230';
-const BLACK = '#0D0D0D';
-const MUTED = '#8A8A8A';
-const BG = '#F8F8F8';
 
 // Mirrors the Vite reference's sidebar sections (Apps | Discover | Settings)
 // as a plain state switch. Only "Apps" (the store list) is wired up today —
@@ -33,21 +27,23 @@ export function StudioScreen() {
   const router = useRouter();
   const status = useAuth.use.status();
   const isLoggedIn = status === 'signIn';
+  const { colorScheme } = useColorScheme();
+  const t = useAppTheme(colorScheme);
 
   const [section, setSection] = React.useState<StudioSection>('apps');
 
   return (
-    <View style={st.root}>
-      <View style={[st.header, { paddingTop: insets.top + 14 }]}>
-        <Text style={st.headerTitle}>Studio</Text>
-        <Text style={st.headerSubtitle}>Manage every store on your account</Text>
+    <View style={[st.root, { backgroundColor: t.bg }]}>
+      <View style={[st.header, { paddingTop: insets.top + 14, backgroundColor: t.card }]}>
+        <Text style={[st.headerTitle, { color: t.text }]}>Studio</Text>
+        <Text style={[st.headerSubtitle, { color: t.textSub }]}>Manage every store on your account</Text>
       </View>
 
       {!isLoggedIn ? (
         <View style={st.gate}>
-          <Ionicons name="lock-closed-outline" size={36} color={MUTED} />
-          <Text style={st.gateTitle}>Sign in to view your stores</Text>
-          <Pressable style={st.gateBtn} onPress={() => router.push('/login' as never)}>
+          <Ionicons name="lock-closed-outline" size={36} color={t.textMuted} />
+          <Text style={[st.gateTitle, { color: t.text }]}>Sign in to view your stores</Text>
+          <Pressable style={[st.gateBtn, { backgroundColor: t.accent }]} onPress={() => router.push('/login' as never)}>
             <Text style={st.gateBtnText}>Sign In</Text>
           </Pressable>
         </View>
@@ -60,10 +56,10 @@ export function StudioScreen() {
                 <Pressable
                   key={s.key}
                   onPress={() => setSection(s.key)}
-                  style={[st.tab, active && st.tabActive]}
+                  style={[st.tab, { backgroundColor: t.surface }, active && { backgroundColor: t.accentSoft }]}
                 >
-                  <Ionicons name={s.icon} size={15} color={active ? RED : MUTED} />
-                  <Text style={[st.tabText, active && st.tabTextActive]}>{s.label}</Text>
+                  <Ionicons name={s.icon} size={15} color={active ? t.accent : t.textMuted} />
+                  <Text style={[st.tabText, { color: t.textMuted }, active && { color: t.accent }]}>{s.label}</Text>
                 </Pressable>
               );
             })}
@@ -81,23 +77,25 @@ export function StudioScreen() {
 }
 
 function ComingSoon({ label }: { label: string }) {
+  const { colorScheme } = useColorScheme();
+  const t = useAppTheme(colorScheme);
+
   return (
     <View style={st.gate}>
-      <Ionicons name="hourglass-outline" size={32} color={MUTED} />
-      <Text style={st.gateTitle}>{label} is coming soon</Text>
+      <Ionicons name="hourglass-outline" size={32} color={t.textMuted} />
+      <Text style={[st.gateTitle, { color: t.text }]}>{label} is coming soon</Text>
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+  root: { flex: 1 },
   header: {
-    backgroundColor: BLACK,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  headerTitle: { fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  headerTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, marginTop: 4 },
 
   tabRow: {
     flexDirection: 'row',
@@ -112,14 +110,11 @@ const st = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#fff',
   },
-  tabActive: { backgroundColor: '#FFF0F3' },
-  tabText: { fontSize: 13, fontWeight: '600', color: MUTED },
-  tabTextActive: { color: RED },
+  tabText: { fontSize: 13, fontWeight: '600' },
 
   gate: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 32 },
-  gateTitle: { fontSize: 15, fontWeight: '700', color: BLACK, textAlign: 'center' },
-  gateBtn: { backgroundColor: RED, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, marginTop: 4 },
+  gateTitle: { fontSize: 15, fontWeight: '700', textAlign: 'center' },
+  gateBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, marginTop: 4 },
   gateBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

@@ -1,12 +1,12 @@
 /**
- * Products — ported from Vite's `Containers/Cms/Products`. Phase 1 (this
- * port): media, basic details, category, manufacturer, tags, and
- * variants/combinations — the fields every product needs. Deferred to a
- * follow-up: Amenities/FAQs/Key Benefits/Specifications/Ingredients/
- * Customer Feedback/Custom HTML — all optional marketing content Vite
- * stores in the same free-form `attributes` JSON blob this port already
- * writes `tags`/`features` into, so adding them later is additive, not a
- * restructure.
+ * Products — ported from Vite's `Containers/Cms/Products`. Phase 1 shipped
+ * media/basic details/category/manufacturer/tags/variants. Phase 2 (this
+ * update) adds the remaining `attributes`-blob marketing content — Amenities,
+ * FAQs, Key Benefits, Specifications, Ingredients, Customer Feedback, Custom
+ * HTML, How to Use, Benefits (Detailed) — and fixes `saveProduct` to
+ * round-trip the *whole* `attributes` blob instead of overwriting it with
+ * just `{tags, features}` (which was silently deleting all of the above on
+ * every edit).
  */
 
 /** Canonical shape returned by the backend for a resolved variant option —
@@ -45,6 +45,40 @@ export type SellableInventory = {
   quantity_remaining?: string | number;
 };
 
+export type FaqItem = { question: string; answer: string };
+export type AmenityItem = { image?: string; title: string; description?: string };
+export type KeyBenefitItem = { icon?: string; title: string; description?: string };
+export type SpecificationItem = { label: string; value: string };
+export type IngredientRow = { ingredient: string; strength?: string; benefit?: string };
+export type IngredientsBlock = {
+  heading?: string;
+  table: IngredientRow[];
+  prebiotic_support?: string;
+  other_ingredients?: string;
+};
+export type FeedbackItem = {
+  rating: number;
+  title: string;
+  content: string;
+  images: string[];
+  videos: string[];
+  user_id?: number;
+  user_name?: string;
+};
+
+/** The optional-marketing-content keys the backend stores in one free-form
+ * JSON blob — read back nested under `attributes` (matches Vite's
+ * `initializeData`), but sent flat on `SaveProductInput` since that's
+ * already the pre-serialization shape this port uses for `tags`/`features`. */
+export type ProductAttributes = {
+  key_benefits?: KeyBenefitItem[];
+  specifications?: SpecificationItem[];
+  ingredients?: IngredientsBlock;
+  custom_html?: string;
+  how_to_use?: string;
+  benefits_detail?: string;
+};
+
 export type ProductListItem = {
   id: number;
   product_name: string;
@@ -62,11 +96,18 @@ export type ProductListItem = {
   tags?: string[];
   categories?: ProductCategory[];
   variants?: ProductVariant[];
+  /** Top-level on read, even though written nested under `attributes.feedback.reviews`
+   * — same response-shape-differs-from-write-shape pattern documented across this
+   * port; ported faithfully rather than "fixed" since it's what the backend does. */
+  faqs?: FaqItem[];
+  amenities?: AmenityItem[];
+  feedbacks?: FeedbackItem[];
+  attributes?: ProductAttributes;
 };
 
 /** Structured input the screen builds up; `client.ts` serializes this into
  * the multipart `FormData` the backend expects (same field names as Vite's
- * `handleSubmit`, `attributes` narrowed to just the Phase-1 keys). */
+ * `handleSubmit`). */
 export type SaveProductInput = {
   id?: number;
   product_name: string;
@@ -86,6 +127,15 @@ export type SaveProductInput = {
   features: string[];
   tags: string[];
   variants: ProductVariant[];
+  faqs: FaqItem[];
+  amenities: AmenityItem[];
+  key_benefits: KeyBenefitItem[];
+  specifications: SpecificationItem[];
+  ingredients: IngredientsBlock;
+  feedbacks: FeedbackItem[];
+  custom_html: string;
+  how_to_use: string;
+  benefits_detail: string;
 };
 
 export type CreateManufacturerPayload = { name: string; is_active: true };

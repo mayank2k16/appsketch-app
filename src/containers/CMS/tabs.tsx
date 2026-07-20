@@ -1,16 +1,25 @@
 import type * as React from 'react';
 import type { Ionicons } from '@expo/vector-icons';
 
+import { AiAssistantScreen } from './AiAssistant';
 import { AnalyticsScreen } from './Analytics';
+import { BookingsScreen } from './Bookings';
 import { CategoriesScreen } from './Categories';
 import { CollectionsScreen } from './Collections';
+import { CreditDebitNotesScreen } from './CreditDebitNotes';
 import { DiscountsScreen } from './Discounts';
 import { InventoryScreen } from './Inventory';
 import { InvoicesScreen } from './Invoices';
 import { NotificationsScreen } from './Notifications';
 import { OrdersScreen } from './Orders';
 import { PaymentsScreen } from './Payments';
+import { ProductRequestsScreen } from './ProductRequests';
 import { ProductsScreen } from './Products';
+import { ReferAndEarnScreen } from './ReferAndEarn';
+import { StockHistoryScreen } from './StockHistory';
+import { SupportScreen } from './Support';
+import { UsersScreen } from './Users';
+import { VendorsScreen } from './Vendors';
 import { WalletsScreen } from './Wallets';
 
 /**
@@ -26,16 +35,25 @@ import { WalletsScreen } from './Wallets';
  */
 export type CmsTabKey =
   | 'orders'
+  | 'bookings'
   | 'inventory'
   | 'invoices'
   | 'categories'
   | 'collections'
+  | 'creditDebitNotes'
   | 'discounts'
   | 'notifications'
   | 'payments'
   | 'wallets'
   | 'analytics'
-  | 'products';
+  | 'products'
+  | 'productRequests'
+  | 'referAndEarn'
+  | 'users'
+  | 'stockHistory'
+  | 'aiAssistant'
+  | 'vendors'
+  | 'support';
 
 export type CmsTab = {
   key: CmsTabKey;
@@ -46,14 +64,23 @@ export type CmsTab = {
 
 export const CMS_TABS: CmsTab[] = [
   { key: 'orders', label: 'Orders', icon: 'receipt-outline', Component: OrdersScreen },
+  { key: 'bookings', label: 'Bookings', icon: 'calendar-outline', Component: BookingsScreen },
   { key: 'inventory', label: 'Inventory', icon: 'cube-outline', Component: InventoryScreen },
   { key: 'invoices', label: 'Invoices', icon: 'document-text-outline', Component: InvoicesScreen },
   { key: 'categories', label: 'Categories', icon: 'folder-outline', Component: CategoriesScreen },
   { key: 'collections', label: 'Collections', icon: 'albums-outline', Component: CollectionsScreen },
+  { key: 'creditDebitNotes', label: 'Credit/Debit Notes', icon: 'swap-horizontal-outline', Component: CreditDebitNotesScreen },
   { key: 'discounts', label: 'Discount Codes', icon: 'pricetag-outline', Component: DiscountsScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
   { key: 'payments', label: 'Payments', icon: 'card-outline', Component: PaymentsScreen },
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },
   { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
+  { key: 'productRequests', label: 'Product Requests', icon: 'checkmark-done-outline', Component: ProductRequestsScreen },
+  { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
+  { key: 'users', label: 'Users', icon: 'people-outline', Component: UsersScreen },
+  { key: 'stockHistory', label: 'Stock History', icon: 'time-outline', Component: StockHistoryScreen },
+  { key: 'aiAssistant', label: 'AI Assistant', icon: 'sparkles-outline', Component: AiAssistantScreen },
+  { key: 'vendors', label: 'Vendors', icon: 'people-circle-outline', Component: VendorsScreen },
+  { key: 'support', label: 'Support', icon: 'chatbubbles-outline', Component: SupportScreen },
 ];
