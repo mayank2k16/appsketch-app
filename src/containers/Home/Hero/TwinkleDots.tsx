@@ -3,20 +3,6 @@ import * as React from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 
-/**
- * TwinkleDots — a regular dot grid where dots fade in and out independently in
- * different places, matching the reference video's shimmer (NOT a global pulse,
- * wave, or sweep).
- *
- * Implementation is a hybrid for performance + fidelity:
- *   • a static SVG dot grid at a low base opacity (one cheap node), plus
- *   • a sparse set of overlay dots that each animate their opacity up and down
- *     on their own random duration / phase, so at any moment different dots are
- *     brightening while others dim — the total stays roughly constant.
- *
- * The overlay uses the JS driver (small count) so it animates on every platform
- * including Expo web.
- */
 
 type Twinkle = {
   key: string;
@@ -48,7 +34,7 @@ export function TwinkleDots({
   color,
   spacing = 34,
   radius = 1.4,
-  baseOpacity = 0.4,
+  baseOpacity = 0.6,
   peakOpacity = 0.9,
   density = 0.6,
 }: Props) {

@@ -1,5 +1,6 @@
 export * from './CmsButton';
 export * from './CmsCard';
+export * from './CmsConfirmModal';
 export * from './CmsField';
 export * from './CmsModal';
 export * from './CmsSelect';

@@ -21,8 +21,8 @@ export const appTheme = {
     text:                '#F6F7FA',
     textSub:             'rgba(255,255,255,0.55)',
     textMuted:           'rgba(255,255,255,0.30)',
-    accent:              '#F1552F',        // orange-vermilion (feather logo)
-    accentSoft:          'rgba(241,85,47,0.15)',
+    accent:              '#6C5CE7',        // electric indigo
+    accentSoft:          'rgba(108,92,231,0.15)',
     border:              'rgba(255,255,255,0.09)',
     statusBar:           'light-content' as const,
 
@@ -32,10 +32,10 @@ export const appTheme = {
 
     // ── Hero dot background (twinkling grid) ──────────────────────────────────
     dotColor:            '#C9CDD6',        // cool-gray dot; opacity animated
-    glowColor:           'rgba(241,85,47,0.14)',
-    pulseRing:           'rgba(241,85,47,0.40)',
-    tagBorder:           'rgba(241,85,47,0.55)',
-    tagText:             '#F1552F',
+    glowColor:           'rgba(108,92,231,0.14)',
+    pulseRing:           'rgba(108,92,231,0.40)',
+    tagBorder:           'rgba(108,92,231,0.55)',
+    tagText:             '#6C5CE7',
 
     // ── Home CTAs (video: white primary + dark secondary) ─────────────────────
     heroCtaBg:           '#FFFFFF',
@@ -90,23 +90,23 @@ export const appTheme = {
     drawerScrollBg:      '#141414',
     drawerRowBg:         '#1C1C1C',
     drawerRowBorder:     'transparent',
-    drawerIconWrap:      'rgba(196,18,48,0.14)',
+    drawerIconWrap:      'rgba(108,92,231,0.14)',
     drawerLabel:         '#FFFFFF',
     drawerDim:           'rgba(255,255,255,0.45)',
     drawerWordmark:      '#FFFFFF',
     drawerShimmer:       'rgba(255,255,255,0.45)',
-    drawerAccentLine:    '#C41230',
+    drawerAccentLine:    '#6C5CE7',
     drawerBottomBg:      '#0C0C0C',
     drawerBottomText:    'rgba(255,255,255,0.28)',
     drawerBottomBorder:  'rgba(255,255,255,0.07)',
     drawerCloseIconBg:   'rgba(255,255,255,0.08)',
     drawerCloseIconBorder:'rgba(255,255,255,0.12)',
     drawerCloseIconText: 'rgba(255,255,255,0.45)',
-    drawerShadow:        '#C41230',
+    drawerShadow:        '#6C5CE7',
 
     // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
     tabBarBg:            '#0A0A0C',                 // bar background behind the tabs
-    tabLabelGradient:    ['#FF9E56', '#F1552F', '#C41230', '#8B2DDC'],   // orange → red → violet aura — active icon + label
+    tabLabelGradient:    ['#4C8BFF', '#6C5CE7', '#8B5CF6', '#A78BFA'],   // blue → indigo → violet aura — active icon + label
     tabIconInactive:     'rgba(255,255,255,0.50)',
     tabLabelInactive:    'rgba(255,255,255,0.45)',
 
@@ -124,6 +124,14 @@ export const appTheme = {
     agentBtnBorder:      'rgba(255,255,255,0.12)',
     agentBtnIcon:        'rgba(255,255,255,0.75)',
     agentSendGradient:   ['#3B82F6', '#8B5CF6'],    // blue → purple, matches reference
+
+    // App-type tabs (Web/Mobile/Game) above the prompt card
+    agentTabBg:          'rgba(255,255,255,0.05)',
+    agentTabBorder:      'rgba(255,255,255,0.10)',
+    agentTabText:        'rgba(255,255,255,0.65)',
+    agentTabIcon:        'rgba(255,255,255,0.65)',
+    agentTabActiveBg:    '#6C5CE7',
+    agentTabActiveText:  '#FFFFFF',
   },
 
   light: {
@@ -135,8 +143,8 @@ export const appTheme = {
     text:                '#111111',
     textSub:             'rgba(17,17,17,0.55)',
     textMuted:           'rgba(17,17,17,0.35)',
-    accent:              '#F1552F',
-    accentSoft:          'rgba(241,85,47,0.10)',
+    accent:              '#6C5CE7',
+    accentSoft:          'rgba(108,92,231,0.10)',
     border:              'rgba(17,17,17,0.09)',
     statusBar:           'dark-content' as const,
 
@@ -146,10 +154,10 @@ export const appTheme = {
 
     // ── Hero dot background (twinkling grid) ──────────────────────────────────
     dotColor:            '#11121A',        // dark dot; opacity animated
-    glowColor:           'rgba(241,85,47,0.10)',
-    pulseRing:           'rgba(241,85,47,0.30)',
-    tagBorder:           'rgba(241,85,47,0.40)',
-    tagText:             '#F1552F',
+    glowColor:           'rgba(108,92,231,0.10)',
+    pulseRing:           'rgba(108,92,231,0.30)',
+    tagBorder:           'rgba(108,92,231,0.40)',
+    tagText:             '#6C5CE7',
 
     // ── Home CTAs (video look, inverted for light bg) ─────────────────────────
     heroCtaBg:           '#0A0A0A',
@@ -204,12 +212,12 @@ export const appTheme = {
     drawerScrollBg:      '#F4F4F6',
     drawerRowBg:         '#FFFFFF',
     drawerRowBorder:     'rgba(17,17,17,0.07)',
-    drawerIconWrap:      'rgba(196,18,48,0.09)',
+    drawerIconWrap:      'rgba(108,92,231,0.09)',
     drawerLabel:         '#111111',
     drawerDim:           'rgba(17,17,17,0.45)',
     drawerWordmark:      '#111111',
     drawerShimmer:       'rgba(17,17,17,0.12)',
-    drawerAccentLine:    '#C41230',
+    drawerAccentLine:    '#6C5CE7',
     drawerBottomBg:      '#FFFFFF',
     drawerBottomText:    'rgba(17,17,17,0.30)',
     drawerBottomBorder:  'rgba(17,17,17,0.09)',
@@ -220,7 +228,7 @@ export const appTheme = {
 
     // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
     tabBarBg:            '#F7F7F9',
-    tabLabelGradient:    ['#FF9E56', '#F1552F', '#C41230', '#8B2DDC'],
+    tabLabelGradient:    ['#4C8BFF', '#6C5CE7', '#8B5CF6', '#A78BFA'],
     tabIconInactive:     'rgba(17,17,17,0.42)',
     tabLabelInactive:    'rgba(17,17,17,0.45)',
 
@@ -235,6 +243,14 @@ export const appTheme = {
     agentBtnBorder:      'rgba(17,17,17,0.10)',
     agentBtnIcon:        'rgba(17,17,17,0.62)',
     agentSendGradient:   ['#3B82F6', '#8B5CF6'],
+
+    // App-type tabs (Web/Mobile/Game) above the prompt card
+    agentTabBg:          'rgba(17,17,17,0.04)',
+    agentTabBorder:      'rgba(17,17,17,0.09)',
+    agentTabText:        'rgba(17,17,17,0.60)',
+    agentTabIcon:        'rgba(17,17,17,0.60)',
+    agentTabActiveBg:    '#6C5CE7',
+    agentTabActiveText:  '#FFFFFF',
   },
 } as const;
 

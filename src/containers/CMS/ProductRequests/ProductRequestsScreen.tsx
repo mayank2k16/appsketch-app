@@ -3,9 +3,9 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import type { ProductRequestActionType, ProductRequestItem } from '@/api/product-requests';
 import { useProductRequests, useUpdateProductRequestStatus } from '@/api/product-requests';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
-import { CmsButton, CmsSelect } from '../components';
+import { CmsButton, CmsConfirmModal, CmsSelect } from '../components';
 import { useCmsTheme } from '../theme';
 import { ProductRequestCard } from './components/ProductRequestCard';
 
@@ -118,8 +118,9 @@ export function ProductRequestsScreen({ onMenuPress: _onMenuPress }: { onMenuPre
         />
       </View>
 
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title={actionType === 'APPROVED' ? 'Approve Products' : 'Reject Products'}
         description={
           actionType === 'APPROVED'

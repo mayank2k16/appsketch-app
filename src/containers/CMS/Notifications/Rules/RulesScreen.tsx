@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { NotificationRule } from '@/api/notifications';
 import { useDeleteNotificationRule, useEmailTemplates, useNotificationEvents, useNotificationRules, useSMSTemplates } from '@/api/notifications';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
+import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { ManageRuleModal } from './components/ManageRuleModal';
 import { RuleRow } from './components/RuleRow';
@@ -92,8 +93,9 @@ export function RulesScreen() {
         selectedRule={editingRule}
         onSuccess={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete rule?"
         description={deletingRule ? `The rule for "${deletingRule.event_code}" will be permanently deleted.` : undefined}
         confirmLabel="Delete"

@@ -10,9 +10,10 @@ import {
   useStaffUsers,
   useUsersMeta,
 } from '@/api/users';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { UserListCard } from './components/UserListCard';
 import { ManageUserModal } from './components/ManageUserModal';
@@ -226,8 +227,9 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
         openKey={manageTarget.key}
         onDone={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title={`${isApp ? 'Deactivate' : 'Delete'} this user?`}
         description={deletingUser ? `${deletingUser.name || deletingUser.phone_number} will be ${isApp ? 'deactivated' : 'permanently deleted'}.` : undefined}
         confirmLabel={deleteLabel}

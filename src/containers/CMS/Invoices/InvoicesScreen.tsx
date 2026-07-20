@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { InvoiceFilters, InvoiceListItem } from '@/api/invoices';
 import { searchInvoiceRecords, useDeleteInvoice, useInvoices } from '@/api/invoices';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { FilterModal } from './components/FilterModal';
 import { InvoiceListCard } from './components/InvoiceListCard';
@@ -178,8 +179,9 @@ export function InvoicesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
         openKey={manageTarget.key}
         onDone={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete invoice?"
         description="This invoice will be permanently deleted."
         confirmLabel="Delete"

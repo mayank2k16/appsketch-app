@@ -4,9 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { CustomVariable } from '@/api/notifications';
 import { useCustomVariables, useDeleteCustomVariable, useSystemVariables } from '@/api/notifications';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
-import { CmsCard } from '../../components';
+import { CmsCard, CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { CustomVariableRow } from './components/CustomVariableRow';
@@ -96,8 +96,9 @@ export function VariablesScreen() {
         selectedVariable={editingVariable}
         onSuccess={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete variable?"
         description={deletingVariable ? `{{${deletingVariable.name}}} will be permanently deleted.` : undefined}
         confirmLabel="Delete"

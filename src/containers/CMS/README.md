@@ -174,14 +174,15 @@ has no concept of CMS theming at all.
 | `CmsSelect` | Plain dropdown (opens a `CmsModal` list). **No `disabled` prop** — if you need a Vite field that's conditionally disabled (e.g. a reward-type select that's locked out for milestone-trigger rules), wrap it in a `<View style={disabled ? {opacity:0.5} : undefined} pointerEvents={disabled ? 'none' : 'auto'}>` instead (see `ReferAndEarn/Rules/components/ManageRuleModal.tsx`'s referee-reward group) — just dimming it without `pointerEvents:'none'` still lets the sheet open. |
 | `CmsSwitch` | Boolean toggle row — thin wrapper over RN's native `Switch`, tracked in the theme accent color. |
 | `CmsStatusBadge` | Colored status pill. Takes a `{label, color, kind}` meta object — each domain owns its own string→meta mapping (see `Orders/utils.ts`'s `getOrderStatusMeta`, `Notifications/Logs/utils.ts`'s `getLogStatusMeta`, `Vendors/utils.ts`'s `getVendorStatusMeta`) and just renders the result here. Don't build a per-tab copy of this — extend the shared one. |
+| `CmsConfirmModal` | Every destructive/delete confirmation, replacing `@/components/ui`'s `ConfirmModal` (see below — that one hardcoded neutral NativeWind grays and never read the CMS palette, so it looked like a generic system dialog next to a themed screen). Centered icon badge, title, description, Cancel/Confirm — same prop shape as the old `ConfirmModal` (`title`, `description`, `confirmLabel`, `cancelLabel`, `destructive`, `loading`, `onConfirm`) plus a required `colors` prop, so swapping is a drop-in rename. **Dark palettes render on a fixed near-black, not `colors.surface`** — `charcoal-gray`/`midnight-indigo` both tint the surface blue/purple, which read as "off" for a destructive confirm; confirmed with the user. Light palettes are unaffected and still fully theme off `colors`. |
 
 **Named, documented exceptions** (things it's correct to keep using from `@/components/ui`):
 - `SearchableSelect` — for genuine search-as-you-type pickers (customer/product lookups in
   `CreateOrderModal`, invoice/entity pickers in `Payments`). Rebuilding that debounced-search
   behavior in the kit wasn't worth it.
-- `ConfirmModal` + `useModal` — a generic confirm dialog and the `{ref, present, dismiss}` hook for
-  `BottomSheetModal`. Neither carries a font or CMS-theming concern (the hook is pure ref
-  management; `ConfirmModal`'s copy is neutral enough), so there's no `Cms`-prefixed replacement.
+- `useModal` — the `{ref, present, dismiss}` hook for `BottomSheetModal`. Pure ref management, no
+  font or CMS-theming concern, so there's no `Cms`-prefixed replacement. (`ConfirmModal` itself,
+  which used to live in this same exception, was replaced by `CmsConfirmModal` above.)
 
 **Multi-select checkbox-list-in-a-`CmsModal` pickers stay per-tab, even past the 3rd copy.**
 `Products/components/CategoryMultiSelect.tsx` was the first (its own comment says so explicitly).

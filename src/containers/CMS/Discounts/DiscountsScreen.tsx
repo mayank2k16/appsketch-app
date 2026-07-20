@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { DiscountCodeItem } from '@/api/discounts';
 import { useDeleteDiscount, useDiscountCodes } from '@/api/discounts';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { DiscountListCard } from './components/DiscountListCard';
 import { ManageDiscountModal } from './components/ManageDiscountModal';
@@ -110,8 +111,9 @@ export function DiscountsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
         openKey={manageTarget.key}
         onDone={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete discount?"
         description={deletingDiscount ? `"${deletingDiscount.code}" will be permanently deleted.` : undefined}
         confirmLabel="Delete"

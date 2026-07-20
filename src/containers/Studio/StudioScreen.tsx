@@ -10,10 +10,6 @@ import { useAppTheme } from '@/lib/theme';
 
 import { AppsScreen } from './Apps/AppsScreen';
 
-// Mirrors the Vite reference's sidebar sections (Apps | Discover | Settings)
-// as a plain state switch. Only "Apps" (the store list) is wired up today —
-// add further sections here the same way: a new key in `SECTIONS`, a new
-// branch below.
 type StudioSection = 'apps' | 'discover' | 'settings';
 
 const SECTIONS: { key: StudioSection; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [

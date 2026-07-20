@@ -6,9 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { Commission, VendorListItem } from '@/api/vendors';
 import { useCommissions, useDeleteCommission } from '@/api/vendors';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
-import { CmsButton, CmsCard, CmsField, CmsModal, CmsStatusBadge } from '../../components';
+import { CmsButton, CmsCard, CmsConfirmModal, CmsField, CmsModal, CmsStatusBadge } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { getVendorStatusMeta, money } from '../utils';
@@ -151,8 +151,9 @@ export const VendorDetailSheet = React.forwardRef<BottomSheetModal, Props>(({ co
         openKey={manageTarget.key}
         onDone={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete this commission?"
         description="This commission rule will be permanently removed."
         confirmLabel="Delete"
