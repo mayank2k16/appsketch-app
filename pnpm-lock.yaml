@@ -11,12 +11,6 @@ importers:
       '@expo-google-fonts/inter':
         specifier: ^0.4.2
         version: 0.4.2
-      '@expo-google-fonts/playfair-display':
-        specifier: ^0.4.2
-        version: 0.4.2
-      '@expo-google-fonts/raleway':
-        specifier: ^0.4.2
-        version: 0.4.2
       '@expo/metro-runtime':
         specifier: ~5.0.5
         version: 5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))
@@ -1026,12 +1020,6 @@ packages:
 
   '@expo-google-fonts/inter@0.4.2':
     resolution: {integrity: sha512-syfiImMaDmq7cFi0of+waE2M4uSCyd16zgyWxdPOY7fN2VBmSLKEzkfbZgeOjJq61kSqPBNNtXjggiQiSD6gMQ==}
-
-  '@expo-google-fonts/playfair-display@0.4.2':
-    resolution: {integrity: sha512-mWhBV59RUjSS3aYpytUb7UyHHTnXcHh7epAn7gq+M4XAEh5PuMKUrP8eiUfkJLb6UwHZCi7EhQpUzxHu5OL96w==}
-
-  '@expo-google-fonts/raleway@0.4.2':
-    resolution: {integrity: sha512-EFHYXFx9/M+6kGt/T2/y2Aqo30SosZUp4d8Dd7aLumhacrwlcRL6GYMqwIYQpLbR0xh5Vn4/APH5N72tEkoKRA==}
 
   '@expo/cli@0.24.24':
     resolution: {integrity: sha512-XybHfF2QNPJNnHoUKHcG796iEkX5126UuTAs6MSpZuvZRRQRj/sGCLX+driCOVHbDOpcCOusMuHrhxHbtTApyg==}
@@ -8306,10 +8294,6 @@ snapshots:
       levn: 0.4.1
 
   '@expo-google-fonts/inter@0.4.2': {}
-
-  '@expo-google-fonts/playfair-display@0.4.2': {}
-
-  '@expo-google-fonts/raleway@0.4.2': {}
 
   '@expo/cli@0.24.24':
     dependencies:

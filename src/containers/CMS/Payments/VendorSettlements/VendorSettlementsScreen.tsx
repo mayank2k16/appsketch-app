@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { VendorSettlementListItem } from '@/api/payments';
 import { useDeleteVendorSettlement, useVendorSettlements } from '@/api/payments';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
+import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { SettlementDetailModal } from './components/SettlementDetailModal';
 import { SettlementListCard } from './components/SettlementListCard';
@@ -95,8 +96,9 @@ export function VendorSettlementsScreen() {
       )}
 
       <SettlementDetailModal ref={detailModal.ref} colors={colors} settlement={selectedSettlement} />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete settlement?"
         description={deletingSettlement ? `Settlement #${deletingSettlement.vendor_order ?? deletingSettlement.parent_order ?? ''} will be permanently deleted.` : undefined}
         confirmLabel="Delete"

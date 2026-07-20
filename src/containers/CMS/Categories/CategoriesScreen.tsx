@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { CategoryNode } from '@/api/categories';
 import { useCategoryTree, useDeleteCategoryAtAnyLevel } from '@/api/categories';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { CategoryDetailSheet } from './components/CategoryDetailSheet';
 import { CategoryTreeRow } from './components/CategoryTreeRow';
@@ -163,8 +164,9 @@ export function CategoriesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: (
         openKey={manageTarget.key}
         onDone={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title={deletingCategory?.parent ? 'Delete subcategory?' : 'Delete category?'}
         description={deletingCategory ? `"${deletingCategory.name}" will be permanently deleted.` : undefined}
         confirmLabel="Delete"

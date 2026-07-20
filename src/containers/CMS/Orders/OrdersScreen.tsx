@@ -6,9 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { OrderListItem as OrderListItemType } from '@/api/orders';
 import { useAcceptOrder, useDeleteOrder, useOrderDetail, useOrders, useRejectOrder } from '@/api/orders';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { CreateOrderModal } from './components/CreateOrderModal';
 import { OrderDetailModal } from './components/OrderDetailModal';
@@ -204,8 +205,9 @@ export function OrdersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =>
         }}
       />
       <OrderDetailModal ref={viewModal.ref} colors={colors} order={viewDetail.data ?? null} />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete order?"
         description={deletingOrder ? `Order #${deletingOrder.id} will be permanently deleted.` : undefined}
         confirmLabel="Delete"

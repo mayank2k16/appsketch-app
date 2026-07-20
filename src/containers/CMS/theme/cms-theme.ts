@@ -11,6 +11,11 @@ export type CmsThemeName =
   | 'midnight-indigo';
 
 export type CmsThemeColors = {
+  /** Mirrors this palette's `CmsThemeMeta.kind` — carried onto `colors` itself
+   * so components that only receive `colors` (the established calling
+   * convention, see `CmsConfirmModal`) can still tell light from dark
+   * without a second prop. */
+  kind: 'light' | 'dark';
   sidebarBg: string;
   sidebarActiveBg: string;
   sidebarText: string;
@@ -45,6 +50,7 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     label: 'Ocean Blue',
     kind: 'light',
     colors: {
+      kind: 'light',
       sidebarBg: '#111827',
       sidebarActiveBg: '#1F2937',
       sidebarText: '#FFFFFF',
@@ -62,6 +68,7 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     label: 'Slack Classic',
     kind: 'light',
     colors: {
+      kind: 'light',
       sidebarBg: '#3F0E40',
       sidebarActiveBg: '#522653',
       sidebarText: '#FFFFFF',
@@ -79,6 +86,7 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     label: 'Emerald Fresh',
     kind: 'light',
     colors: {
+      kind: 'light',
       sidebarBg: '#0B4F30',
       sidebarActiveBg: '#0F6B41',
       sidebarText: '#FFFFFF',
@@ -96,6 +104,7 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     label: 'Charcoal Gray',
     kind: 'dark',
     colors: {
+      kind: 'dark',
       sidebarBg: '#1A1D21',
       sidebarActiveBg: '#26292D',
       sidebarText: '#F5F5F5',
@@ -113,6 +122,7 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     label: 'Midnight Indigo',
     kind: 'dark',
     colors: {
+      kind: 'dark',
       sidebarBg: '#15132B',
       sidebarActiveBg: '#211D40',
       sidebarText: '#EDEBFA',

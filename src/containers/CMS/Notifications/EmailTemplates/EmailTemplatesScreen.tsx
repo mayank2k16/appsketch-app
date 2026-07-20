@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { EmailTemplate } from '@/api/notifications';
 import { useDeleteEmailTemplate, useEmailTemplates } from '@/api/notifications';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
+import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { EmailTemplateRow } from './components/EmailTemplateRow';
 import { ManageEmailTemplateModal } from './components/ManageEmailTemplateModal';
@@ -78,8 +79,9 @@ export function EmailTemplatesScreen() {
         selectedTemplate={editingTemplate}
         onSuccess={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete template?"
         description={deletingTemplate ? `"${deletingTemplate.name}" will be permanently deleted.` : undefined}
         confirmLabel="Delete"

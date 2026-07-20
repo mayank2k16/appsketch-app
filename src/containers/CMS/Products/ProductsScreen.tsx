@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { ProductListItem } from '@/api/products';
 import { useDeleteProduct, useProducts } from '@/api/products';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { ManageProductModal } from './components/ManageProductModal';
 import { ProductListCard } from './components/ProductListCard';
@@ -117,8 +118,9 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
           setEditingProduct(null);
         }}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete product?"
         description={deletingProduct ? `"${deletingProduct.product_name}" will be permanently deleted.` : undefined}
         confirmLabel="Delete"

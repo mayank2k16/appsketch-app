@@ -4,9 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { ReferralRule } from '@/api/referrals';
 import { useDeleteReferralRule, useReferralRules, useUpdateReferralRule } from '@/api/referrals';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
-import { CmsButton, CmsCard, CmsStatusBadge } from '../../components';
+import { CmsButton, CmsCard, CmsConfirmModal, CmsStatusBadge } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { formatReward, inr, isRuleWithinWindow, MILESTONE_TRIGGERS, TRIGGER_LABEL } from '../utils';
@@ -182,8 +182,9 @@ export function RulesScreen() {
       )}
 
       <ManageRuleModal ref={manageModal.ref} colors={colors} rule={manageTarget.rule} openKey={manageTarget.key} onDone={() => manageModal.dismiss()} />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title={deletingRule ? `Delete rule "${deletingRule.name}"?` : 'Delete rule?'}
         description="Existing referrals attached to this rule will still keep their bonuses. New referrals will fall back to the next active rule (if any)."
         confirmLabel="Delete"

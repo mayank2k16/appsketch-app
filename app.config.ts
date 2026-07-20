@@ -58,7 +58,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     slug: 'appsketch-ai',
     version: Env.VERSION.toString(),
     orientation: 'portrait',
-    icon: './assets/chinese_corner.png',
+    icon: './assets/logo.png',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     updates: {
@@ -85,7 +85,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/chinese_corner.png',
+        foregroundImage: './assets/logo.png',
         backgroundColor: '#FFFFFF',
       },
       package: Env.PACKAGE,
@@ -99,14 +99,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
     },
     web: {
-      favicon: './assets/chinese_corner.png',
+      favicon: './assets/favicon.png',
       bundler: 'metro',
     },
     plugins: [
       [
         'expo-notifications',
         {
-          icon: './assets/chinese_corner.png',
+          icon: './assets/logo.png',
           color: '#ffffff',
           sounds: [],
         },
@@ -118,19 +118,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'expo-splash-screen',
         {
           backgroundColor: '#FFFFFF',
-          image: './assets/chinese_corner.png',
+          image: './assets/logo.png',
           imageWidth: 150,
-        },
-      ],
-      [
-        'expo-font',
-        {
-          fonts: [
-            './assets/fonts/Inter.ttf',
-            './assets/fonts/ProximaNova-Regular.otf',
-            './assets/fonts/ProximaNova-Bold.otf',
-            './assets/fonts/ProximaNova-Black.otf',
-          ],
         },
       ],
       'expo-localization',

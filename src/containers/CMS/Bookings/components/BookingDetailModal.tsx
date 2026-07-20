@@ -6,9 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { BookingListItem, BookingStatus } from '@/api/bookings';
 import { useDeleteBooking, useUpdateBooking } from '@/api/bookings';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
-import { CmsButton, CmsCard, CmsField, CmsInput, CmsModal, CmsSelect, CmsStatusBadge } from '../../components';
+import { CmsButton, CmsCard, CmsConfirmModal, CmsField, CmsInput, CmsModal, CmsSelect, CmsStatusBadge } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { fmtDateTime, fmtTime, getBookingStatusMeta } from '../utils';
@@ -177,8 +177,9 @@ export const BookingDetailModal = React.forwardRef<BottomSheetModal, Props>(({ c
         </BottomSheetScrollView>
       )}
 
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmDeleteModal.ref}
+        colors={colors}
         title="Delete this booking?"
         description="This booking will be permanently removed."
         confirmLabel="Delete"

@@ -5,8 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { VendorListItem } from '@/api/vendors';
 import { useVendorAction, useVendors } from '@/api/vendors';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { VendorDetailSheet } from './components/VendorDetailSheet';
 import { VendorListCard } from './components/VendorListCard';
@@ -98,8 +99,9 @@ export function VendorsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
       )}
 
       <VendorDetailSheet ref={detailModal.ref} colors={colors} vendor={selectedVendor} />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title={`Confirm ${actionTarget?.action === 'approve' ? 'Approval' : 'Rejection'}`}
         description={
           actionTarget

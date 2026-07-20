@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { CollectionItem } from '@/api/collections';
 import { useCollections, useDeleteCollection } from '@/api/collections';
-import { ConfirmModal, useModal } from '@/components/ui';
+import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
+import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { CollectionCard } from './components/CollectionCard';
 import { ManageCollectionModal } from './components/ManageCollectionModal';
@@ -111,8 +112,9 @@ export function CollectionsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
         openKey={manageTarget.key}
         onDone={() => manageModal.dismiss()}
       />
-      <ConfirmModal
+      <CmsConfirmModal
         ref={confirmModal.ref}
+        colors={colors}
         title="Delete this collection?"
         description={deletingCollection ? `"${deletingCollection.title}" will be permanently deleted.` : undefined}
         confirmLabel="Delete"

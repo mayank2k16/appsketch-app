@@ -1,11 +1,11 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Modal, useModal } from '@/components/ui/modal';
-import { Text } from '@/components/ui/text';
+import { useModal } from '@/components/ui/modal';
 
+import { CmsModal } from '../components';
 import { cmsThemeOrder, cmsThemes } from './cms-theme';
 import type { CmsThemeName } from './cms-theme';
 import { useCmsTheme } from './use-cms-theme';
@@ -44,8 +44,8 @@ const ThemeSwitcherSheet = React.forwardRef<BottomSheetModal, { onSelect: () => 
     );
 
     return (
-      <Modal ref={ref} title="CMS Theme" snapPoints={snapPoints}>
-        <View style={[st.sheet, { backgroundColor: colors.surface }]}>
+      <CmsModal ref={ref} colors={colors} title="CMS Theme" snapPoints={snapPoints}>
+        <View style={st.sheet}>
           {cmsThemeOrder.map((name) => {
             const meta = cmsThemes[name];
             const selected = name === themeName;
@@ -73,7 +73,7 @@ const ThemeSwitcherSheet = React.forwardRef<BottomSheetModal, { onSelect: () => 
             );
           })}
         </View>
-      </Modal>
+      </CmsModal>
     );
   }
 );
