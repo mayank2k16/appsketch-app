@@ -19,6 +19,7 @@ export * from './referrals';
 export * from './stock-history';
 export * from './studio';
 export * from './support';
+export * from './templates';
 export * from './types';
 export * from './users';
 export * from './vendors';

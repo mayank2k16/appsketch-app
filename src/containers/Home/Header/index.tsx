@@ -83,7 +83,7 @@ export function HomeHeader({ onMenuPress }: Props) {
             </Text>
           ) : (
             <Text style={[s.greeting, { color: t.textMuted }]} numberOfLines={1}>
-              Authentic Chinese Cuisine
+              Your Online Store Hub
             </Text>
           )}
         </View>
@@ -92,7 +92,7 @@ export function HomeHeader({ onMenuPress }: Props) {
       {/* ── Right: menu button ── */}
       <TouchableOpacity
         onPress={onMenuPress}
-        style={[s.menuBtn, { backgroundColor: t.accentSoft, borderColor: t.border }]}
+        style={[s.menuBtn]}
         activeOpacity={0.7}
       >
         <HamburgerIcon color={t.accent} />

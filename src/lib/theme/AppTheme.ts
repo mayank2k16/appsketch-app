@@ -132,6 +132,18 @@ export const appTheme = {
     agentTabIcon:        'rgba(255,255,255,0.65)',
     agentTabActiveBg:    '#6C5CE7',
     agentTabActiveText:  '#FFFFFF',
+
+    // ── Marketplace — AI Templates screen ──────────────────────────────────────
+    // Glass cards reuse `card`/`agentSendGradient` for tint + wash (same
+    // BlurView-plus-tint-overlay recipe as AgentV2's prompt card) — only the
+    // category-chip and tag-pill treatments need dedicated tokens.
+    templatesChipBg:     'rgba(255,255,255,0.05)',
+    templatesChipBorder: 'rgba(255,255,255,0.10)',
+    templatesChipText:   'rgba(255,255,255,0.65)',
+    templatesTagBg:      'rgba(108,92,231,0.22)',
+    templatesTagText:    '#B4A9F5',
+    templatesSkeletonBase:      'rgba(255,255,255,0.08)',
+    templatesSkeletonHighlight: 'rgba(255,255,255,0.16)',
   },
 
   light: {
@@ -251,6 +263,15 @@ export const appTheme = {
     agentTabIcon:        'rgba(17,17,17,0.60)',
     agentTabActiveBg:    '#6C5CE7',
     agentTabActiveText:  '#FFFFFF',
+
+    // ── Marketplace — AI Templates screen ──────────────────────────────────────
+    templatesChipBg:     'rgba(17,17,17,0.04)',
+    templatesChipBorder: 'rgba(17,17,17,0.09)',
+    templatesChipText:   'rgba(17,17,17,0.60)',
+    templatesTagBg:      'rgba(108,92,231,0.12)',
+    templatesTagText:    '#6C5CE7',
+    templatesSkeletonBase:      'rgba(17,17,17,0.06)',
+    templatesSkeletonHighlight: 'rgba(17,17,17,0.11)',
   },
 } as const;
 
