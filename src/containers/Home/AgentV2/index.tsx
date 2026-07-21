@@ -2,9 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Easing,
   Modal,
@@ -17,6 +19,7 @@ import {
   View,
 } from 'react-native';
 
+import { createCoderTenant } from '@/api/coder';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import { useAppTheme } from '@/lib/theme';
@@ -78,11 +81,14 @@ export function AgentV2({
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
 
+  const router = useRouter();
+
   const [appType, setAppType] = React.useState<AppTypeKey>('web');
   const [prompt, setPrompt] = React.useState('');
   const [model, setModel] = React.useState(DEFAULT_MODEL);
   const [images, setImages] = React.useState<string[]>([]);
   const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
 
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
@@ -124,6 +130,37 @@ export function AgentV2({
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
+  async function handleSend() {
+    const text = prompt.trim();
+    if (!text || sending) return;
+
+    if (appType === 'game') {
+      toast.error('Game builds are coming soon — try Web or Mobile for now.');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const tenant = await createCoderTenant({ title: text.slice(0, 60), appType });
+      router.push({
+        pathname: '/code-editor/chat',
+        params: {
+          tenantId: String(tenant.id),
+          tenantUid: tenant.uuid,
+          appType,
+          userPrompt: text,
+          model,
+          images: JSON.stringify(images),
+        },
+      });
+      onSendPress?.();
+    } catch {
+      toast.error("Couldn't start your build. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }
+
   const washColor = t.agentSendGradient[1];
 
   return (
@@ -149,6 +186,7 @@ export function AgentV2({
                   <Ionicons name={tab.icon} size={13} color={active ? t.text : t.agentTabIcon} />
                   <Text style={[s.tabOutsideLabel, { color: active ? t.text : t.agentTabText }]} numberOfLines={1}>
                     {tab.label}
+                    {tab.key === 'game' ? ' · soon' : ''}
                   </Text>
                 </TouchableOpacity>
               );
@@ -218,12 +256,12 @@ export function AgentV2({
 
                   <View style={{ flex: 1 }} />
 
-                  <TouchableOpacity onPress={onSendPress} activeOpacity={0.8}>
+                  <TouchableOpacity onPress={handleSend} activeOpacity={0.8} disabled={sending || !prompt.trim()}>
                     <LinearGradient
                       colors={[...t.agentSendGradient] as [string, string, ...string[]]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
-                      style={s.sendBtn}
+                      style={[s.sendBtn, (sending || !prompt.trim()) && { opacity: 0.5 }]}
                     >
                       <Animated.View
                         pointerEvents="none"
@@ -237,7 +275,11 @@ export function AgentV2({
                           },
                         ]}
                       />
-                      <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                      {sending ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                      )}
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>

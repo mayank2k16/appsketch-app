@@ -1,0 +1,155 @@
+/**
+ * AI Coder domain types — ported from Vite's `Containers/Builder/WebsiteBuilder/UI/CoderWorkspace`
+ * (`useCoderSocket.js`, `useBuildLog.js`, `coderModels.js`) + the backend's
+ * `ws/coder/<thread_id>/` protocol documented in `aiktech_backend/docs/CODER_AGENT.md`.
+ * v1 (core loop) only renders a subset of this — the full union is kept so
+ * phase 2 (terminal/collections/git/inspector) doesn't need a breaking type change.
+ */
+
+export type AppTypeKey = 'web' | 'mobile' | 'game';
+
+export type ChatRole = 'user' | 'assistant';
+
+export type ChatMessage = {
+  role: ChatRole;
+  content: string;
+  streaming?: boolean;
+};
+
+export type ActivityStepKind = 'node' | 'step' | 'thinking';
+
+export type ActivityStep = {
+  id: string;
+  kind: ActivityStepKind;
+  text: string;
+  tool?: string;
+};
+
+export type FileTreeNode = {
+  path: string;
+  name: string;
+  type: 'dir' | 'file';
+  children?: FileTreeNode[];
+};
+
+export type WorkspaceFile = {
+  path: string;
+  content: string;
+  is_binary?: boolean;
+};
+
+export type ClarifyQuestionKind = 'choice' | 'palette' | 'fonts' | 'checklist' | 'text';
+
+export type ClarifyQuestionOption = {
+  id: string;
+  label: string;
+  value?: string;
+  colors?: string[];
+};
+
+export type ClarifyQuestion = {
+  id: string;
+  kind: ClarifyQuestionKind;
+  label: string;
+  options?: ClarifyQuestionOption[];
+};
+
+export type ClarifyBlock = {
+  kind: 'clarify';
+  intro?: string;
+  questions: ClarifyQuestion[];
+  submitLabel?: string;
+};
+
+export type WebBuildStatusValue =
+  | 'QUEUED'
+  | 'PREPARING'
+  | 'INSTALLING_DEPS'
+  | 'BUILDING'
+  | 'DEPLOYING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED';
+
+export type WebBuildStatus = {
+  build_id: number;
+  status: WebBuildStatusValue;
+  error?: string | null;
+  errors?: unknown[];
+  log?: string;
+  preview_url?: string | null;
+  bundle_path?: string | null;
+};
+
+// ── Incoming WS events (ws/coder/<thread_id>/) ──────────────────────────────
+
+export type CoderReadyHistoryMessage = { role: ChatRole; content: string };
+export type CoderReadyEvent = { event: 'ready'; history?: CoderReadyHistoryMessage[] };
+export type CoderTokenEvent = { event: 'token'; content: string };
+export type CoderNodeEvent = { event: 'node'; id?: string; label: string; status?: string };
+export type CoderStepEvent = { event: 'step'; text: string; tool?: string };
+export type CoderThinkingEvent = { event: 'thinking'; text: string };
+export type CoderToolCallEvent = { event: 'tool_call' };
+export type CoderFileWriteEvent = {
+  event: 'file_write';
+  path: string;
+  content: string;
+  mode: 'write' | 'edit' | 'delete';
+  old?: string;
+  new?: string;
+};
+export type CoderUiBlockEvent = { event: 'ui_block'; block: ClarifyBlock | Record<string, unknown> };
+export type CoderApprovalRequestEvent = { event: 'approval_request'; id: string; command: string; reason?: string };
+export type CoderApprovalResultEvent = { event: 'approval_result'; id: string; approved: boolean };
+export type CoderBuildStartedEvent = { event: 'build_started'; build_id: number };
+export type CoderBuildDoneEvent = {
+  event: 'build_done';
+  build_id: number;
+  ok: boolean;
+  preview_url?: string;
+  errors?: unknown[];
+};
+export type CoderFinalEvent = { event: 'final'; content?: string; tree?: FileTreeNode[] };
+export type CoderErrorEvent = { event: 'error'; detail?: string };
+
+export type CoderWsEvent =
+  | CoderReadyEvent
+  | CoderTokenEvent
+  | CoderNodeEvent
+  | CoderStepEvent
+  | CoderThinkingEvent
+  | CoderToolCallEvent
+  | CoderFileWriteEvent
+  | CoderUiBlockEvent
+  | CoderApprovalRequestEvent
+  | CoderApprovalResultEvent
+  | CoderBuildStartedEvent
+  | CoderBuildDoneEvent
+  | CoderFinalEvent
+  | CoderErrorEvent;
+
+// ── Outgoing WS messages ─────────────────────────────────────────────────────
+
+export type CoderSendMessagePayload = { type: 'message'; content: string; model?: string; images?: string[] };
+export type CoderInteractionPayload = { type: 'interaction'; value: Record<string, unknown> };
+export type CoderApprovalPayload = { type: 'approval'; value: Record<string, unknown> };
+
+export type CoderOutgoingMessage = CoderSendMessagePayload | CoderInteractionPayload | CoderApprovalPayload;
+
+// ── Incoming WS events (ws/webbuild/<build_id>/) ────────────────────────────
+
+export type WebBuildLogEvent = { event: 'log'; line: string };
+export type WebBuildLogBatchEvent = { event: 'log_batch'; lines: string[] };
+export type WebBuildStatusEvent = { event: 'status'; status: WebBuildStatusValue; preview_url?: string | null };
+export type WebBuildErrorsEvent = { event: 'errors'; errors: unknown[] };
+
+export type WebBuildWsEvent = WebBuildLogEvent | WebBuildLogBatchEvent | WebBuildStatusEvent | WebBuildErrorsEvent;
+
+/** Response shape from `POST account/tenants/` (only the fields we use). */
+export type CreateCoderTenantResponse = {
+  id: number;
+  uuid: string;
+  render_engine?: string;
+  app_type?: string;
+  [key: string]: unknown;
+};
