@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -14,15 +15,14 @@ import {
   Share,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const HEADER_LOGO = require('../../assets/logo.png');
 
 import { Text } from '@/components/ui';
 import { signOut, useAuth } from '@/hooks/useAuth';
-import { useTenant } from '@/lib/tenant';
 import { F } from '@/lib/fonts';
 import { drawerTheme } from '@/containers/Home/theme/HomeTheme';
 import { useSelectedTheme } from '@/lib/hooks/use-selected-theme';
@@ -112,7 +112,6 @@ const pill = StyleSheet.create({
 // ─── DrawerMenu ────────────────────────────────────────────────────────────────
 export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const router = useRouter();
-  const { tenantConfig } = useTenant();
   const status = useAuth.use.status();
   const isGuest = status === 'guest';
   const MENU_ITEMS = isGuest ? GUEST_MENU_ITEMS : AUTH_MENU_ITEMS;
@@ -120,8 +119,6 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const dt = drawerTheme[colorScheme === 'dark' ? 'dark' : 'light'];
   const { selectedTheme, setSelectedTheme } = useSelectedTheme();
   const isDark = colorScheme === 'dark';
-
-  const logo = tenantConfig?.logo ?? tenantConfig?.branding?.logo ?? null;
 
   // ── Animation values ────────────────────────────────────────────────────────
   const translateX = React.useRef(new Animated.Value(DRAWER_W)).current;
@@ -138,14 +135,26 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   React.useEffect(() => {
     if (visible) {
       setModalVisible(true);
-      translateX.setValue(0);
-      overlayOpacity.setValue(1);
-      itemAnims.forEach(a => a.setValue(1));
-    } else {
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
-      setModalVisible(false);
+      itemAnims.forEach(a => a.setValue(0));
+
+      Animated.parallel([
+        Animated.timing(translateX, { toValue: 0, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(overlayOpacity, { toValue: 1, duration: 260, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+      ]).start();
+
+      Animated.stagger(
+        40,
+        itemAnims.map(a => Animated.timing(a, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }))
+      ).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(translateX, { toValue: DRAWER_W, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(overlayOpacity, { toValue: 0, duration: 200, easing: Easing.in(Easing.ease), useNativeDriver: true }),
+      ]).start(() => setModalVisible(false));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   function handlePress(route: string) {
@@ -199,13 +208,22 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       {/* Tap outside to close */}
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
 
-      {/* ── Drawer panel ── */}
-      <Animated.View style={[st.drawer, { backgroundColor: dt.panelBg, shadowColor: dt.shadow, transform: [{ translateX }] }]}>
+      {/* ── Drawer panel — full-panel glass: same BlurView-plus-tint-overlay
+          recipe as AgentV2's prompt card / Marketplace's TemplateCard, just
+          tuned to a heavier tint (esp. in light mode) since this is a much
+          bigger, taller glass surface than a small card. ── */}
+      <Animated.View style={[st.drawer, { shadowColor: dt.shadow, transform: [{ translateX }] }]}>
+        <BlurView
+          intensity={Platform.OS === 'android' ? 55 : 35}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dt.panelBg, opacity: isDark ? 0.68 : 0.84 }]} />
 
         {/* ── Brand header — minimal: mark + static wordmark + close, one
             hairline border underneath. No shimmer/glow competing with the
             list below it. ── */}
-        <View style={[st.brandHeader, { backgroundColor: dt.headerBg, borderBottomColor: dt.bottomBorder }]}>
+        <View style={[st.brandHeader, { borderBottomColor: dt.bottomBorder }]}>
           <View style={st.brandInner}>
             <View style={st.markClip}>
               <ExpoImage source={HEADER_LOGO} style={st.markImg} contentFit="contain" />
@@ -213,19 +231,18 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
             <Text style={[st.wordmarkFlat, { color: dt.wordmarkColor }]}>Appsketch</Text>
 
-            <TouchableOpacity
+            <Pressable
               onPress={onClose}
-              style={[st.closeBtn, { backgroundColor: dt.closeIconBg }]}
-              activeOpacity={0.7}
+              style={({ pressed }) => [st.closeBtn, { backgroundColor: dt.closeIconBg }, pressed && { opacity: 0.6 }]}
             >
-              <Text style={[st.closeBtnTxt, { color: dt.closeIconText }]}>✕</Text>
-            </TouchableOpacity>
+              <Ionicons name="close" size={15} color={dt.closeIconText} />
+            </Pressable>
           </View>
         </View>
 
         {/* ── Menu items ── */}
         <ScrollView
-          style={{ flex: 1, backgroundColor: dt.scrollBg }}
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingTop: 10, paddingBottom: 24 }}
         >
@@ -246,14 +263,13 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                       }],
                     }}
                   >
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => handlePress(item.route)}
-                      style={st.flatRow}
-                      activeOpacity={0.5}
+                      style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
                     >
                       <Text style={st.flatIcon}>{item.emoji}</Text>
                       <Text style={[st.flatLabel, { color: dt.labelColor }]}>{item.label}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </Animated.View>
                 );
               })}
@@ -263,17 +279,23 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Preferences</Text>
 
           {/* ── Theme toggle ── */}
-          <TouchableOpacity onPress={handleThemeToggle} style={st.flatRow} activeOpacity={0.5}>
-            <Text style={st.flatIcon}>{isDark ? '🌙' : '☀️'}</Text>
+          <Pressable
+            onPress={handleThemeToggle}
+            style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+          >
+            <Ionicons name={isDark ? 'moon' : 'sunny'} size={17} color={dt.labelColor} style={st.flatIcon} />
             <Text style={[st.flatLabel, { color: dt.labelColor }]}>{themeLabel}</Text>
             <ThemeTogglePill isDark={isDark} />
-          </TouchableOpacity>
+          </Pressable>
 
           {/* ── Share ── */}
-          <TouchableOpacity onPress={handleShare} style={st.flatRow} activeOpacity={0.5}>
-            <Text style={st.flatIcon}>📤</Text>
+          <Pressable
+            onPress={handleShare}
+            style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+          >
+            <Ionicons name="share-outline" size={17} color={dt.labelColor} style={st.flatIcon} />
             <Text style={[st.flatLabel, { color: dt.labelColor }]}>Share Appsketch</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Divider */}
           <View style={[st.divider, { backgroundColor: `${ACCENT}25` }]} />
@@ -292,23 +314,28 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             }}
           >
             {isGuest ? (
-              <TouchableOpacity onPress={handleSignIn} style={st.flatRow} activeOpacity={0.5}>
-                <Text style={st.flatIcon}>🔑</Text>
+              <Pressable
+                onPress={handleSignIn}
+                style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+              >
+                <Ionicons name="log-in-outline" size={17} color={ACCENT} style={st.flatIcon} />
                 <Text style={[st.flatLabel, { color: ACCENT }]}>Sign In / Register</Text>
-              </TouchableOpacity>
+              </Pressable>
             ) : (
-              <TouchableOpacity onPress={handleLogout} style={st.flatRow} activeOpacity={0.5}>
-                <Text style={st.flatIcon}>🚪</Text>
+              <Pressable
+                onPress={handleLogout}
+                style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+              >
+                <Ionicons name="log-out-outline" size={17} color="#EF4444" style={st.flatIcon} />
                 <Text style={[st.flatLabel, { color: '#EF4444' }]}>Log Out</Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
           </Animated.View>
         </ScrollView>
 
         {/* ── Bottom bar ── */}
-        <TouchableOpacity
-          style={[st.bottomBar, { backgroundColor: dt.bottomBg, borderColor: dt.bottomBorder }]}
-          activeOpacity={0.7}
+        <Pressable
+          style={({ pressed }) => [st.bottomBar, { borderColor: dt.bottomBorder }, pressed && { opacity: 0.6 }]}
           onPress={() => Linking.openURL('https://appsketch.ai')}
         >
           <TextInput
@@ -316,7 +343,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             value="Powered by Appsketch"
             style={[st.versionText, { color: dt.bottomText }]}
           />
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     </Modal>
   );
@@ -351,21 +378,21 @@ const st = StyleSheet.create({
   brandInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 18,
+    gap: 0,
+    paddingHorizontal: 12,
     paddingBottom: 16,
   },
 
   // Real app logo, small and square — no glow behind it
   markClip: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
     borderRadius: 8,
     overflow: 'hidden',
   },
   markImg: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
   },
 
   wordmarkFlat: {

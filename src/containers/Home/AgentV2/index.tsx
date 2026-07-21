@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -22,10 +21,9 @@ import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import { useAppTheme } from '@/lib/theme';
 
-const RADIUS = 24;
-const BORDER_W = 1;
+const RADIUS = 15;
+const BORDER_W = 2;
 const MAX_IMAGES = 3;
-const SEG_PAD = 0;
 
 type AppTypeKey = 'web' | 'mobile' | 'game';
 
@@ -79,7 +77,6 @@ export function AgentV2({
 }) {
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
-  const isDark = colorScheme === 'dark';
 
   const [appType, setAppType] = React.useState<AppTypeKey>('web');
   const [prompt, setPrompt] = React.useState('');
@@ -89,33 +86,6 @@ export function AgentV2({
 
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
-  const activeIndex = APP_TABS.findIndex((tab) => tab.key === appType);
-
-  // Segmented-tab indicator — slides to the active tab instead of each pill
-  // instantly swapping its own background. Driven by index (0/1/2) and
-  // interpolated to a `left` percentage rather than measured pixel widths,
-  // since percentage `left`/`width` need no onLayout round-trip to be exact.
-  const indicatorPos = React.useRef(new Animated.Value(0)).current;
-  React.useEffect(() => {
-    Animated.timing(indicatorPos, {
-      toValue: activeIndex,
-      duration: 240,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [activeIndex]);
-  // Memoized so Animated.View keeps a single stable node attached to
-  // indicatorPos — recreating the interpolation every render (the pos %
-  // never actually changed here) silently detaches it from the running
-  // animation on the web/JS driver, freezing the indicator at 0%.
-  const indicatorLeft = React.useMemo(
-    () =>
-      indicatorPos.interpolate({
-        inputRange: APP_TABS.map((_, i) => i),
-        outputRange: APP_TABS.map((_, i) => `${(i * 100) / APP_TABS.length}%`),
-      }),
-    [indicatorPos]
-  );
 
   // Send button — a slow light sheen sweeps across the glass button every
   // few seconds instead of sitting fully static between presses.
@@ -159,147 +129,118 @@ export function AgentV2({
   return (
     <View style={s.wrap}>
       <View style={s.stage}>
-        {/* Soft violet wash the glass card sits on top of and refracts —
-            three concentric low-opacity circles fake a radial glow since RN
-            has no blur-a-shape primitive. */}
-        <View pointerEvents="none" style={[s.washOuter, { backgroundColor: washColor }]} />
-        <View pointerEvents="none" style={[s.washMid, { backgroundColor: washColor }]} />
-        <View pointerEvents="none" style={[s.washInner, { backgroundColor: washColor }]} />
-
-        {/* Segmented control — one sliding indicator instead of three
-            independently-toggling pills. */}
-        <View style={[s.segTrack, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              s.segIndicator,
-              { width: `${100 / APP_TABS.length}%`, backgroundColor: t.text, left: indicatorLeft },
-            ]}
-          />
-          {APP_TABS.map((tab) => {
-            const active = tab.key === appType;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                onPress={() => setAppType(tab.key)}
-                activeOpacity={0.8}
-                style={s.segTab}
-              >
-                <Ionicons name={tab.icon} size={13} color={active ? t.bg : t.agentTabIcon} />
-                <Text style={[s.segTabLabel, { color: active ? t.bg : t.agentTabText }]} numberOfLines={1}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View
-          style={[
-            s.shadowWrap,
-            Platform.select({
-              ios: { shadowColor: t.agentGlowBlue },
-              default: {},
-            }),
-          ]}
-        >
-          <View
-            style={[
-              s.card,
-              { borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(17,17,17,0.14)' },
-            ]}
-          >
-            <BlurView
-              intensity={Platform.OS === 'android' ? 60 : 40}
-              tint={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-            {/* Keeps the card's contrast guaranteed regardless of how much
-                (or how little) the platform's blur actually renders. */}
-            <View
-              pointerEvents="none"
-              style={[StyleSheet.absoluteFill, { backgroundColor: t.agentInputBg, opacity: isDark ? 0.74 : 0.7 }]}
-            />
-            <LinearGradient
-              pointerEvents="none"
-              colors={isDark ? ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,0.6)', 'rgba(255,255,255,0)']}
-              style={s.cardHighlight}
-            />
-
-            <View style={s.cardContent}>
-              <TextInput
-                placeholder={activeTab.placeholder}
-                placeholderTextColor={t.agentInputPlaceholder}
-                editable
-                multiline
-                value={prompt}
-                onChangeText={setPrompt}
-                style={[s.input, { color: t.agentInputText }]}
-              />
-
-              {images.length > 0 && (
-                <View style={s.thumbRow}>
-                  {images.map((uri, i) => (
-                    <View key={`${uri}-${i}`} style={[s.thumb, { borderColor: t.agentInputBorder }]}>
-                      <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
-                      <Pressable onPress={() => removeImage(i)} style={[s.thumbRemove, { backgroundColor: t.agentBtnBg }]} hitSlop={6}>
-                        <Ionicons name="close" size={11} color={t.agentBtnIcon} />
-                      </Pressable>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              <View style={s.row}>
+        <View style={s.attachedStack}>
+          <View style={s.tabStripOutside}>
+            {APP_TABS.map((tab) => {
+              const active = tab.key === appType;
+              return (
                 <TouchableOpacity
-                  onPress={() => setModelPickerOpen(true)}
-                  activeOpacity={0.7}
-                  style={[s.modelChip, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
+                  key={tab.key}
+                  onPress={() => setAppType(tab.key)}
+                  activeOpacity={0.8}
+                  style={[
+                    s.tabOutside,
+                    {
+                      backgroundColor: active ? t.card : t.agentTabBg,
+                      borderColor: active ? t.tagBorder : t.agentTabBorder,
+                    },
+                  ]}
                 >
-                  <Text style={[s.modelChipLabel, { color: t.agentBtnIcon }]} numberOfLines={1}>
-                    {selectedModel.label}
+                  <Ionicons name={tab.icon} size={13} color={active ? t.text : t.agentTabIcon} />
+                  <Text style={[s.tabOutsideLabel, { color: active ? t.text : t.agentTabText }]} numberOfLines={1}>
+                    {tab.label}
                   </Text>
-                  <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
                 </TouchableOpacity>
+              );
+            })}
+          </View>
 
-                <TouchableOpacity
-                  onPress={handleAttach}
-                  activeOpacity={0.7}
-                  disabled={images.length >= MAX_IMAGES}
-                  style={[s.circleBtn, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
-                >
-                  <Ionicons name="add" size={20} color={t.agentBtnIcon} />
-                  {images.length > 0 && (
-                    <View style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}>
-                      <Text style={s.countBadgeText}>{images.length}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
+          <View style={[s.shadowWrap, Platform.select({ ios: { shadowColor: '#000' }, default: {} })]}>
+            <View style={[s.cardC, { backgroundColor: t.card, borderColor: t.tagBorder }]}>
+              {/* Top spotlight — a soft accent-tinted glow fading down from
+                  the top edge, standing in for the reference's radial glow
+                  since RN's LinearGradient is linear-only. */}
+              {/* <LinearGradient
+                pointerEvents="none"
+                colors={['rgba(108,92,231,0.22)', 'rgba(108,92,231,0)']}
+                style={s.topSpotlight}
+              /> */}
 
-                <View style={{ flex: 1 }} />
+              <View style={s.cardContent}>
+                <TextInput
+                  placeholder={activeTab.placeholder}
+                  placeholderTextColor={t.agentInputPlaceholder}
+                  editable
+                  multiline
+                  value={prompt}
+                  onChangeText={setPrompt}
+                  style={[s.input, { color: t.agentInputText }]}
+                />
 
-                <TouchableOpacity onPress={onSendPress} activeOpacity={0.8}>
-                  <LinearGradient
-                    colors={[...t.agentSendGradient] as [string, string, ...string[]]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={s.sendBtn}
+                {images.length > 0 && (
+                  <View style={s.thumbRow}>
+                    {images.map((uri, i) => (
+                      <View key={`${uri}-${i}`} style={[s.thumb, { borderColor: t.agentInputBorder }]}>
+                        <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
+                        <Pressable onPress={() => removeImage(i)} style={[s.thumbRemove, { backgroundColor: t.agentBtnBg }]} hitSlop={6}>
+                          <Ionicons name="close" size={11} color={t.agentBtnIcon} />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                <View style={s.row}>
+                  <TouchableOpacity
+                    onPress={() => setModelPickerOpen(true)}
+                    activeOpacity={0.7}
+                    style={[s.modelChip, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
                   >
-                    <Animated.View
-                      pointerEvents="none"
-                      style={[
-                        s.sendSheen,
-                        {
-                          transform: [
-                            { translateX: sheenX.interpolate({ inputRange: [-1, 1], outputRange: [-38, 38] }) },
-                            { rotate: '20deg' },
-                          ],
-                        },
-                      ]}
-                    />
-                    <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
+                    <Text style={[s.modelChipLabel, { color: t.agentBtnIcon }]} numberOfLines={1}>
+                      {selectedModel.label}
+                    </Text>
+                    <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleAttach}
+                    activeOpacity={0.7}
+                    disabled={images.length >= MAX_IMAGES}
+                    style={[s.circleBtn, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
+                  >
+                    <Ionicons name="add" size={20} color={t.agentBtnIcon} />
+                    {images.length > 0 && (
+                      <View style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}>
+                        <Text style={s.countBadgeText}>{images.length}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  <View style={{ flex: 1 }} />
+
+                  <TouchableOpacity onPress={onSendPress} activeOpacity={0.8}>
+                    <LinearGradient
+                      colors={[...t.agentSendGradient] as [string, string, ...string[]]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={s.sendBtn}
+                    >
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[
+                          s.sendSheen,
+                          {
+                            transform: [
+                              { translateX: sheenX.interpolate({ inputRange: [-1, 1], outputRange: [-38, 38] }) },
+                              { rotate: '20deg' },
+                            ],
+                          },
+                        ]}
+                      />
+                      <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
@@ -339,7 +280,7 @@ export function AgentV2({
 
 const s = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
     paddingTop: 40,
     paddingBottom: 70
   },
@@ -372,33 +313,33 @@ const s = StyleSheet.create({
     borderRadius: 44,
     opacity: 0.22,
   },
-  segTrack: {
+  // Tabs attached outside the card's own border (see render comment above) —
+  // the strip hugs its own content width instead of stretching, sitting
+  // left-aligned directly on top of the full-width card below it.
+  attachedStack: {
     alignSelf: 'stretch',
+    gap: 1,
+    justifyContent: "center"
+  },
+  tabStripOutside: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: SEG_PAD,
-    marginBottom: 14,
+    gap: 8,
+    justifyContent: "center",
+    width: "100%"
   },
-  segIndicator: {
-    position: 'absolute',
-    top: SEG_PAD,
-    bottom: SEG_PAD,
-    borderRadius: 18,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-      android: { elevation: 2 },
-    }),
-  },
-  segTab: {
-    flex: 1,
+  tabOutside: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 11,
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderTopLeftRadius: 13,
+    borderTopRightRadius: 13,
+    borderWidth: 2,
+    borderBottomWidth: 0,
   },
-  segTabLabel: {
+  tabOutsideLabel: {
     fontFamily: F.sans600,
     fontSize: 12,
   },
@@ -413,17 +354,20 @@ const s = StyleSheet.create({
       android: { elevation: 10 },
     }),
   },
-  card: {
+  // Variant C — "top spotlight + hairline": a solid card with an
+  // accent-tinted hairline border and a soft glow fading down from the top,
+  // instead of the glass/blur treatment used elsewhere.
+  cardC: {
     borderRadius: RADIUS,
     borderWidth: BORDER_W,
     overflow: 'hidden',
   },
-  cardHighlight: {
+  topSpotlight: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '45%',
+    top: -20,
+    left: '10%',
+    right: '10%',
+    height: '70%',
   },
   cardContent: {
     padding: 14,
@@ -433,8 +377,8 @@ const s = StyleSheet.create({
     fontFamily: F.sans400,
     fontSize: 15,
     lineHeight: 20,
-    minHeight: 90,
-    maxHeight: 100,
+    minHeight: 110,
+    maxHeight: 120,
     paddingHorizontal: 4,
   },
   thumbRow: {

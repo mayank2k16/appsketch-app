@@ -8,11 +8,25 @@ import {
   View,
 } from 'react-native';
 
+import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: W, height: H } = Dimensions.get('window');
-const HERO_H = H / 2.2;
+const HERO_H = H / 2.3;
+
+// ─── Gradient heading line ─────────────────────────────────────────────────────
+// Reference recording shows each line running flat-white through its first
+// word, then fading smoothly (not a hard colour swap) across the rest of the
+// line — measured from the actual frames, brightness holds until ~52% of the
+// line then ramps steadily down.
+function GradientHeadingLine({ text, t }: { text: string; t: HomeColors }) {
+  return (
+    <GradientText style={s.heading} colors={[t.text, t.text, t.heroHeadingFade]} locations={[0, 0.52, 1]}>
+      {text}
+    </GradientText>
+  );
+}
 
 // ─── Hero content with staggered entrance ─────────────────────────────────────
 function HeroContent({
@@ -31,10 +45,10 @@ function HeroContent({
   // content invisible. Rendering it statically visible is the robust fix.
   return (
     <View style={[s.content, { pointerEvents: 'box-none' }]}>
-      <Text style={[s.heading, { color: t.text }]}>
-        {'Create unlimited\nbeautiful '}
-        <Text style={{ color: t.heroHeadingFade }}>apps.</Text>
-      </Text>
+      <View style={s.headingWrap}>
+        <GradientHeadingLine text="Create unlimited" t={t} />
+        <GradientHeadingLine text="beautiful apps." t={t} />
+      </View>
 
       <Text style={[s.subtitle, { color: t.textSub }]}>
         {'Write anything and the agentic workspace\ncompiles your dream interface in real-time.'}
@@ -111,13 +125,16 @@ const s = StyleSheet.create({
     zIndex: 2,
   },
 
+  headingWrap: {
+    marginBottom: 18,
+  },
+
   heading: {
     fontFamily: F.display900,
     fontSize: 42,
     letterSpacing: -1.4,
     textAlign: 'center',
-    lineHeight: 48,
-    marginBottom: 18,
+    lineHeight: 50,
   },
 
   subtitle: {
@@ -130,13 +147,13 @@ const s = StyleSheet.create({
 
   btns: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 16,
   },
 
   btnPrimary: {
-    height: 52,
-    paddingHorizontal: 26,
-    borderRadius: 26,
+    height: 56,
+    paddingHorizontal: 30,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -147,9 +164,9 @@ const s = StyleSheet.create({
   },
 
   btnSecondary: {
-    height: 52,
-    paddingHorizontal: 26,
-    borderRadius: 26,
+    height: 56,
+    paddingHorizontal: 30,
+    borderRadius: 28,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
