@@ -95,15 +95,15 @@ export const TemplateCard = React.memo(function TemplateCard({ t, isDark, templa
         ) : null}
 
         <View style={styles.btnRow}>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={onCustomise}
             activeOpacity={0.75}
             style={[styles.btn, { borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(17,17,17,0.10)' }]}
           >
             <Text style={[styles.btnLabel, { color: t.text }]}>Preview</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity onPress={onUse} activeOpacity={0.85} style={[styles.btn, { backgroundColor: t.accent }]}>
-            <Text style={[styles.btnLabel, { color: '#FFFFFF' }]}>Use this Template</Text>
+            <Text style={[styles.btnLabel, { color: '#FFFFFF' }]}>Preview</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     height: '35%',
   },
   content: {
-    padding: 8,
+    padding: 5,
     gap: 6,
   },
   imageWrap: {
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
   tag: { borderRadius: 7, paddingHorizontal: 6, paddingVertical: 2 },
   tagText: { fontFamily: F.sans600, fontSize: 8.5 },
-  btnRow: { gap: 5, marginTop: 2 },
+  btnRow: { gap: 5, marginTop: 10 },
   btn: { height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  btnLabel: { fontFamily: F.sans600, fontSize: 9.5 },
+  btnLabel: { fontFamily: F.sans600, fontSize: 11 },
 });

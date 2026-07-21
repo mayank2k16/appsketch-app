@@ -12,7 +12,7 @@ import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: W, height: H } = Dimensions.get('window');
-const HERO_H = H / 1.9;
+const HERO_H = H / 2.2;
 
 // ─── Hero content with staggered entrance ─────────────────────────────────────
 function HeroContent({
@@ -105,8 +105,8 @@ const s = StyleSheet.create({
   content: {
     width: '100%',
     paddingHorizontal: 28,
-    paddingTop: 40,
-    paddingBottom: 50,
+    paddingTop: 0,
+    paddingBottom: 0,
     alignItems: 'center',
     zIndex: 2,
   },
