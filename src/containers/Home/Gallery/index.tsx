@@ -16,23 +16,8 @@ import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: W, height: H } = Dimensions.get('window');
 
-// Fixed set of real template screenshots — same CDN folder as the login
-// screen's montage (src/app/login.tsx). Each URL is a stable cache key, so
-// expo-image downloads it once ever and serves it from disk on every
-// subsequent app open, unlike the previous picsum.photos placeholders (a new
-// random image on every single request, so nothing could ever be cached —
-// that was the real cost, not "remote vs local").
-//
-// Picked only the CDN's pre-compressed/descriptive-slug variants (23-165KB) —
-// the plain "Screenshot_...png" originals in this same folder are full-res,
-// unoptimized captures (1-6MB each); 8 of the first 20 picks turned out to be
-// that heavy, ~25MB combined for decorative marquee thumbnails, a real,
-// measured source of slow loading on mobile data.
 const CDN = 'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/';
 
-// Six full-width columns of images. A background-coloured block in the middle
-// (see CenterHole) carves out an empty area for the text, giving the reference's
-// "4-sided frame": image rows across the top & bottom, columns down the sides.
 const COLUMNS: {
   direction: 'up' | 'down';
   speed: number;
