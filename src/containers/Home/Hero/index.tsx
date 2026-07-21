@@ -1,7 +1,10 @@
+import MaskedView from '@react-native-masked-view/masked-view';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Dimensions,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +16,55 @@ import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: W, height: H } = Dimensions.get('window');
 const HERO_H = H / 2.2;
+
+// ─── Gradient heading line ─────────────────────────────────────────────────────
+// Reference recording shows each line running flat-white through its first
+// word, then fading smoothly (not a hard colour swap) across the rest of the
+// line — measured from the actual frames, brightness holds until ~52% of the
+// line then ramps steadily down. `<Text>` can't clip a gradient to glyph
+// shapes on its own, so this masks a LinearGradient to the line's own text.
+//
+// `@react-native-masked-view`'s web shim is a no-op stub — it renders only
+// `maskElement` and silently drops the gradient entirely (confirmed by
+// reading its `MaskedView.web.js` source: `React.createElement(View, props,
+// maskElement)`, `children` never touched). Real masking only exists on
+// iOS/Android, so web gets the standard CSS `background-clip: text` trick
+// instead, using the exact same colours/stops.
+function GradientHeadingLine({ text, t }: { text: string; t: HomeColors }) {
+  if (Platform.OS === 'web') {
+    return React.createElement(
+      'span',
+      {
+        style: {
+          display: 'block',
+          fontFamily: F.display900,
+          fontSize: '42px',
+          letterSpacing: '-1.4px',
+          textAlign: 'center',
+          lineHeight: '50px',
+          backgroundImage: `linear-gradient(90deg, ${t.text} 0%, ${t.text} 52%, ${t.heroHeadingFade} 100%)`,
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        },
+      },
+      text
+    );
+  }
+
+  return (
+    <MaskedView maskElement={<Text style={s.heading}>{text}</Text>}>
+      <LinearGradient
+        colors={[t.text, t.text, t.heroHeadingFade]}
+        locations={[0, 0.52, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <Text style={[s.heading, { opacity: 0 }]}>{text}</Text>
+      </LinearGradient>
+    </MaskedView>
+  );
+}
 
 // ─── Hero content with staggered entrance ─────────────────────────────────────
 function HeroContent({
@@ -31,10 +83,10 @@ function HeroContent({
   // content invisible. Rendering it statically visible is the robust fix.
   return (
     <View style={[s.content, { pointerEvents: 'box-none' }]}>
-      <Text style={[s.heading, { color: t.text }]}>
-        {'Create unlimited\nbeautiful '}
-        <Text style={{ color: t.heroHeadingFade }}>apps.</Text>
-      </Text>
+      <View style={s.headingWrap}>
+        <GradientHeadingLine text="Create unlimited" t={t} />
+        <GradientHeadingLine text="beautiful apps." t={t} />
+      </View>
 
       <Text style={[s.subtitle, { color: t.textSub }]}>
         {'Write anything and the agentic workspace\ncompiles your dream interface in real-time.'}
@@ -111,13 +163,16 @@ const s = StyleSheet.create({
     zIndex: 2,
   },
 
+  headingWrap: {
+    marginBottom: 18,
+  },
+
   heading: {
     fontFamily: F.display900,
     fontSize: 42,
     letterSpacing: -1.4,
     textAlign: 'center',
-    lineHeight: 48,
-    marginBottom: 18,
+    lineHeight: 50,
   },
 
   subtitle: {
@@ -130,13 +185,13 @@ const s = StyleSheet.create({
 
   btns: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 16,
   },
 
   btnPrimary: {
-    height: 52,
-    paddingHorizontal: 26,
-    borderRadius: 26,
+    height: 56,
+    paddingHorizontal: 30,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -147,9 +202,9 @@ const s = StyleSheet.create({
   },
 
   btnSecondary: {
-    height: 52,
-    paddingHorizontal: 26,
-    borderRadius: 26,
+    height: 56,
+    paddingHorizontal: 30,
+    borderRadius: 28,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

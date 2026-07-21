@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
-import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { homeTheme } from '../theme/HomeTheme';
 
@@ -20,37 +20,12 @@ type Props = {
   onMenuPress: () => void;
 };
 
-// ─── Hamburger icon ────────────────────────────────────────────────────────────
-function HamburgerIcon({ color }: { color: string }) {
-  return (
-    <View style={hb.wrap}>
-      <View style={[hb.line, { backgroundColor: color }]} />
-      <View style={[hb.line, hb.mid, { backgroundColor: color }]} />
-      <View style={[hb.line, { backgroundColor: color }]} />
-    </View>
-  );
-}
-
-const hb = StyleSheet.create({
-  wrap: { gap: 5, paddingVertical: 4 },
-  line: { width: 22, height: 2, borderRadius: 2 },
-  mid: { width: 16 },
-});
-
 // ─── HomeHeader ───────────────────────────────────────────────────────────────
 export function HomeHeader({ onMenuPress }: Props) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const t = homeTheme[isDark ? 'dark' : 'light'];
-  const user = useAuth.use.user();
-  const userName = typeof user?.name === 'string' ? user.name : undefined;
-  const userEmail = typeof user?.email === 'string' ? user.email : undefined;
-  const displayName = userName
-    ? userName.split(' ')[0]
-    : userEmail
-      ? userEmail.split('@')[0]
-      : null;
 
   const topPad = Math.max(insets.top + 10, Platform.OS === 'android' ? 15 : 30);
 
@@ -64,7 +39,7 @@ export function HomeHeader({ onMenuPress }: Props) {
       ]}
     >
 
-      {/* ── Left: logo + brand + greeting ── */}
+      {/* ── Left: logo + wordmark — single tight row, no subtitle ── */}
       <View style={s.left}>
         <View style={s.logoWrap}>
           <ExpoImage
@@ -73,29 +48,21 @@ export function HomeHeader({ onMenuPress }: Props) {
             contentFit="contain"
           />
         </View>
-        <View style={s.brandBlock}>
-          <Text style={[s.brandName, { color: t.text }]} numberOfLines={1}>
-            Appsketch
-          </Text>
-          {displayName ? (
-            <Text style={[s.greeting, { color: t.textMuted }]} numberOfLines={1}>
-              Welcome, {displayName}
-            </Text>
-          ) : (
-            <Text style={[s.greeting, { color: t.textMuted }]} numberOfLines={1}>
-              Your Online Store Hub
-            </Text>
-          )}
-        </View>
+        <Text style={[s.brandName, { color: t.textSub }]} numberOfLines={1}>
+          APPSKETCH
+        </Text>
       </View>
 
-      {/* ── Right: menu button ── */}
+      {/* ── Right: menu button — avatar-with-settings badge, still opens the drawer ── */}
       <TouchableOpacity
         onPress={onMenuPress}
-        style={[s.menuBtn]}
-        activeOpacity={0.7}
+        style={[s.menuBtn, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
+        activeOpacity={0.75}
       >
-        <HamburgerIcon color={t.accent} />
+        <Ionicons name="person" size={16} color={t.text} />
+        <View style={[s.menuBadge, { backgroundColor: t.accent, borderColor: t.bg }]}>
+          <Ionicons name="settings-sharp" size={9} color="#FFFFFF" />
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -127,26 +94,29 @@ const s = StyleSheet.create({
     height: 40,
     marginTop: 1
   },
-  brandBlock: {
-    flex: 1,
-  },
   brandName: {
-    fontFamily: F.sans700,
-    fontSize: 15,
-    letterSpacing: 0.1,
-  },
-  greeting: {
-    fontFamily: F.sans400,
-    fontSize: 11,
-    marginTop: 1,
+    fontFamily: F.sans600,
+    fontSize: 16,
+    letterSpacing: 2,
   },
   menuBtn: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
+  },
+  menuBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
