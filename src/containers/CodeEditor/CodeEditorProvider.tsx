@@ -19,7 +19,9 @@ type CodeEditorContextValue = ReturnType<typeof useCoderSocket> & {
   buildLog: ReturnType<typeof useBuildLog>;
 };
 
-const CodeEditorContext = React.createContext<CodeEditorContextValue | null>(null);
+const CodeEditorContext = React.createContext<CodeEditorContextValue | null>(
+  null
+);
 
 /**
  * Wraps the whole `code-editor/_layout.tsx` tree (above the top tab
@@ -48,11 +50,16 @@ export function CodeEditorProvider({
     [coder, params, buildLog]
   );
 
-  return <CodeEditorContext.Provider value={value}>{children}</CodeEditorContext.Provider>;
+  return (
+    <CodeEditorContext.Provider value={value}>
+      {children}
+    </CodeEditorContext.Provider>
+  );
 }
 
 export function useCodeEditor() {
   const ctx = React.useContext(CodeEditorContext);
-  if (!ctx) throw new Error('useCodeEditor must be used within a CodeEditorProvider');
+  if (!ctx)
+    throw new Error('useCodeEditor must be used within a CodeEditorProvider');
   return ctx;
 }

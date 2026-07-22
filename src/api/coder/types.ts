@@ -38,7 +38,12 @@ export type WorkspaceFile = {
   is_binary?: boolean;
 };
 
-export type ClarifyQuestionKind = 'choice' | 'palette' | 'fonts' | 'checklist' | 'text';
+export type ClarifyQuestionKind =
+  | 'choice'
+  | 'palette'
+  | 'fonts'
+  | 'checklist'
+  | 'text';
 
 export type ClarifyQuestionOption = {
   id: string;
@@ -84,9 +89,17 @@ export type WebBuildStatus = {
 // ── Incoming WS events (ws/coder/<thread_id>/) ──────────────────────────────
 
 export type CoderReadyHistoryMessage = { role: ChatRole; content: string };
-export type CoderReadyEvent = { event: 'ready'; history?: CoderReadyHistoryMessage[] };
+export type CoderReadyEvent = {
+  event: 'ready';
+  history?: CoderReadyHistoryMessage[];
+};
 export type CoderTokenEvent = { event: 'token'; content: string };
-export type CoderNodeEvent = { event: 'node'; id?: string; label: string; status?: string };
+export type CoderNodeEvent = {
+  event: 'node';
+  id?: string;
+  label: string;
+  status?: string;
+};
 export type CoderStepEvent = { event: 'step'; text: string; tool?: string };
 export type CoderThinkingEvent = { event: 'thinking'; text: string };
 export type CoderToolCallEvent = { event: 'tool_call' };
@@ -98,10 +111,25 @@ export type CoderFileWriteEvent = {
   old?: string;
   new?: string;
 };
-export type CoderUiBlockEvent = { event: 'ui_block'; block: ClarifyBlock | Record<string, unknown> };
-export type CoderApprovalRequestEvent = { event: 'approval_request'; id: string; command: string; reason?: string };
-export type CoderApprovalResultEvent = { event: 'approval_result'; id: string; approved: boolean };
-export type CoderBuildStartedEvent = { event: 'build_started'; build_id: number };
+export type CoderUiBlockEvent = {
+  event: 'ui_block';
+  block: ClarifyBlock | Record<string, unknown>;
+};
+export type CoderApprovalRequestEvent = {
+  event: 'approval_request';
+  id: string;
+  command: string;
+  reason?: string;
+};
+export type CoderApprovalResultEvent = {
+  event: 'approval_result';
+  id: string;
+  approved: boolean;
+};
+export type CoderBuildStartedEvent = {
+  event: 'build_started';
+  build_id: number;
+};
 export type CoderBuildDoneEvent = {
   event: 'build_done';
   build_id: number;
@@ -109,7 +137,11 @@ export type CoderBuildDoneEvent = {
   preview_url?: string;
   errors?: unknown[];
 };
-export type CoderFinalEvent = { event: 'final'; content?: string; tree?: FileTreeNode[] };
+export type CoderFinalEvent = {
+  event: 'final';
+  content?: string;
+  tree?: FileTreeNode[];
+};
 export type CoderErrorEvent = { event: 'error'; detail?: string };
 
 export type CoderWsEvent =
@@ -130,20 +162,42 @@ export type CoderWsEvent =
 
 // ── Outgoing WS messages ─────────────────────────────────────────────────────
 
-export type CoderSendMessagePayload = { type: 'message'; content: string; model?: string; images?: string[] };
-export type CoderInteractionPayload = { type: 'interaction'; value: Record<string, unknown> };
-export type CoderApprovalPayload = { type: 'approval'; value: Record<string, unknown> };
+export type CoderSendMessagePayload = {
+  type: 'message';
+  content: string;
+  model?: string;
+  images?: string[];
+};
+export type CoderInteractionPayload = {
+  type: 'interaction';
+  value: Record<string, unknown>;
+};
+export type CoderApprovalPayload = {
+  type: 'approval';
+  value: Record<string, unknown>;
+};
 
-export type CoderOutgoingMessage = CoderSendMessagePayload | CoderInteractionPayload | CoderApprovalPayload;
+export type CoderOutgoingMessage =
+  | CoderSendMessagePayload
+  | CoderInteractionPayload
+  | CoderApprovalPayload;
 
 // ── Incoming WS events (ws/webbuild/<build_id>/) ────────────────────────────
 
 export type WebBuildLogEvent = { event: 'log'; line: string };
 export type WebBuildLogBatchEvent = { event: 'log_batch'; lines: string[] };
-export type WebBuildStatusEvent = { event: 'status'; status: WebBuildStatusValue; preview_url?: string | null };
+export type WebBuildStatusEvent = {
+  event: 'status';
+  status: WebBuildStatusValue;
+  preview_url?: string | null;
+};
 export type WebBuildErrorsEvent = { event: 'errors'; errors: unknown[] };
 
-export type WebBuildWsEvent = WebBuildLogEvent | WebBuildLogBatchEvent | WebBuildStatusEvent | WebBuildErrorsEvent;
+export type WebBuildWsEvent =
+  | WebBuildLogEvent
+  | WebBuildLogBatchEvent
+  | WebBuildStatusEvent
+  | WebBuildErrorsEvent;
 
 /** Response shape from `POST account/tenants/` (only the fields we use). */
 export type CreateCoderTenantResponse = {
@@ -153,3 +207,87 @@ export type CreateCoderTenantResponse = {
   app_type?: string;
   [key: string]: unknown;
 };
+
+// ── Collections / CMS (phase 2) ─────────────────────────────────────────────
+
+export type CollectionField = {
+  name: string;
+  type: 'text' | 'richtext' | 'number' | 'boolean' | 'date' | 'url' | 'image';
+  required?: boolean;
+};
+
+export type CollectionApi = {
+  id: number | string;
+  source?: 'collection' | 'sql';
+  name: string;
+  method: string;
+  endpoint?: string;
+  slug?: string;
+  auth?: string;
+  is_active: boolean;
+};
+
+export type CollectionRecord = {
+  id: number | string;
+  data: Record<string, unknown>;
+  created_at?: string;
+};
+
+export type Collection = {
+  slug: string;
+  name: string;
+  description?: string;
+  record_count: number;
+  fields: CollectionField[];
+  apis?: CollectionApi[];
+  records?: CollectionRecord[];
+};
+
+export type CollectionsResponse = {
+  collections: Collection[];
+  sql_apis: CollectionApi[];
+  totals: { collections: number; apis: number; records: number };
+};
+
+export type RecordSaveResponse = {
+  ok: boolean;
+  record?: CollectionRecord;
+  error?: string;
+};
+
+// ── Git connect / diff / PR (phase 2) ───────────────────────────────────────
+
+export type RepoStatus = {
+  kind?: 'generated' | 'cloned';
+  status?: string;
+  origin_url?: string;
+  working_branch?: string;
+  default_branch?: string;
+  previewable?: boolean;
+  preview_reason?: string;
+  last_pr_url?: string;
+};
+
+export type RepoChangedFile = { path: string; status: string };
+
+export type RepoDiffResponse = {
+  diff: string;
+  status?: { files: RepoChangedFile[] };
+};
+
+export type OAuthConfig = { providers: Record<string, boolean> };
+export type OAuthSession = {
+  status: 'pending' | 'linked' | 'error';
+  login?: string;
+  provider?: string;
+};
+export type OAuthRepo = {
+  id: number | string;
+  full_name: string;
+  private?: boolean;
+  clone_url?: string;
+};
+
+// ── Visual inspector (phase 2) ──────────────────────────────────────────────
+
+export type VisualEditResponse = { ok: boolean; reason?: string };

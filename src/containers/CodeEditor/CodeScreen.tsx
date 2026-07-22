@@ -16,15 +16,28 @@ import { FileTree } from './FileTree/FileTree';
 export function CodeScreen() {
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
-  const { fileTree, createFile, createFolder, renamePath, deletePath } = useCodeEditor();
+  const { fileTree, createFile, createFolder, renamePath, deletePath } =
+    useCodeEditor();
 
   const [selectedPath, setSelectedPath] = React.useState<string | null>(null);
 
   if (selectedPath) {
     return (
       <View style={[st.root, { backgroundColor: t.codeEditorBg }]}>
-        <View style={[st.header, { borderColor: t.codeEditorBorder, backgroundColor: t.codeEditorSurface }]}>
-          <TouchableOpacity onPress={() => setSelectedPath(null)} hitSlop={10} style={st.backBtn}>
+        <View
+          style={[
+            st.header,
+            {
+              borderColor: t.codeEditorBorder,
+              backgroundColor: t.codeEditorSurface,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() => setSelectedPath(null)}
+            hitSlop={10}
+            style={st.backBtn}
+          >
             <Ionicons name="chevron-back" size={20} color={t.text} />
           </TouchableOpacity>
           <Text style={[st.fileName, { color: t.text }]} numberOfLines={1}>
@@ -62,6 +75,11 @@ const st = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  backBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   fileName: { flex: 1, fontSize: 13, fontWeight: '700' },
 });

@@ -1,9 +1,13 @@
 import * as React from 'react';
 
-import { buildWebBuildWsUrl, getLatestBuild, triggerBuild } from '@/api/coder';
 import type { WebBuildStatusValue, WebBuildWsEvent } from '@/api/coder';
+import { buildWebBuildWsUrl, getLatestBuild, triggerBuild } from '@/api/coder';
 
-const TERMINAL_STATUSES = new Set<WebBuildStatusValue>(['COMPLETED', 'FAILED', 'CANCELLED']);
+const TERMINAL_STATUSES = new Set<WebBuildStatusValue>([
+  'COMPLETED',
+  'FAILED',
+  'CANCELLED',
+]);
 
 /**
  * Owns the `ws/webbuild/<build_id>/` build console — ported from Vite's

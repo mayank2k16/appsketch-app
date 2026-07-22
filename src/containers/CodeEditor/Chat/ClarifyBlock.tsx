@@ -1,8 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import type { ClarifyBlock as ClarifyBlockType, ClarifyQuestion } from '@/api/coder';
+import type {
+  ClarifyBlock as ClarifyBlockType,
+  ClarifyQuestion,
+} from '@/api/coder';
 import type { AppColors } from '@/lib/theme';
 
 type Answers = Record<string, unknown>;
@@ -42,17 +51,30 @@ export function ClarifyBlockView({
 
   function isSelected(question: ClarifyQuestion, optionId: string) {
     const val = answers[question.id];
-    if (question.kind === 'checklist') return Array.isArray(val) && (val as string[]).includes(optionId);
+    if (question.kind === 'checklist')
+      return Array.isArray(val) && (val as string[]).includes(optionId);
     return val === optionId;
   }
 
   return (
-    <View style={[st.card, { backgroundColor: colors.codeEditorSurface, borderColor: colors.codeEditorBorder }]}>
-      {block.intro ? <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text> : null}
+    <View
+      style={[
+        st.card,
+        {
+          backgroundColor: colors.codeEditorSurface,
+          borderColor: colors.codeEditorBorder,
+        },
+      ]}
+    >
+      {block.intro ? (
+        <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text>
+      ) : null}
 
       {block.questions.map((question, qi) => (
         <View key={question.id ?? `q-${qi}`} style={st.questionBlock}>
-          <Text style={[st.label, { color: colors.textSub }]}>{question.label}</Text>
+          <Text style={[st.label, { color: colors.textSub }]}>
+            {question.label}
+          </Text>
 
           {question.kind === 'text' ? (
             <TextInput
@@ -60,7 +82,10 @@ export function ClarifyBlockView({
               onChangeText={(v) => setText(question, v)}
               placeholder="Type your answer…"
               placeholderTextColor={colors.codeEditorTextMuted}
-              style={[st.textInput, { color: colors.text, borderColor: colors.codeEditorBorder }]}
+              style={[
+                st.textInput,
+                { color: colors.text, borderColor: colors.codeEditorBorder },
+              ]}
             />
           ) : question.kind === 'palette' ? (
             <View style={st.optionRow}>
@@ -70,15 +95,27 @@ export function ClarifyBlockView({
                   onPress={() => toggleChoice(question, opt.id)}
                   style={[
                     st.paletteSwatch,
-                    { borderColor: isSelected(question, opt.id) ? colors.accent : colors.codeEditorBorder },
+                    {
+                      borderColor: isSelected(question, opt.id)
+                        ? colors.accent
+                        : colors.codeEditorBorder,
+                    },
                   ]}
                 >
                   <View style={st.paletteColors}>
-                    {(opt.colors ?? [opt.value ?? '#888']).slice(0, 3).map((c, i) => (
-                      <View key={i} style={[st.paletteDot, { backgroundColor: c }]} />
-                    ))}
+                    {(opt.colors ?? [opt.value ?? '#888'])
+                      .slice(0, 3)
+                      .map((c, i) => (
+                        <View
+                          key={i}
+                          style={[st.paletteDot, { backgroundColor: c }]}
+                        />
+                      ))}
                   </View>
-                  <Text style={[st.optionLabel, { color: colors.text }]} numberOfLines={1}>
+                  <Text
+                    style={[st.optionLabel, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -95,13 +132,26 @@ export function ClarifyBlockView({
                     style={[
                       st.chip,
                       {
-                        backgroundColor: selected ? colors.accent : colors.codeEditorTabBg,
-                        borderColor: selected ? colors.accent : colors.codeEditorBorder,
+                        backgroundColor: selected
+                          ? colors.accent
+                          : colors.codeEditorTabBg,
+                        borderColor: selected
+                          ? colors.accent
+                          : colors.codeEditorBorder,
                       },
                     ]}
                   >
-                    {selected ? <Ionicons name="checkmark" size={12} color="#FFFFFF" /> : null}
-                    <Text style={[st.chipLabel, { color: selected ? '#FFFFFF' : colors.text }]}>{opt.label}</Text>
+                    {selected ? (
+                      <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                    ) : null}
+                    <Text
+                      style={[
+                        st.chipLabel,
+                        { color: selected ? '#FFFFFF' : colors.text },
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -110,7 +160,10 @@ export function ClarifyBlockView({
         </View>
       ))}
 
-      <TouchableOpacity onPress={() => onSubmit(answers)} style={[st.submitBtn, { backgroundColor: colors.accent }]}>
+      <TouchableOpacity
+        onPress={() => onSubmit(answers)}
+        style={[st.submitBtn, { backgroundColor: colors.accent }]}
+      >
         <Text style={st.submitLabel}>{block.submitLabel ?? 'Continue'}</Text>
       </TouchableOpacity>
     </View>

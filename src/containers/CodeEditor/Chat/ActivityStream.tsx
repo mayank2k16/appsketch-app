@@ -5,7 +5,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { ActivityStep } from '@/api/coder';
 import type { AppColors } from '@/lib/theme';
 
-const KIND_ICON: Record<ActivityStep['kind'], React.ComponentProps<typeof Ionicons>['name']> = {
+const KIND_ICON: Record<
+  ActivityStep['kind'],
+  React.ComponentProps<typeof Ionicons>['name']
+> = {
   node: 'git-commit-outline',
   step: 'hammer-outline',
   thinking: 'bulb-outline',
@@ -14,18 +17,42 @@ const KIND_ICON: Record<ActivityStep['kind'], React.ComponentProps<typeof Ionico
 /** Collapsible "what the agent is doing" feed — ported from Vite's
  * `ActivityStream.jsx`, minus the per-step diff accordion (file diffs aren't
  * shown inline in v1; the Code tab always reflects the latest file state). */
-export function ActivityStream({ steps, colors }: { steps: ActivityStep[]; colors: AppColors }) {
+export function ActivityStream({
+  steps,
+  colors,
+}: {
+  steps: ActivityStep[];
+  colors: AppColors;
+}) {
   const [expanded, setExpanded] = React.useState(false);
   if (steps.length === 0) return null;
 
   const visible = expanded ? steps : steps.slice(-1);
 
   return (
-    <View style={[st.wrap, { backgroundColor: colors.codeEditorActivityBg, borderColor: colors.codeEditorActivityBorder }]}>
-      <TouchableOpacity onPress={() => setExpanded((e) => !e)} style={st.header} activeOpacity={0.7}>
-        <Ionicons name="sparkles-outline" size={13} color={colors.codeEditorActivityText} />
+    <View
+      style={[
+        st.wrap,
+        {
+          backgroundColor: colors.codeEditorActivityBg,
+          borderColor: colors.codeEditorActivityBorder,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        onPress={() => setExpanded((e) => !e)}
+        style={st.header}
+        activeOpacity={0.7}
+      >
+        <Ionicons
+          name="sparkles-outline"
+          size={13}
+          color={colors.codeEditorActivityText}
+        />
         <Text style={[st.headerText, { color: colors.codeEditorActivityText }]}>
-          {expanded ? 'Agent activity' : `Agent worked · ${steps.length} step${steps.length === 1 ? '' : 's'}`}
+          {expanded
+            ? 'Agent activity'
+            : `Agent worked · ${steps.length} step${steps.length === 1 ? '' : 's'}`}
         </Text>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -36,8 +63,15 @@ export function ActivityStream({ steps, colors }: { steps: ActivityStep[]; color
 
       {visible.map((step) => (
         <View key={step.id} style={st.row}>
-          <Ionicons name={KIND_ICON[step.kind]} size={12} color={colors.codeEditorActivityText} />
-          <Text style={[st.rowText, { color: colors.codeEditorActivityText }]} numberOfLines={expanded ? undefined : 1}>
+          <Ionicons
+            name={KIND_ICON[step.kind]}
+            size={12}
+            color={colors.codeEditorActivityText}
+          />
+          <Text
+            style={[st.rowText, { color: colors.codeEditorActivityText }]}
+            numberOfLines={expanded ? undefined : 1}
+          >
             {step.text}
             {step.tool ? ` (${step.tool})` : ''}
           </Text>

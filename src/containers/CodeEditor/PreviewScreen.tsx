@@ -1,7 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { previewUrlForTenant } from '@/api/coder';
 import { useAppTheme } from '@/lib/theme';
@@ -10,7 +16,13 @@ import { useCodeEditor } from './CodeEditorProvider';
 import { LivePreviewWebView } from './Preview/LivePreviewWebView';
 import { MobileExpoPreview } from './Preview/MobileExpoPreview';
 
-const IN_PROGRESS_STATUSES = new Set(['QUEUED', 'PREPARING', 'INSTALLING_DEPS', 'BUILDING', 'DEPLOYING']);
+const IN_PROGRESS_STATUSES = new Set([
+  'QUEUED',
+  'PREPARING',
+  'INSTALLING_DEPS',
+  'BUILDING',
+  'DEPLOYING',
+]);
 
 function DeployButton({
   deploying,
@@ -23,7 +35,8 @@ function DeployButton({
   onPress: () => void;
   colors: ReturnType<typeof useAppTheme>;
 }) {
-  const inProgress = deploying || (status ? IN_PROGRESS_STATUSES.has(status) : false);
+  const inProgress =
+    deploying || (status ? IN_PROGRESS_STATUSES.has(status) : false);
   const failed = status === 'FAILED';
   const done = status === 'COMPLETED' && !inProgress;
 
@@ -40,9 +53,27 @@ function DeployButton({
       {inProgress ? (
         <ActivityIndicator size="small" color="#FFFFFF" />
       ) : (
-        <Ionicons name={done ? 'checkmark-circle' : failed ? 'alert-circle' : 'rocket-outline'} size={14} color="#FFFFFF" />
+        <Ionicons
+          name={
+            done
+              ? 'checkmark-circle'
+              : failed
+                ? 'alert-circle'
+                : 'rocket-outline'
+          }
+          size={14}
+          color="#FFFFFF"
+        />
       )}
-      <Text style={st.deployLabel}>{inProgress ? 'Deploying…' : done ? 'Deployed' : failed ? 'Retry deploy' : 'Deploy'}</Text>
+      <Text style={st.deployLabel}>
+        {inProgress
+          ? 'Deploying…'
+          : done
+            ? 'Deployed'
+            : failed
+              ? 'Retry deploy'
+              : 'Deploy'}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -53,7 +84,9 @@ export function PreviewScreen() {
   const { params, threadId, buildLog } = useCodeEditor();
   const { status, deploying, startBuild } = buildLog;
 
-  const livePreviewUrl = params.tenantUid ? previewUrlForTenant(params.tenantUid) : undefined;
+  const livePreviewUrl = params.tenantUid
+    ? previewUrlForTenant(params.tenantUid)
+    : undefined;
 
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
@@ -70,10 +103,16 @@ export function PreviewScreen() {
       {params.appType === 'mobile' ? (
         <MobileExpoPreview tenantId={params.tenantId} colors={t} />
       ) : livePreviewUrl ? (
-        <LivePreviewWebView url={livePreviewUrl} colors={t} />
+        <LivePreviewWebView
+          url={livePreviewUrl}
+          colors={t}
+          tenantId={params.tenantId}
+        />
       ) : (
         <View style={st.center}>
-          <Text style={{ color: t.textSub }}>Your preview will appear here once the agent starts building.</Text>
+          <Text style={{ color: t.textSub }}>
+            Your preview will appear here once the agent starts building.
+          </Text>
         </View>
       )}
     </View>
@@ -91,7 +130,12 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: { fontSize: 14.5, fontWeight: '700' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
   deployBtn: {
     flexDirection: 'row',
     alignItems: 'center',

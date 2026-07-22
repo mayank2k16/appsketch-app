@@ -1,18 +1,18 @@
 import * as React from 'react';
 
-import {
-  buildCoderWsUrl,
-  fsOp as fsOpApi,
-  getLatestThread,
-  getTree,
-  onboardCoder,
-} from '@/api/coder';
 import type {
   ActivityStep,
   ChatMessage,
   ClarifyBlock,
   CoderWsEvent,
   FileTreeNode,
+} from '@/api/coder';
+import {
+  buildCoderWsUrl,
+  fsOp as fsOpApi,
+  getLatestThread,
+  getTree,
+  onboardCoder,
 } from '@/api/coder';
 import { getItem, setItem } from '@/lib/storage';
 
@@ -43,8 +43,11 @@ export function useCoderSocket(params: CoderSocketParams) {
   const [threadId, setThreadId] = React.useState<string | null>(null);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [activity, setActivity] = React.useState<ActivityStep[]>([]);
-  const [clarifyBlock, setClarifyBlock] = React.useState<ClarifyBlock | null>(null);
-  const [approvalRequest, setApprovalRequest] = React.useState<PendingApproval | null>(null);
+  const [clarifyBlock, setClarifyBlock] = React.useState<ClarifyBlock | null>(
+    null
+  );
+  const [approvalRequest, setApprovalRequest] =
+    React.useState<PendingApproval | null>(null);
   const [fileTree, setFileTree] = React.useState<FileTreeNode[]>([]);
   const [openFiles, setOpenFiles] = React.useState<Record<string, string>>({});
   const [lastBuildId, setLastBuildId] = React.useState<number | null>(null);
@@ -67,7 +70,12 @@ export function useCoderSocket(params: CoderSocketParams) {
     (msg: CoderWsEvent) => {
       switch (msg.event) {
         case 'ready':
-          setMessages((msg.history ?? []).map((m) => ({ role: m.role, content: m.content })));
+          setMessages(
+            (msg.history ?? []).map((m) => ({
+              role: m.role,
+              content: m.content,
+            }))
+          );
           void refreshTree();
           break;
 
@@ -77,28 +85,51 @@ export function useCoderSocket(params: CoderSocketParams) {
             const last = prev[prev.length - 1];
             if (last && last.role === 'assistant' && last.streaming) {
               const copy = [...prev];
-              copy[copy.length - 1] = { ...last, content: last.content + msg.content };
+              copy[copy.length - 1] = {
+                ...last,
+                content: last.content + msg.content,
+              };
               return copy;
             }
-            return [...prev, { role: 'assistant', content: msg.content, streaming: true }];
+            return [
+              ...prev,
+              { role: 'assistant', content: msg.content, streaming: true },
+            ];
           });
           break;
 
         case 'node':
-          setActivity((prev) => [...prev, { id: nextActivityId(), kind: 'node', text: msg.label }]);
+          setActivity((prev) => [
+            ...prev,
+            { id: nextActivityId(), kind: 'node', text: msg.label },
+          ]);
           break;
 
         case 'step':
           setBusy(true);
-          setActivity((prev) => [...prev, { id: nextActivityId(), kind: 'step', text: msg.text, tool: msg.tool }]);
+          setActivity((prev) => [
+            ...prev,
+            {
+              id: nextActivityId(),
+              kind: 'step',
+              text: msg.text,
+              tool: msg.tool,
+            },
+          ]);
           break;
 
         case 'thinking':
-          setActivity((prev) => [...prev, { id: nextActivityId(), kind: 'thinking', text: msg.text }]);
+          setActivity((prev) => [
+            ...prev,
+            { id: nextActivityId(), kind: 'thinking', text: msg.text },
+          ]);
           break;
 
         case 'file_write':
-          setOpenFiles((prev) => ({ ...prev, [msg.path]: msg.mode === 'delete' ? '' : msg.content }));
+          setOpenFiles((prev) => ({
+            ...prev,
+            [msg.path]: msg.mode === 'delete' ? '' : msg.content,
+          }));
           void refreshTree();
           break;
 
@@ -110,7 +141,11 @@ export function useCoderSocket(params: CoderSocketParams) {
           break;
 
         case 'approval_request':
-          setApprovalRequest({ id: msg.id, command: msg.command, reason: msg.reason });
+          setApprovalRequest({
+            id: msg.id,
+            command: msg.command,
+            reason: msg.reason,
+          });
           break;
 
         case 'approval_result':
@@ -133,10 +168,16 @@ export function useCoderSocket(params: CoderSocketParams) {
             const last = prev[prev.length - 1];
             if (last && last.role === 'assistant' && last.streaming) {
               const copy = [...prev];
-              copy[copy.length - 1] = { ...last, content: msg.content || last.content, streaming: false };
+              copy[copy.length - 1] = {
+                ...last,
+                content: msg.content || last.content,
+                streaming: false,
+              };
               return copy;
             }
-            return msg.content ? [...prev, { role: 'assistant', content: msg.content }] : prev;
+            return msg.content
+              ? [...prev, { role: 'assistant', content: msg.content }]
+              : prev;
           });
           if (msg.tree) setFileTree(msg.tree);
           else void refreshTree();
@@ -144,7 +185,13 @@ export function useCoderSocket(params: CoderSocketParams) {
 
         case 'error':
           setBusy(false);
-          setMessages((prev) => [...prev, { role: 'assistant', content: msg.detail || 'Something went wrong.' }]);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content: msg.detail || 'Something went wrong.',
+            },
+          ]);
           break;
 
         default:
@@ -198,12 +245,22 @@ export function useCoderSocket(params: CoderSocketParams) {
   // update) becomes an infinite render loop ("Maximum update depth
   // exceeded"). Every function returned from this hook is memoized for the
   // same reason.
-  const send = React.useCallback((content: string, opts?: { model?: string; images?: string[] }) => {
-    if (!wsRef.current || !content.trim()) return;
-    setMessages((prev) => [...prev, { role: 'user', content }]);
-    setBusy(true);
-    wsRef.current.send(JSON.stringify({ type: 'message', content, model: opts?.model, images: opts?.images }));
-  }, []);
+  const send = React.useCallback(
+    (content: string, opts?: { model?: string; images?: string[] }) => {
+      if (!wsRef.current || !content.trim()) return;
+      setMessages((prev) => [...prev, { role: 'user', content }]);
+      setBusy(true);
+      wsRef.current.send(
+        JSON.stringify({
+          type: 'message',
+          content,
+          model: opts?.model,
+          images: opts?.images,
+        })
+      );
+    },
+    []
+  );
 
   // ── websocket lifecycle ──────────────────────────────────────────────────
   React.useEffect(() => {
@@ -243,9 +300,12 @@ export function useCoderSocket(params: CoderSocketParams) {
     wsRef.current.send(JSON.stringify({ type: 'interaction', value }));
   }, []);
 
-  const setOpenFileContent = React.useCallback((path: string, content: string) => {
-    setOpenFiles((prev) => ({ ...prev, [path]: content }));
-  }, []);
+  const setOpenFileContent = React.useCallback(
+    (path: string, content: string) => {
+      setOpenFiles((prev) => ({ ...prev, [path]: content }));
+    },
+    []
+  );
 
   const createFile = React.useCallback(
     async (path: string) => {
@@ -263,7 +323,9 @@ export function useCoderSocket(params: CoderSocketParams) {
   );
   const renamePath = React.useCallback(
     async (path: string, newPath: string) => {
-      const res = await fsOpApi(tenantId, 'rename', path, { new_path: newPath });
+      const res = await fsOpApi(tenantId, 'rename', path, {
+        new_path: newPath,
+      });
       setFileTree(res.tree ?? []);
     },
     [tenantId]

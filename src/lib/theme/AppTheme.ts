@@ -169,6 +169,33 @@ export const appTheme = {
     codeEditorConnectedDot:     '#3DDC84',
     codeEditorDisconnectedDot:  'rgba(255,255,255,0.30)',
     codeEditorDanger:           '#FF5C5C',
+
+    // Terminal — line-type colouring mirrors Vite's `lineClass` classifier
+    terminalBg:        '#0A0A0C',
+    terminalText:      'rgba(255,255,255,0.82)',
+    terminalCmd:        '#8AB4FF',
+    terminalOk:         '#3DDC84',
+    terminalErr:        '#FF6B6B',
+    terminalWarn:       '#FFC24B',
+    terminalInfo:       'rgba(255,255,255,0.50)',
+    terminalInputBg:    'rgba(255,255,255,0.06)',
+    terminalInputBorder:'rgba(255,255,255,0.12)',
+
+    // Collections / CMS
+    collectionsChipBg:      'rgba(255,255,255,0.05)',
+    collectionsChipActiveBg:'#6C5CE7',
+    collectionsBadgeBg:     'rgba(108,92,231,0.20)',
+    collectionsBadgeText:   '#B4A9F5',
+    collectionsMethodGet:   '#3DDC84',
+    collectionsMethodPost:  '#4C8BFF',
+    collectionsMethodOther: '#FFC24B',
+
+    // Changes / git diff
+    diffAddedBg:   'rgba(61,220,132,0.14)',
+    diffAddedText: '#3DDC84',
+    diffRemovedBg: 'rgba(255,92,92,0.14)',
+    diffRemovedText:'#FF5C5C',
+    diffMeta:      'rgba(255,255,255,0.40)',
   },
 
   light: {
@@ -322,6 +349,35 @@ export const appTheme = {
     codeEditorConnectedDot:     '#1FA971',
     codeEditorDisconnectedDot:  'rgba(17,17,17,0.25)',
     codeEditorDanger:           '#E0392B',
+
+    // Terminal — light mode keeps a dark shell surface (real terminal
+    // convention) even though the rest of the app is light, same as most
+    // code editors' console panes.
+    terminalBg:        '#16161A',
+    terminalText:      'rgba(255,255,255,0.85)',
+    terminalCmd:        '#6C9BFF',
+    terminalOk:         '#1FA971',
+    terminalErr:        '#E0392B',
+    terminalWarn:       '#C9860A',
+    terminalInfo:       'rgba(255,255,255,0.50)',
+    terminalInputBg:    'rgba(255,255,255,0.08)',
+    terminalInputBorder:'rgba(255,255,255,0.14)',
+
+    // Collections / CMS
+    collectionsChipBg:      'rgba(17,17,17,0.04)',
+    collectionsChipActiveBg:'#6C5CE7',
+    collectionsBadgeBg:     'rgba(108,92,231,0.12)',
+    collectionsBadgeText:   '#6C5CE7',
+    collectionsMethodGet:   '#1FA971',
+    collectionsMethodPost:  '#3B82F6',
+    collectionsMethodOther: '#C9860A',
+
+    // Changes / git diff
+    diffAddedBg:   'rgba(31,169,113,0.10)',
+    diffAddedText: '#1FA971',
+    diffRemovedBg: 'rgba(224,57,43,0.10)',
+    diffRemovedText:'#E0392B',
+    diffMeta:      'rgba(17,17,17,0.35)',
   },
 } as const;
 

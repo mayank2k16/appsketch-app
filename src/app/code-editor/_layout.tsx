@@ -4,16 +4,31 @@ import type {
   MaterialTopTabNavigationOptions,
 } from '@react-navigation/material-top-tabs';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import type { ParamListBase, TabNavigationState } from '@react-navigation/native';
-import { useLocalSearchParams, useRouter, withLayoutContext } from 'expo-router';
+import type {
+  ParamListBase,
+  TabNavigationState,
+} from '@react-navigation/native';
+import {
+  useLocalSearchParams,
+  useRouter,
+  withLayoutContext,
+} from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Pressable, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AppTypeKey } from '@/api/coder';
 import { CodeEditorProvider } from '@/containers/CodeEditor/CodeEditorProvider';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { type AppColors, useAppTheme } from '@/lib/theme';
 
 const { Navigator } = createMaterialTopTabNavigator();
 
@@ -26,17 +41,23 @@ const MaterialTopTabs = withLayoutContext<
   MaterialTopTabNavigationEventMap
 >(Navigator);
 
-const TAB_ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
-  chat: 'chatbubble-ellipses-outline',
-  code: 'code-slash-outline',
-  preview: 'phone-portrait-outline',
-};
+const TAB_ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> =
+  {
+    chat: 'chatbubble-ellipses-outline',
+    code: 'code-slash-outline',
+    preview: 'phone-portrait-outline',
+    terminal: 'terminal-outline',
+    data: 'server-outline',
+    changes: 'git-branch-outline',
+  };
 
 type TabBarProps = {
   state: TabNavigationState<ParamListBase>;
   descriptors: Record<string, { options: { title?: string } }>;
   navigation: {
-    emit: (e: { type: string; target: string; canPreventDefault: boolean }) => { defaultPrevented: boolean };
+    emit: (e: { type: string; target: string; canPreventDefault: boolean }) => {
+      defaultPrevented: boolean;
+    };
     navigate: (name: string) => void;
   };
 };
@@ -51,39 +72,77 @@ function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
     <View
       style={[
         styles.tabBar,
-        { backgroundColor: t.codeEditorTabBarBg, borderColor: t.codeEditorBorder, paddingTop: insets.top },
+        {
+          backgroundColor: t.codeEditorTabBarBg,
+          borderColor: t.codeEditorBorder,
+          paddingTop: insets.top,
+        },
       ]}
     >
       <View style={styles.tabRow}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={10}
+          style={styles.backBtn}
+        >
           <Ionicons name="chevron-back" size={22} color={t.text} />
         </TouchableOpacity>
 
-        {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
-          const label = descriptors[route.key]?.options.title ?? route.name;
-          const onPress = () => {
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
-          };
-          return (
-            <Pressable key={route.key} onPress={onPress} style={styles.tab}>
-              <Ionicons
-                name={TAB_ICONS[route.name] ?? 'ellipse-outline'}
-                size={16}
-                color={isFocused ? t.codeEditorTabActiveText : t.codeEditorTabText}
-              />
-              <Text
-                style={[styles.tabLabel, { color: isFocused ? t.codeEditorTabActiveText : t.codeEditorTabText }]}
-              >
-                {label}
-              </Text>
-              {isFocused && <View style={[styles.indicator, { backgroundColor: t.codeEditorTabIndicator }]} />}
-            </Pressable>
-          );
-        })}
+        {/* Horizontally scrollable — 6 tabs (Chat/Code/Preview/Terminal/Data/
+            Changes) don't fit a fixed-width row on a phone; the first 3 stay
+            reachable at a glance, the rest a swipe away. */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabScrollContent}
+        >
+          {state.routes.map((route, index) => {
+            const isFocused = state.index === index;
+            const label = descriptors[route.key]?.options.title ?? route.name;
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+              if (!isFocused && !event.defaultPrevented)
+                navigation.navigate(route.name);
+            };
+            return (
+              <Pressable key={route.key} onPress={onPress} style={styles.tab}>
+                <Ionicons
+                  name={TAB_ICONS[route.name] ?? 'ellipse-outline'}
+                  size={16}
+                  color={
+                    isFocused ? t.codeEditorTabActiveText : t.codeEditorTabText
+                  }
+                />
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color: isFocused
+                        ? t.codeEditorTabActiveText
+                        : t.codeEditorTabText,
+                    },
+                  ]}
+                >
+                  {label}
+                </Text>
+                {isFocused && (
+                  <View
+                    style={[
+                      styles.indicator,
+                      { backgroundColor: t.codeEditorTabIndicator },
+                    ]}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
-        {/* Balances the back button so the tab row stays visually centered */}
+        {/* Balances the back button so the scrollable row doesn't creep under it */}
         <View style={styles.backBtn} />
       </View>
     </View>
@@ -91,14 +150,15 @@ function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
 }
 
 export default function CodeEditorLayout() {
-  const { tenantId, tenantUid, appType, userPrompt, model, images } = useLocalSearchParams<{
-    tenantId: string;
-    tenantUid?: string;
-    appType?: AppTypeKey;
-    userPrompt?: string;
-    model?: string;
-    images?: string;
-  }>();
+  const { tenantId, tenantUid, appType, userPrompt, model, images } =
+    useLocalSearchParams<{
+      tenantId: string;
+      tenantUid?: string;
+      appType?: AppTypeKey;
+      userPrompt?: string;
+      model?: string;
+      images?: string;
+    }>();
   const { colorScheme } = useColorScheme();
   const t: AppColors = useAppTheme(colorScheme);
 
@@ -118,7 +178,11 @@ export default function CodeEditorLayout() {
 
   return (
     <CodeEditorProvider params={params}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={t.statusBar}
+      />
       <MaterialTopTabs
         tabBar={(props) => <CodeEditorTabBar {...(props as TabBarProps)} />}
         screenOptions={{ lazy: true, swipeEnabled: true }}
@@ -126,6 +190,12 @@ export default function CodeEditorLayout() {
         <MaterialTopTabs.Screen name="chat" options={{ title: 'Chat' }} />
         <MaterialTopTabs.Screen name="code" options={{ title: 'Code' }} />
         <MaterialTopTabs.Screen name="preview" options={{ title: 'Preview' }} />
+        <MaterialTopTabs.Screen
+          name="terminal"
+          options={{ title: 'Terminal' }}
+        />
+        <MaterialTopTabs.Screen name="data" options={{ title: 'Data' }} />
+        <MaterialTopTabs.Screen name="changes" options={{ title: 'Changes' }} />
       </MaterialTopTabs>
     </CodeEditorProvider>
   );
@@ -141,6 +211,10 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 4,
   },
+  tabScrollContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   backBtn: {
     width: 36,
     height: 36,
@@ -148,12 +222,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tab: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     height: '100%',
+    paddingHorizontal: 14,
   },
   tabLabel: {
     fontSize: 13,

@@ -1,4 +1,6 @@
-import CodeEditor, { CodeEditorSyntaxStyles } from '@rivascva/react-native-code-editor';
+import CodeEditor, {
+  CodeEditorSyntaxStyles,
+} from '@rivascva/react-native-code-editor';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -50,7 +52,9 @@ export function CodeEditorPane({ path }: { path: string }) {
   const t = useAppTheme(colorScheme);
   const { params, openFiles, setOpenFileContent } = useCodeEditor();
 
-  const [content, setContent] = React.useState<string | null>(openFiles[path] ?? null);
+  const [content, setContent] = React.useState<string | null>(
+    openFiles[path] ?? null
+  );
   const [loading, setLoading] = React.useState(openFiles[path] === undefined);
 
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,8 +148,14 @@ export function CodeEditorPane({ path }: { path: string }) {
           highlighterLineHeight: 20,
           inputLineHeight: 20,
         }}
-        language={languageForPath(path) as Parameters<typeof CodeEditor>[0]['language']}
-        syntaxStyle={colorScheme === 'dark' ? CodeEditorSyntaxStyles.atomOneDarkReasonable : CodeEditorSyntaxStyles.atomOneLight}
+        language={
+          languageForPath(path) as Parameters<typeof CodeEditor>[0]['language']
+        }
+        syntaxStyle={
+          colorScheme === 'dark'
+            ? CodeEditorSyntaxStyles.atomOneDarkReasonable
+            : CodeEditorSyntaxStyles.atomOneLight
+        }
         initialValue={content}
         onChange={handleChange}
         showLineNumbers
