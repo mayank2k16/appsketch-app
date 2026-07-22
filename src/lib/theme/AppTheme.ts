@@ -26,6 +26,16 @@ export const appTheme = {
     border:              'rgba(255,255,255,0.09)',
     statusBar:           'light-content' as const,
 
+    // ── Global toast (bottom, swipe-to-dismiss — ToastContainer) ──────────────
+    toastBg:             '#141414',
+    toastBorder:         'rgba(255,255,255,0.09)',
+    toastText:           '#F6F7FA',
+    toastTextSub:        'rgba(255,255,255,0.55)',
+    toastSuccess:        '#3DDC84',
+    toastError:          '#FF5C5C',
+    toastWarning:        '#FFC24B',
+    toastInfo:           '#6C5CE7',
+
     // ── Header ────────────────────────────────────────────────────────────────
     headerBg:            'rgba(10,10,12,0.96)',
     headerBorder:        'rgba(255,255,255,0.08)',
@@ -153,7 +163,7 @@ export const appTheme = {
     codeEditorTabActiveText: '#FFFFFF',
     codeEditorTabIndicator:  '#6C5CE7',
     codeEditorSurface:       '#141414',
-    codeEditorBg:            '#101012',
+    codeEditorBg:            '#0A0A0C',
     codeEditorBorder:        'rgba(255,255,255,0.09)',
     codeEditorGutterBg:      '#0D0D0F',
     codeEditorLineNumber:    'rgba(255,255,255,0.28)',
@@ -169,6 +179,26 @@ export const appTheme = {
     codeEditorConnectedDot:     '#3DDC84',
     codeEditorDisconnectedDot:  'rgba(255,255,255,0.30)',
     codeEditorDanger:           '#FF5C5C',
+
+    // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
+    // same recipe as the drawer panel and marketplace TemplateCard.
+    codeEditorGlassOverlay:        'rgba(32,26,46,0.55)',
+    codeEditorGlassBorder:         'rgba(255,255,255,0.14)',
+    codeEditorGlassBorderTop:      'rgba(255,255,255,0.26)',
+    codeEditorUserBubbleFrom:      '#7C6EF2',
+    codeEditorUserBubbleTo:        '#5B4BD1',
+
+    // Activity step timeline
+    codeEditorTimelineLine:        'rgba(255,255,255,0.09)',
+    codeEditorTimelineDone:        '#3DDC84',
+    codeEditorTimelineActive:      '#6C5CE7',
+    codeEditorToolChipBg:          'rgba(255,255,255,0.05)',
+    codeEditorToolChipBorder:      'rgba(255,255,255,0.10)',
+    codeEditorToolChipText:        'rgba(255,255,255,0.55)',
+    codeEditorToolChipActiveBg:    'rgba(108,92,231,0.16)',
+    codeEditorToolChipActiveBorder:'rgba(108,92,231,0.40)',
+    codeEditorToolChipActiveText:  '#C9C0FF',
+    codeEditorShimmerHighlight:    '#9C8CFF',
 
     // Terminal — line-type colouring mirrors Vite's `lineClass` classifier
     terminalBg:        '#0A0A0C',
@@ -211,6 +241,16 @@ export const appTheme = {
     accentSoft:          'rgba(108,92,231,0.10)',
     border:              'rgba(17,17,17,0.09)',
     statusBar:           'dark-content' as const,
+
+    // ── Global toast (bottom, swipe-to-dismiss — ToastContainer) ──────────────
+    toastBg:             '#FFFFFF',
+    toastBorder:         'rgba(17,17,17,0.09)',
+    toastText:           '#111111',
+    toastTextSub:        'rgba(17,17,17,0.55)',
+    toastSuccess:        '#1FA971',
+    toastError:          '#E0392B',
+    toastWarning:        '#C9860A',
+    toastInfo:           '#6C5CE7',
 
     // ── Header ────────────────────────────────────────────────────────────────
     headerBg:            'rgba(247,247,249,0.96)',
@@ -349,6 +389,26 @@ export const appTheme = {
     codeEditorConnectedDot:     '#1FA971',
     codeEditorDisconnectedDot:  'rgba(17,17,17,0.25)',
     codeEditorDanger:           '#E0392B',
+
+    // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
+    // same recipe as the drawer panel and marketplace TemplateCard.
+    codeEditorGlassOverlay:        'rgba(255,255,255,0.55)',
+    codeEditorGlassBorder:         'rgba(17,17,17,0.10)',
+    codeEditorGlassBorderTop:      'rgba(255,255,255,0.65)',
+    codeEditorUserBubbleFrom:      '#7C6EF2',
+    codeEditorUserBubbleTo:        '#5B4BD1',
+
+    // Activity step timeline
+    codeEditorTimelineLine:        'rgba(17,17,17,0.09)',
+    codeEditorTimelineDone:        '#1FA971',
+    codeEditorTimelineActive:      '#6C5CE7',
+    codeEditorToolChipBg:          'rgba(17,17,17,0.04)',
+    codeEditorToolChipBorder:      'rgba(17,17,17,0.09)',
+    codeEditorToolChipText:        'rgba(17,17,17,0.55)',
+    codeEditorToolChipActiveBg:    'rgba(108,92,231,0.10)',
+    codeEditorToolChipActiveBorder:'rgba(108,92,231,0.35)',
+    codeEditorToolChipActiveText:  '#4B3FC4',
+    codeEditorShimmerHighlight:    '#4B3FC4',
 
     // Terminal — light mode keeps a dark shell surface (real terminal
     // convention) even though the rest of the app is light, same as most

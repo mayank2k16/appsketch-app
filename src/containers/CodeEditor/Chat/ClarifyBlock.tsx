@@ -1,27 +1,32 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import type {
   ClarifyBlock as ClarifyBlockType,
+  ClarifyFontOption,
+  ClarifyPaletteOption,
   ClarifyQuestion,
 } from '@/api/coder';
 import type { AppColors } from '@/lib/theme';
 
-type Answers = Record<string, unknown>;
+type Selected = string | ClarifyPaletteOption | ClarifyFontOption | undefined;
+
+function isPaletteOption(v: unknown): v is ClarifyPaletteOption {
+  return !!v && typeof v === 'object' && 'colors' in (v as Record<string, unknown>);
+}
+function isFontOption(v: unknown): v is ClarifyFontOption {
+  return !!v && typeof v === 'object' && 'heading' in (v as Record<string, unknown>);
+}
 
 /** Renders the agent's design-brief clarify questionnaire (`ui_block.kind
- * === "clarify"`) — ported from Vite's `ClarifyBlock.jsx`. Supports the
- * question kinds the backend actually sends: choice / checklist (single vs
- * multi-select chips), palette (colour swatches), fonts (named options), and
- * a free-text fallback. Answers are collected locally and sent as one
- * `{"type":"interaction","value":{...}}` frame on submit. */
+ * === "clarify"`) — a faithful port of Vite's `ClarifyBlock.jsx`, matched
+ * against that file directly rather than guessed: `choice`/`checklist`
+ * options are plain strings (not `{id,label}` objects), `palette` options
+ * are `{name,colors,vibe}`, `fonts` options are `{name,heading,body}`, and
+ * every question (unless `allowCustom===false`) also accepts a typed custom
+ * answer that overrides the picked option. Submission always sends one
+ * human-readable string per question — never raw ids — because the agent
+ * reads these as design-brief text. */
 export function ClarifyBlockView({
   block,
   colors,
@@ -29,141 +34,178 @@ export function ClarifyBlockView({
 }: {
   block: ClarifyBlockType;
   colors: AppColors;
-  onSubmit: (value: Answers) => void;
+  onSubmit: (value: Record<string, string>) => void;
 }) {
-  const [answers, setAnswers] = React.useState<Answers>({});
+  const questions = block.questions ?? [];
 
-  function toggleChoice(question: ClarifyQuestion, optionId: string) {
-    setAnswers((prev) => {
-      if (question.kind === 'checklist') {
-        const current = new Set<string>((prev[question.id] as string[]) ?? []);
-        if (current.has(optionId)) current.delete(optionId);
-        else current.add(optionId);
-        return { ...prev, [question.id]: Array.from(current) };
+  const [sel, setSel] = React.useState<Record<string, Selected>>({});
+  const [checks, setChecks] = React.useState<Record<string, string[]>>(() => {
+    const init: Record<string, string[]> = {};
+    questions.forEach((q) => {
+      if (q.type === 'checklist' && Array.isArray(q.preselect) && q.preselect.length) {
+        const options = (q.options as string[] | undefined) ?? [];
+        init[q.id] = q.preselect.filter((o) => options.includes(o));
       }
-      return { ...prev, [question.id]: optionId };
+    });
+    return init;
+  });
+  const [custom, setCustom] = React.useState<Record<string, string>>({});
+
+  function pick(id: string, val: Selected) {
+    setSel((s) => ({ ...s, [id]: val }));
+  }
+  function setText(id: string, val: string) {
+    setCustom((c) => ({ ...c, [id]: val }));
+  }
+  function toggleCheck(id: string, opt: string) {
+    setChecks((c) => {
+      const cur = c[id] ?? [];
+      return { ...c, [id]: cur.includes(opt) ? cur.filter((o) => o !== opt) : [...cur, opt] };
     });
   }
 
-  function setText(question: ClarifyQuestion, value: string) {
-    setAnswers((prev) => ({ ...prev, [question.id]: value }));
+  function valueFor(q: ClarifyQuestion): string {
+    const c = (custom[q.id] ?? '').trim();
+    if (q.type === 'checklist') {
+      const extra = c ? c.split(',').map((s) => s.trim()).filter(Boolean) : [];
+      return [...(checks[q.id] ?? []), ...extra].join(', ');
+    }
+    if (c) return c;
+    const v = sel[q.id];
+    if (v == null) {
+      const first = (q.options as (string | ClarifyPaletteOption | ClarifyFontOption)[] | undefined)?.[0];
+      if (q.type === 'palette') return isPaletteOption(first) ? `${first.name} — ${first.colors.join(', ')}` : '';
+      if (q.type === 'fonts') return isFontOption(first) ? `${first.heading} / ${first.body}` : '';
+      return (first as string) ?? '';
+    }
+    if (isPaletteOption(v)) return `${v.name} — ${v.colors.join(', ')}`;
+    if (isFontOption(v)) return `${v.heading} / ${v.body}`;
+    return v;
   }
 
-  function isSelected(question: ClarifyQuestion, optionId: string) {
-    const val = answers[question.id];
-    if (question.kind === 'checklist')
-      return Array.isArray(val) && (val as string[]).includes(optionId);
-    return val === optionId;
+  function submit() {
+    const out: Record<string, string> = {};
+    questions.forEach((q) => {
+      out[q.id] = valueFor(q);
+    });
+    onSubmit(out);
   }
 
   return (
-    <View
-      style={[
-        st.card,
-        {
-          backgroundColor: colors.codeEditorSurface,
-          borderColor: colors.codeEditorBorder,
-        },
-      ]}
-    >
-      {block.intro ? (
-        <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text>
-      ) : null}
+    <View style={[st.card, { backgroundColor: colors.codeEditorSurface, borderColor: colors.codeEditorBorder }]}>
+      {block.intro ? <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text> : null}
 
-      {block.questions.map((question, qi) => (
-        <View key={question.id ?? `q-${qi}`} style={st.questionBlock}>
-          <Text style={[st.label, { color: colors.textSub }]}>
-            {question.label}
-          </Text>
+      {questions.map((q) => (
+        <View key={q.id} style={st.questionBlock}>
+          <Text style={[st.label, { color: colors.textSub }]}>{q.label}</Text>
 
-          {question.kind === 'text' ? (
-            <TextInput
-              value={(answers[question.id] as string) ?? ''}
-              onChangeText={(v) => setText(question, v)}
-              placeholder="Type your answer…"
-              placeholderTextColor={colors.codeEditorTextMuted}
-              style={[
-                st.textInput,
-                { color: colors.text, borderColor: colors.codeEditorBorder },
-              ]}
-            />
-          ) : question.kind === 'palette' ? (
+          {q.type === 'palette' ? (
             <View style={st.optionRow}>
-              {(question.options ?? []).map((opt, oi) => (
-                <TouchableOpacity
-                  key={opt.id ?? `${question.id ?? qi}-${oi}`}
-                  onPress={() => toggleChoice(question, opt.id)}
-                  style={[
-                    st.paletteSwatch,
-                    {
-                      borderColor: isSelected(question, opt.id)
-                        ? colors.accent
-                        : colors.codeEditorBorder,
-                    },
-                  ]}
-                >
-                  <View style={st.paletteColors}>
-                    {(opt.colors ?? [opt.value ?? '#888'])
-                      .slice(0, 3)
-                      .map((c, i) => (
-                        <View
-                          key={i}
-                          style={[st.paletteDot, { backgroundColor: c }]}
-                        />
-                      ))}
-                  </View>
-                  <Text
-                    style={[st.optionLabel, { color: colors.text }]}
-                    numberOfLines={1}
-                  >
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <View style={st.optionRow}>
-              {(question.options ?? []).map((opt, oi) => {
-                const selected = isSelected(question, opt.id);
+              {((q.options as ClarifyPaletteOption[] | undefined) ?? []).map((p) => {
+                const current = sel[q.id];
+                const selected = isPaletteOption(current) && current.name === p.name;
                 return (
                   <TouchableOpacity
-                    key={opt.id ?? `${question.id ?? qi}-${oi}`}
-                    onPress={() => toggleChoice(question, opt.id)}
+                    key={p.name}
+                    onPress={() => pick(q.id, p)}
                     style={[
-                      st.chip,
-                      {
-                        backgroundColor: selected
-                          ? colors.accent
-                          : colors.codeEditorTabBg,
-                        borderColor: selected
-                          ? colors.accent
-                          : colors.codeEditorBorder,
-                      },
+                      st.paletteSwatch,
+                      { borderColor: selected ? colors.accent : colors.codeEditorBorder },
                     ]}
                   >
-                    {selected ? (
-                      <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                    ) : null}
-                    <Text
-                      style={[
-                        st.chipLabel,
-                        { color: selected ? '#FFFFFF' : colors.text },
-                      ]}
-                    >
-                      {opt.label}
+                    <View style={st.paletteColors}>
+                      {p.colors.slice(0, 4).map((c, i) => (
+                        <View key={`${c}-${i}`} style={[st.paletteDot, { backgroundColor: c }]} />
+                      ))}
+                    </View>
+                    <Text style={[st.optionLabel, { color: colors.text }]} numberOfLines={1}>
+                      {p.name}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
-          )}
+          ) : q.type === 'fonts' ? (
+            <View style={st.optionRow}>
+              {((q.options as ClarifyFontOption[] | undefined) ?? []).map((f) => {
+                const current = sel[q.id];
+                const selected = isFontOption(current) && current.name === f.name;
+                return (
+                  <TouchableOpacity
+                    key={f.name}
+                    onPress={() => pick(q.id, f)}
+                    style={[
+                      st.fontCard,
+                      { borderColor: selected ? colors.accent : colors.codeEditorBorder },
+                    ]}
+                  >
+                    <Text style={[st.fontHeading, { color: colors.text }]} numberOfLines={1}>
+                      {f.heading}
+                    </Text>
+                    <Text style={{ color: colors.textSub, fontSize: 10.5 }} numberOfLines={1}>
+                      {f.body}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : q.type === 'checklist' ? (
+            <View style={st.optionRow}>
+              {((q.options as string[] | undefined) ?? []).map((opt) => {
+                const on = (checks[q.id] ?? []).includes(opt);
+                return (
+                  <TouchableOpacity
+                    key={opt}
+                    onPress={() => toggleCheck(q.id, opt)}
+                    style={[
+                      st.chip,
+                      {
+                        backgroundColor: on ? colors.accent : colors.codeEditorTabBg,
+                        borderColor: on ? colors.accent : colors.codeEditorBorder,
+                      },
+                    ]}
+                  >
+                    <Text style={[st.chipLabel, { color: on ? '#FFFFFF' : colors.text }]}>{opt}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : q.type === 'choice' ? (
+            <View style={st.optionRow}>
+              {((q.options as string[] | undefined) ?? []).map((opt) => {
+                const selected = sel[q.id] === opt;
+                return (
+                  <TouchableOpacity
+                    key={opt}
+                    onPress={() => pick(q.id, opt)}
+                    style={[
+                      st.chip,
+                      {
+                        backgroundColor: selected ? colors.accent : colors.codeEditorTabBg,
+                        borderColor: selected ? colors.accent : colors.codeEditorBorder,
+                      },
+                    ]}
+                  >
+                    <Text style={[st.chipLabel, { color: selected ? '#FFFFFF' : colors.text }]}>{opt}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : null}
+
+          {q.allowCustom !== false ? (
+            <TextInput
+              value={custom[q.id] ?? ''}
+              onChangeText={(v) => setText(q.id, v)}
+              placeholder={q.type === 'checklist' ? 'add your own (comma separated)…' : 'or type your own…'}
+              placeholderTextColor={colors.codeEditorTextMuted}
+              style={[st.textInput, { color: colors.text, borderColor: colors.codeEditorBorder }]}
+            />
+          ) : null}
         </View>
       ))}
 
-      <TouchableOpacity
-        onPress={() => onSubmit(answers)}
-        style={[st.submitBtn, { backgroundColor: colors.accent }]}
-      >
+      <TouchableOpacity onPress={submit} style={[st.submitBtn, { backgroundColor: colors.accent }]}>
         <Text style={st.submitLabel}>{block.submitLabel ?? 'Continue'}</Text>
       </TouchableOpacity>
     </View>
@@ -199,9 +241,6 @@ const st = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 12,
@@ -217,20 +256,32 @@ const st = StyleSheet.create({
     padding: 8,
     alignItems: 'center',
     gap: 6,
-    width: 76,
+    width: 84,
   },
   paletteColors: {
     flexDirection: 'row',
     gap: 2,
   },
   paletteDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
   optionLabel: {
     fontSize: 10.5,
     fontWeight: '600',
+  },
+  fontCard: {
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 3,
+    minWidth: 110,
+  },
+  fontHeading: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   textInput: {
     borderWidth: 1,

@@ -32,6 +32,22 @@ export function AppsScreen() {
     });
   }
 
+  // Same `/app-preview` route the Marketplace's "Use template" flow opens —
+  // same header/WebView/copy-link behavior, just with an existing tenant's
+  // uuid instead of creating a new one from a template. Falls back to the
+  // tenant's numeric id when the API hasn't returned a `uuid` for it.
+  function handleViewStore(tenant: TenantSummary) {
+    router.push({
+      pathname: '/app-preview',
+      params: { uuid: tenant.uuid || String(tenant.id), name: tenant.title },
+    } as never);
+  }
+
+
+  function handleViewCrm(tenant: TenantSummary) {
+
+  }
+
   if (tenantsQuery.isLoading) {
     return (
       <View style={st.center}>
@@ -47,7 +63,13 @@ export function AppsScreen() {
       data={tenants}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => (
-        <StoreCard tenant={item} loading={attachingId === item.id} onViewCms={() => handleViewCms(item)} />
+        <StoreCard
+          tenant={item}
+          loading={attachingId === item.id}
+          onViewCms={() => handleViewCms(item)}
+          onViewStore={() => handleViewStore(item)}
+          onViewCrm={(() => handleViewCrm(item))}
+        />
       )}
       contentContainerStyle={{ paddingTop: 4, paddingBottom: 24 }}
       ListEmptyComponent={

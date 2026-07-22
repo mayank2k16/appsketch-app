@@ -1,6 +1,4 @@
-import CodeEditor, {
-  CodeEditorSyntaxStyles,
-} from '@rivascva/react-native-code-editor';
+import CodeEditor from '@rivascva/react-native-code-editor';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -9,6 +7,7 @@ import { getFile, saveFile } from '@/api/coder';
 import { useAppTheme } from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
+import { vsDarkSyntaxStyle, vsLightSyntaxStyle } from './codeEditorSyntaxTheme';
 
 const SAVE_DEBOUNCE_MS = 700;
 
@@ -135,30 +134,31 @@ export function CodeEditorPane({ path }: { path: string }) {
   return (
     <View style={[st.root, { backgroundColor: t.codeEditorBg }]}>
       <CodeEditor
-        // Remounts per file — the component is uncontrolled (`initialValue`
-        // only), so switching files needs a fresh instance rather than a
-        // value update.
         key={path}
         style={{
+          width: '100%',
+          height: '100%',
           fontSize: 13,
           padding: 12,
           backgroundColor: t.codeEditorBg,
           lineNumbersColor: t.codeEditorLineNumber,
           lineNumbersBackgroundColor: t.codeEditorGutterBg,
-          highlighterLineHeight: 20,
+          highlighterLineHeight: 22,
           inputLineHeight: 20,
         }}
         language={
           languageForPath(path) as Parameters<typeof CodeEditor>[0]['language']
         }
         syntaxStyle={
-          colorScheme === 'dark'
-            ? CodeEditorSyntaxStyles.atomOneDarkReasonable
-            : CodeEditorSyntaxStyles.atomOneLight
+          (colorScheme === 'dark'
+            ? vsDarkSyntaxStyle
+            : vsLightSyntaxStyle) as Parameters<
+            typeof CodeEditor
+          >[0]['syntaxStyle']
         }
         initialValue={content}
         onChange={handleChange}
-        showLineNumbers
+        showLineNumbers={true}
       />
     </View>
   );

@@ -38,25 +38,29 @@ export type WorkspaceFile = {
   is_binary?: boolean;
 };
 
-export type ClarifyQuestionKind =
-  | 'choice'
-  | 'palette'
-  | 'fonts'
-  | 'checklist'
-  | 'text';
+/**
+ * Ground truth is Vite's `CoderWorkspace/ClarifyBlock.jsx`, not a guess —
+ * `choice`/`checklist` options are plain strings (not `{id,label}` objects);
+ * `palette`/`fonts` options are their own distinct shapes with no `id` field
+ * at all. Rendering these as if every option were `{id,label}` (an earlier,
+ * unverified assumption) made every option compare `undefined === undefined`
+ * and render as permanently "selected" with a blank label.
+ */
+export type ClarifyQuestionType = 'choice' | 'palette' | 'fonts' | 'checklist' | 'text';
 
-export type ClarifyQuestionOption = {
-  id: string;
-  label: string;
-  value?: string;
-  colors?: string[];
-};
+export type ClarifyPaletteOption = { name: string; colors: string[]; vibe?: string };
+export type ClarifyFontOption = { name: string; heading: string; body: string };
 
 export type ClarifyQuestion = {
   id: string;
-  kind: ClarifyQuestionKind;
+  type: ClarifyQuestionType;
   label: string;
-  options?: ClarifyQuestionOption[];
+  /** `choice`/`checklist`: plain strings. `palette`/`fonts`: typed objects. Absent for `text`. */
+  options?: string[] | ClarifyPaletteOption[] | ClarifyFontOption[];
+  /** `checklist` only — budget-aware server defaults, pre-checked on open. */
+  preselect?: string[];
+  /** Whether to also show a free-text input alongside the options. Defaults to true. */
+  allowCustom?: boolean;
 };
 
 export type ClarifyBlock = {

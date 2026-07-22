@@ -1,4 +1,5 @@
 import { useColorScheme } from 'nativewind';
+import * as Clipboard from 'expo-clipboard';
 import * as React from 'react';
 import { ActivityIndicator, Animated, Easing, Linking, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -6,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useUseTemplate } from '@/api/templates';
+import { toast } from '@/lib/toast';
 import { useAppTheme } from '@/lib/theme';
 
 // `react-native-webview` has no RN-Web implementation (same guard as the CMS's
@@ -84,6 +86,12 @@ export function AppPreviewScreen() {
     if (url) Linking.openURL(url);
   }
 
+  async function handleCopyUrl() {
+    if (!url) return;
+    await Clipboard.setStringAsync(url);
+    toast.success("Store link copied. Paste it into your browser to open the store.");
+  }
+
   function handleRetryLoad() {
     setWebStatus('loading');
     setHasLoadedOnce(false);
@@ -121,7 +129,10 @@ export function AppPreviewScreen() {
         <Text style={[st.title, { color: t.text }]} numberOfLines={1}>
           {name || 'Preview'}
         </Text>
-        <TouchableOpacity onPress={handleOpenInBrowser} hitSlop={10} style={st.openBtn} disabled={!url}>
+        <TouchableOpacity onPress={handleCopyUrl} hitSlop={10} style={st.headerIconBtn} disabled={!url}>
+          <Ionicons name="copy-outline" size={19} color={url ? t.text : t.textMuted} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleOpenInBrowser} hitSlop={10} style={st.headerIconBtn} disabled={!url}>
           <Ionicons name="open-outline" size={20} color={url ? t.text : t.textMuted} />
         </TouchableOpacity>
       </View>
@@ -347,10 +358,10 @@ const st = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    gap: 10,
+    gap: 2,
   },
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  openBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  headerIconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1, fontSize: 15, fontWeight: '700', textAlign: 'center' },
   body: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },

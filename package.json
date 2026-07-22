@@ -167,6 +167,11 @@
     "url": "git+https://github.com/obytes/react-native-template-obytes.git"
   },
   "packageManager": "pnpm@10.12.3",
+  "pnpm": {
+    "patchedDependencies": {
+      "@rivascva/react-native-code-editor@1.2.2": "patches/@rivascva__react-native-code-editor@1.2.2.patch"
+    }
+  },
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {

@@ -42,14 +42,14 @@ const MaterialTopTabs = withLayoutContext<
 >(Navigator);
 
 const TAB_ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> =
-  {
-    chat: 'chatbubble-ellipses-outline',
-    code: 'code-slash-outline',
-    preview: 'phone-portrait-outline',
-    terminal: 'terminal-outline',
-    data: 'server-outline',
-    changes: 'git-branch-outline',
-  };
+{
+  chat: 'chatbubble-ellipses-outline',
+  code: 'code-slash-outline',
+  preview: 'phone-portrait-outline',
+  terminal: 'terminal-outline',
+  data: 'server-outline',
+  changes: 'git-branch-outline',
+};
 
 type TabBarProps = {
   state: TabNavigationState<ParamListBase>;
@@ -87,10 +87,6 @@ function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
         >
           <Ionicons name="chevron-back" size={22} color={t.text} />
         </TouchableOpacity>
-
-        {/* Horizontally scrollable — 6 tabs (Chat/Code/Preview/Terminal/Data/
-            Changes) don't fit a fixed-width row on a phone; the first 3 stay
-            reachable at a glance, the rest a swipe away. */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -129,21 +125,10 @@ function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
                 >
                   {label}
                 </Text>
-                {isFocused && (
-                  <View
-                    style={[
-                      styles.indicator,
-                      { backgroundColor: t.codeEditorTabIndicator },
-                    ]}
-                  />
-                )}
               </Pressable>
             );
           })}
         </ScrollView>
-
-        {/* Balances the back button so the scrollable row doesn't creep under it */}
-        <View style={styles.backBtn} />
       </View>
     </View>
   );
@@ -235,7 +220,7 @@ const styles = StyleSheet.create({
   },
   indicator: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -1,
     left: 12,
     right: 12,
     height: 2,

@@ -13,7 +13,7 @@ import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: W, height: H } = Dimensions.get('window');
-const HERO_H = H / 2.3;
+const HERO_H = H / 2.4;
 
 // ─── Gradient heading line ─────────────────────────────────────────────────────
 // Reference recording shows each line running flat-white through its first
