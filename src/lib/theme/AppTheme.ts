@@ -26,6 +26,16 @@ export const appTheme = {
     border:              'rgba(255,255,255,0.09)',
     statusBar:           'light-content' as const,
 
+    // ── Global toast (bottom, swipe-to-dismiss — ToastContainer) ──────────────
+    toastBg:             '#141414',
+    toastBorder:         'rgba(255,255,255,0.09)',
+    toastText:           '#F6F7FA',
+    toastTextSub:        'rgba(255,255,255,0.55)',
+    toastSuccess:        '#3DDC84',
+    toastError:          '#FF5C5C',
+    toastWarning:        '#FFC24B',
+    toastInfo:           '#6C5CE7',
+
     // ── Header ────────────────────────────────────────────────────────────────
     headerBg:            'rgba(10,10,12,0.96)',
     headerBorder:        'rgba(255,255,255,0.08)',
@@ -144,6 +154,78 @@ export const appTheme = {
     templatesTagText:    '#B4A9F5',
     templatesSkeletonBase:      'rgba(255,255,255,0.08)',
     templatesSkeletonHighlight: 'rgba(255,255,255,0.16)',
+
+    // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
+    codeEditorTabBarBg:      '#0A0A0C',
+    codeEditorTabBg:         'rgba(255,255,255,0.05)',
+    codeEditorTabBorder:     'rgba(255,255,255,0.10)',
+    codeEditorTabText:       'rgba(255,255,255,0.55)',
+    codeEditorTabActiveText: '#FFFFFF',
+    codeEditorTabIndicator:  '#6C5CE7',
+    codeEditorSurface:       '#141414',
+    codeEditorBg:            '#0A0A0C',
+    codeEditorBorder:        'rgba(255,255,255,0.09)',
+    codeEditorGutterBg:      '#0D0D0F',
+    codeEditorLineNumber:    'rgba(255,255,255,0.28)',
+    codeEditorText:          '#F6F7FA',
+    codeEditorTextMuted:     'rgba(255,255,255,0.45)',
+    codeEditorChatUserBg:       '#6C5CE7',
+    codeEditorChatUserText:     '#FFFFFF',
+    codeEditorChatAssistantBg:  '#1C1C1C',
+    codeEditorChatAssistantText:'#F6F7FA',
+    codeEditorActivityBg:       'rgba(255,255,255,0.04)',
+    codeEditorActivityBorder:   'rgba(255,255,255,0.08)',
+    codeEditorActivityText:     'rgba(255,255,255,0.60)',
+    codeEditorConnectedDot:     '#3DDC84',
+    codeEditorDisconnectedDot:  'rgba(255,255,255,0.30)',
+    codeEditorDanger:           '#FF5C5C',
+
+    // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
+    // same recipe as the drawer panel and marketplace TemplateCard.
+    codeEditorGlassOverlay:        'rgba(32,26,46,0.55)',
+    codeEditorGlassBorder:         'rgba(255,255,255,0.14)',
+    codeEditorGlassBorderTop:      'rgba(255,255,255,0.26)',
+    codeEditorUserBubbleFrom:      '#7C6EF2',
+    codeEditorUserBubbleTo:        '#5B4BD1',
+
+    // Activity step timeline
+    codeEditorTimelineLine:        'rgba(255,255,255,0.09)',
+    codeEditorTimelineDone:        '#3DDC84',
+    codeEditorTimelineActive:      '#6C5CE7',
+    codeEditorToolChipBg:          'rgba(255,255,255,0.05)',
+    codeEditorToolChipBorder:      'rgba(255,255,255,0.10)',
+    codeEditorToolChipText:        'rgba(255,255,255,0.55)',
+    codeEditorToolChipActiveBg:    'rgba(108,92,231,0.16)',
+    codeEditorToolChipActiveBorder:'rgba(108,92,231,0.40)',
+    codeEditorToolChipActiveText:  '#C9C0FF',
+    codeEditorShimmerHighlight:    '#9C8CFF',
+
+    // Terminal — line-type colouring mirrors Vite's `lineClass` classifier
+    terminalBg:        '#0A0A0C',
+    terminalText:      'rgba(255,255,255,0.82)',
+    terminalCmd:        '#8AB4FF',
+    terminalOk:         '#3DDC84',
+    terminalErr:        '#FF6B6B',
+    terminalWarn:       '#FFC24B',
+    terminalInfo:       'rgba(255,255,255,0.50)',
+    terminalInputBg:    'rgba(255,255,255,0.06)',
+    terminalInputBorder:'rgba(255,255,255,0.12)',
+
+    // Collections / CMS
+    collectionsChipBg:      'rgba(255,255,255,0.05)',
+    collectionsChipActiveBg:'#6C5CE7',
+    collectionsBadgeBg:     'rgba(108,92,231,0.20)',
+    collectionsBadgeText:   '#B4A9F5',
+    collectionsMethodGet:   '#3DDC84',
+    collectionsMethodPost:  '#4C8BFF',
+    collectionsMethodOther: '#FFC24B',
+
+    // Changes / git diff
+    diffAddedBg:   'rgba(61,220,132,0.14)',
+    diffAddedText: '#3DDC84',
+    diffRemovedBg: 'rgba(255,92,92,0.14)',
+    diffRemovedText:'#FF5C5C',
+    diffMeta:      'rgba(255,255,255,0.40)',
   },
 
   light: {
@@ -159,6 +241,16 @@ export const appTheme = {
     accentSoft:          'rgba(108,92,231,0.10)',
     border:              'rgba(17,17,17,0.09)',
     statusBar:           'dark-content' as const,
+
+    // ── Global toast (bottom, swipe-to-dismiss — ToastContainer) ──────────────
+    toastBg:             '#FFFFFF',
+    toastBorder:         'rgba(17,17,17,0.09)',
+    toastText:           '#111111',
+    toastTextSub:        'rgba(17,17,17,0.55)',
+    toastSuccess:        '#1FA971',
+    toastError:          '#E0392B',
+    toastWarning:        '#C9860A',
+    toastInfo:           '#6C5CE7',
 
     // ── Header ────────────────────────────────────────────────────────────────
     headerBg:            'rgba(247,247,249,0.96)',
@@ -272,6 +364,80 @@ export const appTheme = {
     templatesTagText:    '#6C5CE7',
     templatesSkeletonBase:      'rgba(17,17,17,0.06)',
     templatesSkeletonHighlight: 'rgba(17,17,17,0.11)',
+
+    // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
+    codeEditorTabBarBg:      '#F7F7F9',
+    codeEditorTabBg:         'rgba(17,17,17,0.04)',
+    codeEditorTabBorder:     'rgba(17,17,17,0.09)',
+    codeEditorTabText:       'rgba(17,17,17,0.55)',
+    codeEditorTabActiveText: '#111111',
+    codeEditorTabIndicator:  '#6C5CE7',
+    codeEditorSurface:       '#FFFFFF',
+    codeEditorBg:            '#FBFBFC',
+    codeEditorBorder:        'rgba(17,17,17,0.09)',
+    codeEditorGutterBg:      '#F1F1F3',
+    codeEditorLineNumber:    'rgba(17,17,17,0.32)',
+    codeEditorText:          '#111111',
+    codeEditorTextMuted:     'rgba(17,17,17,0.45)',
+    codeEditorChatUserBg:       '#6C5CE7',
+    codeEditorChatUserText:     '#FFFFFF',
+    codeEditorChatAssistantBg:  '#FFFFFF',
+    codeEditorChatAssistantText:'#111111',
+    codeEditorActivityBg:       'rgba(17,17,17,0.03)',
+    codeEditorActivityBorder:   'rgba(17,17,17,0.08)',
+    codeEditorActivityText:     'rgba(17,17,17,0.60)',
+    codeEditorConnectedDot:     '#1FA971',
+    codeEditorDisconnectedDot:  'rgba(17,17,17,0.25)',
+    codeEditorDanger:           '#E0392B',
+
+    // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
+    // same recipe as the drawer panel and marketplace TemplateCard.
+    codeEditorGlassOverlay:        'rgba(255,255,255,0.55)',
+    codeEditorGlassBorder:         'rgba(17,17,17,0.10)',
+    codeEditorGlassBorderTop:      'rgba(255,255,255,0.65)',
+    codeEditorUserBubbleFrom:      '#7C6EF2',
+    codeEditorUserBubbleTo:        '#5B4BD1',
+
+    // Activity step timeline
+    codeEditorTimelineLine:        'rgba(17,17,17,0.09)',
+    codeEditorTimelineDone:        '#1FA971',
+    codeEditorTimelineActive:      '#6C5CE7',
+    codeEditorToolChipBg:          'rgba(17,17,17,0.04)',
+    codeEditorToolChipBorder:      'rgba(17,17,17,0.09)',
+    codeEditorToolChipText:        'rgba(17,17,17,0.55)',
+    codeEditorToolChipActiveBg:    'rgba(108,92,231,0.10)',
+    codeEditorToolChipActiveBorder:'rgba(108,92,231,0.35)',
+    codeEditorToolChipActiveText:  '#4B3FC4',
+    codeEditorShimmerHighlight:    '#4B3FC4',
+
+    // Terminal — light mode keeps a dark shell surface (real terminal
+    // convention) even though the rest of the app is light, same as most
+    // code editors' console panes.
+    terminalBg:        '#16161A',
+    terminalText:      'rgba(255,255,255,0.85)',
+    terminalCmd:        '#6C9BFF',
+    terminalOk:         '#1FA971',
+    terminalErr:        '#E0392B',
+    terminalWarn:       '#C9860A',
+    terminalInfo:       'rgba(255,255,255,0.50)',
+    terminalInputBg:    'rgba(255,255,255,0.08)',
+    terminalInputBorder:'rgba(255,255,255,0.14)',
+
+    // Collections / CMS
+    collectionsChipBg:      'rgba(17,17,17,0.04)',
+    collectionsChipActiveBg:'#6C5CE7',
+    collectionsBadgeBg:     'rgba(108,92,231,0.12)',
+    collectionsBadgeText:   '#6C5CE7',
+    collectionsMethodGet:   '#1FA971',
+    collectionsMethodPost:  '#3B82F6',
+    collectionsMethodOther: '#C9860A',
+
+    // Changes / git diff
+    diffAddedBg:   'rgba(31,169,113,0.10)',
+    diffAddedText: '#1FA971',
+    diffRemovedBg: 'rgba(224,57,43,0.10)',
+    diffRemovedText:'#E0392B',
+    diffMeta:      'rgba(17,17,17,0.35)',
   },
 } as const;
 

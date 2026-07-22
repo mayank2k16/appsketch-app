@@ -12,6 +12,7 @@ export type TenantTemplateConfig = {
 
 export type TenantSummary = {
   id: number | string;
+  uuid?: string;
   title: string;
   website_url?: string;
   logo?: string;

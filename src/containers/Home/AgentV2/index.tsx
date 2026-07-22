@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Easing,
   Modal,
@@ -17,9 +19,10 @@ import {
   View,
 } from 'react-native';
 
+import { createCoderTenant } from '@/api/coder';
 import { F } from '@/lib/fonts';
-import { toast } from '@/lib/toast';
 import { useAppTheme } from '@/lib/theme';
+import { toast } from '@/lib/toast';
 
 const RADIUS = 15;
 const BORDER_W = 2;
@@ -27,7 +30,12 @@ const MAX_IMAGES = 3;
 
 type AppTypeKey = 'web' | 'mobile' | 'game';
 
-const APP_TABS: { key: AppTypeKey; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; placeholder: string }[] = [
+const APP_TABS: {
+  key: AppTypeKey;
+  label: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  placeholder: string;
+}[] = [
   {
     key: 'web',
     label: 'Web App',
@@ -51,9 +59,17 @@ const APP_TABS: { key: AppTypeKey; label: string; icon: React.ComponentProps<typ
 // Mirrors the web builder's model list (`coderModels.js`) — no tier/lock UI
 // here since Home has no auth/plan context wired in yet, just plain options.
 const MODELS = [
-  { value: 'minimaxai/minimax-m3', label: 'MiniMax M3 · free', context: 1_000_000 },
+  {
+    value: 'minimaxai/minimax-m3',
+    label: 'MiniMax M3 · free',
+    context: 1_000_000,
+  },
   { value: 'z-ai/glm-5.2', label: 'GLM 5.2 · free', context: 200_000 },
-  { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron · free', context: 128_000 },
+  {
+    value: 'nvidia/nemotron-3-ultra-550b-a55b',
+    label: 'Nemotron · free',
+    context: 128_000,
+  },
   { value: 'gpt-4.1', label: 'GPT-4.1 · best quality', context: 1_047_576 },
   { value: 'gpt-4.1-mini', label: 'GPT-4.1 mini · fast', context: 1_047_576 },
   { value: 'gpt-4o-mini', label: 'GPT-4o mini · cheapest', context: 128_000 },
@@ -63,7 +79,8 @@ const MODELS = [
 const DEFAULT_MODEL = MODELS[0].value;
 
 function fmtContext(tokens: number): string {
-  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(tokens % 1_000_000 === 0 ? 0 : 1)}M ctx`;
+  if (tokens >= 1_000_000)
+    return `${(tokens / 1_000_000).toFixed(tokens % 1_000_000 === 0 ? 0 : 1)}M ctx`;
   if (tokens >= 1_000) return `${Math.round(tokens / 1_000)}K ctx`;
   return `${tokens} ctx`;
 }
@@ -78,11 +95,14 @@ export function AgentV2({
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
 
+  const router = useRouter();
+
   const [appType, setAppType] = React.useState<AppTypeKey>('web');
   const [prompt, setPrompt] = React.useState('');
   const [model, setModel] = React.useState(DEFAULT_MODEL);
   const [images, setImages] = React.useState<string[]>([]);
   const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
 
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
@@ -94,8 +114,17 @@ export function AgentV2({
     const loop = Animated.loop(
       Animated.sequence([
         Animated.delay(1200),
-        Animated.timing(sheenX, { toValue: 1, duration: 850, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(sheenX, { toValue: -1, duration: 0, useNativeDriver: true }),
+        Animated.timing(sheenX, {
+          toValue: 1,
+          duration: 850,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheenX, {
+          toValue: -1,
+          duration: 0,
+          useNativeDriver: true,
+        }),
         Animated.delay(2600),
       ])
     );
@@ -116,7 +145,9 @@ export function AgentV2({
       quality: 0.8,
     });
     if (result.canceled || result.assets.length === 0) return;
-    setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_IMAGES));
+    setImages((prev) =>
+      [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_IMAGES)
+    );
     onAttachPress?.();
   }
 
@@ -124,7 +155,39 @@ export function AgentV2({
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  const washColor = t.agentSendGradient[1];
+  async function handleSend() {
+    const text = prompt.trim();
+    if (!text || sending) return;
+
+    if (appType === 'game') {
+      toast.error('Game builds are coming soon — try Web or Mobile for now.');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const tenant = await createCoderTenant({
+        title: text.slice(0, 60),
+        appType,
+      });
+      router.push({
+        pathname: '/code-editor/chat',
+        params: {
+          tenantId: String(tenant.id),
+          tenantUid: tenant.uuid,
+          appType,
+          userPrompt: text,
+          model,
+          images: JSON.stringify(images),
+        },
+      });
+      onSendPress?.();
+    } catch {
+      toast.error("Couldn't start your build. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <View style={s.wrap}>
@@ -146,17 +209,38 @@ export function AgentV2({
                     },
                   ]}
                 >
-                  <Ionicons name={tab.icon} size={13} color={active ? t.text : t.agentTabIcon} />
-                  <Text style={[s.tabOutsideLabel, { color: active ? t.text : t.agentTabText }]} numberOfLines={1}>
+                  <Ionicons
+                    name={tab.icon}
+                    size={13}
+                    color={active ? t.text : t.agentTabIcon}
+                  />
+                  <Text
+                    style={[
+                      s.tabOutsideLabel,
+                      { color: active ? t.text : t.agentTabText },
+                    ]}
+                    numberOfLines={1}
+                  >
                     {tab.label}
+                    {tab.key === 'game' ? ' · soon' : ''}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <View style={[s.shadowWrap, Platform.select({ ios: { shadowColor: '#000' }, default: {} })]}>
-            <View style={[s.cardC, { backgroundColor: t.card, borderColor: t.tagBorder }]}>
+          <View
+            style={[
+              s.shadowWrap,
+              Platform.select({ ios: { shadowColor: '#000' }, default: {} }),
+            ]}
+          >
+            <View
+              style={[
+                s.cardC,
+                { backgroundColor: t.card, borderColor: t.tagBorder },
+              ]}
+            >
               {/* Top spotlight — a soft accent-tinted glow fading down from
                   the top edge, standing in for the reference's radial glow
                   since RN's LinearGradient is linear-only. */}
@@ -180,10 +264,28 @@ export function AgentV2({
                 {images.length > 0 && (
                   <View style={s.thumbRow}>
                     {images.map((uri, i) => (
-                      <View key={`${uri}-${i}`} style={[s.thumb, { borderColor: t.agentInputBorder }]}>
-                        <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
-                        <Pressable onPress={() => removeImage(i)} style={[s.thumbRemove, { backgroundColor: t.agentBtnBg }]} hitSlop={6}>
-                          <Ionicons name="close" size={11} color={t.agentBtnIcon} />
+                      <View
+                        key={`${uri}-${i}`}
+                        style={[s.thumb, { borderColor: t.agentInputBorder }]}
+                      >
+                        <Image
+                          source={{ uri }}
+                          style={s.thumbImg}
+                          contentFit="cover"
+                        />
+                        <Pressable
+                          onPress={() => removeImage(i)}
+                          style={[
+                            s.thumbRemove,
+                            { backgroundColor: t.agentBtnBg },
+                          ]}
+                          hitSlop={6}
+                        >
+                          <Ionicons
+                            name="close"
+                            size={11}
+                            color={t.agentBtnIcon}
+                          />
                         </Pressable>
                       </View>
                     ))}
@@ -194,23 +296,47 @@ export function AgentV2({
                   <TouchableOpacity
                     onPress={() => setModelPickerOpen(true)}
                     activeOpacity={0.7}
-                    style={[s.modelChip, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
+                    style={[
+                      s.modelChip,
+                      {
+                        backgroundColor: t.agentBtnBg,
+                        borderColor: t.agentBtnBorder,
+                      },
+                    ]}
                   >
-                    <Text style={[s.modelChipLabel, { color: t.agentBtnIcon }]} numberOfLines={1}>
+                    <Text
+                      style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
+                      numberOfLines={1}
+                    >
                       {selectedModel.label}
                     </Text>
-                    <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
+                    <Ionicons
+                      name="chevron-down"
+                      size={13}
+                      color={t.agentBtnIcon}
+                    />
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={handleAttach}
                     activeOpacity={0.7}
                     disabled={images.length >= MAX_IMAGES}
-                    style={[s.circleBtn, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
+                    style={[
+                      s.circleBtn,
+                      {
+                        backgroundColor: t.agentBtnBg,
+                        borderColor: t.agentBtnBorder,
+                      },
+                    ]}
                   >
                     <Ionicons name="add" size={20} color={t.agentBtnIcon} />
                     {images.length > 0 && (
-                      <View style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}>
+                      <View
+                        style={[
+                          s.countBadge,
+                          { backgroundColor: t.agentTabActiveBg },
+                        ]}
+                      >
                         <Text style={s.countBadgeText}>{images.length}</Text>
                       </View>
                     )}
@@ -218,12 +344,25 @@ export function AgentV2({
 
                   <View style={{ flex: 1 }} />
 
-                  <TouchableOpacity onPress={onSendPress} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    onPress={handleSend}
+                    activeOpacity={0.8}
+                    disabled={sending || !prompt.trim()}
+                  >
                     <LinearGradient
-                      colors={[...t.agentSendGradient] as [string, string, ...string[]]}
+                      colors={
+                        [...t.agentSendGradient] as [
+                          string,
+                          string,
+                          ...string[],
+                        ]
+                      }
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
-                      style={s.sendBtn}
+                      style={[
+                        s.sendBtn,
+                        (sending || !prompt.trim()) && { opacity: 0.5 },
+                      ]}
                     >
                       <Animated.View
                         pointerEvents="none"
@@ -231,13 +370,22 @@ export function AgentV2({
                           s.sendSheen,
                           {
                             transform: [
-                              { translateX: sheenX.interpolate({ inputRange: [-1, 1], outputRange: [-38, 38] }) },
+                              {
+                                translateX: sheenX.interpolate({
+                                  inputRange: [-1, 1],
+                                  outputRange: [-38, 38],
+                                }),
+                              },
                               { rotate: '20deg' },
                             ],
                           },
                         ]}
                       />
-                      <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                      {sending ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                      )}
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>
@@ -247,9 +395,22 @@ export function AgentV2({
         </View>
       </View>
 
-      <Modal visible={modelPickerOpen} transparent animationType="fade" onRequestClose={() => setModelPickerOpen(false)}>
-        <Pressable style={s.modalBackdrop} onPress={() => setModelPickerOpen(false)}>
-          <Pressable style={[s.modelSheet, { backgroundColor: t.sheetBg, borderColor: t.agentInputBorder }]}>
+      <Modal
+        visible={modelPickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModelPickerOpen(false)}
+      >
+        <Pressable
+          style={s.modalBackdrop}
+          onPress={() => setModelPickerOpen(false)}
+        >
+          <Pressable
+            style={[
+              s.modelSheet,
+              { backgroundColor: t.sheetBg, borderColor: t.agentInputBorder },
+            ]}
+          >
             <Text style={[s.modelSheetTitle, { color: t.text }]}>AI model</Text>
             {MODELS.map((m) => {
               const selected = m.value === model;
@@ -264,10 +425,20 @@ export function AgentV2({
                   style={s.modelOption}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.modelOptionLabel, { color: t.text }]}>{m.label}</Text>
-                    <Text style={[s.modelOptionMeta, { color: t.textSub }]}>{fmtContext(m.context)}</Text>
+                    <Text style={[s.modelOptionLabel, { color: t.text }]}>
+                      {m.label}
+                    </Text>
+                    <Text style={[s.modelOptionMeta, { color: t.textSub }]}>
+                      {fmtContext(m.context)}
+                    </Text>
                   </View>
-                  {selected && <Ionicons name="checkmark-circle" size={18} color={t.accent} />}
+                  {selected && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={18}
+                      color={t.accent}
+                    />
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -282,7 +453,7 @@ const s = StyleSheet.create({
   wrap: {
     paddingHorizontal: 12,
     paddingTop: 40,
-    paddingBottom: 70
+    paddingBottom: 70,
   },
   stage: {
     alignItems: 'center',
@@ -295,7 +466,7 @@ const s = StyleSheet.create({
     width: 230,
     height: 230,
     borderRadius: 115,
-    opacity: 0.10,
+    opacity: 0.1,
   },
   washMid: {
     position: 'absolute',
@@ -319,14 +490,14 @@ const s = StyleSheet.create({
   attachedStack: {
     alignSelf: 'stretch',
     gap: 1,
-    justifyContent: "center"
+    justifyContent: 'center',
   },
   tabStripOutside: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     gap: 8,
-    justifyContent: "center",
-    width: "100%"
+    justifyContent: 'center',
+    width: '100%',
   },
   tabOutside: {
     flexDirection: 'row',

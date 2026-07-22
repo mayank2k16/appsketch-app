@@ -4,8 +4,9 @@
     {
       "name": "expo-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["cross-env", "EXPO_NO_DOTENV=1", "expo", "start", "--web", "--port", "8100"],
-      "port": 8100
+      "runtimeArgs": ["cross-env", "EXPO_NO_DOTENV=1", "expo", "start", "--web", "--port", "8300"],
+      "port": 8300,
+      "autoPort": false
     }
   ]
 }
