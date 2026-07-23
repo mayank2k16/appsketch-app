@@ -1,0 +1,595 @@
+{
+  "id": "default-ecommerce",
+  "name": "Fashion Store",
+  "slug": "fashion-store",
+  "version": "1.0.0",
+  "theme": {
+    "colors": {
+      "primary": "#000000",
+      "secondary": "#6B7280",
+      "background": "#FFFFFF",
+      "surface": "#F9FAFB",
+      "text": "#111827",
+      "textSecondary": "#6B7280",
+      "border": "#E5E7EB",
+      "error": "#EF4444",
+      "success": "#10B981"
+    },
+    "fonts": {
+      "heading": "Inter",
+      "body": "Inter"
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "borderRadius": {
+      "sm": 4,
+      "md": 8,
+      "lg": 12
+    }
+  },
+  "navigation": {
+    "type": "tabs",
+    "tabVariant": "main",
+    "items": [
+      {
+        "id": "home",
+        "label": "Home",
+        "route": "/",
+        "icon": "home"
+      },
+      {
+        "id": "explore",
+        "label": "Explore",
+        "route": "/explore",
+        "icon": "search"
+      },
+      {
+        "id": "wishlist",
+        "label": "Wishlist",
+        "route": "/wishlist",
+        "icon": "heart"
+      }
+    ]
+  },
+  "screens": [
+    {
+      "id": "home",
+      "route": "/",
+      "title": "Home",
+      "layout": "scroll",
+      "navigation": {
+        "showHeader": false,
+        "showBackButton": false
+      },
+      "components": [
+        {
+          "id": "header",
+          "type": "container",
+          "props": {
+            "className": "px-4 pt-12 pb-4 bg-white border-b border-gray-200"
+          },
+          "children": [
+            {
+              "id": "header-content",
+              "type": "container",
+              "props": {
+                "className": "flex-row items-center justify-between"
+              },
+              "children": [
+                {
+                  "id": "logo",
+                  "type": "text",
+                  "props": {
+                    "content": "FASHION",
+                    "variant": "h3",
+                    "className": "font-bold"
+                  }
+                },
+                {
+                  "id": "header-actions",
+                  "type": "container",
+                  "props": {
+                    "className": "flex-row items-center"
+                  },
+                  "children": [
+                    {
+                      "id": "search-bar-header",
+                      "type": "search-bar",
+                      "props": {
+                        "className": "mr-2",
+                        "placeholder": "Search..."
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hero-carousel",
+          "type": "hero-carousel",
+          "props": {
+            "height": 400,
+            "autoPlay": true,
+            "items": [
+              {
+                "title": "Summer Collection 2024",
+                "subtitle": "Discover the latest trends",
+                "ctaText": "Shop Now",
+                "image": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800",
+                "route": "/storefront/categories"
+              },
+              {
+                "title": "New Arrivals",
+                "subtitle": "Fresh styles for every occasion",
+                "ctaText": "Explore",
+                "image": "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800",
+                "route": "/storefront/categories"
+              }
+            ]
+          }
+        },
+        {
+          "id": "category-grid",
+          "type": "category-grid",
+          "props": {
+            "columns": 4,
+            "categories": [
+              {
+                "id": "men",
+                "label": "Men",
+                "image": "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=200",
+                "route": "/storefront/categories?category=men"
+              },
+              {
+                "id": "women",
+                "label": "Women",
+                "image": "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=200",
+                "route": "/storefront/categories?category=women"
+              },
+              {
+                "id": "kids",
+                "label": "Kids",
+                "image": "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=200",
+                "route": "/storefront/categories?category=kids"
+              },
+              {
+                "id": "accessories",
+                "label": "Accessories",
+                "image": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200",
+                "route": "/storefront/categories?category=accessories"
+              },
+              {
+                "id": "shoes",
+                "label": "Shoes",
+                "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200",
+                "route": "/storefront/categories?category=shoes"
+              }
+            ]
+          }
+        },
+        {
+          "id": "spacer-1",
+          "type": "spacer",
+          "props": {
+            "height": 24
+          }
+        },
+        {
+          "id": "trending-rail",
+          "type": "product-rail",
+          "props": {
+            "title": "Trending Now",
+            "showWishlist": true,
+            "products": [
+              {
+                "id": "1",
+                "title": "Classic White T-Shirt",
+                "brand": "Premium",
+                "price": 29.99,
+                "originalPrice": 39.99,
+                "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400"
+              },
+              {
+                "id": "2",
+                "title": "Blue Denim Jeans",
+                "brand": "Denim Co",
+                "price": 79.99,
+                "image": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400"
+              },
+              {
+                "id": "3",
+                "title": "Black Leather Jacket",
+                "brand": "Leather Works",
+                "price": 199.99,
+                "originalPrice": 249.99,
+                "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400"
+              },
+              {
+                "id": "4",
+                "title": "Red Sneakers",
+                "brand": "Sporty",
+                "price": 89.99,
+                "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400"
+              }
+            ]
+          }
+        },
+        {
+          "id": "spacer-2",
+          "type": "spacer",
+          "props": {
+            "height": 24
+          }
+        },
+        {
+          "id": "new-arrivals",
+          "type": "product-rail",
+          "props": {
+            "title": "New Arrivals",
+            "showWishlist": true,
+            "products": [
+              {
+                "id": "5",
+                "title": "Green Backpack",
+                "brand": "Travel Gear",
+                "price": 59.99,
+                "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400"
+              },
+              {
+                "id": "6",
+                "title": "Silver Watch",
+                "brand": "Timepiece",
+                "price": 149.99,
+                "originalPrice": 199.99,
+                "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400"
+              },
+              {
+                "id": "7",
+                "title": "Designer Sunglasses",
+                "brand": "Luxury",
+                "price": 129.99,
+                "image": "https://images.unsplash.com/photo-1511499767150-a48a237f008b?w=400"
+              },
+              {
+                "id": "8",
+                "title": "Wool Scarf",
+                "brand": "Cozy",
+                "price": 34.99,
+                "image": "https://images.unsplash.com/photo-1582794543139-8ac38803e6f7?w=400"
+              }
+            ]
+          }
+        },
+        {
+          "id": "spacer-3",
+          "type": "spacer",
+          "props": {
+            "height": 24
+          }
+        },
+        {
+          "id": "promo-banner",
+          "type": "banner",
+          "props": {
+            "title": "Summer Sale",
+            "subtitle": "Up to 50% off on selected items",
+            "image": "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800",
+            "height": 200,
+            "className": "mx-4"
+          }
+        },
+        {
+          "id": "spacer-4",
+          "type": "spacer",
+          "props": {
+            "height": 32
+          }
+        }
+      ]
+    },
+    {
+      "id": "categories",
+      "route": "/categories",
+      "title": "Categories",
+      "layout": "scroll",
+      "navigation": {
+        "showHeader": true,
+        "showBackButton": false
+      },
+      "components": [
+        {
+          "id": "category-product-grid",
+          "type": "product-grid",
+          "props": {
+            "columns": 2,
+            "products": [
+              {
+                "id": "1",
+                "title": "Classic White T-Shirt",
+                "brand": "Premium",
+                "price": 29.99,
+                "originalPrice": 39.99,
+                "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400"
+              },
+              {
+                "id": "2",
+                "title": "Blue Denim Jeans",
+                "brand": "Denim Co",
+                "price": 79.99,
+                "image": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400"
+              },
+              {
+                "id": "3",
+                "title": "Black Leather Jacket",
+                "brand": "Leather Works",
+                "price": 199.99,
+                "originalPrice": 249.99,
+                "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400"
+              },
+              {
+                "id": "4",
+                "title": "Red Sneakers",
+                "brand": "Sporty",
+                "price": 89.99,
+                "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400"
+              },
+              {
+                "id": "5",
+                "title": "Green Backpack",
+                "brand": "Travel Gear",
+                "price": 59.99,
+                "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400"
+              },
+              {
+                "id": "6",
+                "title": "Silver Watch",
+                "brand": "Timepiece",
+                "price": 149.99,
+                "originalPrice": 199.99,
+                "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400"
+              }
+            ],
+            "className": "px-4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "explore",
+      "route": "/explore",
+      "title": "Explore",
+      "layout": "scroll",
+      "navigation": {
+        "showHeader": true,
+        "showBackButton": false
+      },
+      "components": [
+        {
+          "id": "search-section",
+          "type": "container",
+          "props": {
+            "className": "p-4 bg-white"
+          },
+          "children": [
+            {
+              "id": "explore-search",
+              "type": "search-bar",
+              "props": {
+                "placeholder": "Search products, brands, categories..."
+              }
+            }
+          ]
+        },
+        {
+          "id": "trending-searches",
+          "type": "container",
+          "props": {
+            "className": "p-4"
+          },
+          "children": [
+            {
+              "id": "trending-title",
+              "type": "text",
+              "props": {
+                "content": "Trending Searches",
+                "variant": "h3",
+                "className": "mb-4"
+              }
+            }
+          ]
+        },
+        {
+          "id": "explore-products",
+          "type": "product-grid",
+          "props": {
+            "columns": 2,
+            "products": [
+              {
+                "id": "1",
+                "title": "Classic White T-Shirt",
+                "brand": "Premium",
+                "price": 29.99,
+                "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400"
+              },
+              {
+                "id": "2",
+                "title": "Blue Denim Jeans",
+                "brand": "Denim Co",
+                "price": 79.99,
+                "image": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400"
+              },
+              {
+                "id": "3",
+                "title": "Black Leather Jacket",
+                "brand": "Leather Works",
+                "price": 199.99,
+                "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400"
+              },
+              {
+                "id": "4",
+                "title": "Red Sneakers",
+                "brand": "Sporty",
+                "price": 89.99,
+                "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400"
+              }
+            ],
+            "className": "px-4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wishlist",
+      "route": "/wishlist",
+      "title": "Wishlist",
+      "layout": "scroll",
+      "navigation": {
+        "showHeader": true,
+        "showBackButton": false
+      },
+      "components": [
+        {
+          "id": "wishlist-grid",
+          "type": "product-grid",
+          "props": {
+            "columns": 2,
+            "className": "px-4"
+          }
+        }
+      ]
+    },
+    {
+      "id": "profile",
+      "route": "/profile",
+      "title": "Profile",
+      "layout": "scroll",
+      "navigation": {
+        "showHeader": true,
+        "showBackButton": false
+      },
+      "components": [
+        {
+          "id": "profile-header",
+          "type": "container",
+          "props": {
+            "className": "p-6 bg-white items-center"
+          },
+          "children": [
+            {
+              "id": "profile-name",
+              "type": "text",
+              "props": {
+                "content": "John Doe",
+                "variant": "h2",
+                "className": "mb-2"
+              }
+            },
+            {
+              "id": "profile-email",
+              "type": "text",
+              "props": {
+                "content": "john.doe@example.com",
+                "variant": "body",
+                "className": "text-gray-600"
+              }
+            }
+          ]
+        },
+        {
+          "id": "profile-menu",
+          "type": "container",
+          "props": {
+            "className": "mt-4"
+          },
+          "children": [
+            {
+              "id": "menu-item-orders",
+              "type": "button",
+              "props": {
+                "label": "My Orders",
+                "variant": "ghost",
+                "className": "w-full justify-start"
+              }
+            },
+            {
+              "id": "menu-item-addresses",
+              "type": "button",
+              "props": {
+                "label": "Addresses",
+                "variant": "ghost",
+                "className": "w-full justify-start"
+              }
+            },
+            {
+              "id": "menu-item-payments",
+              "type": "button",
+              "props": {
+                "label": "Payment Methods",
+                "variant": "ghost",
+                "className": "w-full justify-start"
+              }
+            },
+            {
+              "id": "menu-item-settings",
+              "type": "button",
+              "props": {
+                "label": "Settings",
+                "variant": "ghost",
+                "className": "w-full justify-start"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cart",
+      "route": "/cart",
+      "title": "Shopping Cart",
+      "layout": "column",
+      "navigation": {
+        "showHeader": true,
+        "showBackButton": true
+      },
+      "components": [
+        {
+          "id": "cart-component",
+          "type": "cart",
+          "props": {
+            "className": "flex-1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "checkout",
+      "route": "/checkout",
+      "title": "Checkout",
+      "layout": "scroll",
+      "navigation": {
+        "showHeader": true,
+        "showBackButton": true
+      },
+      "components": [
+        {
+          "id": "checkout-form",
+          "type": "checkout-form",
+          "props": {
+            "className": "flex-1"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "logo": "https://via.placeholder.com/150",
+    "description": "A premium fashion e-commerce storefront"
+  }
+}

@@ -14,15 +14,50 @@ export type ChatMessage = {
   role: ChatRole;
   content: string;
   streaming?: boolean;
+  /** Steps the agent took to produce this message — attached once the turn
+   * finishes, so a past turn keeps its own collapsed "Agent worked · N
+   * steps" history instead of the feed evaporating between turns. */
+  activity?: ActivityStep[];
 };
 
-export type ActivityStepKind = 'node' | 'step' | 'thinking';
+export type ActivityStepKind =
+  | 'node'
+  | 'step'
+  | 'thinking'
+  | 'plan'
+  | 'todos'
+  | 'review';
+
+export type TodoStatus = 'done' | 'doing' | 'todo';
+export type TodoItem = { status: TodoStatus; text: string };
 
 export type ActivityStep = {
   id: string;
   kind: ActivityStepKind;
   text: string;
   tool?: string;
+  /** `plan` only. */
+  summary?: string;
+  steps?: string[];
+  done?: string[];
+  /** `todos` only — parsed `"[done|doing|todo] text"` items. */
+  items?: TodoItem[];
+  /** `review` only. */
+  ok?: boolean;
+  gaps?: string[];
+  /** attached after the fact by a `tool_result` event, for a plain `step`. */
+  result?: string;
+  resultOk?: boolean;
+  image?: string;
+};
+
+/** Live token meter for the turn in progress — billable = uncached input +
+ * cached-at-25% + output (what actually counts against the plan). */
+export type TokenUsage = {
+  in: number;
+  out: number;
+  raw?: number;
+  cached?: number;
 };
 
 export type FileTreeNode = {
@@ -46,9 +81,18 @@ export type WorkspaceFile = {
  * unverified assumption) made every option compare `undefined === undefined`
  * and render as permanently "selected" with a blank label.
  */
-export type ClarifyQuestionType = 'choice' | 'palette' | 'fonts' | 'checklist' | 'text';
+export type ClarifyQuestionType =
+  | 'choice'
+  | 'palette'
+  | 'fonts'
+  | 'checklist'
+  | 'text';
 
-export type ClarifyPaletteOption = { name: string; colors: string[]; vibe?: string };
+export type ClarifyPaletteOption = {
+  name: string;
+  colors: string[];
+  vibe?: string;
+};
 export type ClarifyFontOption = { name: string; heading: string; body: string };
 
 export type ClarifyQuestion = {
@@ -107,6 +151,33 @@ export type CoderNodeEvent = {
 export type CoderStepEvent = { event: 'step'; text: string; tool?: string };
 export type CoderThinkingEvent = { event: 'thinking'; text: string };
 export type CoderToolCallEvent = { event: 'tool_call' };
+export type CoderPlanEvent = {
+  event: 'plan';
+  summary?: string;
+  steps?: string[];
+  done?: string[];
+};
+export type CoderTodosEvent = { event: 'todos'; items?: string[] };
+export type CoderReviewEvent = {
+  event: 'review';
+  ok: boolean;
+  gaps?: string[];
+  summary?: string;
+};
+export type CoderToolResultEvent = {
+  event: 'tool_result';
+  tool: string;
+  detail?: string;
+  ok?: boolean;
+  image?: string;
+};
+export type CoderUsageEvent = {
+  event: 'usage';
+  tokens_in?: number;
+  tokens_out?: number;
+  billable?: number;
+  cached?: number;
+};
 export type CoderFileWriteEvent = {
   event: 'file_write';
   path: string;
@@ -155,6 +226,11 @@ export type CoderWsEvent =
   | CoderStepEvent
   | CoderThinkingEvent
   | CoderToolCallEvent
+  | CoderPlanEvent
+  | CoderTodosEvent
+  | CoderReviewEvent
+  | CoderToolResultEvent
+  | CoderUsageEvent
   | CoderFileWriteEvent
   | CoderUiBlockEvent
   | CoderApprovalRequestEvent

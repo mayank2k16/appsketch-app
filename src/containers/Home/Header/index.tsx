@@ -49,7 +49,7 @@ export function HomeHeader({ onMenuPress }: Props) {
           />
         </View>
         <AnimatedGradientText style={s.brandName} baseColor={t.text} highlightColor={t.heroHeadingFade}>
-          APPSKETCH
+          AppSketch
         </AnimatedGradientText>
       </View>
 

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +19,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Reanimated, {
+  Easing as ReanimatedEasing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { createCoderTenant } from '@/api/coder';
 import { F } from '@/lib/fonts';
@@ -25,8 +33,13 @@ import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 const RADIUS = 15;
-const BORDER_W = 2;
+const BORDER_W = 1.75;
+const RING_SPIN_MS = 6000;
 const MAX_IMAGES = 3;
+const TYPE_MS = 28; // ms per character while "typing"
+const DELETE_MS = 16; // ms per character while "deleting"
+const TYPE_HOLD_MS = 1500; // pause once a phrase is fully typed
+const TYPE_GAP_MS = 300; // pause once a phrase is fully deleted, before the next
 
 type AppTypeKey = 'web' | 'mobile' | 'game';
 
@@ -34,27 +47,100 @@ const APP_TABS: {
   key: AppTypeKey;
   label: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
-  placeholder: string;
+  // Starter prompts, both the suggestion-pill text below the card and the
+  // rotating typewriter placeholder inside it — one list, two uses.
+  suggestions: string[];
 }[] = [
-  {
-    key: 'web',
-    label: 'Web App',
-    icon: 'globe-outline',
-    placeholder: 'Build an e-commerce website for my grocery store...',
-  },
-  {
-    key: 'mobile',
-    label: 'Mobile App',
-    icon: 'phone-portrait-outline',
-    placeholder: 'Build a fitness tracking mobile app with workout logging...',
-  },
-  {
-    key: 'game',
-    label: 'Game',
-    icon: 'game-controller-outline',
-    placeholder: 'Build a 2D space shooter game with levels and a score...',
-  },
-];
+    {
+      key: 'web',
+      label: 'Web App',
+      icon: 'globe-outline',
+      suggestions: [
+        'Build a landing page for my product launch with an email signup and countdown timer',
+        'Build an online store for my clothing brand with product listings and a shopping cart',
+        'Build a personal portfolio site to showcase my projects and contact information',
+      ],
+    },
+    {
+      key: 'mobile',
+      label: 'Mobile App',
+      icon: 'phone-portrait-outline',
+      suggestions: [
+        'Build a habit tracker app with daily reminders and streak tracking',
+        'Build a food delivery app with restaurant listings and live order tracking',
+        'Build a social app for sharing photos with friends, likes, and comments',
+      ],
+    },
+    {
+      key: 'game',
+      label: 'Game',
+      icon: 'game-controller-outline',
+      suggestions: [
+        'Build a 2D platformer game with power-ups and multiple levels',
+        'Build an endless runner game with obstacles and a live score counter',
+        'Build a puzzle game with increasing difficulty and a move counter',
+      ],
+    },
+  ];
+
+/** Cycles through `phrases`, typing then deleting each in turn, forever —
+ * restarts from scratch whenever `phrases` or `enabled` changes (tab switch,
+ * or the real input gaining text/focus interrupts it). */
+function useTypewriter(phrases: string[], enabled: boolean): string {
+  const [text, setText] = React.useState('');
+
+  React.useEffect(() => {
+    if (!enabled || phrases.length === 0) {
+      setText('');
+      return;
+    }
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let phraseIndex = 0;
+    let charIndex = 0;
+
+    const typeStep = () => {
+      if (cancelled) return;
+      const phrase = phrases[phraseIndex % phrases.length];
+      setText(phrase.slice(0, charIndex));
+      if (charIndex < phrase.length) {
+        charIndex += 1;
+        timer = setTimeout(typeStep, TYPE_MS);
+      } else {
+        timer = setTimeout(deleteStep, TYPE_HOLD_MS);
+      }
+    };
+    const deleteStep = () => {
+      if (cancelled) return;
+      const phrase = phrases[phraseIndex % phrases.length];
+      if (charIndex > 0) {
+        charIndex -= 1;
+        setText(phrase.slice(0, charIndex));
+        timer = setTimeout(deleteStep, DELETE_MS);
+      } else {
+        phraseIndex += 1;
+        timer = setTimeout(typeStep, TYPE_GAP_MS);
+      }
+    };
+
+    timer = setTimeout(typeStep, TYPE_GAP_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [phrases, enabled]);
+
+  return text;
+}
+
+function BlinkingCursor({ color }: { color: string }) {
+  const [visible, setVisible] = React.useState(true);
+  React.useEffect(() => {
+    const id = setInterval(() => setVisible((v) => !v), 500);
+    return () => clearInterval(id);
+  }, []);
+  return <Text style={{ color, opacity: visible ? 1 : 0 }}>|</Text>;
+}
 
 // Mirrors the web builder's model list (`coderModels.js`) — no tier/lock UI
 // here since Home has no auth/plan context wired in yet, just plain options.
@@ -103,9 +189,43 @@ export function AgentV2({
   const [images, setImages] = React.useState<string[]>([]);
   const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
   const [sending, setSending] = React.useState(false);
+  const [inputFocused, setInputFocused] = React.useState(false);
 
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
+
+  const showTypewriter = !inputFocused && prompt.length === 0;
+  const typedPlaceholder = useTypewriter(activeTab.suggestions, showTypewriter);
+
+  // Ring border: rotates an oversized copy of the gradient behind a
+  // BORDER_W-wide window (see `ringSpinner` below) via a `transform` style,
+  // not by animating the LinearGradient's own `start`/`end` props.
+  //
+  // A `start`/`end` sweep (via `Reanimated.createAnimatedComponent(LinearGradient)`
+  // + `useAnimatedProps`) was tried first — it gives noticeably better colour
+  // variety around the ring since the gradient never needs oversizing — but
+  // it crashes on web: reanimated's web prop-patcher expects the animated
+  // component to expose a `_touchableNode` (only true for Touchable-based
+  // elements), and LinearGradient doesn't have one, so every animation frame
+  // throws "Cannot read properties of undefined (reading 'setAttribute')" and
+  // takes down the whole screen. `useAnimatedStyle` + `transform` has no such
+  // requirement and is the same pattern already used safely on web elsewhere
+  // in this app (see splash.tsx). Do not retry the props-sweep approach
+  // without a web-specific fallback.
+  const ringSpin = useSharedValue(0);
+  React.useEffect(() => {
+    ringSpin.value = withRepeat(
+      withTiming(360, {
+        duration: RING_SPIN_MS,
+        easing: ReanimatedEasing.linear,
+      }),
+      -1,
+      false
+    );
+  }, []);
+  const ringSpinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${ringSpin.value}deg` }],
+  }));
 
   // Send button — a slow light sheen sweeps across the glass button every
   // few seconds instead of sitting fully static between presses.
@@ -192,8 +312,8 @@ export function AgentV2({
   return (
     <View style={s.wrap}>
       <View style={s.stage}>
-        <View style={s.attachedStack}>
-          <View style={s.tabStripOutside}>
+        <View style={s.promptStack}>
+          <View style={s.tabRow}>
             {APP_TABS.map((tab) => {
               const active = tab.key === appType;
               return (
@@ -202,22 +322,26 @@ export function AgentV2({
                   onPress={() => setAppType(tab.key)}
                   activeOpacity={0.8}
                   style={[
-                    s.tabOutside,
+                    s.tabPill,
                     {
-                      backgroundColor: active ? t.card : t.agentTabBg,
-                      borderColor: active ? t.tagBorder : t.agentTabBorder,
+                      backgroundColor: active
+                        ? t.agentTabActiveBg
+                        : t.agentTabBg,
+                      borderColor: active
+                        ? t.agentTabActiveBg
+                        : t.agentTabBorder,
                     },
                   ]}
                 >
                   <Ionicons
                     name={tab.icon}
                     size={13}
-                    color={active ? t.text : t.agentTabIcon}
+                    color={active ? t.agentTabActiveText : t.agentTabIcon}
                   />
                   <Text
                     style={[
-                      s.tabOutsideLabel,
-                      { color: active ? t.text : t.agentTabText },
+                      s.tabPillLabel,
+                      { color: active ? t.agentTabActiveText : t.agentTabText },
                     ]}
                     numberOfLines={1}
                   >
@@ -235,162 +359,220 @@ export function AgentV2({
               Platform.select({ ios: { shadowColor: '#000' }, default: {} }),
             ]}
           >
-            <View
-              style={[
-                s.cardC,
-                { backgroundColor: t.card, borderColor: t.tagBorder },
-              ]}
-            >
-              {/* Top spotlight — a soft accent-tinted glow fading down from
-                  the top edge, standing in for the reference's radial glow
-                  since RN's LinearGradient is linear-only. */}
-              {/* <LinearGradient
-                pointerEvents="none"
-                colors={['rgba(108,92,231,0.22)', 'rgba(108,92,231,0)']}
-                style={s.topSpotlight}
-              /> */}
+            <View style={s.ringMask}>
+              <Reanimated.View style={[s.ringSpinner, ringSpinStyle]}>
+                <LinearGradient
+                  colors={
+                    [...t.agentBorderGradient] as [string, string, ...string[]]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              </Reanimated.View>
 
-              <View style={s.cardContent}>
-                <TextInput
-                  placeholder={activeTab.placeholder}
-                  placeholderTextColor={t.agentInputPlaceholder}
-                  editable
-                  multiline
-                  value={prompt}
-                  onChangeText={setPrompt}
-                  style={[s.input, { color: t.agentInputText }]}
+              <View style={s.cardInner}>
+                <BlurView
+                  intensity={Platform.OS === 'android' ? 80 : 60}
+                  tint={colorScheme === 'dark' ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    StyleSheet.absoluteFill,
+                    { backgroundColor: t.agentCardGlassTint },
+                  ]}
                 />
 
-                {images.length > 0 && (
-                  <View style={s.thumbRow}>
-                    {images.map((uri, i) => (
-                      <View
-                        key={`${uri}-${i}`}
-                        style={[s.thumb, { borderColor: t.agentInputBorder }]}
-                      >
-                        <Image
-                          source={{ uri }}
-                          style={s.thumbImg}
-                          contentFit="cover"
-                        />
-                        <Pressable
-                          onPress={() => removeImage(i)}
-                          style={[
-                            s.thumbRemove,
-                            { backgroundColor: t.agentBtnBg },
-                          ]}
-                          hitSlop={6}
-                        >
-                          <Ionicons
-                            name="close"
-                            size={11}
-                            color={t.agentBtnIcon}
-                          />
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                <View style={s.row}>
-                  <TouchableOpacity
-                    onPress={() => setModelPickerOpen(true)}
-                    activeOpacity={0.7}
-                    style={[
-                      s.modelChip,
-                      {
-                        backgroundColor: t.agentBtnBg,
-                        borderColor: t.agentBtnBorder,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
-                      numberOfLines={1}
-                    >
-                      {selectedModel.label}
-                    </Text>
-                    <Ionicons
-                      name="chevron-down"
-                      size={13}
-                      color={t.agentBtnIcon}
+                <View style={s.cardContent}>
+                  <View style={s.inputWrap}>
+                    <TextInput
+                      placeholder={activeTab.suggestions[0]}
+                      placeholderTextColor="transparent"
+                      editable
+                      multiline
+                      value={prompt}
+                      onChangeText={setPrompt}
+                      onFocus={() => setInputFocused(true)}
+                      onBlur={() => setInputFocused(false)}
+                      style={[s.input, { color: t.agentInputText }]}
                     />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={handleAttach}
-                    activeOpacity={0.7}
-                    disabled={images.length >= MAX_IMAGES}
-                    style={[
-                      s.circleBtn,
-                      {
-                        backgroundColor: t.agentBtnBg,
-                        borderColor: t.agentBtnBorder,
-                      },
-                    ]}
-                  >
-                    <Ionicons name="add" size={20} color={t.agentBtnIcon} />
-                    {images.length > 0 && (
+                    {showTypewriter && (
                       <View
-                        style={[
-                          s.countBadge,
-                          { backgroundColor: t.agentTabActiveBg },
-                        ]}
+                        pointerEvents="none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                        style={s.typewriterOverlay}
                       >
-                        <Text style={s.countBadgeText}>{images.length}</Text>
+                        <Text
+                          style={[s.input, { color: t.agentInputPlaceholder }]}
+                        >
+                          {typedPlaceholder}
+                          <BlinkingCursor color={t.agentInputPlaceholder} />
+                        </Text>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </View>
 
-                  <View style={{ flex: 1 }} />
+                  {images.length > 0 && (
+                    <View style={s.thumbRow}>
+                      {images.map((uri, i) => (
+                        <View
+                          key={`${uri}-${i}`}
+                          style={[s.thumb, { borderColor: t.agentInputBorder }]}
+                        >
+                          <Image
+                            source={{ uri }}
+                            style={s.thumbImg}
+                            contentFit="cover"
+                          />
+                          <Pressable
+                            onPress={() => removeImage(i)}
+                            style={[
+                              s.thumbRemove,
+                              { backgroundColor: t.agentBtnBg },
+                            ]}
+                            hitSlop={6}
+                          >
+                            <Ionicons
+                              name="close"
+                              size={11}
+                              color={t.agentBtnIcon}
+                            />
+                          </Pressable>
+                        </View>
+                      ))}
+                    </View>
+                  )}
 
-                  <TouchableOpacity
-                    onPress={handleSend}
-                    activeOpacity={0.8}
-                    disabled={sending || !prompt.trim()}
-                  >
-                    <LinearGradient
-                      colors={
-                        [...t.agentSendGradient] as [
-                          string,
-                          string,
-                          ...string[],
-                        ]
-                      }
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
+                  <View style={s.row}>
+                    <TouchableOpacity
+                      onPress={() => setModelPickerOpen(true)}
+                      activeOpacity={0.7}
                       style={[
-                        s.sendBtn,
-                        (sending || !prompt.trim()) && { opacity: 0.5 },
+                        s.modelChip,
+                        {
+                          backgroundColor: t.agentBtnBg,
+                          borderColor: t.agentBtnBorder,
+                        },
                       ]}
                     >
-                      <Animated.View
-                        pointerEvents="none"
-                        style={[
-                          s.sendSheen,
-                          {
-                            transform: [
-                              {
-                                translateX: sheenX.interpolate({
-                                  inputRange: [-1, 1],
-                                  outputRange: [-38, 38],
-                                }),
-                              },
-                              { rotate: '20deg' },
-                            ],
-                          },
-                        ]}
+                      <Text
+                        style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
+                        numberOfLines={1}
+                      >
+                        {selectedModel.label}
+                      </Text>
+                      <Ionicons
+                        name="chevron-down"
+                        size={13}
+                        color={t.agentBtnIcon}
                       />
-                      {sending ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={handleAttach}
+                      activeOpacity={0.7}
+                      disabled={images.length >= MAX_IMAGES}
+                      style={[
+                        s.circleBtn,
+                        {
+                          backgroundColor: t.agentBtnBg,
+                          borderColor: t.agentBtnBorder,
+                        },
+                      ]}
+                    >
+                      <Ionicons name="add" size={20} color={t.agentBtnIcon} />
+                      {images.length > 0 && (
+                        <View
+                          style={[
+                            s.countBadge,
+                            { backgroundColor: t.agentTabActiveBg },
+                          ]}
+                        >
+                          <Text style={s.countBadgeText}>{images.length}</Text>
+                        </View>
                       )}
-                    </LinearGradient>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+
+                    <View style={{ flex: 1 }} />
+
+                    <TouchableOpacity
+                      onPress={handleSend}
+                      activeOpacity={0.8}
+                      disabled={sending || !prompt.trim()}
+                    >
+                      <LinearGradient
+                        colors={
+                          [...t.agentSendGradient] as [
+                            string,
+                            string,
+                            ...string[],
+                          ]
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[
+                          s.sendBtn,
+                          (sending || !prompt.trim()) && { opacity: 0.5 },
+                        ]}
+                      >
+                        <Animated.View
+                          pointerEvents="none"
+                          style={[
+                            s.sendSheen,
+                            {
+                              transform: [
+                                {
+                                  translateX: sheenX.interpolate({
+                                    inputRange: [-1, 1],
+                                    outputRange: [-38, 38],
+                                  }),
+                                },
+                                { rotate: '20deg' },
+                              ],
+                            },
+                          ]}
+                        />
+                        {sending ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </View>
+          </View>
+
+          <View style={s.suggestionCol}>
+            {activeTab.suggestions.map((suggestion) => (
+              <TouchableOpacity
+                key={suggestion}
+                onPress={() => setPrompt(suggestion)}
+                activeOpacity={0.7}
+                style={[
+                  s.suggestionPill,
+                  {
+                    backgroundColor: t.agentTabBg,
+                    borderColor: t.agentTabBorder,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="sparkles-outline"
+                  size={13}
+                  color={t.agentTabIcon}
+                  style={s.suggestionIcon}
+                />
+                <Text style={[s.suggestionText, { color: t.agentTabText }]}>
+                  {suggestion}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </View>
@@ -484,35 +666,55 @@ const s = StyleSheet.create({
     borderRadius: 44,
     opacity: 0.22,
   },
-  // Tabs attached outside the card's own border (see render comment above) —
-  // the strip hugs its own content width instead of stretching, sitting
-  // left-aligned directly on top of the full-width card below it.
-  attachedStack: {
+  // Tabs float above the card as separate pills (a visible gap, no shared
+  // border/background with the card below — deliberately not "attached").
+  promptStack: {
     alignSelf: 'stretch',
-    gap: 1,
+    gap: 12,
     justifyContent: 'center',
   },
-  tabStripOutside: {
+  tabRow: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     gap: 8,
-    justifyContent: 'center',
     width: '100%',
+    justifyContent: 'center',
   },
-  tabOutside: {
+  tabPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    borderTopLeftRadius: 13,
-    borderTopRightRadius: 13,
-    borderWidth: 2,
-    borderBottomWidth: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 13,
+    borderRadius: 999,
+    borderWidth: 1,
   },
-  tabOutsideLabel: {
+  tabPillLabel: {
     fontFamily: F.sans600,
     fontSize: 12,
+  },
+  // Suggested-prompt cards below the card — one full prompt per row (not a
+  // wrapping row of short labels), same glass tokens as the tabs above.
+  suggestionCol: {
+    gap: 8,
+  },
+  suggestionPill: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 13,
+    borderRadius: 13,
+    borderWidth: 1,
+  },
+  suggestionIcon: {
+    marginTop: 2,
+  },
+  suggestionText: {
+    flex: 1,
+    fontFamily: F.sans500,
+    fontSize: 12.5,
+    lineHeight: 17,
   },
   shadowWrap: {
     alignSelf: 'stretch',
@@ -525,24 +727,41 @@ const s = StyleSheet.create({
       android: { elevation: 10 },
     }),
   },
-  // Variant C — "top spotlight + hairline": a solid card with an
-  // accent-tinted hairline border and a soft glow fading down from the top,
-  // instead of the glass/blur treatment used elsewhere.
-  cardC: {
+  // Gradient-ring border: `ringMask` clips to the rounded rect and reserves
+  // exactly BORDER_W of padding; `ringSpinner` is an oversized LinearGradient
+  // rotated continuously behind that padding (see the comment above
+  // `ringSpin` for why it's rotated via transform, not via animated
+  // start/end props), and `cardInner` — sized to fill everything inside the
+  // padding — covers the spinner everywhere except that ring, so only the
+  // border ever shows the animated colour.
+  ringMask: {
     borderRadius: RADIUS,
-    borderWidth: BORDER_W,
+    padding: BORDER_W,
     overflow: 'hidden',
   },
-  topSpotlight: {
+  ringSpinner: {
     position: 'absolute',
-    top: -20,
-    left: '10%',
-    right: '10%',
-    height: '70%',
+    top: '-75%',
+    left: '-75%',
+    width: '250%',
+    height: '250%',
+  },
+  cardInner: {
+    borderRadius: RADIUS - BORDER_W,
+    overflow: 'hidden',
   },
   cardContent: {
     padding: 14,
     gap: 10,
+  },
+  inputWrap: {
+    position: 'relative',
+  },
+  typewriterOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
   input: {
     fontFamily: F.sans400,
