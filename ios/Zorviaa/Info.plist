@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>Chinese Corner</string>
+    <string>AppSketch</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>appsketch-ecommerce</string>
-          <string>com.chinesecorner.app.development</string>
+          <string>com.appsketch-ai.app.development</string>
         </array>
       </dict>
       <dict>

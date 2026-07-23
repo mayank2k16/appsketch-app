@@ -1,4 +1,4 @@
-package com.chinesecorner.app
+package com.appsketchai.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

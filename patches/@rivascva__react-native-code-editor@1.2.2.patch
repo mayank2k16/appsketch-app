@@ -1,7 +1,8 @@
-diff -ruN '--exclude=node_modules' a/@rivascva/react-native-code-editor/lib/commonjs/SyntaxHighlighter.js b/@rivascva/react-native-code-editor/lib/commonjs/SyntaxHighlighter.js
---- a/@rivascva/react-native-code-editor/lib/commonjs/SyntaxHighlighter.js	2026-07-22 12:46:21.026148600 +0530
-+++ b/@rivascva/react-native-code-editor/lib/commonjs/SyntaxHighlighter.js	2026-07-22 12:47:27.734369400 +0530
-@@ -87,7 +87,7 @@
+diff --git a/lib/commonjs/SyntaxHighlighter.js b/lib/commonjs/SyntaxHighlighter.js
+index 94546acf7fb3c728967f2d0dafac3936d107121e..d861746963609fe7e4da7369900e424682fa3f7b 100644
+--- a/lib/commonjs/SyntaxHighlighter.js
++++ b/lib/commonjs/SyntaxHighlighter.js
+@@ -87,7 +87,7 @@ const SyntaxHighlighter = props => {
              lineHeight: highlighterLineHeight,
              fontFamily,
              fontSize,
@@ -10,10 +11,11 @@ diff -ruN '--exclude=node_modules' a/@rivascva/react-native-code-editor/lib/comm
            }]
          }, renderNode(node.children, `${key}.${index}`));
  
-diff -ruN '--exclude=node_modules' a/@rivascva/react-native-code-editor/lib/module/SyntaxHighlighter.js b/@rivascva/react-native-code-editor/lib/module/SyntaxHighlighter.js
---- a/@rivascva/react-native-code-editor/lib/module/SyntaxHighlighter.js	2026-07-22 12:46:20.991409000 +0530
-+++ b/@rivascva/react-native-code-editor/lib/module/SyntaxHighlighter.js	2026-07-22 12:47:13.669743100 +0530
-@@ -69,7 +69,7 @@
+diff --git a/lib/module/SyntaxHighlighter.js b/lib/module/SyntaxHighlighter.js
+index f70d8a1efcb3deac1bccda18fdba322dafd9ccfd..cf19b06d12c3941658251db639ec4a979b214cb5 100644
+--- a/lib/module/SyntaxHighlighter.js
++++ b/lib/module/SyntaxHighlighter.js
+@@ -69,7 +69,7 @@ const SyntaxHighlighter = props => {
              lineHeight: highlighterLineHeight,
              fontFamily,
              fontSize,
@@ -22,10 +24,11 @@ diff -ruN '--exclude=node_modules' a/@rivascva/react-native-code-editor/lib/modu
            }]
          }, renderNode(node.children, `${key}.${index}`));
          const lineNumberElement = key !== '0' || index >= nodes.length - 2 ? undefined : /*#__PURE__*/React.createElement(Text, {
-diff -ruN '--exclude=node_modules' a/@rivascva/react-native-code-editor/src/SyntaxHighlighter.tsx b/@rivascva/react-native-code-editor/src/SyntaxHighlighter.tsx
---- a/@rivascva/react-native-code-editor/src/SyntaxHighlighter.tsx	2026-07-22 12:46:20.926022100 +0530
-+++ b/@rivascva/react-native-code-editor/src/SyntaxHighlighter.tsx	2026-07-22 12:47:05.336768500 +0530
-@@ -168,7 +168,13 @@
+diff --git a/src/SyntaxHighlighter.tsx b/src/SyntaxHighlighter.tsx
+index fb5d53c21bf908d8249e1fec2e5cd85388f92f98..09da082a3ef8500fdf97f826e72a8650b89fef96 100644
+--- a/src/SyntaxHighlighter.tsx
++++ b/src/SyntaxHighlighter.tsx
+@@ -168,7 +168,13 @@ const SyntaxHighlighter = (props: PropsWithForwardRef): JSX.Element => {
                                  lineHeight: highlighterLineHeight,
                                  fontFamily,
                                  fontSize,

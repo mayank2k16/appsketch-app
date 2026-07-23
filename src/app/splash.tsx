@@ -51,7 +51,7 @@ const C = {
 };
 
 // How long the whole intro takes before we start holding / navigating
-const HOLD_MS = 3200;
+const HOLD_MS = 5000;
 
 // ─────────────────────────────────────────────────────────────
 // Starfield

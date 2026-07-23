@@ -1,4 +1,4 @@
-package com.chinesecorner.app
+package com.appsketchai.app
 import com.facebook.react.common.assets.ReactFontManager
 
 import android.app.Application

@@ -35,9 +35,9 @@ require('dotenv').config({
 
 // TODO: Replace these values with your own
 
-const BUNDLE_ID = 'com.chinesecorner.app'; // ios bundle id
-const PACKAGE = 'com.chinesecorner.app'; // android package name
-const NAME = 'Chinese Corner'; // app name
+const BUNDLE_ID = 'com.appsketch-ai.app'; // ios bundle id
+const PACKAGE = 'com.appsketchai.app'; // android package name
+const NAME = 'AppSketch'; // app name
 const EXPO_ACCOUNT_OWNER = 'appsketch'; // expo account owner
 const EAS_PROJECT_ID = 'c3e1075b-6fe7-4686-aa49-35b46a229044'; // eas project id
 const SCHEME = 'appsketch-ecommerce'; // app scheme

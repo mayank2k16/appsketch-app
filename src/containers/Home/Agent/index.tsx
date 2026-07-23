@@ -112,6 +112,7 @@ export function AgentScreen() {
             width={fieldSize.width}
             height={fieldSize.height}
             t={t}
+            cardRect={cardRect}
             orangeOrbit={orangeOrbit}
             blueOrbit={blueOrbit}
             orangeClock={orangeClock}
