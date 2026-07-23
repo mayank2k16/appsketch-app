@@ -1,5 +1,11 @@
 import * as React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import type {
   ClarifyBlock as ClarifyBlockType,
@@ -12,10 +18,21 @@ import type { AppColors } from '@/lib/theme';
 type Selected = string | ClarifyPaletteOption | ClarifyFontOption | undefined;
 
 function isPaletteOption(v: unknown): v is ClarifyPaletteOption {
-  return !!v && typeof v === 'object' && 'colors' in (v as Record<string, unknown>);
+  return (
+    !!v && typeof v === 'object' && 'colors' in (v as Record<string, unknown>)
+  );
 }
 function isFontOption(v: unknown): v is ClarifyFontOption {
-  return !!v && typeof v === 'object' && 'heading' in (v as Record<string, unknown>);
+  return (
+    !!v && typeof v === 'object' && 'heading' in (v as Record<string, unknown>)
+  );
+}
+
+function paletteLabel(p: ClarifyPaletteOption): string {
+  return `${p.name} — ${p.colors.join(', ')}`;
+}
+function fontLabel(f: ClarifyFontOption): string {
+  return `${f.heading} / ${f.body}`;
 }
 
 /** Renders the agent's design-brief clarify questionnaire (`ui_block.kind
@@ -26,23 +43,35 @@ function isFontOption(v: unknown): v is ClarifyFontOption {
  * every question (unless `allowCustom===false`) also accepts a typed custom
  * answer that overrides the picked option. Submission always sends one
  * human-readable string per question — never raw ids — because the agent
- * reads these as design-brief text. */
+ * reads these as design-brief text.
+ *
+ * When `answers` is passed (the question has already been submitted), the
+ * card freezes in place instead of disappearing: the picked option keeps
+ * its selected styling, everything else dims, and there's no Continue
+ * button or text input — same card, just no longer interactive. */
 export function ClarifyBlockView({
   block,
   colors,
   onSubmit,
+  answers,
 }: {
   block: ClarifyBlockType;
   colors: AppColors;
   onSubmit: (value: Record<string, string>) => void;
+  answers?: Record<string, string> | null;
 }) {
+  const locked = !!answers;
   const questions = block.questions ?? [];
 
   const [sel, setSel] = React.useState<Record<string, Selected>>({});
   const [checks, setChecks] = React.useState<Record<string, string[]>>(() => {
     const init: Record<string, string[]> = {};
     questions.forEach((q) => {
-      if (q.type === 'checklist' && Array.isArray(q.preselect) && q.preselect.length) {
+      if (
+        q.type === 'checklist' &&
+        Array.isArray(q.preselect) &&
+        q.preselect.length
+      ) {
         const options = (q.options as string[] | undefined) ?? [];
         init[q.id] = q.preselect.filter((o) => options.includes(o));
       }
@@ -60,26 +89,40 @@ export function ClarifyBlockView({
   function toggleCheck(id: string, opt: string) {
     setChecks((c) => {
       const cur = c[id] ?? [];
-      return { ...c, [id]: cur.includes(opt) ? cur.filter((o) => o !== opt) : [...cur, opt] };
+      return {
+        ...c,
+        [id]: cur.includes(opt) ? cur.filter((o) => o !== opt) : [...cur, opt],
+      };
     });
   }
 
   function valueFor(q: ClarifyQuestion): string {
     const c = (custom[q.id] ?? '').trim();
     if (q.type === 'checklist') {
-      const extra = c ? c.split(',').map((s) => s.trim()).filter(Boolean) : [];
+      const extra = c
+        ? c
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
       return [...(checks[q.id] ?? []), ...extra].join(', ');
     }
     if (c) return c;
     const v = sel[q.id];
     if (v == null) {
-      const first = (q.options as (string | ClarifyPaletteOption | ClarifyFontOption)[] | undefined)?.[0];
-      if (q.type === 'palette') return isPaletteOption(first) ? `${first.name} — ${first.colors.join(', ')}` : '';
-      if (q.type === 'fonts') return isFontOption(first) ? `${first.heading} / ${first.body}` : '';
+      const first = (
+        q.options as
+          | (string | ClarifyPaletteOption | ClarifyFontOption)[]
+          | undefined
+      )?.[0];
+      if (q.type === 'palette')
+        return isPaletteOption(first) ? paletteLabel(first) : '';
+      if (q.type === 'fonts')
+        return isFontOption(first) ? fontLabel(first) : '';
       return (first as string) ?? '';
     }
-    if (isPaletteOption(v)) return `${v.name} — ${v.colors.join(', ')}`;
-    if (isFontOption(v)) return `${v.heading} / ${v.body}`;
+    if (isPaletteOption(v)) return paletteLabel(v);
+    if (isFontOption(v)) return fontLabel(v);
     return v;
   }
 
@@ -92,122 +135,351 @@ export function ClarifyBlockView({
   }
 
   return (
-    <View style={[st.card, { backgroundColor: colors.codeEditorSurface, borderColor: colors.codeEditorBorder }]}>
-      {block.intro ? <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text> : null}
+    <View
+      style={[
+        st.card,
+        {
+          backgroundColor: colors.codeEditorSurface,
+          borderColor: colors.codeEditorBorder,
+        },
+      ]}
+    >
+      {block.intro ? (
+        <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text>
+      ) : null}
 
-      {questions.map((q) => (
-        <View key={q.id} style={st.questionBlock}>
-          <Text style={[st.label, { color: colors.textSub }]}>{q.label}</Text>
+      {questions.map((q) => {
+        const answer = answers?.[q.id];
+        return (
+          <View key={q.id} style={st.questionBlock}>
+            <Text style={[st.label, { color: colors.textSub }]}>{q.label}</Text>
 
-          {q.type === 'palette' ? (
-            <View style={st.optionRow}>
-              {((q.options as ClarifyPaletteOption[] | undefined) ?? []).map((p) => {
-                const current = sel[q.id];
-                const selected = isPaletteOption(current) && current.name === p.name;
-                return (
-                  <TouchableOpacity
-                    key={p.name}
-                    onPress={() => pick(q.id, p)}
-                    style={[
-                      st.paletteSwatch,
-                      { borderColor: selected ? colors.accent : colors.codeEditorBorder },
-                    ]}
-                  >
-                    <View style={st.paletteColors}>
-                      {p.colors.slice(0, 4).map((c, i) => (
-                        <View key={`${c}-${i}`} style={[st.paletteDot, { backgroundColor: c }]} />
-                      ))}
-                    </View>
-                    <Text style={[st.optionLabel, { color: colors.text }]} numberOfLines={1}>
-                      {p.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : q.type === 'fonts' ? (
-            <View style={st.optionRow}>
-              {((q.options as ClarifyFontOption[] | undefined) ?? []).map((f) => {
-                const current = sel[q.id];
-                const selected = isFontOption(current) && current.name === f.name;
-                return (
-                  <TouchableOpacity
-                    key={f.name}
-                    onPress={() => pick(q.id, f)}
-                    style={[
-                      st.fontCard,
-                      { borderColor: selected ? colors.accent : colors.codeEditorBorder },
-                    ]}
-                  >
-                    <Text style={[st.fontHeading, { color: colors.text }]} numberOfLines={1}>
-                      {f.heading}
-                    </Text>
-                    <Text style={{ color: colors.textSub, fontSize: 10.5 }} numberOfLines={1}>
-                      {f.body}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : q.type === 'checklist' ? (
-            <View style={st.optionRow}>
-              {((q.options as string[] | undefined) ?? []).map((opt) => {
-                const on = (checks[q.id] ?? []).includes(opt);
-                return (
-                  <TouchableOpacity
-                    key={opt}
-                    onPress={() => toggleCheck(q.id, opt)}
-                    style={[
-                      st.chip,
-                      {
-                        backgroundColor: on ? colors.accent : colors.codeEditorTabBg,
-                        borderColor: on ? colors.accent : colors.codeEditorBorder,
-                      },
-                    ]}
-                  >
-                    <Text style={[st.chipLabel, { color: on ? '#FFFFFF' : colors.text }]}>{opt}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : q.type === 'choice' ? (
-            <View style={st.optionRow}>
-              {((q.options as string[] | undefined) ?? []).map((opt) => {
-                const selected = sel[q.id] === opt;
-                return (
-                  <TouchableOpacity
-                    key={opt}
-                    onPress={() => pick(q.id, opt)}
-                    style={[
-                      st.chip,
-                      {
-                        backgroundColor: selected ? colors.accent : colors.codeEditorTabBg,
-                        borderColor: selected ? colors.accent : colors.codeEditorBorder,
-                      },
-                    ]}
-                  >
-                    <Text style={[st.chipLabel, { color: selected ? '#FFFFFF' : colors.text }]}>{opt}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : null}
+            {q.type === 'palette' ? (
+              <PaletteOptions
+                q={q}
+                sel={sel[q.id]}
+                locked={locked}
+                answer={answer}
+                colors={colors}
+                onPick={(p) => pick(q.id, p)}
+              />
+            ) : q.type === 'fonts' ? (
+              <FontOptions
+                q={q}
+                sel={sel[q.id]}
+                locked={locked}
+                answer={answer}
+                colors={colors}
+                onPick={(f) => pick(q.id, f)}
+              />
+            ) : q.type === 'checklist' ? (
+              <ChecklistOptions
+                q={q}
+                checked={checks[q.id] ?? []}
+                locked={locked}
+                answer={answer}
+                colors={colors}
+                onToggle={(opt) => toggleCheck(q.id, opt)}
+              />
+            ) : q.type === 'choice' ? (
+              <ChoiceOptions
+                q={q}
+                sel={sel[q.id]}
+                locked={locked}
+                answer={answer}
+                colors={colors}
+                onPick={(opt) => pick(q.id, opt)}
+              />
+            ) : null}
 
-          {q.allowCustom !== false ? (
-            <TextInput
-              value={custom[q.id] ?? ''}
-              onChangeText={(v) => setText(q.id, v)}
-              placeholder={q.type === 'checklist' ? 'add your own (comma separated)…' : 'or type your own…'}
-              placeholderTextColor={colors.codeEditorTextMuted}
-              style={[st.textInput, { color: colors.text, borderColor: colors.codeEditorBorder }]}
-            />
-          ) : null}
-        </View>
-      ))}
+            {!locked && q.allowCustom !== false ? (
+              <TextInput
+                value={custom[q.id] ?? ''}
+                onChangeText={(v) => setText(q.id, v)}
+                placeholder={
+                  q.type === 'checklist'
+                    ? 'add your own (comma separated)…'
+                    : 'or type your own…'
+                }
+                placeholderTextColor={colors.codeEditorTextMuted}
+                style={[
+                  st.textInput,
+                  { color: colors.text, borderColor: colors.codeEditorBorder },
+                ]}
+              />
+            ) : null}
+          </View>
+        );
+      })}
 
-      <TouchableOpacity onPress={submit} style={[st.submitBtn, { backgroundColor: colors.accent }]}>
-        <Text style={st.submitLabel}>{block.submitLabel ?? 'Continue'}</Text>
-      </TouchableOpacity>
+      {!locked ? (
+        <TouchableOpacity
+          onPress={submit}
+          style={[st.submitBtn, { backgroundColor: colors.accent }]}
+        >
+          <Text style={st.submitLabel}>{block.submitLabel ?? 'Continue'}</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
+function PaletteOptions({
+  q,
+  sel,
+  locked,
+  answer,
+  colors,
+  onPick,
+}: {
+  q: ClarifyQuestion;
+  sel: Selected;
+  locked: boolean;
+  answer: string | undefined;
+  colors: AppColors;
+  onPick: (p: ClarifyPaletteOption) => void;
+}) {
+  const options = (q.options as ClarifyPaletteOption[] | undefined) ?? [];
+  const anyMatch = locked && options.some((p) => paletteLabel(p) === answer);
+
+  return (
+    <View style={st.optionRow} pointerEvents={locked ? 'none' : 'auto'}>
+      {options.map((p) => {
+        const label = paletteLabel(p);
+        const selected = locked
+          ? label === answer
+          : isPaletteOption(sel) && sel.name === p.name;
+        return (
+          <TouchableOpacity
+            key={p.name}
+            disabled={locked}
+            onPress={() => onPick(p)}
+            style={[
+              st.paletteSwatch,
+              {
+                borderColor: selected ? colors.accent : colors.codeEditorBorder,
+              },
+              locked && !selected ? st.dimmed : null,
+            ]}
+          >
+            <View style={st.paletteColors}>
+              {p.colors.slice(0, 4).map((c, i) => (
+                <View
+                  key={`${c}-${i}`}
+                  style={[st.paletteDot, { backgroundColor: c }]}
+                />
+              ))}
+            </View>
+            <Text
+              style={[st.optionLabel, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {p.name}
+            </Text>
+            {selected ? <CheckBadge colors={colors} /> : null}
+          </TouchableOpacity>
+        );
+      })}
+      {locked && !anyMatch && answer ? (
+        <LockedCustomAnswer answer={answer} colors={colors} />
+      ) : null}
+    </View>
+  );
+}
+
+function FontOptions({
+  q,
+  sel,
+  locked,
+  answer,
+  colors,
+  onPick,
+}: {
+  q: ClarifyQuestion;
+  sel: Selected;
+  locked: boolean;
+  answer: string | undefined;
+  colors: AppColors;
+  onPick: (f: ClarifyFontOption) => void;
+}) {
+  const options = (q.options as ClarifyFontOption[] | undefined) ?? [];
+  const anyMatch = locked && options.some((f) => fontLabel(f) === answer);
+
+  return (
+    <View style={st.optionRow} pointerEvents={locked ? 'none' : 'auto'}>
+      {options.map((f) => {
+        const label = fontLabel(f);
+        const selected = locked
+          ? label === answer
+          : isFontOption(sel) && sel.name === f.name;
+        return (
+          <TouchableOpacity
+            key={f.name}
+            disabled={locked}
+            onPress={() => onPick(f)}
+            style={[
+              st.fontCard,
+              {
+                borderColor: selected ? colors.accent : colors.codeEditorBorder,
+              },
+              locked && !selected ? st.dimmed : null,
+            ]}
+          >
+            <Text
+              style={[st.fontHeading, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {f.heading}
+            </Text>
+            <Text
+              style={{ color: colors.textSub, fontSize: 10.5 }}
+              numberOfLines={1}
+            >
+              {f.body}
+            </Text>
+            {selected ? <CheckBadge colors={colors} /> : null}
+          </TouchableOpacity>
+        );
+      })}
+      {locked && !anyMatch && answer ? (
+        <LockedCustomAnswer answer={answer} colors={colors} />
+      ) : null}
+    </View>
+  );
+}
+
+function ChecklistOptions({
+  q,
+  checked,
+  locked,
+  answer,
+  colors,
+  onToggle,
+}: {
+  q: ClarifyQuestion;
+  checked: string[];
+  locked: boolean;
+  answer: string | undefined;
+  colors: AppColors;
+  onToggle: (opt: string) => void;
+}) {
+  const options = (q.options as string[] | undefined) ?? [];
+  const lockedPicked = locked
+    ? (answer ?? '').split(',').map((s) => s.trim())
+    : [];
+
+  return (
+    <View style={st.optionRow} pointerEvents={locked ? 'none' : 'auto'}>
+      {options.map((opt) => {
+        const on = locked ? lockedPicked.includes(opt) : checked.includes(opt);
+        return (
+          <TouchableOpacity
+            key={opt}
+            disabled={locked}
+            onPress={() => onToggle(opt)}
+            style={[
+              st.chip,
+              {
+                backgroundColor: on ? colors.accent : colors.codeEditorTabBg,
+                borderColor: on ? colors.accent : colors.codeEditorBorder,
+              },
+              locked && !on ? st.dimmed : null,
+            ]}
+          >
+            <Text
+              style={[st.chipLabel, { color: on ? '#FFFFFF' : colors.text }]}
+            >
+              {opt}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function ChoiceOptions({
+  q,
+  sel,
+  locked,
+  answer,
+  colors,
+  onPick,
+}: {
+  q: ClarifyQuestion;
+  sel: Selected;
+  locked: boolean;
+  answer: string | undefined;
+  colors: AppColors;
+  onPick: (opt: string) => void;
+}) {
+  const options = (q.options as string[] | undefined) ?? [];
+  const anyMatch = locked && options.includes(answer ?? '');
+
+  return (
+    <View style={st.optionRow} pointerEvents={locked ? 'none' : 'auto'}>
+      {options.map((opt) => {
+        const selected = locked ? opt === answer : sel === opt;
+        return (
+          <TouchableOpacity
+            key={opt}
+            disabled={locked}
+            onPress={() => onPick(opt)}
+            style={[
+              st.chip,
+              {
+                backgroundColor: selected
+                  ? colors.accent
+                  : colors.codeEditorTabBg,
+                borderColor: selected ? colors.accent : colors.codeEditorBorder,
+              },
+              locked && !selected ? st.dimmed : null,
+            ]}
+          >
+            <Text
+              style={[
+                st.chipLabel,
+                { color: selected ? '#FFFFFF' : colors.text },
+              ]}
+            >
+              {opt}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+      {locked && !anyMatch && answer ? (
+        <LockedCustomAnswer answer={answer} colors={colors} />
+      ) : null}
+    </View>
+  );
+}
+
+/** A submitted answer that doesn't match any predefined option — the
+ * respondent typed their own. Shown as plain locked text alongside the
+ * (all-dimmed) options instead of silently dropping it. */
+function LockedCustomAnswer({
+  answer,
+  colors,
+}: {
+  answer: string;
+  colors: AppColors;
+}) {
+  return (
+    <View
+      style={[
+        st.chip,
+        { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+      ]}
+    >
+      <Text style={[st.chipLabel, { color: colors.accent }]}>{answer}</Text>
+    </View>
+  );
+}
+
+function CheckBadge({ colors }: { colors: AppColors }) {
+  return (
+    <View style={[st.checkBadge, { backgroundColor: colors.accent }]}>
+      <Text style={st.checkBadgeText}>✓</Text>
     </View>
   );
 }
@@ -240,6 +512,9 @@ const st = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  dimmed: {
+    opacity: 0.42,
+  },
   chip: {
     borderWidth: 1,
     borderRadius: 16,
@@ -251,6 +526,7 @@ const st = StyleSheet.create({
     fontWeight: '600',
   },
   paletteSwatch: {
+    position: 'relative',
     borderWidth: 1.5,
     borderRadius: 12,
     padding: 8,
@@ -272,6 +548,7 @@ const st = StyleSheet.create({
     fontWeight: '600',
   },
   fontCard: {
+    position: 'relative',
     borderWidth: 1.5,
     borderRadius: 12,
     paddingHorizontal: 12,
@@ -281,6 +558,21 @@ const st = StyleSheet.create({
   },
   fontHeading: {
     fontSize: 14,
+    fontWeight: '700',
+  },
+  checkBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
     fontWeight: '700',
   },
   textInput: {

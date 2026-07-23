@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from '@shopify/flash-list';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,23 +13,22 @@ import {
   View,
 } from 'react-native';
 
-import type { ChatMessage } from '@/api/coder';
+import type { ActivityStep, ChatMessage, ClarifyBlock } from '@/api/coder';
 import { F } from '@/lib/fonts';
 import { useAppTheme } from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
-import { ActivityStream } from './ActivityStream';
+import { ActivityStream, LiveActivity } from './ActivityStream';
 import { ClarifyBlockView } from './ClarifyBlock';
 import { PulsingDot } from './PulsingDot';
+import { TokenMeter } from './TokenMeter';
 
 function MessageBubble({
   message,
   colors,
-  isDark,
 }: {
   message: ChatMessage;
   colors: ReturnType<typeof useAppTheme>;
-  isDark: boolean;
 }) {
   const isUser = message.role === 'user';
   const text = message.content || (message.streaming ? '…' : '');
@@ -60,23 +58,11 @@ function MessageBubble({
           st.bubble,
           st.bubbleAssistant,
           {
-            borderColor: colors.codeEditorGlassBorder,
-            borderTopColor: colors.codeEditorGlassBorderTop,
+            backgroundColor: colors.codeEditorChatAssistantBg,
+            borderColor: colors.codeEditorBorder,
           },
         ]}
       >
-        <BlurView
-          intensity={Platform.OS === 'android' ? 45 : 24}
-          tint={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
-        <View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: colors.codeEditorGlassOverlay },
-          ]}
-        />
         <Text
           style={[
             st.assistantText,
@@ -86,6 +72,23 @@ function MessageBubble({
           {text}
         </Text>
       </View>
+    </View>
+  );
+}
+
+function MessageRow({
+  message,
+  colors,
+}: {
+  message: ChatMessage;
+  colors: ReturnType<typeof useAppTheme>;
+}) {
+  return (
+    <View>
+      <MessageBubble message={message} colors={colors} />
+      {message.activity && message.activity.length > 0 ? (
+        <ActivityStream steps={message.activity} colors={colors} />
+      ) : null}
     </View>
   );
 }
@@ -124,30 +127,16 @@ function Composer({
   onChangeInput,
   onSend,
   disabled,
-  isDark,
   colors,
 }: {
   input: string;
   onChangeInput: (v: string) => void;
   onSend: () => void;
   disabled: boolean;
-  isDark: boolean;
   colors: ReturnType<typeof useAppTheme>;
 }) {
   return (
     <View style={[st.composer, { borderColor: colors.codeEditorGlassBorder }]}>
-      <BlurView
-        intensity={Platform.OS === 'android' ? 45 : 24}
-        tint={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: colors.codeEditorGlassOverlay },
-        ]}
-      />
       <TextInput
         value={input}
         onChangeText={onChangeInput}
@@ -185,6 +174,34 @@ function Composer({
   );
 }
 
+function ChatFooter({
+  activity,
+  clarifyBlock,
+  clarifyAnswers,
+  colors,
+  onSubmitClarify,
+}: {
+  activity: ActivityStep[];
+  clarifyBlock: ClarifyBlock | null;
+  clarifyAnswers: Record<string, string> | null;
+  colors: ReturnType<typeof useAppTheme>;
+  onSubmitClarify: (value: Record<string, string>) => void;
+}) {
+  return (
+    <>
+      <LiveActivity steps={activity} colors={colors} />
+      {clarifyBlock ? (
+        <ClarifyBlockView
+          block={clarifyBlock}
+          colors={colors}
+          onSubmit={onSubmitClarify}
+          answers={clarifyAnswers}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function EmptyState({ colors }: { colors: ReturnType<typeof useAppTheme> }) {
   return (
     <View style={st.empty}>
@@ -206,26 +223,31 @@ function EmptyState({ colors }: { colors: ReturnType<typeof useAppTheme> }) {
 export function ChatPanel() {
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
-  const isDark = colorScheme === 'dark';
   const {
     connected,
     busy,
     messages,
     activity,
+    tokens,
     clarifyBlock,
+    clarifyAnswers,
     send,
     answerClarify,
   } = useCodeEditor();
 
   const [input, setInput] = React.useState('');
-  const listRef = React.useRef<FlashList<ChatMessage>>(null);
+  const listRef = React.useRef<ScrollView>(null);
 
+  // Bottom-anchored, like iMessage/most chat UIs — follows new content as it
+  // streams in, not just on a brand new message (a turn with many activity
+  // steps would otherwise leave the view stuck wherever it last was while
+  // the feed grows well past the fold).
   React.useEffect(() => {
-    if (messages.length)
+    if (messages.length || activity.length)
       requestAnimationFrame(() =>
         listRef.current?.scrollToEnd({ animated: true })
       );
-  }, [messages.length]);
+  }, [messages.length, activity.length]);
 
   function handleSend() {
     const text = input.trim();
@@ -243,37 +265,35 @@ export function ChatPanel() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
-        <FlashList
+        <ScrollView
           ref={listRef}
           style={st.list}
-          data={messages}
-          keyExtractor={(_, i) => String(i)}
-          renderItem={({ item }) => (
-            <MessageBubble message={item} colors={t} isDark={isDark} />
-          )}
-          estimatedItemSize={80}
           contentContainerStyle={st.listContent}
-          ListFooterComponent={
-            <>
-              <ActivityStream steps={activity} busy={busy} colors={t} />
-              {clarifyBlock ? (
-                <ClarifyBlockView
-                  block={clarifyBlock}
-                  colors={t}
-                  onSubmit={answerClarify}
-                />
-              ) : null}
-            </>
-          }
-          ListEmptyComponent={<EmptyState colors={t} />}
-        />
+          keyboardShouldPersistTaps="handled"
+        >
+          {messages.length === 0 ? (
+            <EmptyState colors={t} />
+          ) : (
+            messages.map((item, i) => (
+              <MessageRow key={i} message={item} colors={t} />
+            ))
+          )}
+          <ChatFooter
+            activity={activity}
+            clarifyBlock={clarifyBlock}
+            clarifyAnswers={clarifyAnswers}
+            colors={t}
+            onSubmitClarify={answerClarify}
+          />
+        </ScrollView>
+
+        <TokenMeter tokens={tokens} colors={t} />
 
         <Composer
           input={input}
           onChangeInput={setInput}
           onSend={handleSend}
           disabled={!connected || busy || !input.trim()}
-          isDark={isDark}
           colors={t}
         />
       </KeyboardAvoidingView>

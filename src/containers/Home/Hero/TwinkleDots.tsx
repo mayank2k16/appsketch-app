@@ -36,7 +36,7 @@ export function TwinkleDots({
   radius = 1.4,
   baseOpacity = 0.6,
   peakOpacity = 0.9,
-  density = 0.6,
+  density = 1,
 }: Props) {
   const isFocused = useIsFocused();
 
