@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@rivascva/react-native-code-editor@1.2.2': patches/@rivascva__react-native-code-editor@1.2.2.patch

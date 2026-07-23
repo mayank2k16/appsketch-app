@@ -2,7 +2,7 @@ default_platform(:ios)
 
 # ─── Shared helpers ────────────────────────────────────────────────────────────
 
-BUNDLE_ID   = "com.chinesecorner.app"
+BUNDLE_ID   = "com.appsketch-ai.app"
 TEAM_ID     = "SU6UH5H6N9"
 APPLE_ID    = "akash@appsketch.ai"
 WORKSPACE   = "ios/Zorviaa.xcworkspace"
@@ -18,7 +18,7 @@ platform :ios do
   lane :beta do
     # Install the local App Store profile (already downloaded, valid until Apr 2027)
     install_provisioning_profile(
-      path: "./fastlane/profiles/AppStore_com.chinesecorner.app.mobileprovision"
+      path: "./fastlane/profiles/AppStore_com.appsketch-ai.app.mobileprovision"
     )
 
     # Auto-increment build number locally
@@ -36,17 +36,17 @@ platform :ios do
         "DEVELOPMENT_TEAM=#{TEAM_ID}",
         "CODE_SIGN_STYLE=Manual",
         "CODE_SIGN_IDENTITY='Apple Distribution'",
-        "PROVISIONING_PROFILE_SPECIFIER='Chinese Corner AppStore'",
+        "PROVISIONING_PROFILE_SPECIFIER='AppSketch AppStore'",
         "OTHER_CODE_SIGN_FLAGS='--keychain /Users/mayankoli/Library/Keychains/login.keychain-db'"
       ].join(" "),
       export_options: {
         method:               "app-store",
         teamID:               TEAM_ID,
         signingStyle:         "manual",
-        provisioningProfiles: { BUNDLE_ID => "Chinese Corner AppStore" }
+        provisioningProfiles: { BUNDLE_ID => "AppSketch AppStore" }
       },
       output_directory: "./build",
-      output_name:      "ChineseCorner.ipa",
+      output_name:      "AppSketch.ipa",
       clean:            true
     )
 
@@ -104,7 +104,7 @@ platform :ios do
       app_identifier:               BUNDLE_ID,
       username:                     APPLE_ID,
       team_id:                      TEAM_ID,
-      provisioning_name:            "Chinese Corner AppStore",
+      provisioning_name:            "AppSketch AppStore",
       force:                        true,
       output_path:                  "./fastlane/profiles",
       skip_certificate_verification: true

@@ -275,7 +275,7 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
       signInAfterVerify(data);
       const saved = authState.phone || authState.email || '';
       if (saved) void setItem('user_contact', saved);
-      toast.success('Welcome to Chinese Corner! 🥢');
+      toast.success('Welcome to AppSketch! 👋');
       onVerified();
     } catch (err) { showErrorFlash(err, 'Invalid code. Please try again.'); }
     finally { setLoading(false); }
@@ -334,7 +334,7 @@ export function useGoogleSignIn(onSuccess: () => void) {
       try {
         const data = await continueGoogle({ token: accessToken });
         signInAfterVerify(data);
-        toast.success('Welcome to Chinese Corner! 🥢');
+        toast.success('Welcome to AppSketch! 👋');
         onSuccess();
       } catch {
         toast.error('Google sign-in failed. Please try again.');

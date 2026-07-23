@@ -1,22 +1,25 @@
 import * as React from 'react';
 import { Animated, Platform, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import type { AppColors } from '@/lib/theme';
 
-import { CHAR_INFLUENCE_RADIUS, ORB_SIZE, type Orbit, proximityCurve } from './orbits';
+import { CHAR_INFLUENCE_RADIUS, PROMPT_CARD_RADIUS, type Orbit, type Rect as RectType, proximityCurve } from './orbits';
 
 /**
- * CipherField — dark backdrop scattered with monospace cipher characters, with
- * two soft glow orbs (orange + blue) travelling around the prompt card. Every
- * character is invisible by default; it fades in — orange or blue — only while
- * an orb's glow is close to it, so the SAME character can light orange when the
- * orange orb passes and blue when the blue orb passes half a lap later.
+ * CipherField — dark backdrop scattered with monospace cipher characters, plus
+ * a soft two-tone glow that hugs the prompt card's rounded-rect edge.
  *
- * Each near-path cell renders two overlaid glyphs (one per orb), each driven by
- * that orb's own looping clock (owned by `AgentScreen`) over a precomputed
- * distance curve — all native-driver opacity, no per-frame JS. This mirrors the
- * validated HTML prototype exactly.
+ * The glow is NOT a pair of travelling circles (those read as hard-edged discs
+ * with a visible boundary). Instead it's a *border bloom*: several concentric
+ * rounded-rect strokes tracing the exact card outline, each one wider, further
+ * out and fainter than the last, painted with a single orange→purple→blue
+ * horizontal gradient. Stacked, they fake a gaussian bloom that fades to
+ * nothing at its outer edge, so there's no perceptible circle — the light
+ * simply radiates outward from the input's border (see reference).
+ *
+ * The cipher characters still fade orange/blue as the two invisible orbit
+ * clocks sweep past them, keeping the field alive without any visible orb.
  */
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -25,21 +28,22 @@ const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'mon
 const CHAR_ORANGE = '#FF8A5C';
 const CHAR_BLUE = '#78AAFF';
 
-// Orb radial-gradient stops, cloned from the prototype — a hot bright core that
-// reddens / deepens toward the transparent edge.
-const ORANGE_STOPS = [
-  { offset: '0%', color: '#FF783C', opacity: 0.98 },
-  { offset: '16%', color: '#FF5A28', opacity: 0.75 },
-  { offset: '36%', color: '#FF461E', opacity: 0.4 },
-  { offset: '62%', color: '#FF3C19', opacity: 0.14 },
-  { offset: '100%', color: '#FF3C19', opacity: 0 },
-] as const;
-const BLUE_STOPS = [
-  { offset: '0%', color: '#6EAAFF', opacity: 0.98 },
-  { offset: '16%', color: '#5096FF', opacity: 0.75 },
-  { offset: '36%', color: '#3C82FF', opacity: 0.4 },
-  { offset: '62%', color: '#3C78FF', opacity: 0.14 },
-  { offset: '100%', color: '#3C78FF', opacity: 0 },
+// Mid stop of the border gradient — a violet where orange meets blue, matching
+// the app's blue→purple send button so the whole screen reads as one palette.
+const BLOOM_MID = '#8B5CF6';
+
+// Concentric rounded-rect strokes, outer → inner. `outset` pushes the stroke
+// away from the card edge, `sw` is its width, `op` its opacity. The wide/faint
+// outer rings melt into the background (no edge); the tight/bright inner ring
+// is the crisp glowing rim right at the border.
+const BLOOM_LAYERS = [
+  { outset: 46, sw: 66, op: 0.035 },
+  { outset: 31, sw: 48, op: 0.06 },
+  { outset: 20, sw: 34, op: 0.09 },
+  { outset: 12, sw: 24, op: 0.13 },
+  { outset: 6, sw: 15, op: 0.2 },
+  { outset: 2, sw: 8, op: 0.32 },
+  { outset: 0.75, sw: 3, op: 0.9 },
 ] as const;
 
 // Deterministic PRNG so the character field layout is stable across
@@ -65,32 +69,69 @@ type Cell = {
   blueCurve: number[];
 };
 
-// ─── Glow orb ─────────────────────────────────────────────────────────────────
-function GlowOrb({
-  gradientId,
-  stops,
-  tx,
-  ty,
+// ─── Border bloom ─────────────────────────────────────────────────────────────
+function BorderBloom({
+  rect,
+  width,
+  height,
+  orange,
+  blue,
 }: {
-  gradientId: string;
-  stops: readonly { offset: string; color: string; opacity: number }[];
-  tx: Animated.AnimatedInterpolation<number>;
-  ty: Animated.AnimatedInterpolation<number>;
+  rect: RectType;
+  width: number;
+  height: number;
+  orange: string;
+  blue: string;
 }) {
+  // Gentle breathing so the rim feels alive without any motion that would
+  // reveal an edge. Native-driver opacity only — no per-frame JS, and none of
+  // the SVG-attribute animation that destabilises Fabric on this device.
+  const breathe = React.useRef(new Animated.Value(0)).current;
+  React.useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathe, { toValue: 1, duration: 2600, useNativeDriver: true, isInteraction: false }),
+        Animated.timing(breathe, { toValue: 0, duration: 2600, useNativeDriver: true, isInteraction: false }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [breathe]);
+
+  const opacity = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.78, 1] });
+
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[s.orb, { transform: [{ translateX: tx }, { translateY: ty }] }]}
-    >
-      <Svg width={ORB_SIZE} height={ORB_SIZE}>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity }]}>
+      <Svg width={width} height={height}>
         <Defs>
-          <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-            {stops.map((st) => (
-              <Stop key={st.offset} offset={st.offset} stopColor={st.color} stopOpacity={st.opacity} />
-            ))}
-          </RadialGradient>
+          <LinearGradient
+            id="agentBloomGrad"
+            x1={rect.x}
+            y1={rect.y}
+            x2={rect.x + rect.width}
+            y2={rect.y}
+            gradientUnits="userSpaceOnUse"
+          >
+            <Stop offset="0" stopColor={orange} />
+            <Stop offset="0.5" stopColor={BLOOM_MID} />
+            <Stop offset="1" stopColor={blue} />
+          </LinearGradient>
         </Defs>
-        <Circle cx={ORB_SIZE / 2} cy={ORB_SIZE / 2} r={ORB_SIZE / 2} fill={`url(#${gradientId})`} />
+        {BLOOM_LAYERS.map((l, i) => (
+          <Rect
+            key={i}
+            x={rect.x - l.outset}
+            y={rect.y - l.outset}
+            width={rect.width + l.outset * 2}
+            height={rect.height + l.outset * 2}
+            rx={PROMPT_CARD_RADIUS + l.outset}
+            ry={PROMPT_CARD_RADIUS + l.outset}
+            fill="none"
+            stroke="url(#agentBloomGrad)"
+            strokeWidth={l.sw}
+            opacity={l.op}
+          />
+        ))}
       </Svg>
     </Animated.View>
   );
@@ -101,13 +142,14 @@ type Props = {
   width: number;
   height: number;
   t: AppColors;
+  cardRect: RectType | null;
   orangeOrbit: Orbit | null;
   blueOrbit: Orbit | null;
   orangeClock: Animated.Value;
   blueClock: Animated.Value;
 };
 
-export function CipherField({ width, height, t, orangeOrbit, blueOrbit, orangeClock, blueClock }: Props) {
+export function CipherField({ width, height, t, cardRect, orangeOrbit, blueOrbit, orangeClock, blueClock }: Props) {
   const cells = React.useMemo<Cell[]>(() => {
     if (width <= 0 || height <= 0 || !orangeOrbit || !blueOrbit) return [];
 
@@ -147,15 +189,11 @@ export function CipherField({ width, height, t, orangeOrbit, blueOrbit, orangeCl
 
   if (!orangeOrbit || !blueOrbit) return null;
 
-  const orangeX = orangeClock.interpolate({ inputRange: orangeOrbit.input, outputRange: orangeOrbit.xs.map((v) => v - ORB_SIZE / 2) });
-  const orangeY = orangeClock.interpolate({ inputRange: orangeOrbit.input, outputRange: orangeOrbit.ys.map((v) => v - ORB_SIZE / 2) });
-  const blueX = blueClock.interpolate({ inputRange: blueOrbit.input, outputRange: blueOrbit.xs.map((v) => v - ORB_SIZE / 2) });
-  const blueY = blueClock.interpolate({ inputRange: blueOrbit.input, outputRange: blueOrbit.ys.map((v) => v - ORB_SIZE / 2) });
-
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: t.bg, overflow: 'hidden' }]} pointerEvents="none">
-      <GlowOrb gradientId="agentGlowOrange" stops={ORANGE_STOPS} tx={orangeX} ty={orangeY} />
-      <GlowOrb gradientId="agentGlowBlue" stops={BLUE_STOPS} tx={blueX} ty={blueY} />
+      {cardRect && cardRect.width > 0 && cardRect.height > 0 ? (
+        <BorderBloom rect={cardRect} width={width} height={height} orange={t.agentGlowOrange} blue={t.agentGlowBlue} />
+      ) : null}
 
       {cells.map((cell) => {
         const orangeOpacity = orangeClock.interpolate({ inputRange: orangeOrbit.input, outputRange: cell.orangeCurve });
@@ -176,11 +214,6 @@ export function CipherField({ width, height, t, orangeOrbit, blueOrbit, orangeCl
 }
 
 const s = StyleSheet.create({
-  orb: {
-    position: 'absolute',
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-  },
   char: {
     position: 'absolute',
     fontFamily: MONO,

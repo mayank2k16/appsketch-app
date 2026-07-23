@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.chinesecorner.app'
+    namespace 'com.appsketchai.app'
     defaultConfig {
-        applicationId 'com.chinesecorner.app'
+        applicationId 'com.appsketchai.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
