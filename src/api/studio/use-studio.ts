@@ -16,6 +16,7 @@ export function useUserTenants() {
     queryKey: studioKeys.tenants(),
     queryFn: fetchUserTenants,
     staleTime: 60 * 1000,
+    retry: false,
   });
 }
 
