@@ -1783,6 +1783,30 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-pager-view (6.7.1):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-razorpay (2.3.1):
     - razorpay-pod (= 1.5.0)
     - React
@@ -2632,6 +2656,7 @@ DEPENDENCIES:
   - react-native-keyboard-controller (from `../node_modules/react-native-keyboard-controller`)
   - react-native-maps (from `../node_modules/react-native-maps`)
   - react-native-mmkv (from `../node_modules/react-native-mmkv`)
+  - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-razorpay (from `../node_modules/react-native-razorpay`)
   - react-native-restart (from `../node_modules/react-native-restart`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -2848,6 +2873,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-maps"
   react-native-mmkv:
     :path: "../node_modules/react-native-mmkv"
+  react-native-pager-view:
+    :path: "../node_modules/react-native-pager-view"
   react-native-razorpay:
     :path: "../node_modules/react-native-razorpay"
   react-native-restart:
@@ -3022,6 +3049,7 @@ SPEC CHECKSUMS:
   react-native-keyboard-controller: 0617eae6fa22bc7ae111e3747498248e8fe719e0
   react-native-maps: 9febd31278b35cd21e4fad2cf6fa708993be5dab
   react-native-mmkv: e653f0100f078487aad95be73f08a644e2cefdee
+  react-native-pager-view: f238ed7fb53458bd03366944a33686f067c83e9a
   react-native-razorpay: 376ba84b614ef8a22b5701df4ffee10f4c116d14
   react-native-restart: 0bc732f4461709022a742bb29bcccf6bbc5b4863
   react-native-safe-area-context: 562163222d999b79a51577eda2ea8ad2c32b4d06
