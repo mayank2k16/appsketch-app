@@ -20,7 +20,7 @@ import {
   Inter_900Black,
 } from '@expo-google-fonts/inter';
 import { APIProvider } from '@/api';
-import { loadSelectedTheme, useAppStartup } from '@/lib';
+import { loadSelectedTheme } from '@/lib';
 import { hydrateAuth } from '@/hooks/useAuth';
 import { hydrateStudio } from '@/lib/store/studio-store';
 import { TenantProvider } from '@/lib/tenant';
@@ -45,8 +45,6 @@ SplashScreen.setOptions({
 });
 
 function RootLayoutContent() {
-  useAppStartup();
-
   const [fontsLoaded] = useFonts({
     // ── Inter (replaces Proxima Nova app-wide, mapped via @/lib/fonts) ──
     Inter_400Regular,

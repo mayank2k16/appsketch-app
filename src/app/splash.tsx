@@ -37,17 +37,18 @@ const { width, height } = Dimensions.get('window');
 const HORIZON_Y = height * 0.5; // where the orb sits / horizon line
 const ORB_SIZE = Math.min(width * 0.86, 320); // soft glow diameter
 
-// Palette
+// Palette — indigo accent (key names kept as `amber*` since they're referenced
+// throughout; only the values changed from the old orange to indigo tones).
 const C = {
   bgTop: '#000000',
   bgMid: '#070912',
-  bgLow: '#0d0a12',
-  amber: '#FF7A18',
-  amberSoft: '#FFB070',
-  amberHot: '#FFE9CE',
+  bgLow: '#0a0a16',
+  amber: '#6C5CE7', // indigo accent (orb / glow / ".ai")
+  amberSoft: '#A9A2F2', // light indigo
+  amberHot: '#E7E6FF', // near-white indigo core
   ink: '#F5F1EA',
   muted: 'rgba(255,255,255,0.5)',
-  loader: 'rgba(255,196,150,0.75)',
+  loader: 'rgba(184,178,255,0.75)',
 };
 
 // How long the whole intro takes before we start holding / navigating
@@ -70,8 +71,8 @@ function makeStars(count: number): StarSpec[] {
   for (let i = 0; i < count; i++) {
     out.push({
       x: Math.random() * width,
-      // keep stars mostly in the upper sky, thinning near the horizon
-      y: Math.random() * (HORIZON_Y - 40),
+      // scattered across the whole screen (top to bottom)
+      y: Math.random() * height,
       size: Math.random() < 0.85 ? 1.5 : 2.5,
       delay: Math.random() * 2200,
       dur: 900 + Math.random() * 1600,
@@ -155,8 +156,8 @@ function Letter({
 }
 
 function Wordmark() {
-  // "appsketch" white, ".ai" amber — appearing left→right
-  const white = 'Appsketch'.split('');
+  // "appsketch" white, ".ai" indigo — appearing left→right
+  const white = 'appsketch'.split('');
   const amber = '.ai'.split('');
   const step = 55; // ms between letters
   const amberStart = 1150 + white.length * step + 120;
@@ -203,7 +204,7 @@ function Dot({ index }: { index: number }) {
 // ─────────────────────────────────────────────────────────────
 export default function BrandSplashScreen() {
   const router = useRouter();
-  const stars = React.useMemo(() => makeStars(46), []);
+  const stars = React.useMemo(() => makeStars(80), []);
   const navigated = React.useRef(false);
 
   // intro shared values
@@ -319,7 +320,7 @@ export default function BrandSplashScreen() {
       {/* Deep-space background */}
       <ReAnimated.View style={[StyleSheet.absoluteFill, skyStyle]}>
         <LinearGradient
-          colors={[C.bgTop, C.bgMid, C.bgLow, '#120a10']}
+          colors={[C.bgTop, C.bgMid, C.bgLow, '#0d0a1a']}
           locations={[0, 0.45, 0.72, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -347,7 +348,7 @@ export default function BrandSplashScreen() {
       {/* Vertical light beam through the orb */}
       <ReAnimated.View style={[styles.beam, beamStyle]} pointerEvents="none">
         <LinearGradient
-          colors={['transparent', 'rgba(255,150,60,0.0)', 'rgba(255,170,90,0.55)', 'rgba(255,150,60,0.0)', 'transparent']}
+          colors={['transparent', 'rgba(108,92,231,0.0)', 'rgba(140,124,231,0.55)', 'rgba(108,92,231,0.0)', 'transparent']}
           locations={[0, 0.28, 0.5, 0.72, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -371,9 +372,9 @@ export default function BrandSplashScreen() {
             <RadialGradient id="orb" cx="50%" cy="50%" r="50%">
               <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
               <Stop offset="10%" stopColor={C.amberHot} stopOpacity="1" />
-              <Stop offset="24%" stopColor="#FFB265" stopOpacity="0.95" />
+              <Stop offset="24%" stopColor="#B7AEFF" stopOpacity="0.95" />
               <Stop offset="42%" stopColor={C.amber} stopOpacity="0.75" />
-              <Stop offset="70%" stopColor="#8f2f00" stopOpacity="0.22" />
+              <Stop offset="70%" stopColor="#2b1d63" stopOpacity="0.22" />
               <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
             </RadialGradient>
           </Defs>
@@ -443,10 +444,12 @@ const styles = StyleSheet.create({
   },
 
   brandBlock: {
+    // Sits near the bottom, just above the INITIALIZING loader (rather than
+    // over the centred orb).
     position: 'absolute',
     left: 0,
     right: 0,
-    top: HORIZON_Y - 108,
+    bottom: Platform.OS === 'ios' ? 118 : 102,
     alignItems: 'center',
   },
 
@@ -503,6 +506,6 @@ const styles = StyleSheet.create({
 
   flash: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFE9CE',
+    backgroundColor: '#E7E6FF',
   },
 });

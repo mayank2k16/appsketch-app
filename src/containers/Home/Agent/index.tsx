@@ -191,7 +191,15 @@ export function AgentScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ paddingBottom: insets.bottom || 12 }}
       >
-        <View style={[s.composer, { backgroundColor: t.agentInputBg, borderColor: t.agentInputBorder }]}>
+        <View style={s.composerRing}>
+          <LinearGradient
+            pointerEvents="none"
+            colors={['#22D3EE', '#8B5CF6', '#3B82F6']}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[s.composer, { backgroundColor: t.agentInputBg }]}>
           <TextInput
             placeholder="Ask the agent to build something…"
             placeholderTextColor={t.agentInputPlaceholder}
@@ -260,6 +268,7 @@ export function AgentScreen() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
+          </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -417,10 +426,17 @@ const s = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
   },
-  composer: {
+  // 1px gradient border ring (matches the Home screen prompt card): the ring
+  // reserves the border via padding, a LinearGradient fills it, and the
+  // composer sits inside covering everything but that 1px edge.
+  composerRing: {
     marginHorizontal: 18,
-    borderWidth: 1,
     borderRadius: 18,
+    padding: 1,
+    overflow: 'hidden',
+  },
+  composer: {
+    borderRadius: 17,
     padding: 12,
     gap: 8,
   },
@@ -428,9 +444,11 @@ const s = StyleSheet.create({
     fontFamily: F.sans400,
     fontSize: 14.5,
     lineHeight: 20,
-    minHeight: 40,
-    maxHeight: 100,
+    // Enlarged prompt box, then reduced (96 → 75).
+    minHeight: 75,
+    maxHeight: 150,
     paddingHorizontal: 2,
+    textAlignVertical: 'top',
   },
   thumbRow: {
     flexDirection: 'row',
@@ -465,7 +483,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     height: 34,
-    maxWidth: 150,
+    // Was 150 — just under the width of "MiniMax M3 · free" + chevron, which
+    // clipped the chevron at the edge. Roomier cap; long labels still
+    // truncate via numberOfLines on the label.
+    maxWidth: 185,
     borderRadius: 17,
     borderWidth: 1,
     paddingHorizontal: 11,

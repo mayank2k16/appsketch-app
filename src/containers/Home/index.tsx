@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 
 import { DrawerMenu } from '@/components/drawer-menu';
+import { useAppStartup } from '@/lib';
 import { homeTheme } from './theme/HomeTheme';
 import { HomeHeader } from './Header';
 import { HeroBanner } from './Hero';
@@ -14,6 +16,13 @@ import { Showcase } from './Showcase';
 const { width: W, height: H } = Dimensions.get('window');
 
 export function HomeScreen() {
+  // Camera/location/notifications permissions are requested once the user
+  // actually reaches Home, not during splash/login — asking upfront before
+  // the user has any context for why the app wants them was getting ignored
+  // more often than granted.
+  useAppStartup();
+
+  const router = useRouter();
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
   const isDark = colorScheme === 'dark';
@@ -21,11 +30,11 @@ export function HomeScreen() {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   function handleStartPress() {
-    // TODO: route to onboarding / explore
+    router.push('/agent');
   }
 
   function handleLearnPress() {
-    // TODO: route to info / about
+    router.push('/about');
   }
 
   function handleGalleryStartPress() {

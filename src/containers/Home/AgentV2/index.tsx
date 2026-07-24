@@ -124,7 +124,7 @@ function TabFlare({
           height: r * 2,
           borderRadius: r,
           backgroundColor: bg,
-          borderColor: '#FFFFFF',
+          borderColor: '#8B5CF6',
           borderWidth: 1,
         }}
       />
@@ -379,7 +379,7 @@ export function AgentV2({
                     active ? s.tabPillActive : s.tabPillInactive,
                     {
                       backgroundColor: active ? t.card : t.agentTabBg,
-                      borderColor: active ? '#FFFFFF' : t.agentTabBorder,
+                      borderColor: active ? '#8B5CF6' : t.agentTabBorder,
                       // Outer corners match the card radius so the first/last
                       // tab flows flush into the card edge (no broken curve);
                       // inner corners are the smaller tab radius.
@@ -417,6 +417,13 @@ export function AgentV2({
           </View>
 
           <View style={s.ringMask}>
+            <LinearGradient
+              pointerEvents="none"
+              colors={['#22D3EE', '#8B5CF6', '#3B82F6']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
             <View style={s.cardInner}>
               <BlurView
                 intensity={Platform.OS === 'android' ? 80 : 60}
@@ -815,10 +822,10 @@ const s = StyleSheet.create({
     borderTopRightRadius: 0,
     borderBottomLeftRadius: RADIUS,
     borderBottomRightRadius: RADIUS,
-    // The white outline lives here, on the card's true outer edge, so it
-    // traces the visible border exactly.
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
+    // 1px gradient ring: this View reserves the border's thickness via
+    // padding, a LinearGradient fills it (rendered as the first child, see
+    // JSX), and `cardInner` covers everything except that 1px edge.
+    padding: 1,
     overflow: 'hidden',
   },
   ringSpinner: {
