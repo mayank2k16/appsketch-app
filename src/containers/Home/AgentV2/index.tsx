@@ -193,7 +193,9 @@ function BlinkingCursor({ color }: { color: string }) {
 
 // Mirrors the web builder's model list (`coderModels.js`) — no tier/lock UI
 // here since Home has no auth/plan context wired in yet, just plain options.
-const MODELS = [
+// Exported so the standalone Agent tab screen (../Agent) reuses the same
+// list/picker instead of maintaining a second copy.
+export const MODELS = [
   {
     value: 'minimaxai/minimax-m3',
     label: 'MiniMax M3 · free',
@@ -211,9 +213,9 @@ const MODELS = [
   { value: 'gpt-5-mini', label: 'GPT-5 mini · advanced', context: 400_000 },
   { value: 'gpt-5', label: 'GPT-5 · most capable', context: 400_000 },
 ];
-const DEFAULT_MODEL = MODELS[0].value;
+export const DEFAULT_MODEL = MODELS[0].value;
 
-function fmtContext(tokens: number): string {
+export function fmtContext(tokens: number): string {
   if (tokens >= 1_000_000)
     return `${(tokens / 1_000_000).toFixed(tokens % 1_000_000 === 0 ? 0 : 1)}M ctx`;
   if (tokens >= 1_000) return `${Math.round(tokens / 1_000)}K ctx`;
