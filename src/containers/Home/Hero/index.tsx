@@ -153,29 +153,29 @@ const s = StyleSheet.create({
   },
 
   btnPrimary: {
-    height: 56,
-    paddingHorizontal: 30,
-    borderRadius: 28,
+    height: 50, // -10% (was 56)
+    paddingHorizontal: 27, // -10% (was 30)
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
   },
   btnPrimaryTxt: {
     fontFamily: F.sans700,
-    fontSize: 15,
+    fontSize: 13.5, // -10% (was 15)
     letterSpacing: 0.1,
   },
 
   btnSecondary: {
-    height: 56,
-    paddingHorizontal: 30,
-    borderRadius: 28,
+    height: 50, // -10% (was 56)
+    paddingHorizontal: 27, // -10% (was 30)
+    borderRadius: 25,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   btnSecondaryTxt: {
     fontFamily: F.sans700,
-    fontSize: 15,
+    fontSize: 13.5, // -10% (was 15)
     letterSpacing: 0.1,
   },
 });
