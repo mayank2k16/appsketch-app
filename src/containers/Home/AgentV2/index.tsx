@@ -83,6 +83,55 @@ const APP_TABS: {
     },
   ];
 
+// ─── Concave "flare" for the base of the active tab ────────────────────────────
+// Browser tabs don't just have rounded TOP corners — the active tab also flares
+// OUTWARD at the bottom with a reverse (concave) curve that blends it into the
+// card below. RN can't draw a concave border directly, so this is the standard
+// inverted-corner trick: an `r×r` window filled with the card colour, with a
+// `bg`-coloured circle (white-bordered) carving the concave arc out of its top
+// corner. Placed just outside a bottom corner of the active tab.
+function TabFlare({
+  side,
+  r,
+  card,
+  bg,
+}: {
+  side: 'left' | 'right';
+  r: number;
+  card: string;
+  bg: string;
+}) {
+  const isLeft = side === 'left';
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        [isLeft ? 'left' : 'right']: -r,
+        width: r,
+        height: r,
+        overflow: 'hidden',
+        backgroundColor: card,
+      }}
+    >
+      <View
+        style={{
+          position: 'absolute',
+          top: -r,
+          left: isLeft ? -r : 0,
+          width: r * 2,
+          height: r * 2,
+          borderRadius: r,
+          backgroundColor: bg,
+          borderColor: '#FFFFFF',
+          borderWidth: 1,
+        }}
+      />
+    </View>
+  );
+}
+
 /** Cycles through `phrases`, typing then deleting each in turn, forever —
  * restarts from scratch whenever `phrases` or `enabled` changes (tab switch,
  * or the real input gaining text/focus interrupts it). */
@@ -316,8 +365,10 @@ export function AgentV2({
       <View style={s.stage}>
         <View style={s.promptStack}>
           <View style={s.tabRow}>
-            {APP_TABS.map((tab) => {
+            {APP_TABS.map((tab, i) => {
               const active = tab.key === appType;
+              const isFirst = i === 0;
+              const isLast = i === APP_TABS.length - 1;
               return (
                 <TouchableOpacity
                   key={tab.key}
@@ -325,13 +376,15 @@ export function AgentV2({
                   activeOpacity={0.8}
                   style={[
                     s.tabPill,
+                    active ? s.tabPillActive : s.tabPillInactive,
                     {
-                      backgroundColor: active
-                        ? t.agentTabActiveBg
-                        : t.agentTabBg,
-                      borderColor: active
-                        ? t.agentTabActiveBg
-                        : t.agentTabBorder,
+                      backgroundColor: active ? t.card : t.agentTabBg,
+                      borderColor: active ? '#FFFFFF' : t.agentTabBorder,
+                      // Outer corners match the card radius so the first/last
+                      // tab flows flush into the card edge (no broken curve);
+                      // inner corners are the smaller tab radius.
+                      borderTopLeftRadius: isFirst ? RADIUS : 12,
+                      borderTopRightRadius: isLast ? RADIUS : 12,
                     },
                   ]}
                 >
@@ -349,6 +402,15 @@ export function AgentV2({
                   >
                     {tab.label}
                   </Text>
+
+                  {/* Concave base flares — only on the active tab, and never
+                      on the side that's flush with the card edge. */}
+                  {active && !isFirst && (
+                    <TabFlare side="left" r={7} card={t.card} bg={t.bg} />
+                  )}
+                  {active && !isLast && (
+                    <TabFlare side="right" r={7} card={t.card} bg={t.bg} />
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -650,24 +712,43 @@ const s = StyleSheet.create({
   // border/background with the card below — deliberately not "attached").
   promptStack: {
     alignSelf: 'stretch',
-    gap: 12,
+    // No gap: the browser-style tabs sit flush on the card's top edge (they
+    // overlap it by 1px via marginBottom). Spacing below the card is added
+    // back explicitly on `suggestionCol`.
+    gap: 0,
     justifyContent: 'center',
   },
   tabRow: {
-    alignSelf: 'flex-start',
+    // Full width, edge-to-edge with the card; the 3 tabs split it equally and
+    // sit flush against each other (no gap).
+    alignSelf: 'stretch',
     flexDirection: 'row',
-    gap: 8,
-    width: '100%',
-    justifyContent: 'center',
+    gap: 0,
+    // Lift the tab row above the card so the active tab's fill covers the
+    // card's top border segment underneath it, letting the two merge like a
+    // browser tab connecting to its page.
+    zIndex: 2,
   },
+  // Browser-style tab: equal width (flex 1), rounded top corners only, open
+  // (border-less) bottom that overlaps onto the card so the active tab reads
+  // as attached to it.
   tabPill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 13,
-    borderRadius: 999,
+    paddingVertical: 9,
+    paddingHorizontal: 6,
     borderWidth: 1,
+    borderBottomWidth: 0,
+    marginBottom: -1,
+  },
+  tabPillActive: {
+    zIndex: 2,
+  },
+  tabPillInactive: {
+    zIndex: 1,
   },
   tabPillLabel: {
     fontFamily: F.sans600,
@@ -676,6 +757,7 @@ const s = StyleSheet.create({
   // Suggested-prompt cards below the card — one full prompt per row (not a
   // wrapping row of short labels), same glass tokens as the tabs above.
   suggestionCol: {
+    marginTop: 12,
     gap: 8,
   },
   suggestionPill: {
@@ -726,12 +808,15 @@ const s = StyleSheet.create({
   // padding — covers the spinner everywhere except that ring, so only the
   // border ever shows the animated colour.
   ringMask: {
-    borderRadius: RADIUS,
+    // Top corners are SQUARE so the first/last tab's straight outer edge flows
+    // seamlessly into the card's side with no distortion (the tabs provide the
+    // top rounding via their own outer radius); only the bottom corners round.
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: RADIUS,
+    borderBottomRightRadius: RADIUS,
     // The white outline lives here, on the card's true outer edge, so it
-    // traces the visible border exactly. (Previously the border sat on an
-    // inner view inset by BORDER_W with a tighter radius — the legacy
-    // gradient-ring `ringSpinner` isn't rendered anymore — which made the
-    // white line float inside the card instead of along its edge.)
+    // traces the visible border exactly.
     borderWidth: 1,
     borderColor: '#FFFFFF',
     overflow: 'hidden',
@@ -744,7 +829,10 @@ const s = StyleSheet.create({
     height: '250%',
   },
   cardInner: {
-    borderRadius: RADIUS - 1,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: RADIUS - 1,
+    borderBottomRightRadius: RADIUS - 1,
     overflow: 'hidden',
   },
   cardContent: {
