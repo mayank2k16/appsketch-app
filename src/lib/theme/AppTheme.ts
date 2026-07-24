@@ -41,7 +41,7 @@ export const appTheme = {
     headerBorder: 'rgba(255,255,255,0.08)',
 
     // ── Hero dot background (twinkling grid) ──────────────────────────────────
-    dotColor: '#C9CDD6', // cool-gray dot; opacity animated
+    dotColor: '#36454f', // opacity animated
     glowColor: 'rgba(108,92,231,0.14)',
     pulseRing: 'rgba(108,92,231,0.40)',
     tagBorder: 'rgba(108,92,231,0.55)',
