@@ -363,7 +363,7 @@ export function AgentV2({
                 pointerEvents="none"
                 style={[
                   StyleSheet.absoluteFill,
-                  { backgroundColor: t.background, borderColor: t.border, borderWidth: 1 },
+                  { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
                 ]}
               />
 

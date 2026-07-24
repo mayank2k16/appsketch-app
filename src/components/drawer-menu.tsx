@@ -121,6 +121,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const router = useRouter();
   const status = useAuth.use.status();
   const isGuest = status === 'guest';
+  const isSignedIn = status === 'signIn';
   const MENU_ITEMS = isGuest ? GUEST_MENU_ITEMS : AUTH_MENU_ITEMS;
   const { colorScheme } = useColorScheme();
   const dt = drawerTheme[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -320,21 +321,21 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
               }],
             }}
           >
-            {isGuest ? (
-              <Pressable
-                onPress={handleSignIn}
-                style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
-              >
-                <Ionicons name="log-in-outline" size={17} color={ACCENT} style={st.flatIcon} />
-                <Text style={[st.flatLabel, { color: ACCENT }]}>Sign In / Register</Text>
-              </Pressable>
-            ) : (
+            {isSignedIn ? (
               <Pressable
                 onPress={handleLogout}
                 style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
               >
                 <Ionicons name="log-out-outline" size={17} color="#EF4444" style={st.flatIcon} />
                 <Text style={[st.flatLabel, { color: '#EF4444' }]}>Log Out</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={handleSignIn}
+                style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+              >
+                <Ionicons name="log-in-outline" size={17} color={ACCENT} style={st.flatIcon} />
+                <Text style={[st.flatLabel, { color: ACCENT }]}>Sign In / Register</Text>
               </Pressable>
             )}
           </Animated.View>

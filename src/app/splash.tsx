@@ -30,7 +30,7 @@ import Svg, {
 } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
-import { hydrateAuth } from '@/hooks/useAuth';
+import { hydrateAuth, useAuth } from '@/hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -273,18 +273,21 @@ export default function BrandSplashScreen() {
     loaderOp.value = withDelay(2350, withTiming(1, { duration: 600 }));
 
     // 7. auto - advance
-    // const t = setTimeout(doExit, HOLD_MS);
-    // return () => clearTimeout(t);
+    const t = setTimeout(doExit, HOLD_MS);
+    return () => clearTimeout(t);
   }, []);
 
   const doExit = () => {
     if (navigated.current) return;
     navigated.current = true;
 
-    // quick amber bloom, then navigate — always land on home (login optional from drawer)
+    // quick amber bloom, then navigate — logged-out users go to login, everyone else to home
     flashOp.value = withTiming(1, { duration: 360, easing: Easing.in(Easing.quad) });
+    const authStatus = useAuth.getState().status;
+    // console.log("idldsg", authStatus)
+    const isLoggedOut = authStatus === 'guest' || authStatus === 'signOut';
     setTimeout(() => {
-      router.replace('/home');
+      router.replace(isLoggedOut ? '/login' : '/home');
     }, 340);
   };
 

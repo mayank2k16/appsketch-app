@@ -109,13 +109,6 @@ export const hydrateAuth = () => _useAuth.getState().hydrate();
 /** True when the user is browsing without an account */
 export const isGuest = () => _useAuth.getState().status === 'guest';
 
-/** Session bootstrap shared by the OTP and Google flows: signs in, then
- * replays any cart items a guest added before authenticating.
- *
- * `cart-store` is required lazily (not statically imported) because it pulls
- * in `api/common/client`, which itself imports `useAuth` from this file —
- * a static import here would create a module cycle that leaves `useAuth`
- * undefined for early consumers (e.g. splash.tsx) at app startup. */
 function signInAfterVerify(response: VerifyOtpResponse): void {
   const pendingItems = getItem<{ id: number; quantity: number }[]>('pending_cart_sync') ?? [];
 
@@ -312,7 +305,6 @@ export function useGoogleSignIn(onSuccess: () => void) {
 
   const redirectUri = AuthSession.makeRedirectUri();
 
-  console.log("Redirect URI:", redirectUri);
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: Env.GOOGLE_OAUTH_CLIENT_ID || 'unconfigured',
