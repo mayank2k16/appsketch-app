@@ -86,6 +86,14 @@ export function AuthForm() {
         <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Google</Text>
       </Pressable> */}
 
+      {/* Tertiary — Guest */}
+      <Pressable
+        onPress={() => { signInAsGuest(); goHome(); }}
+        style={({ pressed }) => [s.guestBtn, pressed && s.btnPressed]}
+      >
+        <Text style={[s.guest, { color: t.guest }]}>Continue as Guest</Text>
+      </Pressable>
+
       <Text style={[s.footer, { color: t.footer }]}>
         By pressing on “Continue with…” you agree to our{' '}
         <Text style={{ color: t.footerLink, textDecorationLine: 'underline' }}>Terms of Service</Text>
@@ -105,12 +113,16 @@ export function AuthForm() {
 
 const s = StyleSheet.create({
   panel: {
-    paddingVertical: 26,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    // paddingVertical: 26,
     paddingHorizontal: 26,
-    marginTop: "auto",
+    paddingBottom: 26
   },
   heading: {
-    fontSize: 30,
+    fontSize: 28,
     fontFamily: F.display900,
     letterSpacing: -0.6,
     lineHeight: 33,
@@ -156,6 +168,12 @@ const s = StyleSheet.create({
     lineHeight: 16,
   },
 
-  guestBtn: { marginTop: 16, alignSelf: 'center' },
-  guest: { fontSize: 13, fontFamily: F.sans600 },
+  guestBtn: {
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  guest: { fontSize: 14, fontFamily: F.sans700 },
 });

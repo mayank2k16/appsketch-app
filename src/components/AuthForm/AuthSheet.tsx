@@ -72,7 +72,7 @@ export function AuthSheet({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={close} >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={close} >
       <KeyboardAvoidingView
         style={{ flex: 1, justifyContent: 'flex-end' }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

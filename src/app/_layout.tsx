@@ -69,6 +69,8 @@ function RootLayoutContent() {
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="cms"        options={{ headerShown: false }} />
       <Stack.Screen name="app-preview" options={{ headerShown: false }} />
+      <Stack.Screen name="about"      options={{ headerShown: false }} />
+      <Stack.Screen name="contact"    options={{ headerShown: false }} />
       <Stack.Screen name="code-editor" options={{ headerShown: false }} />
     </Stack>
   );

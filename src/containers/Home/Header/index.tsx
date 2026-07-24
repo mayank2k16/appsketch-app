@@ -6,11 +6,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  Text
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
-import { AnimatedGradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
 import { homeTheme } from '../theme/HomeTheme';
 
@@ -48,9 +47,9 @@ export function HomeHeader({ onMenuPress }: Props) {
             contentFit="contain"
           />
         </View>
-        <AnimatedGradientText style={s.brandName} baseColor={t.text} highlightColor={t.heroHeadingFade}>
+        <Text style={[s.brandName, { color: t.text }]}>
           AppSketch
-        </AnimatedGradientText>
+        </Text>
       </View>
 
       {/* ── Right: menu button — avatar-with-settings badge, still opens the drawer ── */}
@@ -95,8 +94,8 @@ const s = StyleSheet.create({
     marginTop: 1
   },
   brandName: {
-    fontFamily: F.sans800,
-    fontSize: 17,
+    fontFamily: F.sans600,
+    fontSize: 19,
     letterSpacing: 1.2,
   },
   menuBtn: {
