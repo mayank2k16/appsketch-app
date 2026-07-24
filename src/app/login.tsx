@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -10,7 +9,6 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 import { AuthForm } from '@/components/AuthForm';
 import { loginTheme } from '@/components/AuthForm/AuthTheme';
@@ -30,16 +28,28 @@ const IMGS = [
   'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/compressed_Screenshot_2026-01-12_at_10_15.webp?w=400',            // 8 neutral
 ];
 
-const MONTAGE_COLS = 4;
-const TILE_GAP = 8;
-const GRID_W = width * 1.4;
+// A steep -40° tilt leaves the top-right/top corners empty unless the band of
+// columns is WIDE enough to reach into them. Rather than scaling the tiles up
+// (which makes each huge and shows fewer of them), we use MORE columns so the
+// diagonal band is wide enough to fill every corner while individual tiles
+// stay a sensible size. The middle ~4 columns read as the "main" ones; the
+// outer columns are partly cut at the screen edges (which the user is fine
+// with) and exist mainly to fill the corners.
+const MONTAGE_COLS = 6;
+const TILE_GAP = 5;
+const GRID_W = width * 1.7;
 const COL_W = (GRID_W - TILE_GAP * (MONTAGE_COLS + 1)) / MONTAGE_COLS;
 
+// Shorter, wider tiles (was 140) — less height, more width.
+const TILE_H = 104;
+
 const COLUMNS = [
-  { order: [0, 2, 8, 3, 1, 6], goDown: true, speed: 12, tileH: 140 },
-  { order: [7, 4, 5, 8, 0, 2], goDown: false, speed: 12, tileH: 140 },
-  { order: [3, 1, 6, 2, 7, 4], goDown: true, speed: 12, tileH: 140 },
-  { order: [8, 5, 0, 4, 3, 1], goDown: false, speed: 12, tileH: 140 },
+  { order: [0, 2, 8, 3, 1, 6], goDown: true, speed: 12, tileH: TILE_H },
+  { order: [7, 4, 5, 8, 0, 2], goDown: false, speed: 12, tileH: TILE_H },
+  { order: [3, 1, 6, 2, 7, 4], goDown: true, speed: 12, tileH: TILE_H },
+  { order: [8, 5, 0, 4, 3, 1], goDown: false, speed: 12, tileH: TILE_H },
+  { order: [1, 6, 3, 0, 8, 5], goDown: true, speed: 12, tileH: TILE_H },
+  { order: [4, 7, 2, 5, 1, 0], goDown: false, speed: 12, tileH: TILE_H },
 ];
 
 function buildImgs(order: number[]): string[] {
@@ -88,7 +98,8 @@ function ScrollColumn({
             style={{
               width: COL_W, height: tileH,
               marginBottom: TILE_GAP, borderRadius: 12,
-              backgroundColor: 'rgba(128,128,128,0.15)',
+              backgroundColor: '#000',
+              opacity: 1,
             }}
             resizeMode="cover"
           />
@@ -99,30 +110,45 @@ function ScrollColumn({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Full-screen twinkling stars (dark mode only)
+// Twinkling stars scattered over the montage
 // ─────────────────────────────────────────────────────────────
 type StarSpec = { x: number; y: number; size: number; delay: number; dur: number; base: number };
 
+// The opaque AuthForm panel covers roughly the bottom half of the screen, so
+// stars generated below this line are hidden behind it and wasted — keep
+// them within the actually-visible montage band, and bias extra weight into
+// its lowest slice (just above the fade into the panel) so twinkles are
+// visible near the bottom of the images too, not just up top.
+const VISIBLE_MONTAGE_H = height * 0.55;
+
 function makeStars(count: number): StarSpec[] {
   const out: StarSpec[] = [];
+  const bands = 6;
   for (let i = 0; i < count; i++) {
+    const band = i % bands;
+    const bandH = VISIBLE_MONTAGE_H / bands;
+    const isBottomBand = band === bands - 1;
     out.push({
       x: Math.random() * width,
-      y: Math.random() * height,
-      size: Math.random() < 0.82 ? 1.5 : 2.5,
+      y: band * bandH + Math.random() * bandH,
+      // Slightly bigger/brighter in the bottom band so twinkles read clearly
+      // over the darker fade zone just above the panel.
+      size: isBottomBand ? (Math.random() < 0.6 ? 2 : 3) : (Math.random() < 0.82 ? 1.5 : 2.5),
       delay: Math.random() * 2400,
       dur: 900 + Math.random() * 1600,
-      base: 0.12 + Math.random() * 0.22,
+      base: isBottomBand ? 0.25 + Math.random() * 0.3 : 0.12 + Math.random() * 0.22,
     });
   }
   return out;
 }
 
 function TwinkleStar({ spec }: { spec: StarSpec }) {
-  const anim = React.useRef(new Animated.Value(0)).current;
+  // Start at the star's base opacity (not 0) so it stays visible even if the
+  // looping animation ever fails to run on this device — matches the caution
+  // documented around one-shot animations elsewhere in the auth flow.
+  const anim = React.useRef(new Animated.Value(spec.base)).current;
 
   React.useEffect(() => {
-    anim.setValue(0);
     Animated.sequence([
       Animated.delay(spec.delay),
       Animated.timing(anim, {
@@ -169,51 +195,21 @@ function TwinkleStar({ spec }: { spec: StarSpec }) {
 // ─────────────────────────────────────────────────────────────
 
 const DARK_BASE = '#050510';
-const ORB_D = width * 1.6; // radial orb wider than screen so edges are invisible
-
-const FADE_H = 700;
-const FADE_LOCATIONS = [0, 0.1, 0.2, 0.3, 0.42, 1];
-const FADE_STOPS = [0, 0.08, 0.25, 0.55, 1, 1];
-
-function hexToRgba(hex: string, alpha: number): string {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-// Brand tint used for the faint mid-fade color shift — same hue in both themes.
-const ACCENT_TINT = '#6C5CE7';
-
-const FADE_ALPHAS = [0, 0.005, 0.01, 0.02, 0.04, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 1] as const;
-const FADE_LOCATIONS_MAIN = [0, 0.03, 0.06, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.42, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00] as const;
-
-// Builds the montage → panel fade, keeping the same alpha/location proportions
-// in both themes but basing the color on the theme's panel bg (dark: near-black,
-// light: white) instead of a hardcoded dark value.
-function buildMontageFade(baseHex: string): [string, string, ...string[]] {
-  return FADE_ALPHAS.map((alpha, i) =>
-    i === 2 ? hexToRgba(ACCENT_TINT, alpha) : hexToRgba(baseHex, alpha)
-  ) as [string, string, ...string[]];
-}
 
 export default function Login() {
   const { colorScheme } = useColorScheme();
   const t = loginTheme[colorScheme === 'dark' ? 'dark' : 'light'];
   const isDark = colorScheme === 'dark';
 
-  const stars = React.useMemo(() => makeStars(48), []);
-  const montageFadeColors = React.useMemo(() => buildMontageFade(t.panel), [t.panel]);
-  const topScrimColors: [string, string] = isDark
-    ? ['rgba(0,0,0,0.5)', 'transparent']
-    : ['rgba(255,255,255,0.05)', 'transparent'];
+  const stars = React.useMemo(() => makeStars(72), []);
 
   return (
     <View style={[s.root, { backgroundColor: isDark ? DARK_BASE : t.panel }]}>
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
-      {/* ── Zone A: drifting template montage ── */}
+      {/* ── Zone A: drifting template montage (shown clearly, no dimming
+          overlay — the only fade is the seamless one owned by AuthForm at the
+          montage/panel boundary) ── */}
       <View style={[s.montage, { backgroundColor: 'transparent' }]}>
         <View style={s.gridWrap} pointerEvents="none">
           <View style={s.grid}>
@@ -226,34 +222,21 @@ export default function Login() {
             ))}
           </View>
         </View>
-
-        {/* top scrim for status-bar legibility */}
-        <LinearGradient
-          colors={topScrimColors}
-          style={s.topScrim}
-          pointerEvents="none"
-        />
-
-
-        <LinearGradient
-          colors={montageFadeColors}
-          locations={FADE_LOCATIONS_MAIN}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 350,
-            height: 360,
-          }}
-          pointerEvents="none"
-        />
-
       </View>
 
       {/* ── Zone B: auth panel — same background shows through ── */}
       <AuthForm />
+
+      {/* Twinkling stars — rendered ABOVE the AuthForm fade so they stay
+          visible in the dark fade band near the bottom of the montage (if
+          they lived under AuthForm, its top-fade gradient would paint over
+          them and no stars would show at the bottom). Height-capped to the
+          visible montage band + fade so they never cover the buttons. */}
+      <View style={s.starsLayer} pointerEvents="none">
+        {stars.map((spec, i) => (
+          <TwinkleStar key={i} spec={spec} />
+        ))}
+      </View>
     </View>
   );
 }
@@ -264,16 +247,26 @@ const s = StyleSheet.create({
   montage: { flex: 1, overflow: 'hidden', position: "absolute", top: 0, width: '100%', height: "100%" },
   gridWrap: {
     position: 'absolute',
-    top: -0.18 * height,
+    // Steep -40° tilt needs a generously oversized + scaled frame so the
+    // rotated band still fills every corner (top-left/top-right and down to
+    // the montage's bottom edge) with no empty triangles.
+    top: -0.22 * height,
     left: (width - GRID_W) / 2,
     width: GRID_W,
-    height: height * 1.1,
+    height: height * 1.7,
   },
   grid: {
     flex: 1,
     flexDirection: 'row',
-    transform: [{ rotate: '-30deg' }, { scale: 1.1 }],
+    transform: [{ rotate: '-40deg' }, { scale: 1.5 }],
   },
-  topScrim: { position: 'absolute', left: 0, right: 0, height: "100%", bottom: 0 },
-  bottomFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: FADE_H },
+  // Stars occupy the visible montage band + a little into the fade, and sit
+  // above the AuthForm fade so they read in the dark transition at the bottom.
+  starsLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: VISIBLE_MONTAGE_H + 40,
+  },
 });

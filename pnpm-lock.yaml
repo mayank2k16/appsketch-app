@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@rivascva/react-native-code-editor':
+    hash: ecb5141006be9c09d0f9c79a0078d412e715c1f9bfdbee1b6de94b991fcb0a4e
+    path: patches/@rivascva__react-native-code-editor.patch
+
 importers:
 
   .:
@@ -31,7 +36,7 @@ importers:
         version: 7.2.10(@react-native-masked-view/masked-view@0.3.2(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(@react-navigation/native@7.1.11(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native-pager-view@8.0.4(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native-safe-area-context@5.4.0(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       '@rivascva/react-native-code-editor':
         specifier: ^1.2.2
-        version: 1.2.2(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+        version: 1.2.2(patch_hash=ecb5141006be9c09d0f9c79a0078d412e715c1f9bfdbee1b6de94b991fcb0a4e)(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       '@shopify/flash-list':
         specifier: 1.7.6
         version: 1.7.6(@babel/runtime@7.26.0)(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
@@ -60,8 +65,8 @@ importers:
         specifier: ~16.1.11
         version: 16.1.11(expo@53.0.27(@babel/core@7.26.0)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native-web@0.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       expo-clipboard:
-        specifier: ^57.0.1
-        version: 57.0.1(expo@53.0.27(@babel/core@7.26.0)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+        specifier: ~7.1.5
+        version: 7.1.5(expo@53.0.27(@babel/core@7.26.0)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       expo-constants:
         specifier: ~17.1.8
         version: 17.1.8(expo@53.0.27(@babel/core@7.26.0)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))
@@ -3559,8 +3564,8 @@ packages:
       react-native-web:
         optional: true
 
-  expo-clipboard@57.0.1:
-    resolution: {integrity: sha512-HWICri4+1ao7S6QEfcorxVumXDiDnx1guGGewjZgGJWLGxFYs0RgH8ujBs+lkTzBkMmlwADaWSlaesR+nDJt5Q==}
+  expo-clipboard@7.1.5:
+    resolution: {integrity: sha512-TCANUGOxouoJXxKBW5ASJl2WlmQLGpuZGemDCL2fO5ZMl57DGTypUmagb0CVUFxDl0yAtFIcESd78UsF9o64aw==}
     peerDependencies:
       expo: '*'
       react: '*'
@@ -9647,7 +9652,7 @@ snapshots:
     dependencies:
       nanoid: 3.3.11
 
-  '@rivascva/react-native-code-editor@1.2.2(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)':
+  '@rivascva/react-native-code-editor@1.2.2(patch_hash=ecb5141006be9c09d0f9c79a0078d412e715c1f9bfdbee1b6de94b991fcb0a4e)(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)':
     dependencies:
       react: 19.0.0
       react-native: 0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)
@@ -11881,7 +11886,7 @@ snapshots:
     optionalDependencies:
       react-native-web: 0.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
 
-  expo-clipboard@57.0.1(expo@53.0.27(@babel/core@7.26.0)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
+  expo-clipboard@7.1.5(expo@53.0.27(@babel/core@7.26.0)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
     dependencies:
       expo: 53.0.27(@babel/core@7.26.0)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       react: 19.0.0

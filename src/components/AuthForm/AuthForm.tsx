@@ -1,20 +1,40 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { signInAsGuest, useGoogleSignIn } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { openLinkInBrowser } from '@/lib/utils';
 
 import { AuthSheet } from './AuthSheet';
 import { loginTheme } from './AuthTheme';
+
+// Public legal pages on the marketing site. If those routes ever move, this is
+// the only place to update.
+const TERMS_URL = 'https://appsketch.ai/terms-of-service';
+const PRIVACY_URL = 'https://appsketch.ai/privacy-policy';
+
+// Height of the montage → panel fade that sits just above the panel. It's a
+// child of the panel (rendered outside its top edge) painted in the panel's own
+// colour, so the montage dissolves into the panel with no seam/line.
+const TOP_FADE_H = 200;
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 // ─────────────────────────────────────────────────────────────
 // AuthForm — the bottom auth panel only (Welcome + the three
@@ -39,66 +59,93 @@ export function AuthForm() {
     setSheetVisible(true);
   }
 
+  const fadeColors = React.useMemo(
+    () =>
+      [
+        hexToRgba(t.panel, 0),
+        hexToRgba(t.panel, 0),
+        hexToRgba(t.panel, 0.5),
+        hexToRgba(t.panel, 0.85),
+        hexToRgba(t.panel, 0.97),
+        t.panel,
+      ] as [string, string, ...string[]],
+    [t.panel]
+  );
+
   return (
     <View
       style={[s.panel, { backgroundColor: t.panel, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
     >
+      {/* Seamless montage → panel dissolve. Sits just above the panel and ends
+          in the exact panel colour, so no line shows at the boundary. */}
+      <LinearGradient
+        colors={fadeColors}
+        locations={[0, 0.12, 0.5, 0.72, 0.9, 1]}
+        style={s.topFade}
+        pointerEvents="none"
+      />
+
       <Text style={[s.heading, { color: t.heading }]}>Build Stunning Websites and Apps</Text>
       <Text style={[s.sub, { color: t.sub }]}>Your journey starts from here</Text>
 
       {/* Primary — Phone */}
-      <Pressable
+      <TouchableOpacity
         onPress={() => openSheet('phone')}
-        style={({ pressed }) => [
-          s.btn,
-          { backgroundColor: t.primaryBg },
-          pressed && s.btnPressed,
-        ]}
+        activeOpacity={0.85}
+        style={[s.btn, { backgroundColor: t.primaryBg }]}
       >
         <Text style={[s.btnLabel, { color: t.primaryText }]}>Continue with Phone</Text>
-      </Pressable>
+      </TouchableOpacity>
 
       {/* Secondary — Email */}
-      <Pressable
+      <TouchableOpacity
         onPress={() => openSheet('email')}
-        style={({ pressed }) => [
-          s.btn, s.btnSecondary,
-          { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder },
-          pressed && s.btnPressed,
-        ]}
+        activeOpacity={0.85}
+        style={[s.btn, s.btnSecondary, { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder }]}
       >
         <Ionicons name="mail-outline" size={18} color={t.secondaryIcon} style={s.btnIcon} />
         <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Email</Text>
-      </Pressable>
+      </TouchableOpacity>
 
       {/* Secondary — Gmail / Google */}
-      {/* <Pressable
+      {/* <TouchableOpacity
         onPress={signInWithGoogle}
         disabled={googleLoading}
-        style={({ pressed }) => [
+        activeOpacity={0.85}
+        style={[
           s.btn, s.btnSecondary,
           { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder },
-          pressed && s.btnPressed,
           googleLoading && { opacity: 0.6 },
         ]}
       >
         <Ionicons name="logo-google" size={18} color={t.secondaryIcon} style={s.btnIcon} />
         <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Google</Text>
-      </Pressable> */}
+      </TouchableOpacity> */}
 
       {/* Tertiary — Guest */}
-      <Pressable
+      <TouchableOpacity
         onPress={() => { signInAsGuest(); goHome(); }}
-        style={({ pressed }) => [s.guestBtn, pressed && s.btnPressed]}
+        activeOpacity={0.7}
+        style={s.guestBtn}
       >
         <Text style={[s.guest, { color: t.guest }]}>Continue as Guest</Text>
-      </Pressable>
+      </TouchableOpacity>
 
       <Text style={[s.footer, { color: t.footer }]}>
         By pressing on “Continue with…” you agree to our{' '}
-        <Text style={{ color: t.footerLink, textDecorationLine: 'underline' }}>Terms of Service</Text>
+        <Text
+          onPress={() => openLinkInBrowser(TERMS_URL)}
+          style={{ color: t.footerLink, textDecorationLine: 'underline' }}
+        >
+          Terms of Service
+        </Text>
         {' '}and{' '}
-        <Text style={{ color: t.footerLink, textDecorationLine: 'underline' }}>Privacy Policy</Text>
+        <Text
+          onPress={() => openLinkInBrowser(PRIVACY_URL)}
+          style={{ color: t.footerLink, textDecorationLine: 'underline' }}
+        >
+          Privacy Policy
+        </Text>
       </Text>
 
       <AuthSheet
@@ -121,6 +168,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 26,
     paddingBottom: 26
   },
+  topFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -TOP_FADE_H,
+    height: TOP_FADE_H,
+  },
   heading: {
     fontSize: 28,
     fontFamily: F.display900,
@@ -133,7 +187,7 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontFamily: F.sans400,
     marginTop: 10,
-    marginBottom: 22,
+    marginBottom: 14,
     paddingLeft: 5,
     textAlign: "center",
   },
@@ -148,10 +202,6 @@ const s = StyleSheet.create({
   },
   btnSecondary: {
     borderWidth: 1,
-  },
-  btnPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.985 }],
   },
   btnIcon: { marginRight: 8 },
   btnLabel: {

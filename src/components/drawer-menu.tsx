@@ -15,6 +15,7 @@ import {
   Share,
   StyleSheet,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,14 +47,14 @@ type DrawerMenuProps = {
 // back to /home. No real routes to add here until those are fixed or new
 // screens are built. `/about` is a real, standalone route (src/app/about.tsx)
 // so it's safe to link for both signed-in and guest users.
-const AUTH_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [
-  { id: 'about', label: 'About Us', route: '/about', emoji: '✨' },
-  { id: 'contact', label: 'Contact Us', route: '/contact', emoji: '💬' },
+const AUTH_MENU_ITEMS: { id: string; label: string; route: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { id: 'about', label: 'About Us', route: '/about', icon: 'sparkles-outline' },
+  { id: 'contact', label: 'Contact Us', route: '/contact', icon: 'chatbubble-ellipses-outline' },
 ];
 
-const GUEST_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [
-  { id: 'about', label: 'About Us', route: '/about', emoji: '✨' },
-  { id: 'contact', label: 'Contact Us', route: '/contact', emoji: '💬' },
+const GUEST_MENU_ITEMS: { id: string; label: string; route: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { id: 'about', label: 'About Us', route: '/about', icon: 'sparkles-outline' },
+  { id: 'contact', label: 'Contact Us', route: '/contact', icon: 'chatbubble-ellipses-outline' },
 ];
 
 // ─── Pulsing orange dot ────────────────────────────────────────────────────────
@@ -271,13 +272,14 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                       }],
                     }}
                   >
-                    <Pressable
+                    <TouchableOpacity
                       onPress={() => handlePress(item.route)}
-                      style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+                      activeOpacity={0.6}
+                      style={st.flatRow}
                     >
-                      <Text style={st.flatIcon}>{item.emoji}</Text>
+                      <Ionicons name={item.icon} size={17} color={dt.labelColor} style={st.flatIcon} />
                       <Text style={[st.flatLabel, { color: dt.labelColor }]}>{item.label}</Text>
-                    </Pressable>
+                    </TouchableOpacity>
                   </Animated.View>
                 );
               })}
@@ -287,23 +289,25 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Preferences</Text>
 
           {/* ── Theme toggle ── */}
-          <Pressable
+          <TouchableOpacity
             onPress={handleThemeToggle}
-            style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+            activeOpacity={0.6}
+            style={st.flatRow}
           >
             <Ionicons name={isDark ? 'moon' : 'sunny'} size={17} color={dt.labelColor} style={st.flatIcon} />
             <Text style={[st.flatLabel, { color: dt.labelColor }]}>{themeLabel}</Text>
             <ThemeTogglePill isDark={isDark} />
-          </Pressable>
+          </TouchableOpacity>
 
           {/* ── Share ── */}
-          <Pressable
+          <TouchableOpacity
             onPress={handleShare}
-            style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+            activeOpacity={0.6}
+            style={st.flatRow}
           >
             <Ionicons name="share-outline" size={17} color={dt.labelColor} style={st.flatIcon} />
             <Text style={[st.flatLabel, { color: dt.labelColor }]}>Share Appsketch</Text>
-          </Pressable>
+          </TouchableOpacity>
 
           {/* Divider */}
           <View style={[st.divider, { backgroundColor: `${ACCENT}25` }]} />
@@ -322,21 +326,23 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             }}
           >
             {isSignedIn ? (
-              <Pressable
+              <TouchableOpacity
                 onPress={handleLogout}
-                style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+                activeOpacity={0.6}
+                style={st.flatRow}
               >
                 <Ionicons name="log-out-outline" size={17} color="#EF4444" style={st.flatIcon} />
                 <Text style={[st.flatLabel, { color: '#EF4444' }]}>Log Out</Text>
-              </Pressable>
+              </TouchableOpacity>
             ) : (
-              <Pressable
+              <TouchableOpacity
                 onPress={handleSignIn}
-                style={({ pressed }) => [st.flatRow, pressed && { backgroundColor: dt.rowBg }]}
+                activeOpacity={0.6}
+                style={st.flatRow}
               >
                 <Ionicons name="log-in-outline" size={17} color={ACCENT} style={st.flatIcon} />
                 <Text style={[st.flatLabel, { color: ACCENT }]}>Sign In / Register</Text>
-              </Pressable>
+              </TouchableOpacity>
             )}
           </Animated.View>
         </ScrollView>
