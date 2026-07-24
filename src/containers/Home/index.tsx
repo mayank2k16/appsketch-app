@@ -52,10 +52,10 @@ export function HomeScreen() {
         width={W}
         height={H}
         color={t.dotColor}
-        spacing={32}
-        radius={1.3}
-        baseOpacity={isDark ? 0.04 : 0.03}
-        peakOpacity={isDark ? 0.18 : 0.12}
+        spacing={31}
+        radius={1.1}
+        baseOpacity={isDark ? 0.16 : 0.08}
+        peakOpacity={isDark ? 0.42 : 0.24}
       />
 
       {/* Header absolutely overlays the hero — rendered after scroll for z-order */}

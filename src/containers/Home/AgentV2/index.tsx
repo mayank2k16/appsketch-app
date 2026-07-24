@@ -363,10 +363,7 @@ export function AgentV2({
               />
               <View
                 pointerEvents="none"
-                style={[
-                  StyleSheet.absoluteFill,
-                  { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
-                ]}
+                style={[StyleSheet.absoluteFill, { backgroundColor: t.card }]}
               />
 
               <View style={s.cardContent}>
@@ -617,7 +614,7 @@ export function AgentV2({
 const s = StyleSheet.create({
   wrap: {
     paddingHorizontal: 12,
-    paddingTop: 40,
+    paddingTop: 16,
     paddingBottom: 70,
   },
   stage: {
@@ -730,7 +727,13 @@ const s = StyleSheet.create({
   // border ever shows the animated colour.
   ringMask: {
     borderRadius: RADIUS,
-    padding: BORDER_W,
+    // The white outline lives here, on the card's true outer edge, so it
+    // traces the visible border exactly. (Previously the border sat on an
+    // inner view inset by BORDER_W with a tighter radius — the legacy
+    // gradient-ring `ringSpinner` isn't rendered anymore — which made the
+    // white line float inside the card instead of along its edge.)
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
     overflow: 'hidden',
   },
   ringSpinner: {
@@ -741,7 +744,7 @@ const s = StyleSheet.create({
     height: '250%',
   },
   cardInner: {
-    borderRadius: RADIUS - BORDER_W,
+    borderRadius: RADIUS - 1,
     overflow: 'hidden',
   },
   cardContent: {

@@ -12,8 +12,7 @@ import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
-const { width: W, height: H } = Dimensions.get('window');
-const HERO_H = H / 2.4;
+const { width: W } = Dimensions.get('window');
 
 // ─── Gradient heading line ─────────────────────────────────────────────────────
 // Reference recording shows each line running flat-white through its first
@@ -109,10 +108,13 @@ export function HeroBanner({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   hero: {
+    // Content-driven height (no fixed HERO_H box + overflow:hidden that used
+    // to clip "Create" off the top and the buttons into a white sliver). A
+    // small paddingTop pulls the whole hero — and everything below it in the
+    // ScrollView — up, filling the previous empty space.
     width: W,
-    height: HERO_H,
-    overflow: 'hidden',
-    justifyContent: 'center',
+    paddingTop: 14,
+    paddingBottom: 6,
     alignItems: 'center',
   },
 
@@ -134,7 +136,7 @@ const s = StyleSheet.create({
     fontSize: 42,
     letterSpacing: -1.4,
     textAlign: 'center',
-    lineHeight: 50,
+    lineHeight: 52,
   },
 
   subtitle: {
