@@ -5,6 +5,7 @@ export * from './bookings';
 export * from './categories';
 export * from './collections';
 export * from './common';
+export * from './contact';
 export * from './credit-debit-notes';
 export * from './discounts';
 export * from './inventory';

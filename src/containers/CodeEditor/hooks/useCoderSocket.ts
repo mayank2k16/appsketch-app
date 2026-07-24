@@ -135,7 +135,14 @@ export function useCoderSocket(params: CoderSocketParams) {
   const [connected, setConnected] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [threadId, setThreadId] = React.useState<string | null>(null);
-  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  // Seeded eagerly from the route param (not waiting on onboard/socket) so
+  // the user's own prompt shows as sent the instant this screen mounts,
+  // instead of sitting blank through the ~2s onboard round-trip.
+  const [messages, setMessages] = React.useState<ChatMessage[]>(() =>
+    params.userPrompt
+      ? [{ role: 'user', content: params.userPrompt }]
+      : []
+  );
   const [activity, setActivity] = React.useState<ActivityStep[]>([]);
   const [tokens, setTokens] = React.useState<TokenUsage>({ in: 0, out: 0 });
   const [clarifyBlock, setClarifyBlock] = React.useState<ClarifyBlock | null>(
@@ -420,9 +427,22 @@ export function useCoderSocket(params: CoderSocketParams) {
 
     ws.onopen = () => {
       setConnected(true);
+      // The prompt bubble itself was already seeded into `messages` at mount
+      // (see the `useState` initializer above) — this only needs to push it
+      // over the wire and flip into the "agent is working" state, not add
+      // a second copy of the message.
       if (params.userPrompt && !hasSentInitialPromptRef.current) {
         hasSentInitialPromptRef.current = true;
-        send(params.userPrompt, { model: params.model, images: params.images });
+        setBusy(true);
+        setTokens({ in: 0, out: 0 });
+        ws.send(
+          JSON.stringify({
+            type: 'message',
+            content: params.userPrompt,
+            model: params.model,
+            images: params.images,
+          })
+        );
       }
     };
     ws.onclose = () => setConnected(false);

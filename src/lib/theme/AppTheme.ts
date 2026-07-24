@@ -140,7 +140,7 @@ export const appTheme = {
     // near-opaque alpha — the ring gradient sits behind the whole card body
     // (unavoidable given the masking technique), so the tint has to be
     // opaque enough to fully hide it there; only the unmasked ring shows it.
-    agentBorderGradient: ['#2DD4BF', '#3B82F6', '#8B5CF6'], // teal → blue → violet
+    agentBorderGradient: ['#8B5CF6', '#EC4899', '#F97316'], // violet → magenta → orange
     agentCardGlassTint: 'rgba(10,10,12,0.94)', // ≈ bg, near-opaque
 
     // App-type tabs (Web/Mobile/Game) above the prompt card
@@ -371,7 +371,7 @@ export const appTheme = {
 
     // Prompt card border ring + glass tint — see dark block above for why
     // the tint needs to be near-opaque rather than a lighter glass alpha.
-    agentBorderGradient: ['#2DD4BF', '#3B82F6', '#8B5CF6'],
+    agentBorderGradient: ['#8B5CF6', '#EC4899', '#F97316'],
     agentCardGlassTint: 'rgba(247,247,249,0.94)', // ≈ bg, near-opaque
 
     // App-type tabs (Web/Mobile/Game) above the prompt card

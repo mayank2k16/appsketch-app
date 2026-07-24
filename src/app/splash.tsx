@@ -202,8 +202,8 @@ function Dot({ index }: { index: number }) {
 // Screen
 // ─────────────────────────────────────────────────────────────
 export default function BrandSplashScreen() {
-  const router    = useRouter();
-  const stars     = React.useMemo(() => makeStars(46), []);
+  const router = useRouter();
+  const stars = React.useMemo(() => makeStars(46), []);
   const navigated = React.useRef(false);
 
   // intro shared values
@@ -220,13 +220,7 @@ export default function BrandSplashScreen() {
 
   React.useEffect(() => {
     hydrateAuth();
-
-    // The root layout calls preventAutoHideAsync(); nothing on the
-    // splash -> home route ever dismissed it, so Expo's native splash
-    // overlay stayed on top of the app forever (looked like a black
-    // screen once JS took over). Hide it now that this custom splash
-    // is mounted and ready to render in its place.
-    SplashScreen.hideAsync().catch(() => {});
+    SplashScreen.hideAsync().catch(() => { });
 
     // 1. sky fades up
     skyOp.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.quad) });
@@ -279,8 +273,8 @@ export default function BrandSplashScreen() {
     loaderOp.value = withDelay(2350, withTiming(1, { duration: 600 }));
 
     // 7. auto - advance
-    const t = setTimeout(doExit, HOLD_MS);
-    return () => clearTimeout(t);
+    // const t = setTimeout(doExit, HOLD_MS);
+    // return () => clearTimeout(t);
   }, []);
 
   const doExit = () => {
@@ -460,9 +454,9 @@ const styles = StyleSheet.create({
   },
 
   wordChar: {
-    fontFamily: F.sans400,
+    fontFamily: F.sans600,
     fontSize: Math.min(width * 0.11, 44),
-    letterSpacing: 1,
+    letterSpacing: 0,
     marginHorizontal: 2.5,
     color: C.ink,
     includeFontPadding: false,

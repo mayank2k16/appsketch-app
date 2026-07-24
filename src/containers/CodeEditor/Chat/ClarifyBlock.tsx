@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
 import {
   StyleSheet,
@@ -14,6 +16,22 @@ import type {
   ClarifyQuestion,
 } from '@/api/coder';
 import type { AppColors } from '@/lib/theme';
+
+/** Small branded avatar shared by every agent-side card header (message
+ * bubble, activity card, clarify card) so the whole chat reads as one
+ * consistent visual language. */
+function AgentAvatar({ colors }: { colors: AppColors }) {
+  return (
+    <LinearGradient
+      colors={[colors.codeEditorUserBubbleFrom, colors.codeEditorUserBubbleTo]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={st.avatar}
+    >
+      <Ionicons name="sparkles" size={11} color="#FFFFFF" />
+    </LinearGradient>
+  );
+}
 
 type Selected = string | ClarifyPaletteOption | ClarifyFontOption | undefined;
 
@@ -35,20 +53,7 @@ function fontLabel(f: ClarifyFontOption): string {
   return `${f.heading} / ${f.body}`;
 }
 
-/** Renders the agent's design-brief clarify questionnaire (`ui_block.kind
- * === "clarify"`) — a faithful port of Vite's `ClarifyBlock.jsx`, matched
- * against that file directly rather than guessed: `choice`/`checklist`
- * options are plain strings (not `{id,label}` objects), `palette` options
- * are `{name,colors,vibe}`, `fonts` options are `{name,heading,body}`, and
- * every question (unless `allowCustom===false`) also accepts a typed custom
- * answer that overrides the picked option. Submission always sends one
- * human-readable string per question — never raw ids — because the agent
- * reads these as design-brief text.
- *
- * When `answers` is passed (the question has already been submitted), the
- * card freezes in place instead of disappearing: the picked option keeps
- * its selected styling, everything else dims, and there's no Continue
- * button or text input — same card, just no longer interactive. */
+
 export function ClarifyBlockView({
   block,
   colors,
@@ -101,9 +106,9 @@ export function ClarifyBlockView({
     if (q.type === 'checklist') {
       const extra = c
         ? c
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
         : [];
       return [...(checks[q.id] ?? []), ...extra].join(', ');
     }
@@ -112,8 +117,8 @@ export function ClarifyBlockView({
     if (v == null) {
       const first = (
         q.options as
-          | (string | ClarifyPaletteOption | ClarifyFontOption)[]
-          | undefined
+        | (string | ClarifyPaletteOption | ClarifyFontOption)[]
+        | undefined
       )?.[0];
       if (q.type === 'palette')
         return isPaletteOption(first) ? paletteLabel(first) : '';
@@ -135,91 +140,115 @@ export function ClarifyBlockView({
   }
 
   return (
-    <View
-      style={[
-        st.card,
-        {
-          backgroundColor: colors.codeEditorSurface,
-          borderColor: colors.codeEditorBorder,
-        },
-      ]}
-    >
-      {block.intro ? (
-        <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text>
-      ) : null}
-
-      {questions.map((q) => {
-        const answer = answers?.[q.id];
-        return (
-          <View key={q.id} style={st.questionBlock}>
-            <Text style={[st.label, { color: colors.textSub }]}>{q.label}</Text>
-
-            {q.type === 'palette' ? (
-              <PaletteOptions
-                q={q}
-                sel={sel[q.id]}
-                locked={locked}
-                answer={answer}
-                colors={colors}
-                onPick={(p) => pick(q.id, p)}
-              />
-            ) : q.type === 'fonts' ? (
-              <FontOptions
-                q={q}
-                sel={sel[q.id]}
-                locked={locked}
-                answer={answer}
-                colors={colors}
-                onPick={(f) => pick(q.id, f)}
-              />
-            ) : q.type === 'checklist' ? (
-              <ChecklistOptions
-                q={q}
-                checked={checks[q.id] ?? []}
-                locked={locked}
-                answer={answer}
-                colors={colors}
-                onToggle={(opt) => toggleCheck(q.id, opt)}
-              />
-            ) : q.type === 'choice' ? (
-              <ChoiceOptions
-                q={q}
-                sel={sel[q.id]}
-                locked={locked}
-                answer={answer}
-                colors={colors}
-                onPick={(opt) => pick(q.id, opt)}
-              />
-            ) : null}
-
-            {!locked && q.allowCustom !== false ? (
-              <TextInput
-                value={custom[q.id] ?? ''}
-                onChangeText={(v) => setText(q.id, v)}
-                placeholder={
-                  q.type === 'checklist'
-                    ? 'add your own (comma separated)…'
-                    : 'or type your own…'
-                }
-                placeholderTextColor={colors.codeEditorTextMuted}
-                style={[
-                  st.textInput,
-                  { color: colors.text, borderColor: colors.codeEditorBorder },
-                ]}
-              />
-            ) : null}
-          </View>
-        );
-      })}
-
-      {!locked ? (
-        <TouchableOpacity
-          onPress={submit}
-          style={[st.submitBtn, { backgroundColor: colors.accent }]}
+    <View style={[st.card, { borderColor: colors.codeEditorBorder }]}>
+      <View
+        style={[st.header, { backgroundColor: colors.codeEditorActivityBg }]}
+      >
+        <AgentAvatar colors={colors} />
+        <Text style={[st.headerName, { color: colors.text }]}>Agent</Text>
+        <View style={{ flex: 1 }} />
+        <View
+          style={[
+            st.badge,
+            {
+              backgroundColor: colors.codeEditorToolChipActiveBg,
+              borderColor: colors.codeEditorToolChipActiveBorder,
+            },
+          ]}
         >
-          <Text style={st.submitLabel}>{block.submitLabel ?? 'Continue'}</Text>
-        </TouchableOpacity>
-      ) : null}
+          <Ionicons
+            name="color-palette"
+            size={9}
+            color={colors.codeEditorToolChipActiveText}
+          />
+          <Text
+            style={[st.badgeText, { color: colors.codeEditorToolChipActiveText }]}
+          >
+            Design Brief
+          </Text>
+        </View>
+      </View>
+
+      <View
+        style={[st.body, { backgroundColor: colors.codeEditorChatAssistantBg }]}
+      >
+        {block.intro ? (
+          <Text style={[st.intro, { color: colors.text }]}>{block.intro}</Text>
+        ) : null}
+
+        {questions.map((q) => {
+          const answer = answers?.[q.id];
+          return (
+            <View key={q.id} style={st.questionBlock}>
+              <Text style={[st.label, { color: colors.textSub }]}>{q.label}</Text>
+
+              {q.type === 'palette' ? (
+                <PaletteOptions
+                  q={q}
+                  sel={sel[q.id]}
+                  locked={locked}
+                  answer={answer}
+                  colors={colors}
+                  onPick={(p) => pick(q.id, p)}
+                />
+              ) : q.type === 'fonts' ? (
+                <FontOptions
+                  q={q}
+                  sel={sel[q.id]}
+                  locked={locked}
+                  answer={answer}
+                  colors={colors}
+                  onPick={(f) => pick(q.id, f)}
+                />
+              ) : q.type === 'checklist' ? (
+                <ChecklistOptions
+                  q={q}
+                  checked={checks[q.id] ?? []}
+                  locked={locked}
+                  answer={answer}
+                  colors={colors}
+                  onToggle={(opt) => toggleCheck(q.id, opt)}
+                />
+              ) : q.type === 'choice' ? (
+                <ChoiceOptions
+                  q={q}
+                  sel={sel[q.id]}
+                  locked={locked}
+                  answer={answer}
+                  colors={colors}
+                  onPick={(opt) => pick(q.id, opt)}
+                />
+              ) : null}
+
+              {!locked && q.allowCustom !== false ? (
+                <TextInput
+                  value={custom[q.id] ?? ''}
+                  onChangeText={(v) => setText(q.id, v)}
+                  placeholder={
+                    q.type === 'checklist'
+                      ? 'add your own (comma separated)…'
+                      : 'or type your own…'
+                  }
+                  placeholderTextColor={colors.codeEditorTextMuted}
+                  style={[
+                    st.textInput,
+                    { color: colors.text, borderColor: colors.codeEditorBorder },
+                  ]}
+                />
+              ) : null}
+            </View>
+          );
+        })}
+
+        {!locked ? (
+          <TouchableOpacity
+            onPress={submit}
+            style={[st.submitBtn, { backgroundColor: colors.accent }]}
+          >
+            <Text style={st.submitLabel}>{block.submitLabel ?? 'Continue'}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -487,10 +516,44 @@ function CheckBadge({ colors }: { colors: AppColors }) {
 const st = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    overflow: 'hidden',
     marginHorizontal: 14,
-    marginBottom: 10,
+    marginBottom: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  headerName: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  avatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  body: {
+    padding: 14,
     gap: 12,
   },
   intro: {

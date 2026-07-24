@@ -44,10 +44,17 @@ type DrawerMenuProps = {
 // route group) are leftover starter-kit boilerplate that isn't wired to
 // onboarding/tenant state correctly — navigating there bounces straight
 // back to /home. No real routes to add here until those are fixed or new
-// screens are built, so this stays empty rather than shipping dead links.
-const AUTH_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [];
+// screens are built. `/about` is a real, standalone route (src/app/about.tsx)
+// so it's safe to link for both signed-in and guest users.
+const AUTH_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [
+  { id: 'about', label: 'About Us', route: '/about', emoji: '✨' },
+  { id: 'contact', label: 'Contact Us', route: '/contact', emoji: '💬' },
+];
 
-const GUEST_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [];
+const GUEST_MENU_ITEMS: { id: string; label: string; route: string; emoji: string }[] = [
+  { id: 'about', label: 'About Us', route: '/about', emoji: '✨' },
+  { id: 'contact', label: 'Contact Us', route: '/contact', emoji: '💬' },
+];
 
 // ─── Pulsing orange dot ────────────────────────────────────────────────────────
 function LiveDot() {
@@ -229,7 +236,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
               <ExpoImage source={HEADER_LOGO} style={st.markImg} contentFit="contain" />
             </View>
 
-            <Text style={[st.wordmarkFlat, { color: dt.wordmarkColor }]}>Appsketch</Text>
+            <Text style={[st.wordmarkFlat, { color: dt.wordmarkColor }]}>AppSketch</Text>
 
             <Pressable
               onPress={onClose}
@@ -397,9 +404,9 @@ const st = StyleSheet.create({
 
   wordmarkFlat: {
     flex: 1,
-    fontFamily: F.sans800,
+    fontFamily: F.sans600,
     fontSize: 15,
-    letterSpacing: -0.1,
+    letterSpacing: 0.5,
   },
 
   sectionLabel: {

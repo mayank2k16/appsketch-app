@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
 import {
   Animated,
@@ -19,6 +20,22 @@ import type { AppColors } from '@/lib/theme';
 import { PulsingDot } from './PulsingDot';
 
 const MONO_FONT = Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace';
+
+/** Small branded avatar shared by every agent-side card header (message
+ * bubble, activity card, clarify card) so the whole chat reads as one
+ * consistent visual language. */
+function AgentAvatar({ colors }: { colors: AppColors }) {
+  return (
+    <LinearGradient
+      colors={[colors.codeEditorUserBubbleFrom, colors.codeEditorUserBubbleTo]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={st.avatar}
+    >
+      <Ionicons name="sparkles" size={11} color="#FFFFFF" />
+    </LinearGradient>
+  );
+}
 
 /** Fades + slides a row in on mount (once — reusing a step's `id` as the
  * list `key` means an in-place update, like a `todos` checklist tick,
@@ -493,7 +510,7 @@ function TimelineRow({
           />
         ) : null}
       </View>
-      <View style={[st.tlBody, { paddingBottom: showLine ? 12 : 0 }]}>
+      <View style={[st.tlBody, { paddingBottom: showLine ? 5 : 0 }]}>
         {active ? (
           <View style={st.tlBodyRow}>
             <ActiveAccentBar color={colors.codeEditorTimelineActive} />
@@ -521,16 +538,16 @@ function ActivityHeader({
   colors: AppColors;
 }) {
   return (
-    <TouchableOpacity onPress={onToggle} style={st.header} activeOpacity={0.7}>
-      <Ionicons
-        name="sparkles-outline"
-        size={13}
-        color={colors.codeEditorActivityText}
-      />
+    <TouchableOpacity
+      onPress={onToggle}
+      style={[st.header]}
+      activeOpacity={0.7}
+    >
+      <AgentAvatar colors={colors} />
       <Text
         style={[
           st.headerText,
-          { color: colors.codeEditorActivityText, fontFamily: F.sans700 },
+          { color: colors.text, fontFamily: F.sans600 },
         ]}
       >
         {expanded
@@ -563,13 +580,7 @@ export function ActivityStream({
 
   return (
     <View
-      style={[
-        st.wrap,
-        {
-          backgroundColor: colors.codeEditorActivityBg,
-          borderColor: colors.codeEditorActivityBorder,
-        },
-      ]}
+      style={[st.wrap, { borderColor: colors.codeEditorBorder, backgroundColor: colors.codeEditorActivityBg }]}
     >
       <ActivityHeader
         expanded={expanded}
@@ -577,16 +588,23 @@ export function ActivityStream({
         onToggle={() => setExpanded((e) => !e)}
         colors={colors}
       />
-      <View style={st.timeline}>
-        {visible.map((step, i) => (
-          <TimelineRow
-            key={step.id}
-            step={step}
-            active={false}
-            showLine={i !== visible.length - 1}
-            colors={colors}
-          />
-        ))}
+      <View
+        style={[
+          st.cardBody,
+          // { backgroundColor: colors.codeEditorChatAssistantBg },
+        ]}
+      >
+        <View style={st.timeline}>
+          {visible.map((step, i) => (
+            <TimelineRow
+              key={step.id}
+              step={step}
+              active={false}
+              showLine={i !== visible.length - 1}
+              colors={colors}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -606,36 +624,48 @@ export function LiveActivity({
 
   return (
     <View
-      style={[
-        st.wrap,
-        {
-          backgroundColor: colors.codeEditorChatAssistantBg,
-          borderColor: colors.codeEditorBorder,
-        },
-      ]}
+      style={[st.wrap, { borderColor: colors.codeEditorBorder }]}
     >
-      <View style={st.header}>
-        <PulsingDot active color={colors.codeEditorTimelineActive} size={8} />
+      <View
+        style={[st.header, { backgroundColor: colors.codeEditorActivityBg }]}
+      >
+        <AgentAvatar colors={colors} />
         <Text
           style={[
             st.headerText,
-            { color: colors.codeEditorTimelineActive, fontFamily: F.sans700 },
+            { color: colors.text, fontFamily: F.sans600 },
+          ]}
+        >
+          Agent
+        </Text>
+        <PulsingDot active color={colors.codeEditorTimelineActive} size={7} />
+        <Text
+          style={[
+            st.workingText,
+            { color: colors.codeEditorTimelineActive },
           ]}
         >
           Working…
         </Text>
       </View>
-      <View style={st.timeline}>
-        {steps.map((step, i) => (
-          <AnimatedRow key={step.id}>
-            <TimelineRow
-              step={step}
-              active={i === lastIndex}
-              showLine={i !== lastIndex}
-              colors={colors}
-            />
-          </AnimatedRow>
-        ))}
+      <View
+        style={[
+          st.cardBody,
+          { backgroundColor: colors.codeEditorChatAssistantBg },
+        ]}
+      >
+        <View style={st.timeline}>
+          {steps.map((step, i) => (
+            <AnimatedRow key={step.id}>
+              <TimelineRow
+                step={step}
+                active={i === lastIndex}
+                showLine={i !== lastIndex}
+                colors={colors}
+              />
+            </AnimatedRow>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -644,23 +674,40 @@ export function LiveActivity({
 const st = StyleSheet.create({
   wrap: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: 16,
+    overflow: 'hidden',
     marginHorizontal: 14,
     marginBottom: 10,
-    gap: 8,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
   headerText: {
     flex: 1,
-    fontSize: 11.5,
+    fontSize: 13,
+  },
+  workingText: {
+    fontSize: 11,
+    fontFamily: F.sans700,
+  },
+  avatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardBody: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   timeline: {
     paddingLeft: 2,
+    gap: 8,
   },
   tlRow: {
     flexDirection: 'row',

@@ -33,8 +33,8 @@ import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 const RADIUS = 15;
-const BORDER_W = 1.75;
-const RING_SPIN_MS = 6000;
+const BORDER_W = 2.75;
+const RING_SPIN_MS = 14000;
 const MAX_IMAGES = 3;
 const TYPE_MS = 28; // ms per character while "typing"
 const DELETE_MS = 16; // ms per character while "deleting"
@@ -346,203 +346,184 @@ export function AgentV2({
                     numberOfLines={1}
                   >
                     {tab.label}
-                    {tab.key === 'game' ? ' · soon' : ''}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <View
-            style={[
-              s.shadowWrap,
-              Platform.select({ ios: { shadowColor: '#000' }, default: {} }),
-            ]}
-          >
-            <View style={s.ringMask}>
-              <Reanimated.View style={[s.ringSpinner, ringSpinStyle]}>
-                <LinearGradient
-                  colors={
-                    [...t.agentBorderGradient] as [string, string, ...string[]]
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                />
-              </Reanimated.View>
+          <View style={s.ringMask}>
+            <View style={s.cardInner}>
+              <BlurView
+                intensity={Platform.OS === 'android' ? 80 : 60}
+                tint={colorScheme === 'dark' ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+              <View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: t.background, borderColor: t.border, borderWidth: 1 },
+                ]}
+              />
 
-              <View style={s.cardInner}>
-                <BlurView
-                  intensity={Platform.OS === 'android' ? 80 : 60}
-                  tint={colorScheme === 'dark' ? 'dark' : 'light'}
-                  style={StyleSheet.absoluteFill}
-                />
-                <View
-                  pointerEvents="none"
-                  style={[
-                    StyleSheet.absoluteFill,
-                    { backgroundColor: t.agentCardGlassTint },
-                  ]}
-                />
-
-                <View style={s.cardContent}>
-                  <View style={s.inputWrap}>
-                    <TextInput
-                      placeholder={activeTab.suggestions[0]}
-                      placeholderTextColor="transparent"
-                      editable
-                      multiline
-                      value={prompt}
-                      onChangeText={setPrompt}
-                      onFocus={() => setInputFocused(true)}
-                      onBlur={() => setInputFocused(false)}
-                      style={[s.input, { color: t.agentInputText }]}
-                    />
-                    {showTypewriter && (
-                      <View
-                        pointerEvents="none"
-                        accessibilityElementsHidden
-                        importantForAccessibility="no-hide-descendants"
-                        style={s.typewriterOverlay}
-                      >
-                        <Text
-                          style={[s.input, { color: t.agentInputPlaceholder }]}
-                        >
-                          {typedPlaceholder}
-                          <BlinkingCursor color={t.agentInputPlaceholder} />
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {images.length > 0 && (
-                    <View style={s.thumbRow}>
-                      {images.map((uri, i) => (
-                        <View
-                          key={`${uri}-${i}`}
-                          style={[s.thumb, { borderColor: t.agentInputBorder }]}
-                        >
-                          <Image
-                            source={{ uri }}
-                            style={s.thumbImg}
-                            contentFit="cover"
-                          />
-                          <Pressable
-                            onPress={() => removeImage(i)}
-                            style={[
-                              s.thumbRemove,
-                              { backgroundColor: t.agentBtnBg },
-                            ]}
-                            hitSlop={6}
-                          >
-                            <Ionicons
-                              name="close"
-                              size={11}
-                              color={t.agentBtnIcon}
-                            />
-                          </Pressable>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-
-                  <View style={s.row}>
-                    <TouchableOpacity
-                      onPress={() => setModelPickerOpen(true)}
-                      activeOpacity={0.7}
-                      style={[
-                        s.modelChip,
-                        {
-                          backgroundColor: t.agentBtnBg,
-                          borderColor: t.agentBtnBorder,
-                        },
-                      ]}
+              <View style={s.cardContent}>
+                <View style={s.inputWrap}>
+                  <TextInput
+                    placeholder={activeTab.suggestions[0]}
+                    placeholderTextColor="transparent"
+                    editable
+                    multiline
+                    value={prompt}
+                    onChangeText={setPrompt}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    style={[s.input, { color: t.agentInputText }]}
+                  />
+                  {showTypewriter && (
+                    <View
+                      pointerEvents="none"
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                      style={s.typewriterOverlay}
                     >
                       <Text
-                        style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
-                        numberOfLines={1}
+                        style={[s.input, { color: t.agentInputPlaceholder }]}
                       >
-                        {selectedModel.label}
+                        {typedPlaceholder}
+                        <BlinkingCursor color={t.agentInputPlaceholder} />
                       </Text>
-                      <Ionicons
-                        name="chevron-down"
-                        size={13}
-                        color={t.agentBtnIcon}
-                      />
-                    </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
 
-                    <TouchableOpacity
-                      onPress={handleAttach}
-                      activeOpacity={0.7}
-                      disabled={images.length >= MAX_IMAGES}
-                      style={[
-                        s.circleBtn,
-                        {
-                          backgroundColor: t.agentBtnBg,
-                          borderColor: t.agentBtnBorder,
-                        },
-                      ]}
-                    >
-                      <Ionicons name="add" size={20} color={t.agentBtnIcon} />
-                      {images.length > 0 && (
-                        <View
+                {images.length > 0 && (
+                  <View style={s.thumbRow}>
+                    {images.map((uri, i) => (
+                      <View
+                        key={`${uri}-${i}`}
+                        style={[s.thumb, { borderColor: t.agentInputBorder }]}
+                      >
+                        <Image
+                          source={{ uri }}
+                          style={s.thumbImg}
+                          contentFit="cover"
+                        />
+                        <Pressable
+                          onPress={() => removeImage(i)}
                           style={[
-                            s.countBadge,
-                            { backgroundColor: t.agentTabActiveBg },
+                            s.thumbRemove,
+                            { backgroundColor: t.agentBtnBg },
                           ]}
+                          hitSlop={6}
                         >
-                          <Text style={s.countBadgeText}>{images.length}</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
+                          <Ionicons
+                            name="close"
+                            size={11}
+                            color={t.agentBtnIcon}
+                          />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
 
-                    <View style={{ flex: 1 }} />
-
-                    <TouchableOpacity
-                      onPress={handleSend}
-                      activeOpacity={0.8}
-                      disabled={sending || !prompt.trim()}
+                <View style={s.row}>
+                  <TouchableOpacity
+                    onPress={() => setModelPickerOpen(true)}
+                    activeOpacity={0.7}
+                    style={[
+                      s.modelChip,
+                      {
+                        backgroundColor: t.agentBtnBg,
+                        borderColor: t.agentBtnBorder,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
+                      numberOfLines={1}
                     >
-                      <LinearGradient
-                        colors={
-                          [...t.agentSendGradient] as [
-                            string,
-                            string,
-                            ...string[],
-                          ]
-                        }
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
+                      {selectedModel.label}
+                    </Text>
+                    <Ionicons
+                      name="chevron-down"
+                      size={13}
+                      color={t.agentBtnIcon}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleAttach}
+                    activeOpacity={0.7}
+                    disabled={images.length >= MAX_IMAGES}
+                    style={[
+                      s.circleBtn,
+                      {
+                        backgroundColor: t.agentBtnBg,
+                        borderColor: t.agentBtnBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons name="add" size={20} color={t.agentBtnIcon} />
+                    {images.length > 0 && (
+                      <View
                         style={[
-                          s.sendBtn,
-                          (sending || !prompt.trim()) && { opacity: 0.5 },
+                          s.countBadge,
+                          { backgroundColor: t.agentTabActiveBg },
                         ]}
                       >
-                        <Animated.View
-                          pointerEvents="none"
-                          style={[
-                            s.sendSheen,
-                            {
-                              transform: [
-                                {
-                                  translateX: sheenX.interpolate({
-                                    inputRange: [-1, 1],
-                                    outputRange: [-38, 38],
-                                  }),
-                                },
-                                { rotate: '20deg' },
-                              ],
-                            },
-                          ]}
-                        />
-                        {sending ? (
-                          <ActivityIndicator size="small" color="#FFFFFF" />
-                        ) : (
-                          <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
-                        )}
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </View>
+                        <Text style={s.countBadgeText}>{images.length}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  <View style={{ flex: 1 }} />
+
+                  <TouchableOpacity
+                    onPress={handleSend}
+                    activeOpacity={0.8}
+                    disabled={sending || !prompt.trim()}
+                  >
+                    <LinearGradient
+                      colors={
+                        [...t.agentSendGradient] as [
+                          string,
+                          string,
+                          ...string[],
+                        ]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        s.sendBtn,
+                        (sending || !prompt.trim()) && { opacity: 0.5 },
+                      ]}
+                    >
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[
+                          s.sendSheen,
+                          {
+                            transform: [
+                              {
+                                translateX: sheenX.interpolate({
+                                  inputRange: [-1, 1],
+                                  outputRange: [-38, 38],
+                                }),
+                              },
+                              { rotate: '20deg' },
+                            ],
+                          },
+                        ]}
+                      />
+                      {sending ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -726,6 +707,17 @@ const s = StyleSheet.create({
       },
       android: { elevation: 10 },
     }),
+  },
+  // Android can't render a colored native shadow (elevation is always
+  // grey/black), so this is a flat halo standing in for the iOS glow —
+  // slightly larger than the card, low opacity, same border palette.
+  glowHalo: {
+    position: 'absolute',
+    top: -8,
+    left: -8,
+    right: -8,
+    bottom: -8,
+    borderRadius: RADIUS + 10,
   },
   // Gradient-ring border: `ringMask` clips to the rounded rect and reserves
   // exactly BORDER_W of padding; `ringSpinner` is an oversized LinearGradient

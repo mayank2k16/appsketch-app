@@ -32,14 +32,14 @@ const IMGS = [
 
 const MONTAGE_COLS = 4;
 const TILE_GAP = 8;
-const GRID_W = width * 1.7;
+const GRID_W = width * 1.4;
 const COL_W = (GRID_W - TILE_GAP * (MONTAGE_COLS + 1)) / MONTAGE_COLS;
 
 const COLUMNS = [
-  { order: [0, 2, 8, 3, 1, 6], goDown: true, speed: 16, tileH: 152 },
-  { order: [7, 4, 5, 8, 0, 2], goDown: false, speed: 12, tileH: 138 },
-  { order: [3, 1, 6, 2, 7, 4], goDown: true, speed: 18, tileH: 160 },
-  { order: [8, 5, 0, 4, 3, 1], goDown: false, speed: 14, tileH: 146 },
+  { order: [0, 2, 8, 3, 1, 6], goDown: true, speed: 12, tileH: 140 },
+  { order: [7, 4, 5, 8, 0, 2], goDown: false, speed: 12, tileH: 140 },
+  { order: [3, 1, 6, 2, 7, 4], goDown: true, speed: 12, tileH: 140 },
+  { order: [8, 5, 0, 4, 3, 1], goDown: false, speed: 12, tileH: 140 },
 ];
 
 function buildImgs(order: number[]): string[] {
@@ -171,46 +171,47 @@ function TwinkleStar({ spec }: { spec: StarSpec }) {
 const DARK_BASE = '#050510';
 const ORB_D = width * 1.6; // radial orb wider than screen so edges are invisible
 
+const FADE_H = 700;
+const FADE_LOCATIONS = [0, 0.1, 0.2, 0.3, 0.42, 1];
+const FADE_STOPS = [0, 0.08, 0.25, 0.55, 1, 1];
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Brand tint used for the faint mid-fade color shift — same hue in both themes.
+const ACCENT_TINT = '#6C5CE7';
+
+const FADE_ALPHAS = [0, 0.005, 0.01, 0.02, 0.04, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 1] as const;
+const FADE_LOCATIONS_MAIN = [0, 0.03, 0.06, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.42, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00] as const;
+
+// Builds the montage → panel fade, keeping the same alpha/location proportions
+// in both themes but basing the color on the theme's panel bg (dark: near-black,
+// light: white) instead of a hardcoded dark value.
+function buildMontageFade(baseHex: string): [string, string, ...string[]] {
+  return FADE_ALPHAS.map((alpha, i) =>
+    i === 2 ? hexToRgba(ACCENT_TINT, alpha) : hexToRgba(baseHex, alpha)
+  ) as [string, string, ...string[]];
+}
+
 export default function Login() {
   const { colorScheme } = useColorScheme();
   const t = loginTheme[colorScheme === 'dark' ? 'dark' : 'light'];
   const isDark = colorScheme === 'dark';
 
   const stars = React.useMemo(() => makeStars(48), []);
+  const montageFadeColors = React.useMemo(() => buildMontageFade(t.panel), [t.panel]);
+  const topScrimColors: [string, string] = isDark
+    ? ['rgba(0,0,0,0.5)', 'transparent']
+    : ['rgba(255,255,255,0.05)', 'transparent'];
 
   return (
     <View style={[s.root, { backgroundColor: isDark ? DARK_BASE : t.panel }]}>
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
-
-      {/* ── Dark mode: circular radial glow + stars across full screen ── */}
-      {isDark && (
-        <>
-          {/* #c084fc → #f9a8d4 → #60a5fa radial orb, centred on screen */}
-          <Svg
-            width={ORB_D}
-            height={ORB_D}
-            style={{ position: 'absolute', left: (width - ORB_D) / 2, top: (height - ORB_D) / 2 }}
-            pointerEvents="none"
-          >
-            <Defs>
-              <RadialGradient id="loginOrb" cx="50%" cy="50%" r="50%">
-                <Stop offset="0%" stopColor="#c084fc" stopOpacity="0.40" />
-                <Stop offset="28%" stopColor="#f9a8d4" stopOpacity="0.24" />
-                <Stop offset="58%" stopColor="#60a5fa" stopOpacity="0.12" />
-                <Stop offset="100%" stopColor={DARK_BASE} stopOpacity="0" />
-              </RadialGradient>
-            </Defs>
-            <Circle cx={ORB_D / 2} cy={ORB_D / 2} r={ORB_D / 2} fill="url(#loginOrb)" />
-          </Svg>
-
-          {/* Stars in both the montage zone and the auth panel zone */}
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            {stars.map((star, i) => (
-              <TwinkleStar key={i} spec={star} />
-            ))}
-          </View>
-        </>
-      )}
 
       {/* ── Zone A: drifting template montage ── */}
       <View style={[s.montage, { backgroundColor: 'transparent' }]}>
@@ -228,8 +229,24 @@ export default function Login() {
 
         {/* top scrim for status-bar legibility */}
         <LinearGradient
-          colors={['rgba(0,0,0,0.35)', 'transparent']}
+          colors={topScrimColors}
           style={s.topScrim}
+          pointerEvents="none"
+        />
+
+
+        <LinearGradient
+          colors={montageFadeColors}
+          locations={FADE_LOCATIONS_MAIN}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 350,
+            height: 360,
+          }}
           pointerEvents="none"
         />
 
@@ -244,7 +261,7 @@ export default function Login() {
 const s = StyleSheet.create({
   root: { flex: 1, overflow: "hidden" },
 
-  montage: { flex: 1, overflow: 'hidden', position: "absolute", top: 0, width: '100%', height: "60%" },
+  montage: { flex: 1, overflow: 'hidden', position: "absolute", top: 0, width: '100%', height: "100%" },
   gridWrap: {
     position: 'absolute',
     top: -0.18 * height,
@@ -255,7 +272,8 @@ const s = StyleSheet.create({
   grid: {
     flex: 1,
     flexDirection: 'row',
-    transform: [{ rotate: '-30deg' }, { scale: 1.15 }],
+    transform: [{ rotate: '-30deg' }, { scale: 1.1 }],
   },
-  topScrim: { position: 'absolute', top: 0, left: 0, right: 0, height: 110 },
+  topScrim: { position: 'absolute', left: 0, right: 0, height: "100%", bottom: 0 },
+  bottomFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: FADE_H },
 });
