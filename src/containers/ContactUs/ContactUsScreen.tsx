@@ -56,7 +56,7 @@ const SUPPORT_OPTIONS: { icon: IoniconName; title: string; description: string; 
   },
 ];
 
-const GRADIENT_TITLE_COLORS = ['#A855F7', '#EC4899'];
+const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());

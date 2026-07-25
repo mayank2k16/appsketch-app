@@ -20,7 +20,7 @@ import { useAppTheme, type AppColors } from '@/lib/theme';
 // ─── Content — kept identical to the web Privacy Policy page (Vite HomeV3/PrivacyPolicy) ──
 const LAST_UPDATED = 'Last updated: 01/01/2026';
 const CONTACT_EMAIL = 'akash@appsketch.ai';
-const GRADIENT_TITLE_COLORS = ['#60A5FA', '#818CF8', '#A78BFA'];
+const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
 
 export function PrivacyPolicyScreen() {
   const router = useRouter();

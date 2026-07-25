@@ -51,12 +51,14 @@ const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
   { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
+  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc' },
 ];
 
 const GUEST_MENU_ITEMS: { id: string; label: string; route: string }[] = [
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
   { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
+  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc' },
 ];
 
 // ─── Pulsing orange dot ────────────────────────────────────────────────────────
@@ -504,7 +506,7 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
-    paddingVertical: 11,
+    paddingVertical: 7,
     gap: 12,
   },
   flatIcon: {
