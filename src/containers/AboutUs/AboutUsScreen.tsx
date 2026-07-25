@@ -1,6 +1,4 @@
-import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -119,7 +117,6 @@ export function AboutUsScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
-  const isDark = colorScheme === 'dark';
 
   function handleSchedule() {
     Linking.openURL('https://calendly.com/care-appsketch/30min').catch(() => { });
@@ -176,7 +173,7 @@ export function AboutUsScreen() {
         <View style={st.section}>
           <View style={st.statsGrid}>
             {STATS.map((stat) => (
-              <GlassCard key={stat.label} t={t} isDark={isDark} style={st.statCard} contentStyle={st.statCardContent}>
+              <GlassCard key={stat.label} t={t} style={st.statCard} contentStyle={st.statCardContent}>
                 <Text style={[st.statValue, { color: t.text }]}>{stat.value}</Text>
                 <Text style={[st.statLabel, { color: t.textSub }]}>{stat.label}</Text>
               </GlassCard>
@@ -187,8 +184,7 @@ export function AboutUsScreen() {
         {/* ── Mission ── */}
         <View style={st.section}>
           <View style={st.missionImageWrap}>
-            <View style={[st.missionGlow, { backgroundColor: `${t.accent}30` }]} />
-            <GlassCard t={t} isDark={isDark} contentStyle={st.missionImageCard}>
+            <GlassCard t={t} contentStyle={st.missionImageCard}>
               <Image source={{ uri: HERO_IMAGE }} style={st.missionImage} contentFit="cover" />
             </GlassCard>
           </View>
@@ -232,7 +228,7 @@ export function AboutUsScreen() {
 
           <View style={{ gap: 12, marginTop: 24 }}>
             {VALUES.map((value) => (
-              <GlassCard key={value.title} t={t} isDark={isDark} contentStyle={st.valueCard}>
+              <GlassCard key={value.title} t={t} contentStyle={st.valueCard}>
                 <View style={[st.valueIconWrap, { backgroundColor: t.accentSoft }]}>
                   <Ionicons name={value.icon} size={20} color={t.accent} />
                 </View>
@@ -250,7 +246,7 @@ export function AboutUsScreen() {
 
           <View style={{ gap: 12, marginTop: 24 }}>
             {MILESTONES.map((m) => (
-              <GlassCard key={m.year} t={t} isDark={isDark} contentStyle={st.milestoneCard}>
+              <GlassCard key={m.year} t={t} contentStyle={st.milestoneCard}>
                 <GradientText style={st.milestoneYear} colors={['#C084FC', '#60A5FA']}>
                   {m.year}
                 </GradientText>
@@ -264,8 +260,7 @@ export function AboutUsScreen() {
         {/* ── CTA ── */}
         <View style={st.section}>
           <View style={st.ctaWrap}>
-            <View style={[st.ctaGlow, { backgroundColor: `${t.accent}25` }]} />
-            <GlassCard t={t} isDark={isDark} contentStyle={st.ctaCard}>
+            <GlassCard t={t} contentStyle={st.ctaCard}>
               <Text style={[st.ctaTitle, { color: t.text }]}>Ready to build something amazing?</Text>
               <Text style={[st.ctaDesc, { color: t.textSub }]}>
                 Join thousands of creators who are already using AppSketch.ai to bring their ideas to life.
@@ -298,45 +293,30 @@ export function AboutUsScreen() {
   );
 }
 
-// ─── Shared glass surface — BlurView + tint overlay + lift wash + top
-// highlight, wrapped in a shadow layer that sits outside the clipped
-// (overflow: hidden) card so the elevation isn't cut off. `style` sizes/
-// positions the card itself (grid width, margins); `contentStyle` is applied
-// to the actual content wrapper — layout props like flexDirection/padding
-// belong there, not on `style`, since the card's own children (Blur/tint/
-// highlight) are absolutely positioned and only the content wrapper is a
-// real flex participant. The dark tint alone reads almost as dark as the
-// page background, so a faint white "lift" wash sits between the tint and
-// the highlight to make the glass legibly lighter than what's behind it.
+// Flat card — same treatment as the AgentV2 suggestion pills: solid
+// `agentTabBg` fill, `agentTabBorder` border, no blur/gradient. `style`
+// sizes/positions the card itself (grid width, margins); `contentStyle` is
+// applied to the inner content wrapper (padding, flex layout).
 function GlassCard({
   t,
-  isDark,
   style,
   contentStyle,
   children,
 }: {
   t: AppColors;
-  isDark: boolean;
   style?: object;
   contentStyle?: object;
   children: React.ReactNode;
 }) {
   return (
-    <View style={[st.glassShadow, style]}>
-      <View style={[st.glassCard, { borderColor: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(17,17,17,0.12)' }]}>
-        <BlurView intensity={Platform.OS === 'android' ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: t.card, opacity: isDark ? 0.85 : 0.65 }]} />
-        <View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.4)' }]}
-        />
-        <LinearGradient
-          pointerEvents="none"
-          colors={isDark ? ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,0.7)', 'rgba(255,255,255,0)']}
-          style={st.glassHighlight}
-        />
-        <View style={[st.glassContent, contentStyle]}>{children}</View>
-      </View>
+    <View
+      style={[
+        st.glassCard,
+        { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
+        style,
+      ]}
+    >
+      <View style={[st.glassContent, contentStyle]}>{children}</View>
     </View>
   );
 }
@@ -388,7 +368,7 @@ const st = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 22,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 30,
   },
   ctaBtnText: { fontFamily: F.sans700, fontSize: 13.5 },
   ctaBtnSecondary: {
@@ -412,9 +392,8 @@ const st = StyleSheet.create({
   statLabel: { fontFamily: F.sans500, fontSize: 11.5, lineHeight: 15 },
 
   missionImageWrap: { marginBottom: 28 },
-  missionGlow: { position: 'absolute', top: -12, left: -12, right: -12, bottom: -12, borderRadius: 28 },
-  missionImageCard: { padding: 10 },
-  missionImage: { width: '100%', height: 200, borderRadius: 12 },
+  missionImageCard: { padding: 0 },
+  missionImage: { width: '100%', height: 220, borderRadius: 12 },
 
   sectionBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1, marginBottom: 14 },
   sectionBadgeText: { fontFamily: F.sans600, fontSize: 12 },
@@ -438,20 +417,10 @@ const st = StyleSheet.create({
   milestoneDesc: { fontFamily: F.sans400, fontSize: 13, lineHeight: 19 },
 
   ctaWrap: { position: 'relative' },
-  ctaGlow: { position: 'absolute', top: -16, left: -16, right: -16, bottom: -16, borderRadius: 32 },
   ctaCard: { padding: 26 },
   ctaTitle: { fontFamily: F.display900, fontSize: 24, lineHeight: 30, marginBottom: 12, textAlign: 'center' },
   ctaDesc: { fontFamily: F.sans400, fontSize: 14, lineHeight: 21, textAlign: 'center' },
 
-  glassShadow: {
-    borderRadius: 16,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
-      android: { elevation: 4 },
-      default: { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
-    }),
-  },
   glassCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
   glassContent: { position: 'relative' },
-  glassHighlight: { position: 'absolute', top: 0, left: 0, right: 0, height: '35%' },
 });

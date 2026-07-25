@@ -380,9 +380,6 @@ export function AgentV2({
                     {
                       backgroundColor: active ? t.card : t.agentTabBg,
                       borderColor: active ? '#8B5CF6' : t.agentTabBorder,
-                      // Outer corners match the card radius so the first/last
-                      // tab flows flush into the card edge (no broken curve);
-                      // inner corners are the smaller tab radius.
                       borderTopLeftRadius: isFirst ? RADIUS : 12,
                       borderTopRightRadius: isLast ? RADIUS : 12,
                     },
@@ -402,9 +399,6 @@ export function AgentV2({
                   >
                     {tab.label}
                   </Text>
-
-                  {/* Concave base flares — only on the active tab, and never
-                      on the side that's flush with the card edge. */}
                   {active && !isFirst && (
                     <TabFlare side="left" r={7} card={t.card} bg={t.bg} />
                   )}
@@ -726,14 +720,9 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   tabRow: {
-    // Full width, edge-to-edge with the card; the 3 tabs split it equally and
-    // sit flush against each other (no gap).
     alignSelf: 'stretch',
     flexDirection: 'row',
-    gap: 0,
-    // Lift the tab row above the card so the active tab's fill covers the
-    // card's top border segment underneath it, letting the two merge like a
-    // browser tab connecting to its page.
+    gap: 5,
     zIndex: 2,
   },
   // Browser-style tab: equal width (flex 1), rounded top corners only, open

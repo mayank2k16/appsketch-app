@@ -1,5 +1,3 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -69,7 +67,6 @@ export function ContactUsScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
-  const isDark = colorScheme === 'dark';
 
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
@@ -144,7 +141,7 @@ export function ContactUsScreen() {
 
           {/* ── Main support card ── */}
           <View style={st.section}>
-            <GlassCard t={t} isDark={isDark} contentStyle={st.mainCard}>
+            <GlassCard t={t} contentStyle={st.mainCard}>
               <View style={st.mainCardHeader}>
                 <View style={[st.iconWrap, { backgroundColor: t.accentSoft }]}>
                   <Ionicons name="construct-outline" size={22} color={t.accent} />
@@ -175,7 +172,7 @@ export function ContactUsScreen() {
           {/* ── Support options ── */}
           <View style={[st.section, { gap: 12 }]}>
             {SUPPORT_OPTIONS.map((opt) => (
-              <GlassCard key={opt.title} t={t} isDark={isDark} contentStyle={st.optionCard}>
+              <GlassCard key={opt.title} t={t} contentStyle={st.optionCard}>
                 <View style={[st.iconWrap, { backgroundColor: t.accentSoft, marginBottom: 12 }]}>
                   <Ionicons name={opt.icon} size={18} color={t.accent} />
                 </View>
@@ -184,7 +181,7 @@ export function ContactUsScreen() {
                 <TouchableOpacity
                   onPress={handleWhatsApp}
                   activeOpacity={0.85}
-                  style={[st.outlineBtn, { borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(17,17,17,0.12)' }]}
+                  style={[st.outlineBtn, { borderColor: t.agentTabBorder }]}
                 >
                   <Text style={[st.outlineBtnText, { color: t.text }]}>{opt.cta}</Text>
                 </TouchableOpacity>
@@ -203,7 +200,7 @@ export function ContactUsScreen() {
           <View style={[st.section, { gap: 12 }]}>
             {contactCards.map((card) => (
               <TouchableOpacity key={card.title} onPress={card.onPress} activeOpacity={0.85}>
-                <GlassCard t={t} isDark={isDark} contentStyle={st.contactInfoCard}>
+                <GlassCard t={t} contentStyle={st.contactInfoCard}>
                   <View style={[st.iconWrap, { backgroundColor: t.accentSoft }]}>
                     <Ionicons name={card.icon} size={18} color={t.accent} />
                   </View>
@@ -221,7 +218,7 @@ export function ContactUsScreen() {
 
           {/* ── Contact form ── */}
           <View style={st.section}>
-            <GlassCard t={t} isDark={isDark} contentStyle={st.formCard}>
+            <GlassCard t={t} contentStyle={st.formCard}>
               <View style={st.inputGroup}>
                 <TextInput
                   value={name}
@@ -274,34 +271,30 @@ export function ContactUsScreen() {
   );
 }
 
-// ─── Shared glass surface — BlurView + tint overlay + lift wash + top
-// highlight, wrapped in a shadow layer that sits outside the clipped
-// (overflow: hidden) card so the elevation isn't cut off. `style` sizes/
-// positions the card itself (grid width, margins); `contentStyle` is applied
-// to the actual content wrapper — layout props like flexDirection/padding
-// belong there, not on `style`, since the card's own children (Blur/tint/
-// highlight) are absolutely positioned and only the content wrapper is a
-// real flex participant. The dark tint alone reads almost as dark as the
-// page background, so a faint white "lift" wash sits between the tint and
-// the highlight to make the glass legibly lighter than what's behind it. */
+// Flat card — same treatment as the AgentV2 suggestion pills: solid
+// `agentTabBg` fill, `agentTabBorder` border, no blur/gradient. `style`
+// sizes/positions the card itself (grid width, margins); `contentStyle` is
+// applied to the inner content wrapper (padding, flex layout).
 function GlassCard({
   t,
-  isDark,
   style,
   contentStyle,
   children,
 }: {
   t: AppColors;
-  isDark: boolean;
   style?: object;
   contentStyle?: object;
   children: React.ReactNode;
 }) {
   return (
-    <View style={[st.glassShadow, style]}>
-      <View style={[st.glassCard, { borderColor: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255, 255, 255, 0.05)' }]}>
-        <View style={[st.glassContent, contentStyle]}>{children}</View>
-      </View>
+    <View
+      style={[
+        st.glassCard,
+        { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
+        style,
+      ]}
+    >
+      <View style={[st.glassContent, contentStyle]}>{children}</View>
     </View>
   );
 }
@@ -357,15 +350,6 @@ const st = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 13, fontFamily: F.sans400, fontSize: 14 },
   textarea: { height: 110, textAlignVertical: 'top' },
 
-  glassShadow: {
-    borderRadius: 16,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
-      android: { elevation: 4 },
-      default: { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
-    }),
-  },
-  glassCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', backgroundColor: 'rgba(0, 0, 0, 0.4)' },
-  glassContent: { position: 'relative', backgroundColor: 'rgba(0, 0, 0, 0.4)' },
-  glassHighlight: { position: 'absolute', top: 0, left: 0, right: 0, height: '35%' },
+  glassCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  glassContent: { position: 'relative' },
 });
