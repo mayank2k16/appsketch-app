@@ -78,12 +78,14 @@ function MarqueeColumn({
   speed,
   heights,
   colWidth,
+  t,
 }: {
   images: string[];
   direction: 'up' | 'down';
   speed: number;
   heights: number[];
   colWidth: number;
+  t: HomeColors;
 }) {
   const setHeight = heights.reduce((sum, h) => sum + h + IMG_GAP, 0);
   const translateY = React.useRef(
@@ -117,6 +119,7 @@ function MarqueeColumn({
               marginBottom: IMG_GAP,
               borderRadius: IMG_RADIUS,
               overflow: 'hidden',
+              backgroundColor: t.agentTabBg,
             }}
           >
             <ExpoImage
@@ -209,6 +212,7 @@ export function GallerySection({
               speed={c.speed}
               heights={c.heights}
               colWidth={colWidth}
+              t={t}
             />
           ))}
         </View>

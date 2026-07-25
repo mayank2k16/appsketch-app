@@ -47,14 +47,22 @@ type DrawerMenuProps = {
 // back to /home. No real routes to add here until those are fixed or new
 // screens are built. `/about` is a real, standalone route (src/app/about.tsx)
 // so it's safe to link for both signed-in and guest users.
-const AUTH_MENU_ITEMS: { id: string; label: string; route: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
-  { id: 'about', label: 'About Us', route: '/about', icon: 'sparkles-outline' },
-  { id: 'contact', label: 'Contact Us', route: '/contact', icon: 'chatbubble-ellipses-outline' },
+const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
+  { id: 'profile', label: 'My Account', route: '/profile' },
+  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
+  { id: 'about', label: 'About Us', route: '/about' },
+  { id: 'contact', label: 'Contact Us', route: '/contact' },
+  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
+  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc' },
 ];
 
-const GUEST_MENU_ITEMS: { id: string; label: string; route: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
-  { id: 'about', label: 'About Us', route: '/about', icon: 'sparkles-outline' },
-  { id: 'contact', label: 'Contact Us', route: '/contact', icon: 'chatbubble-ellipses-outline' },
+const GUEST_MENU_ITEMS: { id: string; label: string; route: string }[] = [
+  { id: 'profile', label: 'My Account', route: '/profile' },
+  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
+  { id: 'about', label: 'About Us', route: '/about' },
+  { id: 'contact', label: 'Contact Us', route: '/contact' },
+  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
+  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc' },
 ];
 
 // ─── Pulsing orange dot ────────────────────────────────────────────────────────
@@ -173,7 +181,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
   function handleLogout() {
     onClose();
-    setTimeout(() => { signOut(); router.replace('/home'); }, 80);
+    setTimeout(() => { signOut(); router.replace('/login'); }, 80);
   }
 
   function handleSignIn() {
@@ -277,7 +285,6 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                       activeOpacity={0.6}
                       style={st.flatRow}
                     >
-                      <Ionicons name={item.icon} size={17} color={dt.labelColor} style={st.flatIcon} />
                       <Text style={[st.flatLabel, { color: dt.labelColor }]}>{item.label}</Text>
                     </TouchableOpacity>
                   </Animated.View>
@@ -503,7 +510,7 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
-    paddingVertical: 11,
+    paddingVertical: 7,
     gap: 12,
   },
   flatIcon: {

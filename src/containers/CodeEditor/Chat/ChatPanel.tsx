@@ -26,6 +26,7 @@ import { useCodeEditor } from '../CodeEditorProvider';
 import { ActivityStream, LiveActivity } from './ActivityStream';
 import { ClarifyBlockView } from './ClarifyBlock';
 import { PulsingDot } from './PulsingDot';
+import { StatusBanner } from './StatusBanner';
 import { TokenMeter } from './TokenMeter';
 
 const MAX_IMAGES = 3;
@@ -57,28 +58,49 @@ function AgentAvatar({
 function ChatHeader({
   connected,
   busy,
+  needsInput,
   colors,
   onClose,
 }: {
   connected: boolean;
   busy: boolean;
+  needsInput: boolean;
   colors: ReturnType<typeof useAppTheme>;
   onClose: () => void;
 }) {
+  const statusLabel = !connected
+    ? 'Disconnected'
+    : needsInput
+      ? 'Waiting for your input'
+      : busy
+        ? 'Working…'
+        : 'Idle';
+  const dotColor = !connected
+    ? colors.codeEditorDisconnectedDot
+    : needsInput
+      ? colors.accent
+      : colors.codeEditorConnectedDot;
+
   return (
     <View style={[st.header, { borderColor: colors.codeEditorBorder }]}>
       <AgentAvatar size={30} iconSize={15} colors={colors} />
-      <View style={st.headerTitleRow}>
-        <Text style={[st.headerTitle, { color: colors.text }]}>Agent</Text>
-        <PulsingDot
-          active={connected && busy}
-          color={
-            connected
-              ? colors.codeEditorConnectedDot
-              : colors.codeEditorDisconnectedDot
-          }
-          size={7}
-        />
+      <View style={{ flex: 1 }}>
+        <View style={st.headerTitleRow}>
+          <Text style={[st.headerTitle, { color: colors.text }]}>Agent</Text>
+          <PulsingDot
+            active={connected && (busy || needsInput)}
+            color={dotColor}
+            size={7}
+          />
+        </View>
+        <Text
+          style={[
+            st.headerStatus,
+            { color: needsInput ? colors.accent : colors.textSub },
+          ]}
+        >
+          {statusLabel}
+        </Text>
       </View>
       <TouchableOpacity
         onPress={onClose}
@@ -374,16 +396,20 @@ export function ChatPanel() {
   const [images, setImages] = React.useState<string[]>([]);
   const listRef = React.useRef<ScrollView>(null);
 
+  const needsInput = !!clarifyBlock && !clarifyAnswers;
+
   // Bottom-anchored, like iMessage/most chat UIs — follows new content as it
   // streams in, not just on a brand new message (a turn with many activity
   // steps would otherwise leave the view stuck wherever it last was while
-  // the feed grows well past the fold).
+  // the feed grows well past the fold). `clarifyBlock` is included on its
+  // own — it doesn't touch `messages`/`activity`, so without it the design-
+  // brief card could land off-screen with nothing pulling it into view.
   React.useEffect(() => {
-    if (messages.length || activity.length)
+    if (messages.length || activity.length || clarifyBlock)
       requestAnimationFrame(() =>
         listRef.current?.scrollToEnd({ animated: true })
       );
-  }, [messages.length, activity.length]);
+  }, [messages.length, activity.length, clarifyBlock]);
 
   async function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
@@ -420,6 +446,7 @@ export function ChatPanel() {
       <ChatHeader
         connected={connected}
         busy={busy}
+        needsInput={needsInput}
         colors={t}
         onClose={() => router.back()}
       />
@@ -452,6 +479,14 @@ export function ChatPanel() {
         </ScrollView>
 
         <TokenMeter tokens={tokens} colors={t} />
+
+        {needsInput ? (
+          <StatusBanner
+            icon="hand-left-outline"
+            text="Agent needs your input above to continue — pick an option or type your own."
+            colors={t}
+          />
+        ) : null}
 
         <Composer
           input={input}
@@ -489,6 +524,11 @@ const st = StyleSheet.create({
   headerTitle: {
     fontFamily: F.sans600,
     fontSize: 15,
+  },
+  headerStatus: {
+    fontFamily: F.sans500,
+    fontSize: 11,
+    marginTop: 1,
   },
   closeBtn: {
     width: 28,

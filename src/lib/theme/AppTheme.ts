@@ -380,7 +380,7 @@ export const appTheme = {
     agentTabText: 'rgba(17,17,17,0.60)',
     agentTabIcon: 'rgba(17,17,17,0.60)',
     agentTabActiveBg: '#6C5CE7',
-    agentTabActiveText: '#FFFFFF',
+    agentTabActiveText: 'rgba(17,17,17,1)',
 
     // ── Marketplace — AI Templates screen ──────────────────────────────────────
     templatesChipBg: 'rgba(17,17,17,0.04)',

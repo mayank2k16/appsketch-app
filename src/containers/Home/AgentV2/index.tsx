@@ -32,6 +32,8 @@ import { F } from '@/lib/fonts';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
+import { useVoiceInput } from './use-voice-input';
+
 const RADIUS = 15;
 const BORDER_W = 2.75;
 const RING_SPIN_MS = 14000;
@@ -245,6 +247,8 @@ export function AgentV2({
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
 
+  const voice = useVoiceInput(prompt, setPrompt);
+
   const showTypewriter = !inputFocused && prompt.length === 0;
   const typedPlaceholder = useTypewriter(activeTab.suggestions, showTypewriter);
 
@@ -276,6 +280,24 @@ export function AgentV2({
   }, []);
   const ringSpinStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${ringSpin.value}deg` }],
+  }));
+
+  // Mic button pulses while actively listening, settles back to rest
+  // otherwise — same withRepeat/withTiming pattern as the ring spinner above.
+  const micPulse = useSharedValue(1);
+  React.useEffect(() => {
+    if (voice.listening) {
+      micPulse.value = withRepeat(
+        withTiming(1.18, { duration: 550, easing: ReanimatedEasing.inOut(ReanimatedEasing.quad) }),
+        -1,
+        true
+      );
+    } else {
+      micPulse.value = withTiming(1, { duration: 150 });
+    }
+  }, [voice.listening]);
+  const micPulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: micPulse.value }],
   }));
 
   // Send button — a slow light sheen sweeps across the glass button every
@@ -380,9 +402,6 @@ export function AgentV2({
                     {
                       backgroundColor: active ? t.card : t.agentTabBg,
                       borderColor: active ? '#8B5CF6' : t.agentTabBorder,
-                      // Outer corners match the card radius so the first/last
-                      // tab flows flush into the card edge (no broken curve);
-                      // inner corners are the smaller tab radius.
                       borderTopLeftRadius: isFirst ? RADIUS : 12,
                       borderTopRightRadius: isLast ? RADIUS : 12,
                     },
@@ -402,9 +421,6 @@ export function AgentV2({
                   >
                     {tab.label}
                   </Text>
-
-                  {/* Concave base flares — only on the active tab, and never
-                      on the side that's flush with the card edge. */}
                   {active && !isFirst && (
                     <TabFlare side="left" r={7} card={t.card} bg={t.bg} />
                   )}
@@ -546,6 +562,32 @@ export function AgentV2({
                     )}
                   </TouchableOpacity>
 
+                  {voice.supported && (
+                    <TouchableOpacity
+                      onPress={voice.toggle}
+                      activeOpacity={0.7}
+                      style={[
+                        s.circleBtn,
+                        {
+                          backgroundColor: voice.listening
+                            ? `${t.codeEditorDanger}1A`
+                            : t.agentBtnBg,
+                          borderColor: voice.listening
+                            ? t.codeEditorDanger
+                            : t.agentBtnBorder,
+                        },
+                      ]}
+                    >
+                      <Reanimated.View style={micPulseStyle}>
+                        <Ionicons
+                          name={voice.listening ? 'mic' : 'mic-outline'}
+                          size={19}
+                          color={voice.listening ? t.codeEditorDanger : t.agentBtnIcon}
+                        />
+                      </Reanimated.View>
+                    </TouchableOpacity>
+                  )}
+
                   <View style={{ flex: 1 }} />
 
                   <TouchableOpacity
@@ -683,7 +725,7 @@ export function AgentV2({
 const s = StyleSheet.create({
   wrap: {
     paddingHorizontal: 12,
-    paddingTop: 16,
+    paddingTop: 30,
     paddingBottom: 70,
   },
   stage: {
@@ -726,14 +768,9 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   tabRow: {
-    // Full width, edge-to-edge with the card; the 3 tabs split it equally and
-    // sit flush against each other (no gap).
     alignSelf: 'stretch',
     flexDirection: 'row',
-    gap: 0,
-    // Lift the tab row above the card so the active tab's fill covers the
-    // card's top border segment underneath it, letting the two merge like a
-    // browser tab connecting to its page.
+    gap: 5,
     zIndex: 2,
   },
   // Browser-style tab: equal width (flex 1), rounded top corners only, open

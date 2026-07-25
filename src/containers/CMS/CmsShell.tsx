@@ -21,7 +21,7 @@ export function CmsShell() {
   const router = useRouter();
   const { colors } = useCmsTheme();
 
-  const [activeTab, setActiveTab] = React.useState<CmsTabKey>('orders');
+  const [activeTab, setActiveTab] = React.useState<CmsTabKey>('analytics');
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   const activeMeta = CMS_TABS.find((t) => t.key === activeTab);
