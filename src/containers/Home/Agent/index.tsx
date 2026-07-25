@@ -7,6 +7,8 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { createCoderTenant } from '@/api/coder';
 import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
+import { useVoiceInput } from '@/containers/Home/AgentV2/use-voice-input';
 import { F } from '@/lib/fonts';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
@@ -54,6 +57,34 @@ export function AgentScreen() {
   const [sending, setSending] = React.useState(false);
 
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
+
+  const voice = useVoiceInput(prompt, setPrompt);
+
+  // Mic button pulses while actively listening.
+  const micPulse = React.useRef(new Animated.Value(1)).current;
+  React.useEffect(() => {
+    if (voice.listening) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(micPulse, {
+            toValue: 1.18,
+            duration: 550,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(micPulse, {
+            toValue: 1,
+            duration: 550,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+    micPulse.setValue(1);
+  }, [voice.listening, micPulse]);
 
   function handleSuggestionPress(s: (typeof SUGGESTIONS)[number]) {
     setAppType(s.key);
@@ -251,6 +282,28 @@ export function AgentScreen() {
                 </View>
               )}
             </TouchableOpacity>
+
+            {voice.supported && (
+              <TouchableOpacity
+                onPress={voice.toggle}
+                activeOpacity={0.7}
+                style={[
+                  s.circleBtn,
+                  {
+                    backgroundColor: voice.listening ? `${t.codeEditorDanger}1A` : t.agentBtnBg,
+                    borderColor: voice.listening ? t.codeEditorDanger : t.agentBtnBorder,
+                  },
+                ]}
+              >
+                <Animated.View style={{ transform: [{ scale: micPulse }] }}>
+                  <Ionicons
+                    name={voice.listening ? 'mic' : 'mic-outline'}
+                    size={18}
+                    color={voice.listening ? t.codeEditorDanger : t.agentBtnIcon}
+                  />
+                </Animated.View>
+              </TouchableOpacity>
+            )}
 
             <View style={{ flex: 1 }} />
 

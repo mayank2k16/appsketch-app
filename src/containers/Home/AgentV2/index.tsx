@@ -32,6 +32,8 @@ import { F } from '@/lib/fonts';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
+import { useVoiceInput } from './use-voice-input';
+
 const RADIUS = 15;
 const BORDER_W = 2.75;
 const RING_SPIN_MS = 14000;
@@ -245,6 +247,8 @@ export function AgentV2({
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
 
+  const voice = useVoiceInput(prompt, setPrompt);
+
   const showTypewriter = !inputFocused && prompt.length === 0;
   const typedPlaceholder = useTypewriter(activeTab.suggestions, showTypewriter);
 
@@ -276,6 +280,24 @@ export function AgentV2({
   }, []);
   const ringSpinStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${ringSpin.value}deg` }],
+  }));
+
+  // Mic button pulses while actively listening, settles back to rest
+  // otherwise — same withRepeat/withTiming pattern as the ring spinner above.
+  const micPulse = useSharedValue(1);
+  React.useEffect(() => {
+    if (voice.listening) {
+      micPulse.value = withRepeat(
+        withTiming(1.18, { duration: 550, easing: ReanimatedEasing.inOut(ReanimatedEasing.quad) }),
+        -1,
+        true
+      );
+    } else {
+      micPulse.value = withTiming(1, { duration: 150 });
+    }
+  }, [voice.listening]);
+  const micPulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: micPulse.value }],
   }));
 
   // Send button — a slow light sheen sweeps across the glass button every
@@ -540,6 +562,32 @@ export function AgentV2({
                     )}
                   </TouchableOpacity>
 
+                  {voice.supported && (
+                    <TouchableOpacity
+                      onPress={voice.toggle}
+                      activeOpacity={0.7}
+                      style={[
+                        s.circleBtn,
+                        {
+                          backgroundColor: voice.listening
+                            ? `${t.codeEditorDanger}1A`
+                            : t.agentBtnBg,
+                          borderColor: voice.listening
+                            ? t.codeEditorDanger
+                            : t.agentBtnBorder,
+                        },
+                      ]}
+                    >
+                      <Reanimated.View style={micPulseStyle}>
+                        <Ionicons
+                          name={voice.listening ? 'mic' : 'mic-outline'}
+                          size={19}
+                          color={voice.listening ? t.codeEditorDanger : t.agentBtnIcon}
+                        />
+                      </Reanimated.View>
+                    </TouchableOpacity>
+                  )}
+
                   <View style={{ flex: 1 }} />
 
                   <TouchableOpacity
@@ -677,7 +725,7 @@ export function AgentV2({
 const s = StyleSheet.create({
   wrap: {
     paddingHorizontal: 12,
-    paddingTop: 16,
+    paddingTop: 30,
     paddingBottom: 70,
   },
   stage: {
