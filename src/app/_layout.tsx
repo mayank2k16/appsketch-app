@@ -72,6 +72,8 @@ function RootLayoutContent() {
       <Stack.Screen name="code-editor" options={{ headerShown: false }} />
       <Stack.Screen name="privacy-policy" options={{ headerShown: false }} />
       <Stack.Screen name="tnc" options={{ headerShown: false }} />
+      <Stack.Screen name="pricing" options={{ headerShown: false }} />
+      <Stack.Screen name="profile" options={{ headerShown: false }} />
     </Stack>
   );
 }

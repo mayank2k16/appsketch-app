@@ -48,6 +48,8 @@ type DrawerMenuProps = {
 // screens are built. `/about` is a real, standalone route (src/app/about.tsx)
 // so it's safe to link for both signed-in and guest users.
 const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
+  { id: 'profile', label: 'My Account', route: '/profile' },
+  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
   { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
@@ -55,6 +57,8 @@ const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
 ];
 
 const GUEST_MENU_ITEMS: { id: string; label: string; route: string }[] = [
+  { id: 'profile', label: 'My Account', route: '/profile' },
+  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
   { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
