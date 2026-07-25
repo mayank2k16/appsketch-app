@@ -265,7 +265,7 @@ export function AboutUsScreen() {
               <Text style={[st.ctaDesc, { color: t.textSub }]}>
                 Join thousands of creators who are already using AppSketch.ai to bring their ideas to life.
               </Text>
-              <View style={{ gap: 10, marginTop: 22 }}>
+              <View style={{ gap: 15, marginTop: 22 }}>
                 <TouchableOpacity
                   onPress={() => router.push('/home')}
                   activeOpacity={0.85}
@@ -376,7 +376,7 @@ const st = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 22,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 30,
     borderWidth: 1,
   },
 

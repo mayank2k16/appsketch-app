@@ -170,7 +170,7 @@ export function ContactUsScreen() {
           </View>
 
           {/* ── Support options ── */}
-          <View style={[st.section, { gap: 12 }]}>
+          <View style={[st.section, { gap: 15 }]}>
             {SUPPORT_OPTIONS.map((opt) => (
               <GlassCard key={opt.title} t={t} contentStyle={st.optionCard}>
                 <View style={[st.iconWrap, { backgroundColor: t.accentSoft, marginBottom: 12 }]}>
@@ -313,19 +313,19 @@ const st = StyleSheet.create({
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: F.sans700, fontSize: 15 },
 
-  section: { paddingHorizontal: 20, paddingTop: 32 },
+  section: { paddingHorizontal: 20, paddingTop: 30 },
 
   heroTitle: { fontFamily: F.display900, fontSize: 34, lineHeight: 40, letterSpacing: -0.5 },
   heroSubtitle: { fontFamily: F.sans400, fontSize: 15, lineHeight: 22, marginTop: 10 },
 
-  mainCard: { padding: 22 },
+  mainCard: { padding: 20, gap: 5 },
   mainCardHeader: { flexDirection: 'row', gap: 14, marginBottom: 18 },
   iconWrap: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   mainCardTitle: { fontFamily: F.sans700, fontSize: 16, marginBottom: 3 },
   mainCardDesc: { fontFamily: F.sans400, fontSize: 13 },
   mainCardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
 
-  ctaBtn: { alignSelf: 'flex-start', paddingHorizontal: 22, paddingVertical: 13, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  ctaBtn: { alignSelf: 'flex-start', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   ctaBtnText: { fontFamily: F.sans700, fontSize: 13.5 },
 
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
@@ -335,10 +335,10 @@ const st = StyleSheet.create({
   optionCard: { padding: 18 },
   optionTitle: { fontFamily: F.sans700, fontSize: 15, marginBottom: 5 },
   optionDesc: { fontFamily: F.sans400, fontSize: 12.5, lineHeight: 18, marginBottom: 16 },
-  outlineBtn: { borderWidth: 1, borderRadius: 10, paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
+  outlineBtn: { borderWidth: 1, borderRadius: 10, paddingVertical: 13, alignItems: 'center', justifyContent: 'center' },
   outlineBtnText: { fontFamily: F.sans600, fontSize: 13 },
 
-  sectionTitle: { fontFamily: F.display900, fontSize: 26, marginBottom: 10 },
+  sectionTitle: { fontFamily: F.display900, fontSize: 26, marginBottom: 10, marginTop: 15 },
   sectionDesc: { fontFamily: F.sans400, fontSize: 14, lineHeight: 21, maxWidth: 320 },
 
   contactInfoCard: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
