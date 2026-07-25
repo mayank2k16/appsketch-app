@@ -60,16 +60,17 @@ function RootLayoutContent() {
 
   return (
     <Stack initialRouteName="splash">
-      <Stack.Screen name="splash"     options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
-      <Stack.Screen name="login"      options={{ headerShown: false }} />
-      <Stack.Screen name="(app)"      options={{ headerShown: false }} />
+      <Stack.Screen name="splash" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="cms"        options={{ headerShown: false }} />
+      <Stack.Screen name="cms" options={{ headerShown: false }} />
       <Stack.Screen name="app-preview" options={{ headerShown: false }} />
-      <Stack.Screen name="about"      options={{ headerShown: false }} />
-      <Stack.Screen name="contact"    options={{ headerShown: false }} />
+      <Stack.Screen name="about" options={{ headerShown: false }} />
+      <Stack.Screen name="contact" options={{ headerShown: false }} />
       <Stack.Screen name="code-editor" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy-policy" options={{ headerShown: false }} />
     </Stack>
   );
 }

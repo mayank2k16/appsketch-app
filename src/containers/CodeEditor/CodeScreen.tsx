@@ -29,7 +29,6 @@ export function CodeScreen() {
             st.header,
             {
               borderColor: t.codeEditorBorder,
-              backgroundColor: t.codeEditorSurface,
             },
           ]}
         >

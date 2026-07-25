@@ -50,11 +50,13 @@ type DrawerMenuProps = {
 const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
+  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
 ];
 
 const GUEST_MENU_ITEMS: { id: string; label: string; route: string }[] = [
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
+  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
 ];
 
 // ─── Pulsing orange dot ────────────────────────────────────────────────────────
@@ -173,7 +175,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
   function handleLogout() {
     onClose();
-    setTimeout(() => { signOut(); router.replace('/home'); }, 80);
+    setTimeout(() => { signOut(); router.replace('/login'); }, 80);
   }
 
   function handleSignIn() {
