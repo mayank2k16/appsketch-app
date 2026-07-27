@@ -34,8 +34,13 @@ import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import { useAppTheme, type AppColors } from '@/lib/theme';
 
+import { CartSkeleton } from './components/CartSkeleton';
 import { DomainContactForm } from './components/DomainContactForm';
 import { DomainSearchSection } from './components/DomainSearchSection';
+
+// Plan card shows features in a condensed list — cap it so a plan with a
+// long feature set doesn't push the domain/order sections below the fold.
+const MAX_VISIBLE_FEATURES = 4;
 
 const EMPTY_CONTACT: DomainContact = {
   FirstName: '',
@@ -172,10 +177,6 @@ export function CartScreen() {
             }
             : {}),
         });
-
-        // Mirrors Cart.jsx's dual-call — domain registration is confirmed via
-        // `payment/success/` above AND requested again here explicitly.
-        // Non-fatal if it errors: the plan purchase already succeeded.
         if (selectedDomain?.available) {
           try {
             await purchaseDomain({
@@ -183,9 +184,6 @@ export function CartScreen() {
               years: selectedYears,
               auto_renew: false,
               add_free_whoisguard: addFreeWhoisguard,
-              // Web defaults this to `1` when no tenant is in context; we
-              // prefer the actually-attached store (Studio "View CMS") when
-              // known, same fallback otherwise.
               tenant_id: attachedTenant?.id ?? 1,
               contacts: { registrant: contact },
             });
@@ -247,10 +245,10 @@ export function CartScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {plansLoading || !plan ? (
-            <Text style={{ color: t.textSub, fontFamily: F.sans500 }}>
-              {plansLoading ? 'Loading…' : 'No plan selected.'}
-            </Text>
+          {plansLoading ? (
+            <CartSkeleton t={t} />
+          ) : !plan ? (
+            <Text style={{ color: t.textSub, fontFamily: F.sans500 }}>No plan selected.</Text>
           ) : (
             <>
               {/* ── Plan summary ── */}
@@ -262,6 +260,25 @@ export function CartScreen() {
                 <Text style={[st.muted, { color: t.textSub }]}>
                   Billed {billingCycle === 'monthly' ? 'monthly' : 'yearly'}
                 </Text>
+
+                {plan.features.length > 0 && (
+                  <View style={st.featureList}>
+                    {plan.features.slice(0, MAX_VISIBLE_FEATURES).map((feat) => (
+                      <View key={feat} style={st.featureRow}>
+                        <Ionicons name="checkmark-circle" size={13} color={t.accent} />
+                        <Text style={[st.featureText, { color: t.textSub }]} numberOfLines={1}>
+                          {feat}
+                        </Text>
+                      </View>
+                    ))}
+                    {plan.features.length > MAX_VISIBLE_FEATURES && (
+                      <Text style={[st.moreFeatures, { color: t.textSub }]}>
+                        +{plan.features.length - MAX_VISIBLE_FEATURES} more
+                      </Text>
+                    )}
+                  </View>
+                )}
+
                 <TouchableOpacity onPress={() => router.push('/pricing' as never)} style={{ marginTop: 10 }}>
                   <Text style={[st.linkText, { color: t.accent }]}>Change plan</Text>
                 </TouchableOpacity>
@@ -307,7 +324,7 @@ export function CartScreen() {
                     </View>
 
                     {selectedDomain && (
-                      <View style={[st.rowBetween, { marginTop: 8 }]}>
+                      <View style={[st.rowBetween]}>
                         <View style={{ flex: 1, paddingRight: 8 }}>
                           <Text style={[st.muted, { color: t.textSub }]} numberOfLines={1}>
                             Domain: {selectedDomain.domain} ({selectedYears}y)
@@ -361,15 +378,20 @@ const st = StyleSheet.create({
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: F.sans700, fontSize: 15 },
 
-  card: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 20 },
+  card: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 20, gap: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   planName: { fontFamily: F.sans700, fontSize: 16 },
   amount: { fontFamily: F.sans700, fontSize: 16 },
   muted: { fontFamily: F.sans500, fontSize: 13 },
   linkText: { fontFamily: F.sans700, fontSize: 13 },
 
+  featureList: { marginTop: 12, gap: 6 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  featureText: { fontFamily: F.sans500, fontSize: 11.5, flex: 1 },
+  moreFeatures: { fontFamily: F.sans600, fontSize: 11, marginLeft: 20 },
+
   sectionHeading: { fontFamily: F.sans700, fontSize: 15 },
-  divider: { height: 1, marginVertical: 12 },
+  divider: { height: 1, marginVertical: 6 },
 
   continueBtn: { borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
   continueBtnText: { fontFamily: F.sans700, fontSize: 15, color: '#FFFFFF' },

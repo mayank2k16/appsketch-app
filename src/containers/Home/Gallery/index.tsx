@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
@@ -147,12 +148,23 @@ function CenterContent({
   onLearnPress: () => void;
 }) {
   return (
-    <View style={[s.hole, { backgroundColor: t.bg }]}>
-      <Text style={[s.heading, { color: t.text }]}>
+    <View style={s.hole}>
+      <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Defs>
+          <RadialGradient id="galleryOverlay" cx="50%" cy="50%" r="65%">
+            <Stop offset="0%" stopColor={t.galleryOverlayCenter} stopOpacity={1} />
+            <Stop offset="55%" stopColor={t.galleryOverlayMid} stopOpacity={1} />
+            <Stop offset="100%" stopColor={t.galleryOverlayEdge} stopOpacity={1} />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#galleryOverlay)" />
+      </Svg>
+
+      <Text style={[s.heading, { color: t.galleryOverlayText }]}>
         {'Create unlimited beautiful\n'}
         <Text style={{ color: t.heroHeadingFade }}>apps and websites.</Text>
       </Text>
-      <Text style={[s.subtitle, { color: t.textSub }]}>
+      <Text style={[s.subtitle, { color: t.galleryOverlayTextSub }]}>
         Browse a living gallery of apps and websites — every idea rendered,
         remixable, and ready to ship.
       </Text>
@@ -260,6 +272,7 @@ const s = StyleSheet.create({
   hole: {
     width: '100%',
     borderRadius: 20,
+    overflow: 'hidden',
     paddingVertical: 40,
     paddingHorizontal: 12,
     alignItems: 'center',

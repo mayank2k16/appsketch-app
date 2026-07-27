@@ -95,7 +95,12 @@ export function PaymentForm({
   }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={st.content}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <TouchableOpacity onPress={onCancel} style={st.backRow}>
         <Ionicons name="arrow-back" size={16} color={t.textSub} />
         <Text style={[st.backText, { color: t.textSub }]}>Back</Text>
@@ -218,6 +223,7 @@ function FormField({
 }
 
 const st = StyleSheet.create({
+  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
   backText: { fontFamily: F.sans600, fontSize: 13 },
 

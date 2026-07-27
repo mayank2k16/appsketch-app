@@ -47,25 +47,23 @@ type DrawerMenuProps = {
 // back to /home. No real routes to add here until those are fixed or new
 // screens are built. `/about` is a real, standalone route (src/app/about.tsx)
 // so it's safe to link for both signed-in and guest users.
-const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
-  { id: 'profile', label: 'My Account', route: '/profile' },
-  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
-  { id: 'cart', label: 'Cart', route: '/cart' },
-  { id: 'about', label: 'About Us', route: '/about' },
-  { id: 'contact', label: 'Contact Us', route: '/contact' },
-  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
-  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc' },
+type MenuItem = { id: string; label: string; route: string; icon: React.ComponentProps<typeof Ionicons>['name'] };
+
+// Account/cart shortcuts get their own section, above the general links.
+const QUICK_ACCESS_ITEMS: MenuItem[] = [
+  { id: 'profile', label: 'My Account', route: '/profile', icon: 'person-outline' },
+  { id: 'cart', label: 'Cart', route: '/cart', icon: 'cart-outline' },
 ];
 
-const GUEST_MENU_ITEMS: { id: string; label: string; route: string }[] = [
-  { id: 'profile', label: 'My Account', route: '/profile' },
-  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
-  { id: 'cart', label: 'Cart', route: '/cart' },
-  { id: 'about', label: 'About Us', route: '/about' },
-  { id: 'contact', label: 'Contact Us', route: '/contact' },
-  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
-  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc' },
+const AUTH_MENU_ITEMS: MenuItem[] = [
+  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing', icon: 'pricetag-outline' },
+  { id: 'about', label: 'About Us', route: '/about', icon: 'information-circle-outline' },
+  { id: 'contact', label: 'Contact Us', route: '/contact', icon: 'call-outline' },
+  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy', icon: 'shield-checkmark-outline' },
+  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc', icon: 'document-text-outline' },
 ];
+
+const GUEST_MENU_ITEMS: MenuItem[] = AUTH_MENU_ITEMS;
 
 // ─── Pulsing orange dot ────────────────────────────────────────────────────────
 function LiveDot() {
@@ -146,7 +144,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   // the sign-in/logout row's own animation, so that row never shares an
   // Animated.Value with the last menu item.
   const itemAnims = React.useRef(
-    Array.from({ length: AUTH_MENU_ITEMS.length + 1 }, () => new Animated.Value(0))
+    Array.from({ length: QUICK_ACCESS_ITEMS.length + AUTH_MENU_ITEMS.length + 1 }, () => new Animated.Value(0))
   ).current;
 
   const [modalVisible, setModalVisible] = React.useState(false);
@@ -262,11 +260,39 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingTop: 10, paddingBottom: 24 }}
         >
+          {/* ── Quick access: account/profile + cart, kept separate from the general menu links ── */}
+          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Quick Access</Text>
+          {QUICK_ACCESS_ITEMS.map((item, idx) => {
+            const anim = itemAnims[idx];
+            return (
+              <Animated.View
+                key={item.id}
+                style={{
+                  opacity: anim,
+                  transform: [{
+                    translateX: anim.interpolate({
+                      inputRange: [0, 1], outputRange: [28, 0],
+                    }),
+                  }],
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => handlePress(item.route)}
+                  activeOpacity={0.6}
+                  style={st.flatRow}
+                >
+                  <Ionicons name={item.icon} size={17} color={dt.labelColor} style={st.flatIcon} />
+                  <Text style={[st.flatLabel, { color: dt.labelColor }]}>{item.label}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+
           {MENU_ITEMS.length > 0 && (
             <>
               <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Menu</Text>
               {MENU_ITEMS.map((item, idx) => {
-                const anim = itemAnims[idx];
+                const anim = itemAnims[QUICK_ACCESS_ITEMS.length + idx];
                 return (
                   <Animated.View
                     key={item.id}
@@ -284,6 +310,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                       activeOpacity={0.6}
                       style={st.flatRow}
                     >
+                      <Ionicons name={item.icon} size={17} color={dt.labelColor} style={st.flatIcon} />
                       <Text style={[st.flatLabel, { color: dt.labelColor }]}>{item.label}</Text>
                     </TouchableOpacity>
                   </Animated.View>
@@ -318,7 +345,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           {/* Divider */}
           <View style={[st.divider, { backgroundColor: `${ACCENT}25` }]} />
 
-          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Account</Text>
+          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Session</Text>
 
           {/* Sign in / Log out */}
           <Animated.View

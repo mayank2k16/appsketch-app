@@ -31,6 +31,13 @@ export function DomainSearchSection({
   onSelect: (result: DomainSearchResult, years: number, price: number) => void;
   t: AppColors;
 }) {
+  // Available domains first — the ones a user can actually buy shouldn't be
+  // buried under taken ones just because of API result order.
+  const sortedResults = React.useMemo(
+    () => [...(results ?? [])].sort((a, b) => Number(b.available) - Number(a.available)),
+    [results]
+  );
+
   return (
     <View style={[st.wrap, { backgroundColor: t.card, borderColor: t.border }]}>
       <Text style={[st.title, { color: t.text }]}>Every website needs a domain</Text>
@@ -52,69 +59,73 @@ export function DomainSearchSection({
         {isLoading && <ActivityIndicator size="small" color={t.accent} />}
       </View>
 
-      {(results ?? []).map((item) => {
-        const isSelected = selectedDomain?.domain === item.domain;
-        const options = domainRegisterOptions(item);
+      <View style={{ marginTop: 10 }}>
+        {sortedResults.map((item) => {
+          const isSelected = selectedDomain?.domain === item.domain;
+          const options = domainRegisterOptions(item);
 
-        return (
-          <View
-            key={item.domain}
-            style={[
-              st.resultRow,
-              { borderColor: isSelected ? t.accent : t.border, backgroundColor: t.agentTabBg },
-              isSelected && st.resultRowSelected,
-            ]}
-          >
-            <View style={st.resultHeader}>
-              <Text style={[st.resultName, { color: t.text }]}>{item.domain}</Text>
-              <Text style={{ color: item.available ? '#1FA971' : '#E0392B', fontSize: 12.5, fontFamily: F.sans600 }}>
-                {item.available ? 'Available' : 'Unavailable'}
-              </Text>
-            </View>
-
-            {item.available && options.length > 0 ? (
-              <View style={st.yearGrid}>
-                {options.map((opt) => {
-                  const years = Number(opt.years) || 1;
-                  const price = priceForRegisterOption(opt);
-                  const yearSelected = isSelected && selectedYears === years;
-                  return (
-                    <TouchableOpacity
-                      key={years}
-                      onPress={() => onSelect(item, years, price)}
-                      activeOpacity={0.85}
-                      style={[
-                        st.yearChip,
-                        { borderColor: t.border },
-                        yearSelected && { backgroundColor: t.accent, borderColor: t.accent },
-                      ]}
-                    >
-                      <Text style={[st.yearChipYears, { color: yearSelected ? '#FFFFFF' : t.text }]}>{years}Y</Text>
-                      <Text style={[st.yearChipPrice, { color: yearSelected ? '#FFFFFF' : t.textSub }]}>
-                        {formatINR(price)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+          return (
+            <View
+              key={item.domain}
+              style={[
+                st.resultRow,
+                { borderColor: isSelected ? t.accent : t.border, backgroundColor: t.agentTabBg },
+                isSelected && st.resultRowSelected,
+              ]}
+            >
+              <View style={st.resultHeader}>
+                <Text style={[st.resultName, { color: t.text }]}>{item.domain}</Text>
+                <Text style={{ color: item.available ? '#1FA971' : '#E0392B', fontSize: 12.5, fontFamily: F.sans600 }}>
+                  {item.available ? 'Available' : 'Unavailable'}
+                </Text>
               </View>
-            ) : item.available ? (
-              <TouchableOpacity
-                onPress={() => onSelect(item, 1, getDomainPriceFromItem(item))}
-                activeOpacity={0.85}
-                style={[st.flatSelectRow, isSelected && { backgroundColor: t.accentSoft }]}
-              >
-                <Text style={[st.resultPrice, { color: t.text }]}>{formatINR(getDomainPriceFromItem(item))}</Text>
-                <Text style={[st.selectText, { color: t.accent }]}>{isSelected ? 'Selected' : 'Select'}</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        );
-      })}
 
-      {!isLoading && query.trim().length > 1 && (results ?? []).length === 0 && (
-        <Text style={[st.emptyText, { color: t.textMuted }]}>No results for "{query}".</Text>
-      )}
-    </View>
+              {item.available && options.length > 0 ? (
+                <View style={st.yearGrid}>
+                  {options.map((opt) => {
+                    const years = Number(opt.years) || 1;
+                    const price = priceForRegisterOption(opt);
+                    const yearSelected = isSelected && selectedYears === years;
+                    return (
+                      <TouchableOpacity
+                        key={years}
+                        onPress={() => onSelect(item, years, price)}
+                        activeOpacity={0.85}
+                        style={[
+                          st.yearChip,
+                          { borderColor: t.border },
+                          yearSelected && { backgroundColor: t.accent, borderColor: t.accent },
+                        ]}
+                      >
+                        <Text style={[st.yearChipYears, { color: yearSelected ? '#FFFFFF' : t.text }]}>{years}Y</Text>
+                        <Text style={[st.yearChipPrice, { color: yearSelected ? '#FFFFFF' : t.textSub }]}>
+                          {formatINR(price)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : item.available ? (
+                <TouchableOpacity
+                  onPress={() => onSelect(item, 1, getDomainPriceFromItem(item))}
+                  activeOpacity={0.85}
+                  style={[st.flatSelectRow, isSelected && { backgroundColor: t.accentSoft }]}
+                >
+                  <Text style={[st.resultPrice, { color: t.text }]}>{formatINR(getDomainPriceFromItem(item))}</Text>
+                  <Text style={[st.selectText, { color: t.accent }]}>{isSelected ? 'Selected' : 'Select'}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+
+      {
+        !isLoading && query.trim().length > 1 && sortedResults.length === 0 && (
+          <Text style={[st.emptyText, { color: t.textMuted }]}>No results for "{query}".</Text>
+        )
+      }
+    </View >
   );
 }
 
@@ -137,11 +148,11 @@ const st = StyleSheet.create({
 
   resultRow: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 10 },
   resultRowSelected: { borderWidth: 1.5 },
-  resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
   resultName: { fontFamily: F.sans700, fontSize: 14 },
   resultPrice: { fontFamily: F.sans700, fontSize: 14 },
 
-  yearGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  yearGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 10 },
   yearChip: { borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, alignItems: 'center', minWidth: 64 },
   yearChipYears: { fontFamily: F.sans700, fontSize: 12.5 },
   yearChipPrice: { fontFamily: F.sans500, fontSize: 10.5, marginTop: 2 },

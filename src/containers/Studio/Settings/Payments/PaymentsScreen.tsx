@@ -79,7 +79,7 @@ export function PaymentsScreen() {
     const initialTenant = editing ? (tenants ?? []).find((tn) => tn.id === editing.tenant) ?? null : filterTenant;
 
     return (
-      <View style={st.content}>
+      <View style={{ flex: 1 }}>
         <PaymentForm
           tenants={tenants ?? []}
           initialTenant={initialTenant}

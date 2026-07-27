@@ -50,7 +50,7 @@ export function SettingsScreen() {
 }
 
 const st = StyleSheet.create({
-  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
+  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
