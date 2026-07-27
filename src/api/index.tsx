@@ -16,6 +16,7 @@ export * from './payments';
 export * from './posts';
 export * from './product-requests';
 export * from './products';
+export * from './profile';
 export * from './referrals';
 export * from './stock-history';
 export * from './studio';

@@ -53,6 +53,7 @@ interface AuthState {
   signInAsGuest: () => void;
   hydrate: () => void;
   updateSubscription: (subscription: UserSubscription) => void;
+  updateUserFields: (fields: Partial<AuthUser>) => void;
 }
 
 const _useAuth = create<AuthState>((set, get) => ({
@@ -110,6 +111,17 @@ const _useAuth = create<AuthState>((set, get) => ({
     setUser(updated);
     set({ user: updated });
   },
+
+  // Patches arbitrary top-level fields on `user` — used after a successful
+  // self-profile save so name/email/phone update everywhere instantly,
+  // same optimistic pattern as `updateSubscription`.
+  updateUserFields: (fields) => {
+    const current = get().user;
+    if (!current) return;
+    const updated: AuthUser = { ...current, ...fields };
+    setUser(updated);
+    set({ user: updated });
+  },
 }));
 
 export const useAuth = createSelectors(_useAuth);
@@ -120,6 +132,8 @@ export const signInAsGuest = () => _useAuth.getState().signInAsGuest();
 export const hydrateAuth = () => _useAuth.getState().hydrate();
 export const updateSubscription = (subscription: UserSubscription) =>
   _useAuth.getState().updateSubscription(subscription);
+export const updateUserFields = (fields: Partial<AuthUser>) =>
+  _useAuth.getState().updateUserFields(fields);
 
 /** Reads `user.subscription` — see `UserSubscription` in `@/api/auth/types` for the field-name caveat. */
 export const getUserSubscription = (user: AuthUser | null): UserSubscription | null =>

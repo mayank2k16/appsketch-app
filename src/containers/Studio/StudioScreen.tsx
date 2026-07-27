@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAppTheme } from '@/lib/theme';
 
 import { AppsScreen } from './Apps/AppsScreen';
+import { DiscoverScreen } from './Discover/DiscoverScreen';
 
 type StudioSection = 'apps' | 'discover' | 'settings';
 
@@ -63,7 +64,7 @@ export function StudioScreen() {
 
           <View style={{ flex: 1 }}>
             {section === 'apps' && <AppsScreen />}
-            {section === 'discover' && <ComingSoon label="Discover" />}
+            {section === 'discover' && <DiscoverScreen />}
             {section === 'settings' && <ComingSoon label="Settings" />}
           </View>
         </>
