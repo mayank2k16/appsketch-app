@@ -66,7 +66,7 @@ interface ToastItem extends ToastOptions {
 }
 
 function ToastCard({ item, t, onDone }: { item: ToastItem; t: AppColors; onDone: (id: number) => void }) {
-  const duration = item.duration ?? 2800;
+  const duration = item.duration ?? 3500;
   const translateY = useSharedValue(40);
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);

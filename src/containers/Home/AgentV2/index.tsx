@@ -45,7 +45,7 @@ const TYPE_GAP_MS = 300; // pause once a phrase is fully deleted, before the nex
 
 type AppTypeKey = 'web' | 'mobile' | 'game';
 
-const APP_TABS: {
+export const APP_TABS: {
   key: AppTypeKey;
   label: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -725,7 +725,7 @@ export function AgentV2({
 const s = StyleSheet.create({
   wrap: {
     paddingHorizontal: 12,
-    paddingTop: 30,
+    paddingTop: 40,
     paddingBottom: 70,
   },
   stage: {

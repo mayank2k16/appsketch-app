@@ -42,13 +42,6 @@ export function AuthSheet({
     handleContinueContact, handleSubmitName, handleVerifyOtp, handleResendOtp,
   } = useContinueAuthFlow('contact', () => { onClose(); onSuccess?.(); });
 
-  // Set the slide position directly rather than animating it. A one-shot
-  // `Animated.spring/timing().start()` triggered on a visibility change
-  // silently never completes on this device/RN build (same bug seen on the
-  // drawer and the login panel) — the sheet would mount but stay translated
-  // 600px off-screen forever, and close() depended on an animation callback
-  // that never fired, so it wouldn't dismiss either. setValue is instant but
-  // reliable. `!visible` already returns null below, so hide is handled there.
   const sheetAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -64,7 +57,7 @@ export function AuthSheet({
     onClose();
   }
 
-  const sheetBottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 24);
+  const sheetBottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 50 : 40);
   const sheetTY = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [600, 0] });
   const stepOpacity = stepAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
   const stepTY = stepAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] });
@@ -72,7 +65,7 @@ export function AuthSheet({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={close} >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={close} statusBarTranslucent>
       <KeyboardAvoidingView
         style={{ flex: 1, justifyContent: 'flex-end' }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -229,7 +222,7 @@ const as = StyleSheet.create({
   title: { fontSize: 26, fontFamily: F.display900, letterSpacing: -0.5, marginBottom: 6 },
   sub: { fontSize: 14, fontFamily: F.sans400, lineHeight: 21 },
   footer: {
-    marginTop: 18, textAlign: 'center', fontSize: 10,
+    marginTop: 10, textAlign: 'center', fontSize: 10,
     fontFamily: F.sans400,
     paddingHorizontal: 32, lineHeight: 15,
   },

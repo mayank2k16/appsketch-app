@@ -24,7 +24,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { createCoderTenant } from '@/api/coder';
-import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
+import { APP_TABS, DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
 import { useVoiceInput } from '@/containers/Home/AgentV2/use-voice-input';
 import { F } from '@/lib/fonts';
 import { useAppTheme } from '@/lib/theme';
@@ -34,12 +34,14 @@ const MAX_IMAGES = 3;
 
 type AppTypeKey = 'web' | 'mobile' | 'game';
 
-// One representative build prompt per app type — same source list AgentV2
-// uses on Home, just one pick each instead of the full rotating set.
-const SUGGESTIONS: { key: AppTypeKey; icon: React.ComponentProps<typeof Ionicons>['name']; text: string }[] = [
-  { key: 'web', icon: 'globe-outline', text: 'Build a landing page for my product launch' },
-  { key: 'mobile', icon: 'phone-portrait-outline', text: 'Build a habit tracker app with daily reminders' },
-  { key: 'game', icon: 'game-controller-outline', text: 'Build a 2D platformer game with power-ups' },
+// Standalone type-select pills above the composer — deliberately separate,
+// independently-rounded pills (unlike AgentV2's browser-tabs on Home, which
+// fuse into the card below). Purely a UI affordance over the same `appType`
+// state the suggestion chips already drive.
+const TYPE_PILLS: { key: AppTypeKey; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { key: 'web', label: 'Web', icon: 'globe-outline' },
+  { key: 'mobile', label: 'App', icon: 'phone-portrait-outline' },
+  { key: 'game', label: 'Game', icon: 'game-controller-outline' },
 ];
 
 export function AgentScreen() {
@@ -57,6 +59,7 @@ export function AgentScreen() {
   const [sending, setSending] = React.useState(false);
 
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
+  const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
 
   const voice = useVoiceInput(prompt, setPrompt);
 
@@ -85,11 +88,6 @@ export function AgentScreen() {
     }
     micPulse.setValue(1);
   }, [voice.listening, micPulse]);
-
-  function handleSuggestionPress(s: (typeof SUGGESTIONS)[number]) {
-    setAppType(s.key);
-    setPrompt(s.text);
-  }
 
   async function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
@@ -202,16 +200,16 @@ export function AgentScreen() {
         </View>
 
         <View style={s.suggestionRow}>
-          {SUGGESTIONS.map((sug) => (
+          {activeTab.suggestions.map((suggestion) => (
             <TouchableOpacity
-              key={sug.key}
-              onPress={() => handleSuggestionPress(sug)}
+              key={suggestion}
+              onPress={() => setPrompt(suggestion)}
               activeOpacity={0.7}
               style={[s.suggestionChip, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}
             >
-              <Ionicons name={sug.icon} size={15} color={t.agentTabIcon} style={s.suggestionIcon} />
+              <Ionicons name="sparkles-outline" size={15} color={t.agentTabIcon} style={s.suggestionIcon} />
               <Text style={[s.suggestionText, { color: t.agentTabText }]} numberOfLines={3}>
-                {sug.text}
+                {suggestion}
               </Text>
             </TouchableOpacity>
           ))}
@@ -222,15 +220,34 @@ export function AgentScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ paddingBottom: insets.bottom || 12 }}
       >
-        <View style={s.composerRing}>
-          <LinearGradient
-            pointerEvents="none"
-            colors={['#22D3EE', '#8B5CF6', '#3B82F6']}
-            start={{ x: 0, y: 1 }}
-            end={{ x: 1, y: 0 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={[s.composer, { backgroundColor: t.agentInputBg }]}>
+        <View style={s.typePillRow}>
+          {TYPE_PILLS.map((p) => {
+            const active = p.key === appType;
+            return (
+              <TouchableOpacity
+                key={p.key}
+                onPress={() => setAppType(p.key)}
+                activeOpacity={0.8}
+                style={[
+                  s.typePill,
+                  {
+                    backgroundColor: active ? t.agentTabActiveBg : t.agentTabBg,
+                    borderColor: active ? t.agentTabActiveBg : t.agentTabBorder,
+                  },
+                ]}
+              >
+                <Ionicons name={p.icon} size={14} color={active ? t.agentTabActiveText : t.agentTabIcon} />
+                <Text
+                  style={[s.typePillLabel, { color: active ? t.agentTabActiveText : t.agentTabText }]}
+                >
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={[s.composer, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
           <TextInput
             placeholder="Ask the agent to build something…"
             placeholderTextColor={t.agentInputPlaceholder}
@@ -321,7 +338,6 @@ export function AgentScreen() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
-          </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -460,7 +476,6 @@ const s = StyleSheet.create({
   },
   suggestionChip: {
     flex: 1,
-    alignItems: 'flex-start',
     gap: 6,
     paddingVertical: 10,
     paddingHorizontal: 10,
@@ -468,8 +483,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     minWidth: '45%',
     maxWidth: '55%',
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   suggestionIcon: {
     marginBottom: 2,
@@ -479,17 +494,32 @@ const s = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
   },
-  // 1px gradient border ring (matches the Home screen prompt card): the ring
-  // reserves the border via padding, a LinearGradient fills it, and the
-  // composer sits inside covering everything but that 1px edge.
-  composerRing: {
+  // Standalone type pills — a visible gap between each other and below to
+  // the composer (deliberately not attached/flush, unlike Home's tabs).
+  typePillRow: {
+    flexDirection: 'row',
+    gap: 8,
     marginHorizontal: 18,
-    borderRadius: 18,
-    padding: 1,
-    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  typePill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  typePillLabel: {
+    fontFamily: F.sans600,
+    fontSize: 12,
   },
   composer: {
+    marginHorizontal: 18,
     borderRadius: 17,
+    borderWidth: 1,
     padding: 12,
     gap: 8,
   },

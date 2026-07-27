@@ -14,10 +14,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useSubscriptionPlans } from '@/api';
-import type { SubscriptionPlan, SubscriptionPlanFeature, SubscriptionPricingOption } from '@/api';
+import {
+  formatCurrency,
+  isPlanFree,
+  popularPlanIndex,
+  sortPlans,
+  transformPlan,
+  useSubscriptionPlans,
+  type TransformedPlan,
+} from '@/api';
 import { GradientText } from '@/components/ui/GradientText';
 import { Skeleton } from '@/containers/Marketplace/components/Skeleton';
+import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import { useAppTheme, type AppColors } from '@/lib/theme';
@@ -27,80 +35,6 @@ const SKELETON_CARD_COUNT = 3;
 const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
 
 type BillingCycle = 'monthly' | 'yearly';
-
-type TransformedPlan = {
-  tier: string;
-  name: string;
-  description: string;
-  monthly: SubscriptionPricingOption | null;
-  yearly: SubscriptionPricingOption | null;
-  features: string[];
-  buttonText: string;
-  isPrimary: boolean;
-};
-
-function extractPricing(options: SubscriptionPricingOption[]) {
-  let monthly: SubscriptionPricingOption | null = null;
-  let yearly: SubscriptionPricingOption | null = null;
-  for (const opt of options) {
-    if (opt.interval === 'monthly') monthly = opt;
-    else if (opt.interval === 'yearly') yearly = opt;
-  }
-  return { monthly, yearly };
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-IN').format(value);
-}
-
-function formatFeatures(planFeatures: SubscriptionPlanFeature[]): string[] {
-  return (planFeatures || [])
-    .filter((pf) => pf.enabled)
-    .map((pf) => {
-      const displayName = pf.feature.display_name;
-      const limit = pf.integer_limit;
-      if (limit !== null) {
-        return displayName.toLowerCase().includes('data storage')
-          ? `${displayName} (${limit} GB)`
-          : `${displayName} (${limit})`;
-      }
-      return displayName;
-    });
-}
-
-function planPrice(plan: Pick<TransformedPlan, 'monthly' | 'yearly'>): number {
-  const option = plan.monthly ?? plan.yearly;
-  return option ? Number(option.price) || 0 : 0;
-}
-
-function isPlanFree(plan: Pick<TransformedPlan, 'monthly' | 'yearly'>): boolean {
-  return planPrice(plan) === 0;
-}
-
-function transformPlan(plan: SubscriptionPlan): TransformedPlan {
-  const { monthly, yearly } = extractPricing(plan.pricing_options || []);
-  const free = isPlanFree({ monthly, yearly });
-  return {
-    tier: plan.tier,
-    name: plan.display_name || '',
-    description: plan.description || '',
-    monthly,
-    yearly,
-    features: formatFeatures(plan.plan_features || []),
-    buttonText: free ? 'Start Free' : 'Get The Plan Now',
-    isPrimary: !free,
-  };
-}
-
-function sortPlans(plans: TransformedPlan[]): TransformedPlan[] {
-  return [...plans].sort((a, b) => planPrice(a) - planPrice(b));
-}
-
-/** Index of the one plan to badge "Most Popular" — the upper-middle tier,
- * since the backend doesn't send a "recommended" flag. None for 0-1 plans. */
-function popularPlanIndex(count: number): number {
-  return count <= 1 ? -1 : Math.min(count - 1, Math.floor(count / 2));
-}
 
 export function PricingScreen() {
   const router = useRouter();
@@ -112,8 +46,17 @@ export function PricingScreen() {
 
   const plans = React.useMemo(() => sortPlans((data ?? []).map(transformPlan)), [data]);
 
+  // Checkout itself (Razorpay + domain bundling) lives in CartScreen now —
+  // this just hands off the chosen plan, matching the web reference's
+  // Pricing → Cart handoff (`history.push('/cart', {selected_subscription_plan, ...})`).
   function handlePlanPress(plan: TransformedPlan) {
-    toast.info('Checkout coming soon', `Payment for the ${plan.name} plan will be available shortly.`);
+    const authStatus = useAuth.getState().status;
+    if (authStatus === 'guest' || authStatus === 'signOut') {
+      toast.info('Please login to continue');
+      router.push('/login');
+      return;
+    }
+    router.push({ pathname: '/cart', params: { tier: plan.tier, billingCycle } } as never);
   }
 
   return (

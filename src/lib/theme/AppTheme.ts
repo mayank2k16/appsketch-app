@@ -57,6 +57,12 @@ export const appTheme = {
     heroGhostText: '#FFFFFF',
     heroHeadingFade: '#4A4B50', // "apps." gradient end (white → this)
 
+    // ── Gallery overlay (flat, single-value scrim over the whole grid — no
+    // fade/vignette, same opacity everywhere so the dimming reads consistently) ─
+    galleryOverlay: 'rgba(3,3,8,0.88)',
+    galleryOverlayText: '#FFFFFF',
+    galleryOverlayTextSub: 'rgba(255,255,255,0.72)',
+
     // ── Auth landing panel (login.tsx / AuthForm.tsx) ─────────────────────────
     authPanelBg: '#0B0B0D',
     authScrimTo: '#0B0B0D',
@@ -293,6 +299,12 @@ export const appTheme = {
     heroGhostBorder: 'rgba(17,17,17,0.22)',
     heroGhostText: '#111111',
     heroHeadingFade: '#B8BAC0', // "apps." gradient end
+
+    // ── Gallery overlay (flat, single-value scrim over the whole grid — no
+    // fade/vignette, same opacity everywhere so the dimming reads consistently) ─
+    galleryOverlay: 'rgba(255,255,255,0.75)',
+    galleryOverlayText: '#111111',
+    galleryOverlayTextSub: 'rgba(17,17,17,0.62)',
 
     // ── Auth landing panel ────────────────────────────────────────────────────
     authPanelBg: '#FFFFFF',

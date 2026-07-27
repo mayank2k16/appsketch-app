@@ -14,14 +14,13 @@ import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: W } = Dimensions.get('window');
 
-// ─── Gradient heading line ─────────────────────────────────────────────────────
-// Reference recording shows each line running flat-white through its first
-// word, then fading smoothly (not a hard colour swap) across the rest of the
-// line — measured from the actual frames, brightness holds until ~52% of the
-// line then ramps steadily down.
 function GradientHeadingLine({ text, t }: { text: string; t: HomeColors }) {
   return (
-    <GradientText style={s.heading} colors={[t.text, t.text, t.heroHeadingFade]} locations={[0, 0.52, 1]}>
+    <GradientText
+      style={s.heading}
+      colors={[t.text, t.text, t.heroHeadingFade]}
+      locations={[0, 0.52, 1]}
+    >
       {text}
     </GradientText>
   );
@@ -108,19 +107,15 @@ export function HeroBanner({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   hero: {
-    // Content-driven height (no fixed HERO_H box + overflow:hidden that used
-    // to clip "Create" off the top and the buttons into a white sliver). A
-    // small paddingTop pulls the whole hero — and everything below it in the
-    // ScrollView — up, filling the previous empty space.
     width: W,
-    paddingTop: 14,
+    paddingTop: 25,
     paddingBottom: 6,
     alignItems: 'center',
   },
 
   content: {
     width: '100%',
-    paddingHorizontal: 28,
+    paddingHorizontal: 20,
     paddingTop: 0,
     paddingBottom: 0,
     alignItems: 'center',
@@ -133,10 +128,10 @@ const s = StyleSheet.create({
 
   heading: {
     fontFamily: F.display900,
-    fontSize: 42,
+    fontSize: 40,
     letterSpacing: -1.4,
     textAlign: 'center',
-    lineHeight: 52,
+    lineHeight: 46,
   },
 
   subtitle: {

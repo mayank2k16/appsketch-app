@@ -15,7 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { signOut, useAuth } from '@/hooks/useAuth';
+import { updateOwnProfile, useSubscriptionPlans } from '@/api';
+import { PlanBadge } from '@/components/ui/PlanBadge';
+import { getUserSubscription, signOut, updateUserFields, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import { useAppTheme, type AppColors } from '@/lib/theme';
@@ -38,6 +40,11 @@ export function ProfileScreen() {
   const status = useAuth.use.status();
   const user = useAuth.use.user();
   const isGuest = status === 'guest';
+  const subscription = getUserSubscription(user);
+  const { data: plans } = useSubscriptionPlans();
+  const currentPlan = plans?.find(
+    (p) => p.tier?.toLowerCase() === subscription?.plan?.tier?.toLowerCase()
+  );
 
   const original = React.useMemo(
     () => ({
@@ -49,6 +56,7 @@ export function ProfileScreen() {
   );
 
   const [editing, setEditing] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState(original);
 
   React.useEffect(() => {
@@ -66,14 +74,38 @@ export function ProfileScreen() {
     setEditing(false);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.name.trim()) {
       toast.warning('Please enter your name');
       return;
     }
-    toast.info('Not connected yet', 'Profile updates will be saved once account settings go live.');
-    setForm(original);
-    setEditing(false);
+    // `id` isn't confirmed on the login/verify-otp user payload (AuthUser is
+    // deliberately opaque — see @/api/auth/types) but every other user record
+    // on this backend (AppUserProfile, StaffUser) uses `id`, so this is the
+    // best-guess field name pending a live check.
+    const id = user?.id as number | undefined;
+    if (!id) {
+      toast.error('Something went wrong', 'Please sign in again and retry.');
+      return;
+    }
+
+    const fields = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone_number: form.phone.trim(),
+    };
+
+    setSaving(true);
+    try {
+      await updateOwnProfile({ id, ...fields });
+      updateUserFields(fields);
+      toast.success('Profile updated');
+      setEditing(false);
+    } catch {
+      toast.error('Could not update profile', 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleLogout() {
@@ -182,10 +214,41 @@ export function ProfileScreen() {
                   <TouchableOpacity
                     onPress={handleSave}
                     activeOpacity={0.85}
-                    style={[st.primaryBtn, { backgroundColor: t.accent, flex: 1 }]}
+                    disabled={saving}
+                    style={[st.primaryBtn, { backgroundColor: t.accent, flex: 1, opacity: saving ? 0.6 : 1 }]}
                   >
-                    <Text style={st.primaryBtnText}>Save Changes</Text>
+                    <Text style={st.primaryBtnText}>{saving ? 'Saving…' : 'Save Changes'}</Text>
                   </TouchableOpacity>
+                </View>
+              )}
+
+              {!editing && (
+                <View style={st.section}>
+                  <GlassCard t={t} contentStyle={st.sectionCard}>
+                    <View style={st.planHeaderRow}>
+                      <Text style={[st.sectionHeading, { color: t.text }]}>Your Plan</Text>
+                      {subscription?.active && <PlanBadge tier={subscription.plan.tier} />}
+                    </View>
+
+                    <Text style={[st.planName, { color: t.text }]}>
+                      {subscription?.active ? subscription.plan.display_name : 'Free'}
+                    </Text>
+                    {!!currentPlan?.description && (
+                      <Text style={[st.bodyText, { color: t.textSub, marginTop: 4 }]}>
+                        {currentPlan.description}
+                      </Text>
+                    )}
+
+                    <TouchableOpacity
+                      onPress={() => router.push('/pricing')}
+                      activeOpacity={0.85}
+                      style={[st.primaryBtn, { backgroundColor: t.accent, marginTop: 16 }]}
+                    >
+                      <Text style={st.primaryBtnText}>
+                        {subscription?.active ? 'Change Plan' : 'Upgrade Plan'}
+                      </Text>
+                    </TouchableOpacity>
+                  </GlassCard>
                 </View>
               )}
 
@@ -301,6 +364,9 @@ const st = StyleSheet.create({
   sectionCard: { padding: 18 },
   sectionHeading: { fontFamily: F.sans700, fontSize: 15 },
   bodyText: { fontFamily: F.sans400, fontSize: 13.5, lineHeight: 20 },
+
+  planHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  planName: { fontFamily: F.sans700, fontSize: 17, marginTop: 10 },
 
   fieldRow: {
     flexDirection: 'row',
