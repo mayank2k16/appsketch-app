@@ -13,7 +13,7 @@ import { Animated, Easing } from 'react-native';
 import { create } from 'zustand';
 
 import { continueAuth, continueGoogle, verifyOtp } from '@/api/auth';
-import type { AuthNextStep, AuthUser, ContinueAuthResponse, VerifyOtpResponse } from '@/api/auth/types';
+import type { AuthNextStep, AuthUser, ContinueAuthResponse, UserSubscription, VerifyOtpResponse } from '@/api/auth/types';
 import { Env } from '@env';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 import { toast } from '@/lib/toast';
@@ -52,6 +52,7 @@ interface AuthState {
   signOut: () => void;
   signInAsGuest: () => void;
   hydrate: () => void;
+  updateSubscription: (subscription: UserSubscription) => void;
 }
 
 const _useAuth = create<AuthState>((set, get) => ({
@@ -97,6 +98,18 @@ const _useAuth = create<AuthState>((set, get) => ({
       console.error(e);
     }
   },
+
+  // Patches `user.subscription` after a successful subscription payment —
+  // same effect as the web reference writing it into the localStorage
+  // `user` object, but through the store so every screen reading
+  // `useAuth.use.user()` picks it up immediately.
+  updateSubscription: (subscription) => {
+    const current = get().user;
+    if (!current) return;
+    const updated: AuthUser = { ...current, subscription };
+    setUser(updated);
+    set({ user: updated });
+  },
 }));
 
 export const useAuth = createSelectors(_useAuth);
@@ -105,6 +118,12 @@ export const signOut = () => _useAuth.getState().signOut();
 export const signIn = (token: TokenType, user?: AuthUser) => _useAuth.getState().signIn(token, user);
 export const signInAsGuest = () => _useAuth.getState().signInAsGuest();
 export const hydrateAuth = () => _useAuth.getState().hydrate();
+export const updateSubscription = (subscription: UserSubscription) =>
+  _useAuth.getState().updateSubscription(subscription);
+
+/** Reads `user.subscription` — see `UserSubscription` in `@/api/auth/types` for the field-name caveat. */
+export const getUserSubscription = (user: AuthUser | null): UserSubscription | null =>
+  (user?.subscription as UserSubscription | undefined) ?? null;
 
 /** True when the user is browsing without an account */
 export const isGuest = () => _useAuth.getState().status === 'guest';

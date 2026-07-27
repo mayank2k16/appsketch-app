@@ -131,7 +131,7 @@ const s = StyleSheet.create({
     fontSize: 40,
     letterSpacing: -1.4,
     textAlign: 'center',
-    lineHeight: 50,
+    lineHeight: 46,
   },
 
   subtitle: {

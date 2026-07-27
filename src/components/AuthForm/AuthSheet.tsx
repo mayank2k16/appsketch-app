@@ -42,13 +42,6 @@ export function AuthSheet({
     handleContinueContact, handleSubmitName, handleVerifyOtp, handleResendOtp,
   } = useContinueAuthFlow('contact', () => { onClose(); onSuccess?.(); });
 
-  // Set the slide position directly rather than animating it. A one-shot
-  // `Animated.spring/timing().start()` triggered on a visibility change
-  // silently never completes on this device/RN build (same bug seen on the
-  // drawer and the login panel) — the sheet would mount but stay translated
-  // 600px off-screen forever, and close() depended on an animation callback
-  // that never fired, so it wouldn't dismiss either. setValue is instant but
-  // reliable. `!visible` already returns null below, so hide is handled there.
   const sheetAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {

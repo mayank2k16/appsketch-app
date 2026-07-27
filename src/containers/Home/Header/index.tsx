@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { getUserSubscription, useAuth } from '@/hooks/useAuth';
+import { PlanBadge } from '@/components/ui/PlanBadge';
 import { F } from '@/lib/fonts';
 import { homeTheme } from '../theme/HomeTheme';
 
@@ -26,7 +28,10 @@ export function HomeHeader({ onMenuPress }: Props) {
   const isDark = colorScheme === 'dark';
   const t = homeTheme[isDark ? 'dark' : 'light'];
 
-  const topPad = Math.max(insets.top + 10, Platform.OS === 'android' ? 15 : 30);
+  const user = useAuth.use.user();
+  const subscription = getUserSubscription(user);
+
+  const topPad = Math.max(insets.top + 10, Platform.OS === 'android' ? 15 : 20);
 
   return (
     <View
@@ -50,6 +55,7 @@ export function HomeHeader({ onMenuPress }: Props) {
         <Text style={[s.brandName, { color: t.text }]}>
           AppSketch
         </Text>
+        {subscription?.active && <PlanBadge tier={subscription.plan.tier} />}
       </View>
 
       {/* ── Right: menu button — avatar-with-settings badge, still opens the drawer ── */}

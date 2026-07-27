@@ -14,7 +14,7 @@
  *   npm install react-native-inappbrowser-reborn  (PayU)
  */
 
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -78,51 +78,47 @@ export type PaymentContext = {
 };
 
 // ── Razorpay ───────────────────────────────────────────────────────────────────
-async function handleRazorpay(
-  orderId:      number,
-  checkout:     CheckoutDetails,
-  customerName: string,
-  ctx:          PaymentContext,
-): Promise<PaymentResult> {
+function buildRazorpayOptions(checkout: CheckoutDetails, customerName: string, ctx: PaymentContext): Record<string, any> {
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIX: ALL THREE prefill fields must be non-empty real strings.
+  //
+  // Passing empty strings ('') causes:
+  //   • Black top half of the Razorpay modal (header area stays dark)
+  //   • Phone number field is unresponsive / keyboard won't open
+  //
+  // Use values from the cart delivery address form.
+  // Strip non-digits from phone and take the last 10 digits.
+  // Fall back to safe placeholders — Razorpay accepts them fine,
+  // the user can still edit everything inside the checkout screen.
+  // ─────────────────────────────────────────────────────────────────────────
+  const contact = ctx.prefillPhone
+    ? ctx.prefillPhone.replace(/\D/g, '').slice(-10).padStart(10, '0')
+    : '9999999999';   // placeholder — user can edit inside Razorpay
+
+  const email = ctx.prefillEmail || 'customer@order.com';  // placeholder
+
+  return {
+    description: 'Order Payment',
+    currency:    checkout.currency ?? 'INR',
+    key:         checkout.key_id   ?? '',
+    amount:      String(checkout.amount_minor ?? 0),  // paise as string
+    name:        customerName || 'Store',
+    order_id:    checkout.order_id ?? '',
+    prefill: {
+      name:    customerName || 'Customer',
+      contact,    // ← must be non-empty
+      email,      // ← must be non-empty
+    },
+    theme: { color: ctx.primaryColor ?? '#111111' },
+    // FIX: Do NOT pass image as empty string — it causes the black header.
+    // Only include it when you have a real URL.
+    ...(ctx.logoUrl ? { image: ctx.logoUrl } : {}),
+  };
+}
+
+async function handleRazorpayNative(orderId: number, options: Record<string, any>): Promise<PaymentResult> {
   try {
     const RazorpayCheckout = require('react-native-razorpay').default;
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // FIX: ALL THREE prefill fields must be non-empty real strings.
-    //
-    // Passing empty strings ('') causes:
-    //   • Black top half of the Razorpay modal (header area stays dark)
-    //   • Phone number field is unresponsive / keyboard won't open
-    //
-    // Use values from the cart delivery address form.
-    // Strip non-digits from phone and take the last 10 digits.
-    // Fall back to safe placeholders — Razorpay accepts them fine,
-    // the user can still edit everything inside the checkout screen.
-    // ─────────────────────────────────────────────────────────────────────────
-    const contact = ctx.prefillPhone
-      ? ctx.prefillPhone.replace(/\D/g, '').slice(-10).padStart(10, '0')
-      : '9999999999';   // placeholder — user can edit inside Razorpay
-
-    const email = ctx.prefillEmail || 'customer@order.com';  // placeholder
-
-    const options: Record<string, any> = {
-      description: 'Order Payment',
-      currency:    checkout.currency ?? 'INR',
-      key:         checkout.key_id   ?? '',
-      amount:      String(checkout.amount_minor ?? 0),  // paise as string
-      name:        customerName || 'Store',
-      order_id:    checkout.order_id ?? '',
-      prefill: {
-        name:    customerName || 'Customer',
-        contact,    // ← must be non-empty
-        email,      // ← must be non-empty
-      },
-      theme: { color: ctx.primaryColor ?? '#111111' },
-      // FIX: Do NOT pass image as empty string — it causes the black header.
-      // Only include it when you have a real URL.
-      ...(ctx.logoUrl ? { image: ctx.logoUrl } : {}),
-    };
-
     const data = await RazorpayCheckout.open(options);
 
     return {
@@ -141,6 +137,74 @@ async function handleRazorpay(
       message: err?.description ?? err?.message ?? 'Razorpay payment failed',
     };
   }
+}
+
+// react-native-razorpay is native-bridge only — on Expo web `require(...).default`
+// resolves to undefined, so calling `.open()` throws
+// "Cannot read properties of undefined (reading 'open')" (seen testing via
+// `expo start --web`). Web gets Razorpay's own checkout.js instead, same
+// approach as the Vite web reference (Containers/HomeV3/CartPage/Cart.jsx).
+const RAZORPAY_WEB_SCRIPT_ID = 'razorpay-checkout-script';
+
+function loadRazorpayWebScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if ((window as any).Razorpay) { resolve(true); return; }
+    let script = document.getElementById(RAZORPAY_WEB_SCRIPT_ID) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement('script');
+      script.id = RAZORPAY_WEB_SCRIPT_ID;
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+    script.addEventListener('load', () => resolve(true));
+    script.addEventListener('error', () => resolve(false));
+  });
+}
+
+async function handleRazorpayWeb(orderId: number, options: Record<string, any>): Promise<PaymentResult> {
+  const loaded = await loadRazorpayWebScript();
+  if (!loaded || !(window as any).Razorpay) {
+    return { success: false, reason: 'error', message: 'Payment gateway failed to load. Please refresh and try again.' };
+  }
+
+  return new Promise((resolve) => {
+    const rzp = new (window as any).Razorpay({
+      ...options,
+      handler: (response: any) => {
+        resolve({
+          success:             true,
+          orderId,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id:   response.razorpay_order_id,
+          razorpay_signature:  response.razorpay_signature,
+        });
+      },
+      modal: {
+        ondismiss: () => resolve({ success: false, reason: 'cancelled' }),
+      },
+    });
+    rzp.on('payment.failed', (resp: any) => {
+      resolve({
+        success: false,
+        reason:  'failed',
+        message: resp?.error?.description ?? 'Razorpay payment failed',
+      });
+    });
+    rzp.open();
+  });
+}
+
+async function handleRazorpay(
+  orderId:      number,
+  checkout:     CheckoutDetails,
+  customerName: string,
+  ctx:          PaymentContext,
+): Promise<PaymentResult> {
+  const options = buildRazorpayOptions(checkout, customerName, ctx);
+  return Platform.OS === 'web'
+    ? handleRazorpayWeb(orderId, options)
+    : handleRazorpayNative(orderId, options);
 }
 
 // ── PayU ───────────────────────────────────────────────────────────────────────

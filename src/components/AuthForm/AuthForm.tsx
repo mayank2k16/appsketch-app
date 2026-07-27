@@ -33,7 +33,18 @@ export function AuthForm() {
   const { colorScheme } = useColorScheme();
   const t = loginTheme[colorScheme === 'dark' ? 'dark' : 'light'];
 
-  const goHome = React.useCallback(() => router.replace('/home'), [router]);
+  // Prefer returning to whatever screen sent the user to login (e.g. Pricing,
+  // Studio's gated screen) over always landing on Home. Only screens that
+  // pushed `/login` onto the stack leave a back entry — flows that reach
+  // login via a `replace` (splash, sign-out, the (app) route guard) have none,
+  // so falling back to Home is the correct behaviour there.
+  const goBack = React.useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/home');
+    }
+  }, [router]);
 
   const [sheetVisible, setSheetVisible] = React.useState(false);
   const [method, setMethod] = React.useState<'email' | 'phone'>('phone');
@@ -98,7 +109,7 @@ export function AuthForm() {
 
       {/* Tertiary — Guest */}
       <TouchableOpacity
-        onPress={() => { signInAsGuest(); goHome(); }}
+        onPress={() => { signInAsGuest(); goBack(); }}
         activeOpacity={0.7}
         style={s.guestBtn}
       >
@@ -126,7 +137,7 @@ export function AuthForm() {
         visible={sheetVisible}
         method={method}
         onClose={() => setSheetVisible(false)}
-        onSuccess={goHome}
+        onSuccess={goBack}
       />
     </View>
   );
