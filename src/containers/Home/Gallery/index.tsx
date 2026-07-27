@@ -254,7 +254,7 @@ const s = StyleSheet.create({
   centerWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
   },
 
   hole: {

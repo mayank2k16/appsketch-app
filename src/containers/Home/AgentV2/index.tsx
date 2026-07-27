@@ -725,7 +725,7 @@ export function AgentV2({
 const s = StyleSheet.create({
   wrap: {
     paddingHorizontal: 12,
-    paddingTop: 30,
+    paddingTop: 40,
     paddingBottom: 70,
   },
   stage: {

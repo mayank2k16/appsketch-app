@@ -11,21 +11,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { signInAsGuest, useGoogleSignIn } from '@/hooks/useAuth';
+import { signInAsGuest } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { openLinkInBrowser } from '@/lib/utils';
 
 import { AuthSheet } from './AuthSheet';
 import { loginTheme } from './AuthTheme';
 
-// Public legal pages on the marketing site. If those routes ever move, this is
-// the only place to update.
-const TERMS_URL = 'https://appsketch.ai/terms-of-service';
-const PRIVACY_URL = 'https://appsketch.ai/privacy-policy';
-
-// Height of the montage → panel fade that sits just above the panel. It's a
-// child of the panel (rendered outside its top edge) painted in the panel's own
-// colour, so the montage dissolves into the panel with no seam/line.
 const TOP_FADE_H = 200;
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -36,11 +27,6 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// ─────────────────────────────────────────────────────────────
-// AuthForm — the bottom auth panel only (Welcome + the three
-// Continue buttons + legal/guest). The montage above lives in the
-// login screen; this component owns everything auth-related.
-// ─────────────────────────────────────────────────────────────
 export function AuthForm() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -51,8 +37,6 @@ export function AuthForm() {
 
   const [sheetVisible, setSheetVisible] = React.useState(false);
   const [method, setMethod] = React.useState<'email' | 'phone'>('phone');
-
-  const { signInWithGoogle, loading: googleLoading } = useGoogleSignIn(goHome);
 
   function openSheet(m: 'email' | 'phone') {
     setMethod(m);
@@ -71,6 +55,10 @@ export function AuthForm() {
       ] as [string, string, ...string[]],
     [t.panel]
   );
+
+  const redirectToScreen = (path: string) => {
+    router.push(path as any);
+  };
 
   return (
     <View
@@ -107,20 +95,6 @@ export function AuthForm() {
         <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Email</Text>
       </TouchableOpacity>
 
-      {/* Secondary — Gmail / Google */}
-      {/* <TouchableOpacity
-        onPress={signInWithGoogle}
-        disabled={googleLoading}
-        activeOpacity={0.85}
-        style={[
-          s.btn, s.btnSecondary,
-          { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder },
-          googleLoading && { opacity: 0.6 },
-        ]}
-      >
-        <Ionicons name="logo-google" size={18} color={t.secondaryIcon} style={s.btnIcon} />
-        <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Google</Text>
-      </TouchableOpacity> */}
 
       {/* Tertiary — Guest */}
       <TouchableOpacity
@@ -134,14 +108,14 @@ export function AuthForm() {
       <Text style={[s.footer, { color: t.footer }]}>
         By pressing on “Continue with…” you agree to our{' '}
         <Text
-          onPress={() => openLinkInBrowser(TERMS_URL)}
+          onPress={() => redirectToScreen("/tnc")}
           style={{ color: t.footerLink, textDecorationLine: 'underline' }}
         >
           Terms of Service
         </Text>
         {' '}and{' '}
         <Text
-          onPress={() => openLinkInBrowser(PRIVACY_URL)}
+          onPress={() => redirectToScreen("/privacy-policy")}
           style={{ color: t.footerLink, textDecorationLine: 'underline' }}
         >
           Privacy Policy

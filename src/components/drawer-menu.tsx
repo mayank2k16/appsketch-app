@@ -231,15 +231,12 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           bigger, taller glass surface than a small card. ── */}
       <Animated.View style={[st.drawer, { shadowColor: dt.shadow, transform: [{ translateX }] }]}>
         <BlurView
-          intensity={Platform.OS === 'android' ? 55 : 35}
+          intensity={Platform.OS === 'android' ? 70 : 35}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dt.panelBg, opacity: isDark ? 0.68 : 0.84 }]} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dt.panelBg, opacity: isDark ? 0.94 : 0.9 }]} />
 
-        {/* ── Brand header — minimal: mark + static wordmark + close, one
-            hairline border underneath. No shimmer/glow competing with the
-            list below it. ── */}
         <View style={[st.brandHeader, { borderBottomColor: dt.bottomBorder }]}>
           <View style={st.brandInner}>
             <View style={st.markClip}>
@@ -391,7 +388,7 @@ const st = StyleSheet.create({
 
   // Brand header — flat, one hairline border underneath, no animated glow
   brandHeader: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 22,
+    paddingTop: Platform.OS === 'ios' ? 56 : 45,
     paddingBottom: 0,
     borderBottomWidth: 1,
   },
@@ -401,26 +398,27 @@ const st = StyleSheet.create({
     alignItems: 'center',
     gap: 0,
     paddingHorizontal: 12,
-    paddingBottom: 16,
+    paddingLeft: 5,
+    paddingBottom: 10,
   },
 
   // Real app logo, small and square — no glow behind it
   markClip: {
-    width: 40,
-    height: 40,
+    width: 45,
+    height: 45,
     borderRadius: 8,
     overflow: 'hidden',
   },
   markImg: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
   },
 
   wordmarkFlat: {
     flex: 1,
     fontFamily: F.sans600,
-    fontSize: 15,
-    letterSpacing: 0.5,
+    fontSize: 17,
+    letterSpacing: 0.6,
   },
 
   sectionLabel: {
