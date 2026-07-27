@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
@@ -137,7 +136,7 @@ function MarqueeColumn({
   );
 }
 
-// ─── Centre content: the empty (bg-coloured) hole + heading, subtitle, CTAs ────
+// ─── Centre content: heading, subtitle, CTAs — sits on the flat overlay ────────
 function CenterContent({
   t,
   onStartPress,
@@ -149,20 +148,8 @@ function CenterContent({
 }) {
   return (
     <View style={s.hole}>
-      <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient id="galleryOverlay" cx="50%" cy="50%" r="65%">
-            <Stop offset="0%" stopColor={t.galleryOverlayCenter} stopOpacity={1} />
-            <Stop offset="55%" stopColor={t.galleryOverlayMid} stopOpacity={1} />
-            <Stop offset="100%" stopColor={t.galleryOverlayEdge} stopOpacity={1} />
-          </RadialGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#galleryOverlay)" />
-      </Svg>
-
       <Text style={[s.heading, { color: t.galleryOverlayText }]}>
-        {'Create unlimited beautiful\n'}
-        <Text style={{ color: t.heroHeadingFade }}>apps and websites.</Text>
+        {'Create unlimited beautiful\n apps and websites'}
       </Text>
       <Text style={[s.subtitle, { color: t.galleryOverlayTextSub }]}>
         Browse a living gallery of apps and websites — every idea rendered,
@@ -229,7 +216,11 @@ export function GallerySection({
           ))}
         </View>
 
-        {/* Empty bg-coloured centre + text sits inside it */}
+        {/* Flat, single-value overlay across the whole grid — same opacity
+            everywhere (no fade/vignette) so images stay evenly dimmed and
+            heading/subtitle text reads clearly on top in both themes. */}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.galleryOverlay }]} pointerEvents="none" />
+
         <View style={[StyleSheet.absoluteFill, s.centerWrap, { pointerEvents: 'box-none' }]}>
           <CenterContent
             t={t}
@@ -271,8 +262,6 @@ const s = StyleSheet.create({
 
   hole: {
     width: '100%',
-    borderRadius: 20,
-    overflow: 'hidden',
     paddingVertical: 40,
     paddingHorizontal: 12,
     alignItems: 'center',
@@ -280,10 +269,10 @@ const s = StyleSheet.create({
 
   heading: {
     fontFamily: F.display900,
-    fontSize: 22,
-    letterSpacing: -0.6,
+    fontSize: 25,
+    letterSpacing: -0.3,
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 30,
     marginBottom: 11,
   },
 

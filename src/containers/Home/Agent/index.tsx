@@ -476,7 +476,6 @@ const s = StyleSheet.create({
   },
   suggestionChip: {
     flex: 1,
-    alignItems: 'flex-start',
     gap: 6,
     paddingVertical: 10,
     paddingHorizontal: 10,
@@ -484,8 +483,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     minWidth: '45%',
     maxWidth: '55%',
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   suggestionIcon: {
     marginBottom: 2,

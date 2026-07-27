@@ -57,10 +57,9 @@ export const appTheme = {
     heroGhostText: '#FFFFFF',
     heroHeadingFade: '#4A4B50', // "apps." gradient end (white → this)
 
-    // ── Gallery centre overlay (dark scrim behind heading, matches auth fade) ──
-    galleryOverlayCenter: 'rgba(3,3,8,0.85)',
-    galleryOverlayMid: 'rgba(3,3,8,0.55)',
-    galleryOverlayEdge: 'rgba(3,3,8,0)',
+    // ── Gallery overlay (flat, single-value scrim over the whole grid — no
+    // fade/vignette, same opacity everywhere so the dimming reads consistently) ─
+    galleryOverlay: 'rgba(3,3,8,0.88)',
     galleryOverlayText: '#FFFFFF',
     galleryOverlayTextSub: 'rgba(255,255,255,0.72)',
 
@@ -301,10 +300,9 @@ export const appTheme = {
     heroGhostText: '#111111',
     heroHeadingFade: '#B8BAC0', // "apps." gradient end
 
-    // ── Gallery centre overlay (soft light scrim behind heading) ──────────────
-    galleryOverlayCenter: 'rgba(255,255,255,0.92)',
-    galleryOverlayMid: 'rgba(255,255,255,0.62)',
-    galleryOverlayEdge: 'rgba(255,255,255,0)',
+    // ── Gallery overlay (flat, single-value scrim over the whole grid — no
+    // fade/vignette, same opacity everywhere so the dimming reads consistently) ─
+    galleryOverlay: 'rgba(255,255,255,0.75)',
     galleryOverlayText: '#111111',
     galleryOverlayTextSub: 'rgba(17,17,17,0.62)',
 
