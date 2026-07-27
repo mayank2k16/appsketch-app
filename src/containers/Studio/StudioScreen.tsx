@@ -10,6 +10,7 @@ import { useAppTheme } from '@/lib/theme';
 
 import { AppsScreen } from './Apps/AppsScreen';
 import { DiscoverScreen } from './Discover/DiscoverScreen';
+import { SettingsScreen } from './Settings/SettingsScreen';
 
 type StudioSection = 'apps' | 'discover' | 'settings';
 
@@ -65,22 +66,10 @@ export function StudioScreen() {
           <View style={{ flex: 1 }}>
             {section === 'apps' && <AppsScreen />}
             {section === 'discover' && <DiscoverScreen />}
-            {section === 'settings' && <ComingSoon label="Settings" />}
+            {section === 'settings' && <SettingsScreen />}
           </View>
         </>
       )}
-    </View>
-  );
-}
-
-function ComingSoon({ label }: { label: string }) {
-  const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
-
-  return (
-    <View style={st.gate}>
-      <Ionicons name="hourglass-outline" size={32} color={t.textMuted} />
-      <Text style={[st.gateTitle, { color: t.text }]}>{label} is coming soon</Text>
     </View>
   );
 }

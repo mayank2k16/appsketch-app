@@ -50,6 +50,7 @@ type DrawerMenuProps = {
 const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
   { id: 'profile', label: 'My Account', route: '/profile' },
   { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
+  { id: 'cart', label: 'Cart', route: '/cart' },
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
   { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },
@@ -59,6 +60,7 @@ const AUTH_MENU_ITEMS: { id: string; label: string; route: string }[] = [
 const GUEST_MENU_ITEMS: { id: string; label: string; route: string }[] = [
   { id: 'profile', label: 'My Account', route: '/profile' },
   { id: 'pricing', label: 'Pricing & Plans', route: '/pricing' },
+  { id: 'cart', label: 'Cart', route: '/cart' },
   { id: 'about', label: 'About Us', route: '/about' },
   { id: 'contact', label: 'Contact Us', route: '/contact' },
   { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy' },

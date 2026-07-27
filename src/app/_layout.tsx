@@ -74,6 +74,7 @@ function RootLayoutContent() {
       <Stack.Screen name="tnc" options={{ headerShown: false }} />
       <Stack.Screen name="pricing" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ headerShown: false }} />
+      <Stack.Screen name="cart" options={{ headerShown: false }} />
     </Stack>
   );
 }

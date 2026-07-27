@@ -1,11 +1,13 @@
 /**
  * PlanBadge — subscription-tier pill for headers.
  *
- * Free/Basic render nothing. Every other paid tier gets the logo gradient
+ * Free renders nothing. The three paid tiers step up in "glow" as they go:
+ * `Basic` is a plain tinted outline (no gradient, no motion), `Growth` (and
+ * any other paid tier) gets the full logo gradient
  * (`#3B82F6 → #8B5CF6 → #EC4899 → #F97316`, lifted straight from
- * `assets/logo.png`'s icon outline). `100X` gets an enhanced version:
- * a looping shimmer sweep + pulsing glow halo, reusing the same
- * `Animated` (opacity/scale/translateX, native-driver) technique as
+ * `assets/logo.png`'s icon outline), and `100X` gets an enhanced version of
+ * that gradient: a looping shimmer sweep + pulsing glow halo, reusing the
+ * same `Animated` (opacity/scale/translateX, native-driver) technique as
  * `PulsingDot.tsx` and `GradientText.tsx`'s `AnimatedGradientText` —
  * no new animation library.
  */
@@ -18,12 +20,14 @@ import { F } from '@/lib/fonts';
 
 const LOGO_GRADIENT = ['#3B82F6', '#8B5CF6', '#EC4899', '#F97316'] as const;
 
-type BadgeLevel = 'standard' | 'max';
+type BadgeLevel = 'basic' | 'standard' | 'max';
 
 function getBadgeLevel(tier: string | null | undefined): BadgeLevel | null {
   const t = (tier ?? '').trim().toLowerCase();
-  if (!t || t === 'free' || t === 'basic') return null;
-  return t === '100x' ? 'max' : 'standard';
+  if (!t || t === 'free') return null;
+  if (t === '100x') return 'max';
+  if (t === 'basic') return 'basic';
+  return 'standard';
 }
 
 export function PlanBadge({ tier }: { tier: string | null | undefined }) {
@@ -31,10 +35,21 @@ export function PlanBadge({ tier }: { tier: string | null | undefined }) {
   if (!level) return null;
 
   const label = tier!.toUpperCase();
-  return level === 'max' ? <MaxPlanBadge label={label} /> : <StandardPlanBadge label={label} />;
+  if (level === 'max') return <MaxPlanBadge label={label} />;
+  if (level === 'standard') return <StandardPlanBadge label={label} />;
+  return <BasicPlanBadge label={label} />;
 }
 
-// ─── Growth (and every other non-100X paid tier) — static gradient pill ───
+// ─── Basic — lowest tier of the three: plain tinted outline, no gradient/motion ──
+function BasicPlanBadge({ label }: { label: string }) {
+  return (
+    <View style={st.basicPill}>
+      <Text style={st.basicLabel}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── Growth (and every other non-Basic/100X paid tier) — static gradient pill ───
 function StandardPlanBadge({ label }: { label: string }) {
   return (
     <LinearGradient colors={LOGO_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.pill}>
@@ -104,6 +119,20 @@ function MaxPlanBadge({ label }: { label: string }) {
 }
 
 const st = StyleSheet.create({
+  basicPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(59,130,246,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.35)',
+  },
+  basicLabel: {
+    fontFamily: F.sans700,
+    fontSize: 10,
+    color: '#3B82F6',
+    letterSpacing: 0.4,
+  },
   pill: {
     paddingHorizontal: 9,
     paddingVertical: 5,

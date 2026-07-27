@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Easing,
   ScrollView,
@@ -16,26 +15,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import {
-  confirmSubscriptionPaymentFailure,
-  confirmSubscriptionPaymentSuccess,
-  initiateSubscriptionPayment,
+  formatCurrency,
+  isPlanFree,
+  popularPlanIndex,
+  sortPlans,
+  transformPlan,
   useSubscriptionPlans,
+  type TransformedPlan,
 } from '@/api';
-import type { SubscriptionPlan, SubscriptionPlanFeature, SubscriptionPricingOption } from '@/api';
-import type { CheckoutV2Response } from '@/lib/payments/payment-gateway';
-import { openPaymentGateway } from '@/lib/payments/payment-gateway';
 import { GradientText } from '@/components/ui/GradientText';
 import { Skeleton } from '@/containers/Marketplace/components/Skeleton';
-import { updateSubscription, useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import { useAppTheme, type AppColors } from '@/lib/theme';
-
-function readUserField(user: Record<string, unknown> | null, key: 'name' | 'email' | 'phone'): string {
-  if (!user) return '';
-  if (key === 'phone') return String(user.phone_number ?? user.phone ?? '');
-  return String(user[key] ?? '');
-}
 
 const SKELETON_CARD_COUNT = 3;
 
@@ -43,171 +36,27 @@ const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
 
 type BillingCycle = 'monthly' | 'yearly';
 
-type TransformedPlan = {
-  tier: string;
-  name: string;
-  description: string;
-  monthly: SubscriptionPricingOption | null;
-  yearly: SubscriptionPricingOption | null;
-  features: string[];
-  buttonText: string;
-  isPrimary: boolean;
-};
-
-function extractPricing(options: SubscriptionPricingOption[]) {
-  let monthly: SubscriptionPricingOption | null = null;
-  let yearly: SubscriptionPricingOption | null = null;
-  for (const opt of options) {
-    if (opt.interval === 'monthly') monthly = opt;
-    else if (opt.interval === 'yearly') yearly = opt;
-  }
-  return { monthly, yearly };
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-IN').format(value);
-}
-
-function formatFeatures(planFeatures: SubscriptionPlanFeature[]): string[] {
-  return (planFeatures || [])
-    .filter((pf) => pf.enabled)
-    .map((pf) => {
-      const displayName = pf.feature.display_name;
-      const limit = pf.integer_limit;
-      if (limit !== null) {
-        return displayName.toLowerCase().includes('data storage')
-          ? `${displayName} (${limit} GB)`
-          : `${displayName} (${limit})`;
-      }
-      return displayName;
-    });
-}
-
-function planPrice(plan: Pick<TransformedPlan, 'monthly' | 'yearly'>): number {
-  const option = plan.monthly ?? plan.yearly;
-  return option ? Number(option.price) || 0 : 0;
-}
-
-function isPlanFree(plan: Pick<TransformedPlan, 'monthly' | 'yearly'>): boolean {
-  return planPrice(plan) === 0;
-}
-
-function transformPlan(plan: SubscriptionPlan): TransformedPlan {
-  const { monthly, yearly } = extractPricing(plan.pricing_options || []);
-  const free = isPlanFree({ monthly, yearly });
-  return {
-    tier: plan.tier,
-    name: plan.display_name || '',
-    description: plan.description || '',
-    monthly,
-    yearly,
-    features: formatFeatures(plan.plan_features || []),
-    buttonText: free ? 'Start Free' : 'Get The Plan Now',
-    isPrimary: !free,
-  };
-}
-
-function sortPlans(plans: TransformedPlan[]): TransformedPlan[] {
-  return [...plans].sort((a, b) => planPrice(a) - planPrice(b));
-}
-
-/** Index of the one plan to badge "Most Popular" — the upper-middle tier,
- * since the backend doesn't send a "recommended" flag. None for 0-1 plans. */
-function popularPlanIndex(count: number): number {
-  return count <= 1 ? -1 : Math.min(count - 1, Math.floor(count / 2));
-}
-
 export function PricingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
   const [billingCycle, setBillingCycle] = React.useState<BillingCycle>('monthly');
-  const [checkoutTier, setCheckoutTier] = React.useState<string | null>(null);
   const { data, isLoading, isError } = useSubscriptionPlans();
-  const user = useAuth.use.user();
 
   const plans = React.useMemo(() => sortPlans((data ?? []).map(transformPlan)), [data]);
 
-  const validateUserAuth = () => {
+  // Checkout itself (Razorpay + domain bundling) lives in CartScreen now —
+  // this just hands off the chosen plan, matching the web reference's
+  // Pricing → Cart handoff (`history.push('/cart', {selected_subscription_plan, ...})`).
+  function handlePlanPress(plan: TransformedPlan) {
     const authStatus = useAuth.getState().status;
-    const isLoggedOut = authStatus === 'guest' || authStatus === 'signOut';
-    if (isLoggedOut) {
+    if (authStatus === 'guest' || authStatus === 'signOut') {
       toast.info('Please login to continue');
       router.push('/login');
-      return false;
-    }
-    return true;
-  }
-
-  async function handlePlanPress(plan: TransformedPlan) {
-    if (checkoutTier) return;
-    const isAuthenticated = validateUserAuth();
-    if (!isAuthenticated) return;
-    const priceOption = billingCycle === 'monthly' ? plan.monthly : plan.yearly;
-    if (!priceOption?.id) {
-      toast.error('Unavailable', 'This plan is not available for the selected billing cycle.');
       return;
     }
-
-    setCheckoutTier(plan.tier);
-    let userSubscriptionId: number | undefined;
-    try {
-      const { payment_detail } = await initiateSubscriptionPayment({ subscription_id: priceOption.id });
-      console.log(payment_detail)
-      userSubscriptionId = payment_detail.user_subscription_id;
-      const checkoutResponse: CheckoutV2Response = {
-        status: 200,
-        order_id: payment_detail.user_subscription_id,
-        order_amount: payment_detail.razorpay_order_id.amount / 100,
-        customer_name: readUserField(user, 'name'),
-        checkout: {
-          provider: 'Razorpay',
-          order_id: payment_detail.razorpay_order_id.id,
-          key_id: payment_detail.RAZORPAY_API_KEY,
-          amount_minor: payment_detail.razorpay_order_id.amount,
-          currency: payment_detail.razorpay_order_id.currency,
-        },
-        mode_of_payment: 'online',
-        operational: true,
-        delivery_charge: 0,
-        default_delivery_charge: 0,
-        inventory_status: {},
-      };
-
-      const result = await openPaymentGateway(checkoutResponse, {
-        primaryColor: t.accent,
-        prefillPhone: readUserField(user, 'phone'),
-        prefillEmail: readUserField(user, 'email'),
-      });
-
-      if (result.success) {
-        await confirmSubscriptionPaymentSuccess({
-          razorpay_order_id: result.razorpay_order_id ?? '',
-          razorpay_payment_id: result.razorpay_payment_id ?? '',
-          razorpay_signature: result.razorpay_signature ?? '',
-          user_subscription_id: userSubscriptionId,
-        });
-        updateSubscription({ active: true, plan: { tier: plan.tier, display_name: plan.name } });
-        toast.success('You’re subscribed!', `You're now on the ${plan.name} plan.`);
-      } else if (result.reason !== 'cancelled') {
-        await confirmSubscriptionPaymentFailure({
-          error: result.message ?? result.reason,
-          user_subscription_id: userSubscriptionId,
-        });
-        toast.error('Payment failed', result.message ?? 'Please try again.');
-      }
-    } catch {
-      if (userSubscriptionId) {
-        await confirmSubscriptionPaymentFailure({
-          error: 'checkout_error',
-          user_subscription_id: userSubscriptionId,
-        }).catch(() => { });
-      }
-      toast.error('Something went wrong', 'Could not start checkout. Please try again.');
-    } finally {
-      setCheckoutTier(null);
-    }
+    router.push({ pathname: '/cart', params: { tier: plan.tier, billingCycle } } as never);
   }
 
   return (
@@ -263,8 +112,6 @@ export function PricingScreen() {
                   billingCycle={billingCycle}
                   t={t}
                   popular={i === popularPlanIndex(plans.length)}
-                  loading={checkoutTier === plan.tier}
-                  disabled={checkoutTier !== null}
                   onPress={() => handlePlanPress(plan)}
                 />
               ))}
@@ -329,16 +176,12 @@ function PlanCard({
   billingCycle,
   t,
   popular,
-  loading,
-  disabled,
   onPress,
 }: {
   plan: TransformedPlan;
   billingCycle: BillingCycle;
   t: AppColors;
   popular: boolean;
-  loading: boolean;
-  disabled: boolean;
   onPress: () => void;
 }) {
   const priceOption = billingCycle === 'monthly' ? plan.monthly : plan.yearly;
@@ -385,22 +228,16 @@ function PlanCard({
         <TouchableOpacity
           onPress={onPress}
           activeOpacity={0.85}
-          disabled={disabled}
           style={[
             st.ctaButton,
             plan.isPrimary
               ? { backgroundColor: t.accent, borderColor: t.accent }
               : { backgroundColor: 'transparent', borderColor: t.accent },
-            disabled && !loading ? { opacity: 0.5 } : null,
           ]}
         >
-          {loading ? (
-            <ActivityIndicator color={plan.isPrimary ? '#FFFFFF' : t.accent} />
-          ) : (
-            <Text style={[st.ctaButtonText, { color: plan.isPrimary ? '#FFFFFF' : t.accent }]}>
-              {plan.buttonText}
-            </Text>
-          )}
+          <Text style={[st.ctaButtonText, { color: plan.isPrimary ? '#FFFFFF' : t.accent }]}>
+            {plan.buttonText}
+          </Text>
         </TouchableOpacity>
       )}
     </View>

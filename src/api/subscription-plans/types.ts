@@ -4,6 +4,7 @@
  * GET `/account/subscription-plans/`). Response/plan shape matches what
  * that screen's `transformPlan`/`extractPricing`/`formatFeatures` expect.
  */
+import type { DomainContacts } from '@/api/domains/types';
 export type SubscriptionBillingInterval = 'monthly' | 'yearly';
 
 export type SubscriptionPlanCurrency = {
@@ -46,10 +47,18 @@ export type SubscriptionPlansResponse = {
 // makeInitiatePayment/confirmPaymentSuccess/confirmPaymentFailure, hitting
 // the same `account/payment/*` endpoints). `subscription_id` here is the
 // *pricing option* id (monthly/yearly variant), not the plan id — matches
-// what Vite's Cart.jsx sends. ──
+// what Vite's Cart.jsx sends. The optional `domain*` fields let a domain
+// ride along in the same order (Vite's `Cart.jsx` always bills plan+domain
+// together, never separately) — see `ConfirmSubscriptionPaymentSuccessPayload`
+// for the matching fields on the confirm step. ──
 
 export type InitiateSubscriptionPaymentPayload = {
   subscription_id: number;
+  domain?: string | null;
+  domain_price?: number;
+  domain_years?: number;
+  additional_amount_in_inr?: number;
+  include_domain_in_amount?: boolean;
 };
 
 export type InitiateSubscriptionPaymentResponse = {
@@ -69,6 +78,14 @@ export type ConfirmSubscriptionPaymentSuccessPayload = {
   razorpay_payment_id: string;
   razorpay_signature: string;
   user_subscription_id: number;
+  // Present only when a domain rode along in the same order — mirrors
+  // Vite's `Cart.jsx` `confirmPaymentSuccess` call exactly.
+  domain?: string | null;
+  years?: number;
+  auto_renew?: boolean;
+  add_free_whoisguard?: boolean;
+  idn_code?: string | null;
+  contacts?: DomainContacts;
 };
 
 export type ConfirmSubscriptionPaymentFailurePayload = {
