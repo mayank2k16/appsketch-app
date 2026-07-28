@@ -538,7 +538,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 18,
     paddingVertical: 7,
-    gap: 12,
+    gap: 8,
   },
   flatIcon: {
     fontSize: 17,

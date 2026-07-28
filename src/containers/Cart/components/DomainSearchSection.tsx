@@ -21,6 +21,7 @@ export function DomainSearchSection({
   selectedYears,
   onSelect,
   t,
+  domainOnly = false,
 }: {
   query: string;
   onChangeQuery: (v: string) => void;
@@ -30,6 +31,10 @@ export function DomainSearchSection({
   selectedYears: number;
   onSelect: (result: DomainSearchResult, years: number, price: number) => void;
   t: AppColors;
+  /** True when there's no plan riding along in this order (the user already
+   * owns one) — swaps the "billed together with your plan" copy for one that
+   * doesn't imply a plan charge. */
+  domainOnly?: boolean;
 }) {
   // Available domains first — the ones a user can actually buy shouldn't be
   // buried under taken ones just because of API result order.
@@ -42,7 +47,9 @@ export function DomainSearchSection({
     <View style={[st.wrap, { backgroundColor: t.card, borderColor: t.border }]}>
       <Text style={[st.title, { color: t.text }]}>Every website needs a domain</Text>
       <Text style={[st.subtitle, { color: t.textSub }]}>
-        Search and add a domain — it'll be billed together with your plan.
+        {domainOnly
+          ? "Search and add a domain — you'll only be charged for the domain."
+          : "Search and add a domain — it'll be billed together with your plan."}
       </Text>
 
       <View style={[st.searchRow, { borderColor: t.border, backgroundColor: t.agentTabBg }]}>

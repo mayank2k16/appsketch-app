@@ -4,6 +4,7 @@ import type { Ionicons } from '@expo/vector-icons';
 import { AiAssistantScreen } from './AiAssistant';
 import { AnalyticsScreen } from './Analytics';
 import { BookingsScreen } from './Bookings';
+import { CartScreen } from './Cart';
 import { CategoriesScreen } from './Categories';
 import { CollectionsScreen } from './Collections';
 import { CreditDebitNotesScreen } from './CreditDebitNotes';
@@ -16,7 +17,9 @@ import { PaymentsScreen } from './Payments';
 import { ProductRequestsScreen } from './ProductRequests';
 import { ProductsScreen } from './Products';
 import { ReferAndEarnScreen } from './ReferAndEarn';
+import { ShortVideosScreen } from './ShortVideos';
 import { StockHistoryScreen } from './StockHistory';
+import { StoriesScreen } from './Stories';
 import { SupportScreen } from './Support';
 import { UsersScreen } from './Users';
 import { VendorsScreen } from './Vendors';
@@ -39,7 +42,9 @@ export type CmsTabKey =
   | 'inventory'
   | 'invoices'
   | 'categories'
+  | 'cart'
   | 'collections'
+  | 'stories'
   | 'creditDebitNotes'
   | 'discounts'
   | 'notifications'
@@ -49,6 +54,7 @@ export type CmsTabKey =
   | 'products'
   | 'productRequests'
   | 'referAndEarn'
+  | 'shortVideos'
   | 'users'
   | 'stockHistory'
   | 'aiAssistant'
@@ -68,7 +74,9 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'inventory', label: 'Inventory', icon: 'cube-outline', Component: InventoryScreen },
   { key: 'invoices', label: 'Invoices', icon: 'document-text-outline', Component: InvoicesScreen },
   { key: 'categories', label: 'Categories', icon: 'folder-outline', Component: CategoriesScreen },
+  { key: 'cart', label: 'Cart', icon: 'cart-outline', Component: CartScreen },
   { key: 'collections', label: 'Collections', icon: 'albums-outline', Component: CollectionsScreen },
+  { key: 'stories', label: 'Stories', icon: 'book-outline', Component: StoriesScreen },
   { key: 'creditDebitNotes', label: 'Credit/Debit Notes', icon: 'swap-horizontal-outline', Component: CreditDebitNotesScreen },
   { key: 'discounts', label: 'Discount Codes', icon: 'pricetag-outline', Component: DiscountsScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
@@ -78,6 +86,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
   { key: 'productRequests', label: 'Product Requests', icon: 'checkmark-done-outline', Component: ProductRequestsScreen },
   { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
+  { key: 'shortVideos', label: 'Short Videos', icon: 'videocam-outline', Component: ShortVideosScreen },
   { key: 'users', label: 'Users', icon: 'people-outline', Component: UsersScreen },
   { key: 'stockHistory', label: 'Stock History', icon: 'time-outline', Component: StockHistoryScreen },
   { key: 'aiAssistant', label: 'AI Assistant', icon: 'sparkles-outline', Component: AiAssistantScreen },
