@@ -10,7 +10,7 @@ import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 14;
-const CARD_W = SCREEN_W * 0.75;
+const CARD_W = SCREEN_W * 0.72;
 
 const TESTIMONIALS: {
   quote: string;
@@ -169,7 +169,7 @@ const s = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 18,
-    paddingVertical: 25,
+    paddingVertical: 30,
   },
   stars: {
     flexDirection: 'row',

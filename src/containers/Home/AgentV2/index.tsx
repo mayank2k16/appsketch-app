@@ -60,7 +60,6 @@ export const APP_TABS: {
       suggestions: [
         'Build a landing page for my product launch with an email signup and countdown timer',
         'Build an online store for my clothing brand with product listings and a shopping cart',
-        'Build a personal portfolio site to showcase my projects and contact information',
       ],
     },
     {
@@ -70,7 +69,6 @@ export const APP_TABS: {
       suggestions: [
         'Build a habit tracker app with daily reminders and streak tracking',
         'Build a food delivery app with restaurant listings and live order tracking',
-        'Build a social app for sharing photos with friends, likes, and comments',
       ],
     },
     {
@@ -80,7 +78,6 @@ export const APP_TABS: {
       suggestions: [
         'Build a 2D platformer game with power-ups and multiple levels',
         'Build an endless runner game with obstacles and a live score counter',
-        'Build a puzzle game with increasing difficulty and a move counter',
       ],
     },
   ];

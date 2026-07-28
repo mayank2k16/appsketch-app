@@ -14,6 +14,7 @@ import { AgentV2 } from './AgentV2';
 import { Showcase } from './Showcase';
 import { HowItWorksSection } from './HowItWorks';
 import { WhatsInsideSection } from './WhatsInside';
+import { ShippedSection } from './Shipped';
 import { TestimonialsSection } from './Testimonials';
 import { FAQSection } from './FAQ';
 import { ClosingCTASection } from './ClosingCTA';
@@ -103,6 +104,8 @@ export function HomeScreen() {
         <HowItWorksSection />
 
         <WhatsInsideSection />
+
+        <ShippedSection />
 
         <TestimonialsSection />
 

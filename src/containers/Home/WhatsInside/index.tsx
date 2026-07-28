@@ -211,15 +211,15 @@ const s = StyleSheet.create({
   },
   statCell: {
     width: '50%',
-    paddingVertical: 20,
+    paddingVertical: 25,
     paddingHorizontal: 20,
   },
   statValue: {
     fontFamily: F.display900,
-    fontSize: 37,
+    fontSize: 35,
     letterSpacing: -0.3,
     marginBottom: 4,
-    lineHeight: 42
+    lineHeight: 40
   },
   statLabel: {
     fontFamily: F.sans400,

@@ -469,7 +469,7 @@ const s = StyleSheet.create({
     lineHeight: 21,
   },
   suggestionRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: 8,
     flexWrap: 'wrap',
     justifyContent: 'center'
@@ -481,10 +481,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 13,
     borderWidth: 1,
-    minWidth: '45%',
-    maxWidth: '55%',
     flexDirection: 'row',
     alignItems: 'center',
+    width: "100%"
   },
   suggestionIcon: {
     marginBottom: 2,
