@@ -66,6 +66,13 @@ const FEATURES: {
     },
   ];
 
+const STATS: { value: string; label: string }[] = [
+  { value: '10×', label: 'lower cost' },
+  { value: '48h', label: 'to production' },
+  { value: '500+', label: 'businesses shipped' },
+  { value: '100%', label: 'human-reviewed' },
+];
+
 // Same fade recipe as Hero's heading / HowItWorks — one GradientText per line.
 function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
   return (
@@ -111,6 +118,22 @@ export function WhatsInsideSection() {
           </View>
         ))}
       </View>
+
+      <View style={[s.statsCard, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
+        {STATS.map((stat, i) => (
+          <View
+            key={stat.label}
+            style={[
+              s.statCell,
+              i % 2 === 0 && { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: t.agentTabBorder },
+              i < 2 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.agentTabBorder },
+            ]}
+          >
+            <Text style={[s.statValue, { color: t.text }]}>{stat.value}</Text>
+            <Text style={[s.statLabel, { color: t.textSub }]}>{stat.label}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -118,8 +141,8 @@ export function WhatsInsideSection() {
 const s = StyleSheet.create({
   section: {
     paddingHorizontal: 22,
-    paddingTop: 44,
-    paddingBottom: 56,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
 
   eyebrowRow: {
@@ -144,9 +167,9 @@ const s = StyleSheet.create({
   },
   heading: {
     fontFamily: F.display900,
-    fontSize: 30,
+    fontSize: 34,
     letterSpacing: -0.8,
-    lineHeight: 36,
+    lineHeight: 38,
   },
 
   grid: {
@@ -176,5 +199,30 @@ const s = StyleSheet.create({
     fontFamily: F.sans400,
     fontSize: 12.5,
     lineHeight: 18,
+  },
+
+  statsCard: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 30,
+    overflow: 'hidden',
+  },
+  statCell: {
+    width: '50%',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  statValue: {
+    fontFamily: F.display900,
+    fontSize: 37,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+    lineHeight: 42
+  },
+  statLabel: {
+    fontFamily: F.sans400,
+    fontSize: 14,
   },
 });

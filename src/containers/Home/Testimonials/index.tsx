@@ -10,7 +10,7 @@ import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 14;
-const CARD_W = SCREEN_W * 0.8;
+const CARD_W = SCREEN_W * 0.75;
 
 const TESTIMONIALS: {
   quote: string;
@@ -127,8 +127,8 @@ export function TestimonialsSection() {
 
 const s = StyleSheet.create({
   section: {
-    paddingTop: 44,
-    paddingBottom: 56,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
   inset: {
     paddingHorizontal: 22,
@@ -156,9 +156,9 @@ const s = StyleSheet.create({
   },
   heading: {
     fontFamily: F.display900,
-    fontSize: 30,
+    fontSize: 34,
     letterSpacing: -0.8,
-    lineHeight: 36,
+    lineHeight: 38,
   },
 
   carousel: {
@@ -168,7 +168,8 @@ const s = StyleSheet.create({
   card: {
     borderRadius: 18,
     borderWidth: 1,
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 25,
   },
   stars: {
     flexDirection: 'row',
@@ -177,14 +178,15 @@ const s = StyleSheet.create({
   },
   quote: {
     fontFamily: F.sans500,
-    fontSize: 14.5,
-    lineHeight: 22,
-    marginBottom: 20,
+    fontSize: 15,
+    lineHeight: 24,
+    marginBottom: 30,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    marginTop: "auto"
   },
   avatar: {
     width: 40,

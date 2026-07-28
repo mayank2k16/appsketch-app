@@ -267,8 +267,8 @@ export function HowItWorksSection() {
 const s = StyleSheet.create({
   section: {
     paddingHorizontal: 22,
-    paddingTop: 44,
-    paddingBottom: 56,
+    paddingTop: 25,
+    paddingBottom: 30,
   },
 
   eyebrowRow: {
@@ -345,6 +345,7 @@ const s = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
+    minHeight: 70
   },
   promptText: {
     fontFamily: F.sans500,

@@ -15,6 +15,8 @@ import { Showcase } from './Showcase';
 import { HowItWorksSection } from './HowItWorks';
 import { WhatsInsideSection } from './WhatsInside';
 import { TestimonialsSection } from './Testimonials';
+import { FAQSection } from './FAQ';
+import { ClosingCTASection } from './ClosingCTA';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -103,6 +105,13 @@ export function HomeScreen() {
         <WhatsInsideSection />
 
         <TestimonialsSection />
+
+        <FAQSection />
+
+        <ClosingCTASection
+          onStartPress={handleStartPress}
+          onLearnPress={handleLearnPress}
+        />
 
         {/* ── Future home sections slot in here ── */}
       </ScrollView>
