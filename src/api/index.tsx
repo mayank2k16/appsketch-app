@@ -2,6 +2,7 @@ export * from './ai-assistant';
 export * from './analytics';
 export * from './auth';
 export * from './bookings';
+export * from './cart';
 export * from './categories';
 export * from './collections';
 export * from './common';

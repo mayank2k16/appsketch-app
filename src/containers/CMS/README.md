@@ -22,6 +22,7 @@ Ported so far (top-level `CMS_TABS` entries in `tabs.tsx`, each with its own `sr
 | `Collections` | `Collections/` | `collections` |
 | `Stories` | `Stories/` | `stories` |
 | `ShortVideos` | `ShortVideos/` | `short-videos` |
+| `AbandonedCarts` + `CheckoutOrders` (merged) | `Cart/` (2 sub-tabs) | `cart` |
 | `DiscountCodes` | `Discounts/` | `discounts` |
 | `Notifications` | `Notifications/` (8 sub-tabs) | `notifications` |
 | `Payments` | `Payments/` (3 sub-tabs) | `payments` |
