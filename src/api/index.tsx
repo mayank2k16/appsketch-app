@@ -20,6 +20,7 @@ export * from './product-requests';
 export * from './products';
 export * from './profile';
 export * from './referrals';
+export * from './short-videos';
 export * from './stock-history';
 export * from './stories';
 export * from './studio';

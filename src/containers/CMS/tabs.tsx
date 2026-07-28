@@ -16,6 +16,7 @@ import { PaymentsScreen } from './Payments';
 import { ProductRequestsScreen } from './ProductRequests';
 import { ProductsScreen } from './Products';
 import { ReferAndEarnScreen } from './ReferAndEarn';
+import { ShortVideosScreen } from './ShortVideos';
 import { StockHistoryScreen } from './StockHistory';
 import { StoriesScreen } from './Stories';
 import { SupportScreen } from './Support';
@@ -51,6 +52,7 @@ export type CmsTabKey =
   | 'products'
   | 'productRequests'
   | 'referAndEarn'
+  | 'shortVideos'
   | 'users'
   | 'stockHistory'
   | 'aiAssistant'
@@ -81,6 +83,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
   { key: 'productRequests', label: 'Product Requests', icon: 'checkmark-done-outline', Component: ProductRequestsScreen },
   { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
+  { key: 'shortVideos', label: 'Short Videos', icon: 'videocam-outline', Component: ShortVideosScreen },
   { key: 'users', label: 'Users', icon: 'people-outline', Component: UsersScreen },
   { key: 'stockHistory', label: 'Stock History', icon: 'time-outline', Component: StockHistoryScreen },
   { key: 'aiAssistant', label: 'AI Assistant', icon: 'sparkles-outline', Component: AiAssistantScreen },
