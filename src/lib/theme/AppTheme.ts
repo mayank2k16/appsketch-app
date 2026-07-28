@@ -302,7 +302,7 @@ export const appTheme = {
 
     // ── Gallery overlay (flat, single-value scrim over the whole grid — no
     // fade/vignette, same opacity everywhere so the dimming reads consistently) ─
-    galleryOverlay: 'rgba(255,255,255,0.75)',
+    galleryOverlay: 'rgba(255,255,255,0.8)',
     galleryOverlayText: '#111111',
     galleryOverlayTextSub: 'rgba(17,17,17,0.62)',
 

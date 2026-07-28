@@ -12,6 +12,12 @@ import { TwinkleDots } from './Hero/TwinkleDots';
 import { GallerySection } from './Gallery';
 import { AgentV2 } from './AgentV2';
 import { Showcase } from './Showcase';
+import { HowItWorksSection } from './HowItWorks';
+import { WhatsInsideSection } from './WhatsInside';
+import { ShippedSection } from './Shipped';
+import { TestimonialsSection } from './Testimonials';
+import { FAQSection } from './FAQ';
+import { ClosingCTASection } from './ClosingCTA';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -94,6 +100,21 @@ export function HomeScreen() {
         />
 
         <Showcase />
+
+        <HowItWorksSection />
+
+        <WhatsInsideSection />
+
+        <ShippedSection />
+
+        <TestimonialsSection />
+
+        <FAQSection />
+
+        <ClosingCTASection
+          onStartPress={handleStartPress}
+          onLearnPress={handleLearnPress}
+        />
 
         {/* ── Future home sections slot in here ── */}
       </ScrollView>
