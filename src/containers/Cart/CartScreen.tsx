@@ -18,13 +18,14 @@ import {
   confirmSubscriptionPaymentFailure,
   confirmSubscriptionPaymentSuccess,
   initiateSubscriptionPayment,
+  isPlanFree,
   sortPlans,
   transformPlan,
   useSubscriptionPlans,
   type TransformedPlan,
 } from '@/api';
 import { purchaseDomain, useSearchDomains, type DomainContact, type DomainSearchResult } from '@/api/domains';
-import { updateSubscription, useAuth } from '@/hooks/useAuth';
+import { getUserSubscription, updateSubscription, useAuth } from '@/hooks/useAuth';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { formatINR } from '@/lib/domain-pricing';
 import type { CheckoutV2Response } from '@/lib/payments/payment-gateway';
@@ -71,11 +72,23 @@ export function CartScreen() {
   const user = useAuth.use.user();
   const attachedTenant = useStudio.use.attachedTenant();
 
+  const subscription = getUserSubscription(user);
+
   const { data: plansData, isLoading: plansLoading } = useSubscriptionPlans();
   const plans = React.useMemo(() => sortPlans((plansData ?? []).map(transformPlan)), [plansData]);
-  // No `tier` param (e.g. "Add domain" from Settings) → default to the
-  // cheapest plan, same fallback Cart.jsx uses when it has no router-state plan.
-  const plan: TransformedPlan | undefined = tier ? plans.find((p) => p.tier === tier) : plans[0];
+  const ownedPlan = subscription?.active
+    ? plans.find((p) => p.tier?.toLowerCase() === subscription.plan?.tier?.toLowerCase())
+    : undefined;
+  // No `tier` param (e.g. "Add domain" from Settings) + already on a paid
+  // plan → they're here for the domain only, no plan shown or charged.
+  // A user with no subscription (or only the free tier) still needs to pick
+  // one, same fallback Cart.jsx uses when it has no router-state plan.
+  const domainOnlyCheckout = !tier && !!ownedPlan && !isPlanFree(ownedPlan);
+  const plan: TransformedPlan | undefined = tier
+    ? plans.find((p) => p.tier === tier)
+    : domainOnlyCheckout
+      ? undefined
+      : plans[0];
 
   const [domainQuery, setDomainQuery] = React.useState('');
   const debouncedQuery = useDebouncedValue(domainQuery, 400);
@@ -107,9 +120,24 @@ export function CartScreen() {
   const domainAmount = selectedDomain ? selectedYearPrice : 0;
   const subtotal = planAmount + domainAmount;
 
+  // initiate-payment always needs *a* subscription_id. For domain-only
+  // checkout there's no `plan` to show/charge, so this falls back to the
+  // pricing option for the plan the user already owns — the backend
+  // recognizes it's already active and bills the domain amount only.
+  const billingPlan = plan ?? (domainOnlyCheckout ? ownedPlan : undefined);
+  const billingPriceOption = plan
+    ? priceOption
+    : billingPlan
+      ? (billingCycle === 'monthly' ? billingPlan.monthly : billingPlan.yearly)
+      : null;
+
   async function checkout() {
-    if (!plan || !priceOption?.id) {
+    if (!billingPlan || !billingPriceOption?.id) {
       toast.error('Unavailable', 'This plan is not available. Please go back and pick another.');
+      return;
+    }
+    if (domainOnlyCheckout && !selectedDomain) {
+      toast.error('Select a domain', 'Search and select a domain to continue.');
       return;
     }
     if (checkingOut) return;
@@ -118,7 +146,7 @@ export function CartScreen() {
     let userSubscriptionId: number | undefined;
     try {
       const { payment_detail } = await initiateSubscriptionPayment({
-        subscription_id: priceOption.id,
+        subscription_id: billingPriceOption.id,
         ...(selectedDomain
           ? {
             domain: selectedDomain.domain,
@@ -192,10 +220,16 @@ export function CartScreen() {
           }
         }
 
-        updateSubscription({ active: true, plan: { tier: plan.tier, display_name: plan.name } });
+        if (plan) {
+          updateSubscription({ active: true, plan: { tier: plan.tier, display_name: plan.name } });
+        }
         toast.success(
           "You're all set!",
-          selectedDomain ? `Subscribed to ${plan.name} and registered ${selectedDomain.domain}.` : `You're now on the ${plan.name} plan.`
+          selectedDomain
+            ? (plan
+              ? `Subscribed to ${plan.name} and registered ${selectedDomain.domain}.`
+              : `Registered ${selectedDomain.domain}.`)
+            : `You're now on the ${billingPlan.name} plan.`
         );
         router.replace('/studio' as never);
       } else if (result.reason !== 'cancelled') {
@@ -247,42 +281,44 @@ export function CartScreen() {
         >
           {plansLoading ? (
             <CartSkeleton t={t} />
-          ) : !plan ? (
+          ) : !plan && !domainOnlyCheckout ? (
             <Text style={{ color: t.textSub, fontFamily: F.sans500 }}>No plan selected.</Text>
           ) : (
             <>
-              {/* ── Plan summary ── */}
-              <View style={[st.card, { backgroundColor: t.card, borderColor: t.border }]}>
-                <View style={st.rowBetween}>
-                  <Text style={[st.planName, { color: t.text }]}>{plan.name}</Text>
-                  <Text style={[st.amount, { color: t.text }]}>{formatINR(planAmount)}</Text>
-                </View>
-                <Text style={[st.muted, { color: t.textSub }]}>
-                  Billed {billingCycle === 'monthly' ? 'monthly' : 'yearly'}
-                </Text>
-
-                {plan.features.length > 0 && (
-                  <View style={st.featureList}>
-                    {plan.features.slice(0, MAX_VISIBLE_FEATURES).map((feat) => (
-                      <View key={feat} style={st.featureRow}>
-                        <Ionicons name="checkmark-circle" size={13} color={t.accent} />
-                        <Text style={[st.featureText, { color: t.textSub }]} numberOfLines={1}>
-                          {feat}
-                        </Text>
-                      </View>
-                    ))}
-                    {plan.features.length > MAX_VISIBLE_FEATURES && (
-                      <Text style={[st.moreFeatures, { color: t.textSub }]}>
-                        +{plan.features.length - MAX_VISIBLE_FEATURES} more
-                      </Text>
-                    )}
+              {/* ── Plan summary — skipped for domain-only checkout, the user already owns a plan ── */}
+              {plan && (
+                <View style={[st.card, { backgroundColor: t.card, borderColor: t.border }]}>
+                  <View style={st.rowBetween}>
+                    <Text style={[st.planName, { color: t.text }]}>{plan.name}</Text>
+                    <Text style={[st.amount, { color: t.text }]}>{formatINR(planAmount)}</Text>
                   </View>
-                )}
+                  <Text style={[st.muted, { color: t.textSub }]}>
+                    Billed {billingCycle === 'monthly' ? 'monthly' : 'yearly'}
+                  </Text>
 
-                <TouchableOpacity onPress={() => router.push('/pricing' as never)} style={{ marginTop: 10 }}>
-                  <Text style={[st.linkText, { color: t.accent }]}>Change plan</Text>
-                </TouchableOpacity>
-              </View>
+                  {plan.features.length > 0 && (
+                    <View style={st.featureList}>
+                      {plan.features.slice(0, MAX_VISIBLE_FEATURES).map((feat) => (
+                        <View key={feat} style={st.featureRow}>
+                          <Ionicons name="checkmark-circle" size={13} color={t.accent} />
+                          <Text style={[st.featureText, { color: t.textSub }]} numberOfLines={1}>
+                            {feat}
+                          </Text>
+                        </View>
+                      ))}
+                      {plan.features.length > MAX_VISIBLE_FEATURES && (
+                        <Text style={[st.moreFeatures, { color: t.textSub }]}>
+                          +{plan.features.length - MAX_VISIBLE_FEATURES} more
+                        </Text>
+                      )}
+                    </View>
+                  )}
+
+                  <TouchableOpacity onPress={() => router.push('/pricing' as never)} style={{ marginTop: 10 }}>
+                    <Text style={[st.linkText, { color: t.accent }]}>Change plan</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {!showContactForm && (
                 <DomainSearchSection
@@ -294,6 +330,7 @@ export function CartScreen() {
                   selectedYears={selectedYears}
                   onSelect={handleSelectDomain}
                   t={t}
+                  domainOnly={domainOnlyCheckout}
                 />
               )}
 
@@ -318,10 +355,12 @@ export function CartScreen() {
                   <View style={[st.card, { backgroundColor: t.card, borderColor: t.border }]}>
                     <Text style={[st.sectionHeading, { color: t.text }]}>Order summary</Text>
 
-                    <View style={st.rowBetween}>
-                      <Text style={[st.muted, { color: t.textSub }]}>{plan.name}</Text>
-                      <Text style={[st.muted, { color: t.text }]}>{formatINR(planAmount)}</Text>
-                    </View>
+                    {plan && (
+                      <View style={st.rowBetween}>
+                        <Text style={[st.muted, { color: t.textSub }]}>{plan.name}</Text>
+                        <Text style={[st.muted, { color: t.text }]}>{formatINR(planAmount)}</Text>
+                      </View>
+                    )}
 
                     {selectedDomain && (
                       <View style={[st.rowBetween]}>

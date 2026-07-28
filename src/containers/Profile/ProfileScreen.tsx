@@ -245,7 +245,7 @@ export function ProfileScreen() {
                       style={[st.primaryBtn, { backgroundColor: t.accent, marginTop: 16 }]}
                     >
                       <Text style={st.primaryBtnText}>
-                        {subscription?.active ? 'Change Plan' : 'Upgrade Plan'}
+                        {'Upgrade Plan'}
                       </Text>
                     </TouchableOpacity>
                   </GlassCard>
