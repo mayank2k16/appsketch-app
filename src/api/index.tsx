@@ -21,6 +21,7 @@ export * from './products';
 export * from './profile';
 export * from './referrals';
 export * from './stock-history';
+export * from './stories';
 export * from './studio';
 export * from './subscription-plans';
 export * from './support';

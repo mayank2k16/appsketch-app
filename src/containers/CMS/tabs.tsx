@@ -17,6 +17,7 @@ import { ProductRequestsScreen } from './ProductRequests';
 import { ProductsScreen } from './Products';
 import { ReferAndEarnScreen } from './ReferAndEarn';
 import { StockHistoryScreen } from './StockHistory';
+import { StoriesScreen } from './Stories';
 import { SupportScreen } from './Support';
 import { UsersScreen } from './Users';
 import { VendorsScreen } from './Vendors';
@@ -40,6 +41,7 @@ export type CmsTabKey =
   | 'invoices'
   | 'categories'
   | 'collections'
+  | 'stories'
   | 'creditDebitNotes'
   | 'discounts'
   | 'notifications'
@@ -69,6 +71,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'invoices', label: 'Invoices', icon: 'document-text-outline', Component: InvoicesScreen },
   { key: 'categories', label: 'Categories', icon: 'folder-outline', Component: CategoriesScreen },
   { key: 'collections', label: 'Collections', icon: 'albums-outline', Component: CollectionsScreen },
+  { key: 'stories', label: 'Stories', icon: 'book-outline', Component: StoriesScreen },
   { key: 'creditDebitNotes', label: 'Credit/Debit Notes', icon: 'swap-horizontal-outline', Component: CreditDebitNotesScreen },
   { key: 'discounts', label: 'Discount Codes', icon: 'pricetag-outline', Component: DiscountsScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
