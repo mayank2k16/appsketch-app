@@ -14,6 +14,7 @@ import { AgentV2 } from './AgentV2';
 import { Showcase } from './Showcase';
 import { HowItWorksSection } from './HowItWorks';
 import { WhatsInsideSection } from './WhatsInside';
+import { TestimonialsSection } from './Testimonials';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -100,6 +101,8 @@ export function HomeScreen() {
         <HowItWorksSection />
 
         <WhatsInsideSection />
+
+        <TestimonialsSection />
 
         {/* ── Future home sections slot in here ── */}
       </ScrollView>
