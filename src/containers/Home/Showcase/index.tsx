@@ -29,7 +29,9 @@ export function Showcase() {
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
 
   return (
-    <View style={[s.section, { backgroundColor: t.bg }]}>
+    // No section backgroundColor — lets Home's shared TwinkleDots backdrop
+    // show through here too, instead of only behind Hero/AgentV2.
+    <View style={s.section}>
       <Text style={[s.heading, { color: t.text }]}>
         {'A single place to\ncreate and edit images'}
       </Text>

@@ -12,6 +12,7 @@ import { TwinkleDots } from './Hero/TwinkleDots';
 import { GallerySection } from './Gallery';
 import { AgentV2 } from './AgentV2';
 import { Showcase } from './Showcase';
+import { HowItWorksSection } from './HowItWorks';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -94,6 +95,8 @@ export function HomeScreen() {
         />
 
         <Showcase />
+
+        <HowItWorksSection />
 
         {/* ── Future home sections slot in here ── */}
       </ScrollView>
