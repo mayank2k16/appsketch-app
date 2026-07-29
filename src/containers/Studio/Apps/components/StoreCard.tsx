@@ -11,13 +11,15 @@ export function StoreCard({
   loading,
   onViewCms,
   onViewStore,
-  onViewCrm
+  onViewCrm,
+  onViewCustomStore,
 }: {
   tenant: TenantSummary;
   loading: boolean;
   onViewCms: () => void;
   onViewStore: () => void;
   onViewCrm: () => void;
+  onViewCustomStore: () => void;
 }) {
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
@@ -75,6 +77,14 @@ export function StoreCard({
             </>
           )}
         </Pressable>
+
+        <Pressable
+          style={[st.actionBtn, { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder }]}
+          onPress={onViewCustomStore}
+        >
+          <Ionicons name="code-slash-outline" size={14} color={t.text} />
+          <Text style={[st.storeBtnText, { color: t.text }]}>Customise Store</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -107,10 +117,12 @@ const st = StyleSheet.create({
   subtitle: { fontSize: 12, marginTop: 2 },
   actionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   actionBtn: {
-    flex: 1,
+    flexBasis: '47%',
+    flexGrow: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

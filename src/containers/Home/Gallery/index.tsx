@@ -269,10 +269,10 @@ const s = StyleSheet.create({
 
   heading: {
     fontFamily: F.display900,
-    fontSize: 25,
+    fontSize: 28,
     letterSpacing: -0.3,
     textAlign: 'center',
-    lineHeight: 30,
+    lineHeight: 32,
     marginBottom: 11,
   },
 

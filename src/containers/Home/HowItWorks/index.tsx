@@ -205,7 +205,7 @@ export function HowItWorksSection() {
     <View style={s.section}>
       <SectionHeading
         eyebrow="HOW IT WORKS"
-        lines={['AI drafts. Humans', ' perfect.']}
+        lines={['AI drafts. Humans', 'perfect.']}
         t={t}
       />
 

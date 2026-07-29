@@ -83,7 +83,7 @@ export function WhatsInsideSection() {
     <View style={s.section}>
       <SectionHeading
         eyebrow="WHAT'S INSIDE"
-        lines={['AI speed,', 'human craft.']}
+        lines={['AI speed, human', 'craft.']}
         t={t}
       />
 

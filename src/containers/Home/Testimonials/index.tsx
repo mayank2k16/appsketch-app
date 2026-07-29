@@ -190,7 +190,7 @@ const s = StyleSheet.create({
   },
   authorInfo: {
     flexShrink: 1,
-    gap: 3
+    gap: 0
   },
   avatar: {
     width: 40,
@@ -199,7 +199,7 @@ const s = StyleSheet.create({
   },
   authorName: {
     fontFamily: F.sans700,
-    fontSize: 14,
+    fontSize: 14.5,
   },
   authorRole: {
     fontFamily: F.sans400,
@@ -207,11 +207,12 @@ const s = StyleSheet.create({
     marginTop: 1,
   },
   companyTag: {
-    flexShrink: 0,
+    flexShrink: 1,
+    flexGrow: 0,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 5,
-    width: 'max-content',
+    width: 100,
     marginLeft: 45
   },
   companyText: {

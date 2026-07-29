@@ -29,10 +29,9 @@ import Reanimated, {
 
 import { createCoderTenant } from '@/api/coder';
 import { F } from '@/lib/fonts';
+import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
-
-import { useVoiceInput } from './use-voice-input';
 
 const RADIUS = 15;
 const BORDER_W = 2.75;

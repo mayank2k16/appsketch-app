@@ -80,7 +80,7 @@ export function FAQSection() {
         t={t}
       />
 
-      <View>
+      <View style={{ transform: [{ translateY: -15 }] }}>
         {FAQS.map((item, i) => (
           <FAQRow key={item.question} item={item} isLast={i === FAQS.length - 1} t={t} />
         ))}

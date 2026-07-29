@@ -31,7 +31,7 @@ export function SectionHeading({ eyebrow, lines, t, style }: Props) {
             key={i}
             style={s.heading}
             colors={[t.text, t.text, t.heroHeadingFade]}
-            locations={[0, 0.52, 1]}
+            locations={[0, 0.1, 0.8]}
           >
             {line}
           </GradientText>
@@ -46,7 +46,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   eyebrowDot: {
     width: 6,
@@ -64,8 +64,8 @@ const s = StyleSheet.create({
   },
   heading: {
     fontFamily: F.display900,
-    fontSize: 34,
+    fontSize: 32,
     letterSpacing: -0.8,
-    lineHeight: 38,
+    lineHeight: 36,
   },
 });

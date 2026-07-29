@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -9,8 +10,13 @@ import {
   View,
 } from 'react-native';
 
+import { createCoderTenant, type AppTypeKey } from '@/api/coder';
+import { AppTypePills } from '@/components/ui/AppTypePills';
 import { GradientText } from '@/components/ui/GradientText';
+import { PromptComposer } from '@/components/ui/PromptComposer';
 import { F } from '@/lib/fonts';
+import { toast } from '@/lib/toast';
+import { DEFAULT_MODEL, fmtContext, MODELS } from '../AgentV2';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 // Same fade recipe as Hero's own heading — one GradientText per line, over
@@ -153,6 +159,43 @@ export function ClosingCTASection({
 }) {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const router = useRouter();
+
+  const [appType, setAppType] = React.useState<AppTypeKey>('web');
+  const [prompt, setPrompt] = React.useState('');
+  const [model, setModel] = React.useState(DEFAULT_MODEL);
+  const [images, setImages] = React.useState<string[]>([]);
+  const [sending, setSending] = React.useState(false);
+
+  async function handleSend() {
+    const text = prompt.trim();
+    if (!text || sending) return;
+
+    if (appType === 'game') {
+      toast.error('Game builds are coming soon — try Web or Mobile for now.');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const tenant = await createCoderTenant({ title: text.slice(0, 60), appType });
+      router.push({
+        pathname: '/code-editor/chat',
+        params: {
+          tenantId: String(tenant.id),
+          tenantUid: tenant.uuid,
+          appType,
+          userPrompt: text,
+          model,
+          images: JSON.stringify(images),
+        },
+      });
+    } catch {
+      toast.error("Couldn't start your build. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     // No section backgroundColor — same as the other new sections, so the
@@ -169,6 +212,27 @@ export function ClosingCTASection({
       <Text style={[s.subtitle, { color: t.textSub }]}>
         AI drafts it. Our engineers perfect it. You ship.
       </Text>
+
+      <View style={s.typePillRow}>
+        <AppTypePills t={t} value={appType} onChange={setAppType} />
+      </View>
+
+      <View style={s.composerWrap}>
+        <PromptComposer
+          t={t}
+          value={prompt}
+          onChangeText={setPrompt}
+          placeholder="Describe the app you want to build…"
+          images={images}
+          onImagesChange={setImages}
+          models={MODELS}
+          model={model}
+          onModelChange={setModel}
+          formatContext={fmtContext}
+          onSend={handleSend}
+          sending={sending}
+        />
+      </View>
 
       <View style={s.btns}>
         <TouchableOpacity
@@ -210,7 +274,7 @@ const s = StyleSheet.create({
   mockupWrap: {
     width: '100%',
     height: 262,
-    marginBottom: 32,
+    marginBottom: 40,
     alignItems: 'center',
   },
 
@@ -356,6 +420,16 @@ const s = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 30,
+  },
+
+  typePillRow: {
+    width: '100%',
+    marginBottom: 10,
+  },
+
+  composerWrap: {
+    width: '100%',
+    marginBottom: 24,
   },
 
   btns: {

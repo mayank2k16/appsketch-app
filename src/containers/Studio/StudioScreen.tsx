@@ -32,7 +32,7 @@ export function StudioScreen() {
 
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
-      <View style={[st.header, { paddingTop: insets.top + 14, backgroundColor: t.card }]}>
+      <View style={[st.header, { paddingTop: insets.top + 14 }]}>
         <Text style={[st.headerTitle, { color: t.text }]}>Studio</Text>
         <Text style={[st.headerSubtitle, { color: t.textSub }]}>Manage every store on your account</Text>
       </View>

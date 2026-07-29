@@ -122,6 +122,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           imageWidth: 150,
         },
       ],
+      '@react-native-voice/voice',
       'expo-localization',
       'expo-router',
       ['app-icon-badge', appIconBadgeConfig],

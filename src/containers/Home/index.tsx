@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Dimensions, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { Dimensions, StatusBar, StyleSheet, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { DrawerMenu } from '@/components/drawer-menu';
 import { useAppStartup } from '@/lib';
@@ -76,11 +77,13 @@ export function HomeScreen() {
       {/* Header absolutely overlays the hero — rendered after scroll for z-order */}
       <HomeHeader onMenuPress={() => setDrawerOpen(true)} />
 
-      <ScrollView
+      <KeyboardAwareScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.scroll}
         bounces={false}
+        bottomOffset={24}
+        keyboardShouldPersistTaps="handled"
       >
         {/* ── Full-screen hero ── */}
         <HeroBanner
@@ -117,7 +120,7 @@ export function HomeScreen() {
         />
 
         {/* ── Future home sections slot in here ── */}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Sliding drawer */}
       <DrawerMenu
