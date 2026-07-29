@@ -1,3 +1,3 @@
-import AgentScreen from '@/containers/Home/Agent';
+import AgentScreen from '@/containers/Agent';
 
 export default AgentScreen;

@@ -3,8 +3,8 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
-import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
+import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const BADGE_SIZE = 34;
@@ -194,20 +194,6 @@ function StepVisual({ index, t }: { index: number; t: HomeColors }) {
   return <ChipsRow t={t} />;
 }
 
-// Same fade recipe as Hero's heading (white → heroHeadingFade, same stops) —
-// one GradientText per line, matching how Hero splits its two lines.
-function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
-  return (
-    <GradientText
-      style={s.heading}
-      colors={[t.text, t.text, t.heroHeadingFade]}
-      locations={[0, 0.52, 1]}
-    >
-      {text}
-    </GradientText>
-  );
-}
-
 export function HowItWorksSection() {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -217,15 +203,11 @@ export function HowItWorksSection() {
     // (rendered once, fixed, behind the whole Home ScrollView) needs to show
     // through every section, not just the ones that leave it transparent.
     <View style={s.section}>
-      <View style={s.eyebrowRow}>
-        <View style={[s.eyebrowDot, { backgroundColor: t.accent }]} />
-        <Text style={[s.eyebrow, { color: t.tagText }]}>HOW IT WORKS</Text>
-      </View>
-
-      <View style={s.headingWrap}>
-        <HeadingLine text="AI drafts." t={t} />
-        <HeadingLine text="Humans perfect." t={t} />
-      </View>
+      <SectionHeading
+        eyebrow="HOW IT WORKS"
+        lines={['AI drafts. Humans', 'perfect.']}
+        t={t}
+      />
 
       <View>
         {STEPS.map((step, i) => {
@@ -269,33 +251,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 25,
     paddingBottom: 30,
-  },
-
-  eyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  eyebrow: {
-    fontFamily: F.sans700,
-    fontSize: 12,
-    letterSpacing: 1.6,
-  },
-
-  headingWrap: {
-    marginBottom: 30,
-  },
-  heading: {
-    fontFamily: F.display900,
-    fontSize: 30,
-    letterSpacing: -0.8,
-    lineHeight: 36,
   },
 
   stepRow: {

@@ -6,7 +6,7 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["cross-env", "EXPO_NO_DOTENV=1", "expo", "start", "--web", "--port", "8300"],
       "port": 8300,
-      "autoPort": false
+      "autoPort": true
     }
   ]
 }

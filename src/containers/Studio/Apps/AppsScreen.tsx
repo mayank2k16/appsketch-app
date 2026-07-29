@@ -48,6 +48,22 @@ export function AppsScreen() {
 
   }
 
+  // Same `/code-editor/chat` route the hero-prompt flow (AgentScreen) pushes
+  // to when starting a NEW build — the only difference is no `userPrompt` is
+  // passed. `useCoderSocket`'s bootstrap effect resumes the tenant's latest
+  // thread whenever `userPrompt` is absent, so the chat history, file tree,
+  // and preview all restore automatically instead of starting a fresh build.
+  function handleViewCustomStore(tenant: TenantSummary) {
+    router.push({
+      pathname: '/code-editor/chat',
+      params: {
+        tenantId: String(tenant.id),
+        tenantUid: tenant.uuid || String(tenant.id),
+        appType: 'web',
+      },
+    } as never);
+  }
+
   if (tenantsQuery.isLoading) {
     return (
       <View style={st.center}>
@@ -69,6 +85,7 @@ export function AppsScreen() {
           onViewCms={() => handleViewCms(item)}
           onViewStore={() => handleViewStore(item)}
           onViewCrm={(() => handleViewCrm(item))}
+          onViewCustomStore={() => handleViewCustomStore(item)}
         />
       )}
       contentContainerStyle={{ paddingTop: 4, paddingBottom: 24 }}

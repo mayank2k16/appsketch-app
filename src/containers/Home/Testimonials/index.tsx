@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image as ExpoImage } from 'expo-image';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
+import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -13,46 +13,71 @@ const CARD_GAP = 14;
 const CARD_W = SCREEN_W * 0.72;
 
 const TESTIMONIALS: {
+  id: number,
   quote: string;
   name: string;
   role: string;
-  avatarGradient: [string, string];
+  avatar: string;
+  preview: string;
+  companyName: string;
 }[] = [
     {
-      quote:
-        'AppSketch drafted our booking platform overnight and their engineers had it production-ready by the weekend — for a tenth of the agency quote.',
-      name: 'Maya Okafor',
-      role: 'Salon group owner',
-      avatarGradient: ['#8B5CF6', '#6C5CE7'],
+      id: 1,
+      quote: 'Appsketch gives us everything we need to move fast. We don\'t wait on dev. We don\'t compromise on design.',
+      name: 'Nitin Kshatriya',
+      role: 'Head of Design at Vijaya Eats',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+      preview: 'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/ezgif.com-optimize_4.gif',
+      companyName: 'Vijaya Eats'
     },
     {
-      quote:
-        'The proprietary LLM nailed our data model, then a real developer tuned it to our compliance rules. Live in 48 hours.',
-      name: 'Diego Ramos',
-      role: 'Clinic operations',
-      avatarGradient: ['#3B82F6', '#8B5CF6'],
+      id: 2,
+      quote: 'Launching on Appsketch was seamless. Live in no time, no friction.',
+      name: 'Sudhanshu Verma',
+      role: 'Product Lead at Rebuild Clinic',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
+      preview: 'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/ezgif.com-optimize_5.gif',
+      companyName: 'Rebuild Clinic'
     },
     {
-      quote:
-        'We shipped an internal logistics app agencies quoted six figures for. Real engineers, a fraction of the cost.',
-      name: 'Sana Kapoor',
-      role: 'Logistics founder',
-      avatarGradient: ['#22D3EE', '#3B82F6'],
+      id: 3,
+      quote: 'Appsketch gave us full creative freedom. No code limits, no handoffs.',
+      name: 'Ashish Dabariya',
+      role: 'Design Director at Prodigy Pawns',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      preview: 'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/ezgif.com-optimize_6.gif',
+      companyName: 'Prodigy Pawns'
     },
-  ];
 
-// Same fade recipe as Hero's heading / HowItWorks / WhatsInside.
-function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
-  return (
-    <GradientText
-      style={s.heading}
-      colors={[t.text, t.text, t.heroHeadingFade]}
-      locations={[0, 0.52, 1]}
-    >
-      {text}
-    </GradientText>
-  );
-}
+    {
+      id: 4,
+      quote: 'The speed of iteration with Appsketch is unmatched. It feels like designing in the future.',
+      name: 'Himanshi Verma',
+      role: 'Co-founder at Incito India',
+      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop',
+      preview: 'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/ScreenRecording2026-01-13at7.17.03PM-ezgif.com-optimize.gif',
+      companyName: 'Incito India'
+
+    },
+    {
+      id: 5,
+      quote: 'Finally a tool that understands designers. The output is exactly what I envisioned.',
+      name: 'Rashmi Singhal',
+      role: 'Design Systems Lead at RealValue Mart',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+      preview: 'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/ezgif.com-optimize_1.gif',
+      companyName: 'RealValue Mart'
+    },
+    {
+      id: 6,
+      quote: 'The performance is incredible. Lighthouse scores are all green without any extra effort.',
+      name: 'Sarah Johnson',
+      role: 'Engineering Manager at EatCake',
+      avatar: 'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=100&h=100&fit=crop',
+      preview: 'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/ezgif.com-optimize_2.gif',
+      companyName: 'EatCake'
+    }
+  ];
 
 function TestimonialCard({
   item,
@@ -65,28 +90,47 @@ function TestimonialCard({
     <View
       style={[
         s.card,
-        { width: CARD_W, backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
+        { width: CARD_W, borderColor: t.agentTabBorder },
       ]}
     >
+      <ExpoImage
+        source={{ uri: item.preview }}
+        style={s.preview}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={200}
+      />
+
       <View style={s.stars}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <Ionicons key={i} name="star" size={14} color={item.avatarGradient[0]} />
+          <Ionicons key={i} name="star" size={14} color={t.accent} />
         ))}
       </View>
 
       <Text style={[s.quote, { color: t.text }]}>"{item.quote}"</Text>
 
       <View style={s.authorRow}>
-        <LinearGradient
-          colors={item.avatarGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={s.avatar}
-        />
-        <View>
-          <Text style={[s.authorName, { color: t.text }]}>{item.name}</Text>
-          <Text style={[s.authorRole, { color: t.textSub }]}>{item.role}</Text>
+        <View style={s.authorLeft}>
+          <ExpoImage
+            source={{ uri: item.avatar }}
+            style={s.avatar}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+          />
+          <View style={s.authorInfo}>
+            <Text style={[s.authorName, { color: t.text }]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={[s.authorRole, { color: t.textSub }]} numberOfLines={1}>
+              {item.role}
+            </Text>
+          </View>
         </View>
+
+        <Text style={[s.companyText, { color: t.accent }]} numberOfLines={1}>
+          {item.companyName}
+        </Text>
       </View>
     </View>
   );
@@ -100,21 +144,16 @@ export function TestimonialsSection() {
     // No section backgroundColor — same as the other new sections, so the
     // shared TwinkleDots backdrop keeps showing through here too.
     <View style={s.section}>
-      <View style={[s.eyebrowRow, s.inset]}>
-        <View style={[s.eyebrowDot, { backgroundColor: t.accent }]} />
-        <Text style={[s.eyebrow, { color: t.tagText }]}>LOVED BY BUILDERS</Text>
-      </View>
-
-      <View style={[s.headingWrap, s.inset]}>
-        <HeadingLine text="Shipped by real" t={t} />
-        <HeadingLine text="makers." t={t} />
-      </View>
+      <SectionHeading
+        eyebrow="LOVED BY BUILDERS"
+        lines={['Shipped by real', 'makers.']}
+        t={t}
+        style={s.inset}
+      />
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={CARD_W + CARD_GAP}
-        decelerationRate="fast"
         contentContainerStyle={s.carousel}
       >
         {TESTIMONIALS.map((item) => (
@@ -134,33 +173,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 22,
   },
 
-  eyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  eyebrow: {
-    fontFamily: F.sans700,
-    fontSize: 12,
-    letterSpacing: 1.6,
-  },
-
-  headingWrap: {
-    marginBottom: 26,
-  },
-  heading: {
-    fontFamily: F.display900,
-    fontSize: 34,
-    letterSpacing: -0.8,
-    lineHeight: 38,
-  },
-
   carousel: {
     paddingHorizontal: 22,
     gap: CARD_GAP,
@@ -169,7 +181,17 @@ const s = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 18,
-    paddingVertical: 30,
+    paddingTop: 18,
+    paddingBottom: 30,
+    overflow: 'hidden',
+  },
+  preview: {
+    width: CARD_W,
+    height: 200,
+    marginHorizontal: -18,
+    marginTop: -18,
+    marginBottom: 16,
+    backgroundColor: '#00000010',
   },
   stars: {
     flexDirection: 'row',
@@ -180,13 +202,23 @@ const s = StyleSheet.create({
     fontFamily: F.sans500,
     fontSize: 15,
     lineHeight: 24,
-    marginBottom: 30,
+    marginBottom: 20,
   },
   authorRow: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: "auto"
+  },
+  authorLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: "auto"
+    flexShrink: 1,
+  },
+  authorInfo: {
+    flexShrink: 1,
+    gap: 0
   },
   avatar: {
     width: 40,
@@ -195,11 +227,16 @@ const s = StyleSheet.create({
   },
   authorName: {
     fontFamily: F.sans700,
-    fontSize: 14,
+    fontSize: 14.5,
   },
   authorRole: {
     fontFamily: F.sans400,
     fontSize: 12,
     marginTop: 1,
+  },
+  companyText: {
+    fontFamily: F.sans600,
+    fontSize: 13,
+    marginLeft: 50
   },
 });
