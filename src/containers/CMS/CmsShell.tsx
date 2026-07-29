@@ -4,8 +4,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useStudio } from '@/lib/store/studio-store';
+
 import { CmsDrawer } from './CmsDrawer';
-import { CMS_TABS } from './tabs';
+import { getVisibleCmsTabs } from './tabs';
 import type { CmsTabKey } from './tabs';
 import { ThemeSwitcherButton, useCmsTheme } from './theme';
 
@@ -21,10 +23,22 @@ export function CmsShell() {
   const router = useRouter();
   const { colors } = useCmsTheme();
 
+  const tenantType = useStudio.use.attachedTenant()?.tenant_type;
+  const visibleTabs = React.useMemo(() => getVisibleCmsTabs(tenantType), [tenantType]);
+
   const [activeTab, setActiveTab] = React.useState<CmsTabKey>('analytics');
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-  const activeMeta = CMS_TABS.find((t) => t.key === activeTab);
+  // Guards against the default ('analytics') or a stale persisted tab
+  // landing outside the tenant-type-filtered set — falls back to whichever
+  // tab is first for this tenant type instead of rendering a blank shell.
+  React.useEffect(() => {
+    if (visibleTabs.length > 0 && !visibleTabs.some((t) => t.key === activeTab)) {
+      setActiveTab(visibleTabs[0].key);
+    }
+  }, [visibleTabs, activeTab]);
+
+  const activeMeta = visibleTabs.find((t) => t.key === activeTab);
 
   function selectTab(key: CmsTabKey) {
     setActiveTab(key);
@@ -63,7 +77,7 @@ export function CmsShell() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {CMS_TABS.map(
+        {visibleTabs.map(
           (tab) =>
             activeTab === tab.key && (
               <tab.Component key={tab.key} onMenuPress={() => setDrawerOpen(true)} />
@@ -74,7 +88,7 @@ export function CmsShell() {
       <CmsDrawer
         visible={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        tabs={CMS_TABS}
+        tabs={visibleTabs}
         activeTab={activeTab}
         onSelectTab={selectTab}
       />

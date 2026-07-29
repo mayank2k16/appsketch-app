@@ -431,24 +431,30 @@ before reaching for a new package.
   options={{headerShown: false}}/>` entry (already present) — without it, React Navigation's
   default header renders a stray back-bar above `CmsShell`'s own top bar. If you ever add another
   top-level route that CMS-like screens live under, remember this.
-- **No marketplace/multi-tenant support anywhere in this app.** Vite's CMS has real
+- **No marketplace multi-tenant *hierarchy* support anywhere in this app.** Vite's CMS has real
   marketplace-tenant features (a parent tenant approving/managing sub-vendor tenants, per-vendor
   commissions, marketplace-only invoice types, marketplace-scoped category/discount filtering).
   appsketch-app has no such hierarchy today — drop marketplace-only *pieces* while keeping the
   rest of a tab (dropped in `Invoices`, `Categories`, `Discounts`, `Payments`'s Vendor Settlements
-  scope). `Vendors` was the one case where an *entire* tab is marketplace-gated in Vite
-  (`SideBar.jsx`: only rendered when `tenantType === "marketplace"`) — built anyway on explicit
-  request, readying the CMS ahead of marketplace support landing, with the tenant-ID gap above
-  flagged as an explicit follow-up. Default to dropping marketplace-only scope unless told
-  otherwise; when in doubt, ask rather than assume either way.
-- **Same gap, second tenant type: `tenantType === "appointment"`.** Vite also has an
-  appointment/healthcare-booking vertical that swaps `Orders`→`Bookings` and `Products`→`Doctors`
-  (`TenantDashboard.jsx`'s `activeComponent === "Orders" && (tenantType === "appointment" ?
-  <Bookings/> : <Dashboard/>)`, same pattern for `Product`/`Doctors`). appsketch-app can't detect
-  tenant type any more than it can for marketplace. `Bookings` was ported as its own always-visible
-  `CMS_TABS` entry rather than conditionally replacing `Orders` — same "build it standalone, ready
-  ahead of the gating concept landing" call as `Vendors`. `Doctors` (the `Products` replacement)
-  is still unported; apply the same treatment if/when it's picked up.
+  scope). Default to dropping marketplace-only scope unless told otherwise; when in doubt, ask
+  rather than assume either way.
+- **Tenant-type tab gating IS wired up** (this used to be a real gap — it isn't anymore).
+  `account/tenants/` returns a `tenant_type` field per tenant (`TenantSummary.tenant_type`,
+  `src/api/studio/types.ts`); `AppsScreen`'s "View CMS" flow persists the whole tenant object via
+  `useStudio.use.setAttachedTenant()` (`src/lib/store/studio-store.ts`), and `CmsShell` reads it
+  back and filters `CMS_TABS` through `getVisibleCmsTabs(tenantType)` (`tabs.tsx`) before handing
+  the result to both the drawer and the conditional-mount render — mirrors Vite's
+  `SideBar.jsx`/`TenantDashboard.jsx` `tenantType` checks for the tabs actually ported here:
+  `vendors`/`productRequests` show only for `"marketplace"`; `orders`/`bookings` are mutually
+  exclusive on `"appointment"`; `stockHistory`/`creditDebitNotes` hide for
+  `"appointment"`/`"ride-booking"`. `Vendors` and `Bookings` were originally built as
+  always-visible entries *because* tenant type couldn't be detected yet ("ready ahead of the
+  gating concept landing") — that workaround is gone now that it can be. Two things still don't
+  have a ported RN counterpart, so don't gate them even though Vite does: Vite's `"ride-booking"`
+  type replaces the *entire* sidebar with a dedicated RideManager menu (no RN equivalent at all,
+  out of scope); and Vite's `Doctors` (the appointment-tenant `Products` replacement) is unported,
+  so `products` stays visible for every tenant type rather than being hidden with nothing to show
+  instead — apply the same treatment to both if/when they're picked up.
 
 ## Verification
 
