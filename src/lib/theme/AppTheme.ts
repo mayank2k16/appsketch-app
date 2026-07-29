@@ -57,9 +57,20 @@ export const appTheme = {
     heroGhostText: '#FFFFFF',
     heroHeadingFade: '#4A4B50', // "apps." gradient end (white → this)
 
-    // ── Gallery overlay (flat, single-value scrim over the whole grid — no
-    // fade/vignette, same opacity everywhere so the dimming reads consistently) ─
+    // ── Gallery overlay ───────────────────────────────────────────────────────
+    // Scrim behind the gallery's heading/CTA block ONLY — it fades to fully
+    // transparent toward the top and bottom edges so the image masonry stays
+    // undimmed and only the text band is darkened (no hard edge between them).
+    // `galleryOverlay` is the solid mid-value, kept for any flat use.
     galleryOverlay: 'rgba(3,3,8,0.88)',
+    galleryOverlayGradient: [
+      'rgba(3,3,8,0)',
+      'rgba(3,3,8,0.55)',
+      'rgba(3,3,8,0.92)',
+      'rgba(3,3,8,0.92)',
+      'rgba(3,3,8,0.55)',
+      'rgba(3,3,8,0)',
+    ] as string[],
     galleryOverlayText: '#FFFFFF',
     galleryOverlayTextSub: 'rgba(255,255,255,0.72)',
 
@@ -300,9 +311,18 @@ export const appTheme = {
     heroGhostText: '#111111',
     heroHeadingFade: '#B8BAC0', // "apps." gradient end
 
-    // ── Gallery overlay (flat, single-value scrim over the whole grid — no
-    // fade/vignette, same opacity everywhere so the dimming reads consistently) ─
+    // ── Gallery overlay ───────────────────────────────────────────────────────
+    // See the dark-theme note: scrim behind the heading/CTA block only, fading
+    // out toward the top/bottom edges so the masonry itself stays undimmed.
     galleryOverlay: 'rgba(255,255,255,0.8)',
+    galleryOverlayGradient: [
+      'rgba(255,255,255,0)',
+      'rgba(255,255,255,0.5)',
+      'rgba(255,255,255,0.88)',
+      'rgba(255,255,255,0.88)',
+      'rgba(255,255,255,0.5)',
+      'rgba(255,255,255,0)',
+    ] as string[],
     galleryOverlayText: '#111111',
     galleryOverlayTextSub: 'rgba(17,17,17,0.62)',
 

@@ -19,7 +19,10 @@ import {
   Inter_800ExtraBold,
   Inter_900Black,
 } from '@expo-google-fonts/inter';
+import { useColorScheme } from 'nativewind';
+
 import { APIProvider } from '@/api';
+import { appTheme } from '@/lib/theme';
 import { loadSelectedTheme } from '@/lib';
 import { hydrateAuth } from '@/hooks/useAuth';
 import { hydrateStudio } from '@/lib/store/studio-store';
@@ -45,6 +48,9 @@ SplashScreen.setOptions({
 });
 
 function RootLayoutContent() {
+  const { colorScheme } = useColorScheme();
+  const screenBg = appTheme[colorScheme === 'dark' ? 'dark' : 'light'].bg;
+
   const [fontsLoaded] = useFonts({
     // ── Inter (replaces Proxima Nova app-wide, mapped via @/lib/fonts) ──
     Inter_400Regular,
@@ -59,7 +65,16 @@ function RootLayoutContent() {
   if (!fontsLoaded) return null;
 
   return (
-    <Stack initialRouteName="splash">
+    <Stack
+      initialRouteName="splash"
+      // React Navigation renders each screen on an opaque card that defaults to
+      // the nav theme's `background` — which is WHITE here (`useThemeConfig`
+      // returns LightTheme regardless of scheme). Screens paint their own dark
+      // backgrounds, so during a push/replace, and for the frame or two before
+      // a heavy screen's first paint, that white card was visible as a flash.
+      // Pin the card to the same background the screens actually use.
+      screenOptions={{ contentStyle: { backgroundColor: screenBg } }}
+    >
       <Stack.Screen name="splash" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />

@@ -57,7 +57,7 @@ export function Showcase() {
 
 const s = StyleSheet.create({
   section: {
-    paddingHorizontal: 22,
+    paddingHorizontal: 8,
     paddingTop: 44,
     paddingBottom: 56,
   },

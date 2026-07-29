@@ -1,0 +1,105 @@
+{
+  "project_info": {
+    "project_number": "960932374200",
+    "project_id": "appsketch-ai",
+    "storage_bucket": "appsketch-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960932374200:android:ad18605805dab3efa8364d",
+        "android_client_info": {
+          "package_name": "com.appsketch.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl4ybm50KYeshpLs3dLltlWHrIK6_acTo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960932374200:android:b24a5fdf98ddd0f8a8364d",
+        "android_client_info": {
+          "package_name": "com.appsketchai.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl4ybm50KYeshpLs3dLltlWHrIK6_acTo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960932374200:android:ed8c5b1d9ce97775a8364d",
+        "android_client_info": {
+          "package_name": "com.chinesecorner.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl4ybm50KYeshpLs3dLltlWHrIK6_acTo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960932374200:android:44e4e9956eed1581a8364d",
+        "android_client_info": {
+          "package_name": "com.fresheedelivery.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl4ybm50KYeshpLs3dLltlWHrIK6_acTo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960932374200:android:2b99efce2fa1a435a8364d",
+        "android_client_info": {
+          "package_name": "com.fresheefresh.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl4ybm50KYeshpLs3dLltlWHrIK6_acTo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

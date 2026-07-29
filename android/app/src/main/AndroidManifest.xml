@@ -25,6 +25,7 @@
     <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyDoHN41dRDV-s38K6w2GAQJm6TrUwdQry4"/>
     <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notification_icon_color"/>
     <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/notification_icon"/>
+    <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="appsketch_staff_orders_v1" tools:replace="android:value"/>
     <meta-data android:name="expo.modules.notifications.default_notification_color" android:resource="@color/notification_icon_color"/>
     <meta-data android:name="expo.modules.notifications.default_notification_icon" android:resource="@drawable/notification_icon"/>
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="false"/>

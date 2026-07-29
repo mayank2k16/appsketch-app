@@ -3,6 +3,10 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, StatusBar, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 import { DrawerMenu } from '@/components/drawer-menu';
 import { useAppStartup } from '@/lib';
@@ -28,6 +32,15 @@ export function HomeScreen() {
   // the user has any context for why the app wants them was getting ignored
   // more often than granted.
   useAppStartup();
+
+  // Drives the gallery masonry's parallax. `KeyboardAwareScrollView` already
+  // renders a `Reanimated.ScrollView` under the hood and spreads unknown props
+  // (including `onScroll`) straight onto it, so this needs no extra wrapper and
+  // stays on the UI thread — no JS-thread scroll listener.
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
 
   const router = useRouter();
   const { colorScheme } = useColorScheme();
@@ -84,6 +97,7 @@ export function HomeScreen() {
         bounces={false}
         bottomOffset={24}
         keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
       >
         {/* ── Full-screen hero ── */}
         <HeroBanner
@@ -100,6 +114,7 @@ export function HomeScreen() {
         <GallerySection
           onStartPress={handleGalleryStartPress}
           onLearnPress={handleGalleryLearnPress}
+          scrollY={scrollY}
         />
 
         <Showcase />

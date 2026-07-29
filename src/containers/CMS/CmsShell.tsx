@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useCmsTabIntent } from '@/lib/store/cms-tab-intent';
+
 import { CmsDrawer } from './CmsDrawer';
 import { CMS_TABS } from './tabs';
 import type { CmsTabKey } from './tabs';
@@ -23,6 +25,29 @@ export function CmsShell() {
 
   const [activeTab, setActiveTab] = React.useState<CmsTabKey>('analytics');
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  // A notification tap (e.g. "new order received") sets this before routing
+  // here — jump straight to that tab, then clear the intent. Subscribed (not
+  // just read on mount) because CmsShell may already be mounted when a second
+  // notification is tapped — `router.push('/cms')` won't remount it.
+  // The intent store types the key as a plain string (it sits below the CMS
+  // screens in the dependency graph), so validate it against CMS_TABS here
+  // rather than trusting an arbitrary push payload to name a real tab.
+  React.useEffect(() => {
+    const apply = (key: string | null) => {
+      if (key && CMS_TABS.some((t) => t.key === key)) {
+        setActiveTab(key as CmsTabKey);
+      }
+    };
+
+    apply(useCmsTabIntent.getState().consumePendingTab());
+
+    return useCmsTabIntent.subscribe((state) => {
+      if (state.pendingTab) {
+        apply(useCmsTabIntent.getState().consumePendingTab());
+      }
+    });
+  }, []);
 
   const activeMeta = CMS_TABS.find((t) => t.key === activeTab);
 
