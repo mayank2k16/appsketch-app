@@ -39,7 +39,7 @@ const { width: SCREEN_W } = Dimensions.get('window');
 const HEX_W = SCREEN_W / 3.4;
 const HEX_H = HEX_W * (Math.sqrt(3) / 2);
 const COL_STEP = HEX_W * 0.75;
-const ROWS = 3;
+const ROWS = 4;
 const GRID_H = ROWS * HEX_H;
 // Hairline breathing room between neighbours — this is the channel the
 // travelling light runs through.
