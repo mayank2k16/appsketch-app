@@ -3,9 +3,9 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
-import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
-import { homeTheme, type HomeColors } from '../theme/HomeTheme';
+import { SectionHeading } from '../components/SectionHeading';
+import { homeTheme } from '../theme/HomeTheme';
 
 // Explicit pixel width for the 2-col grid — a plain '48%' width resolves to
 // 0 here (same trap MockupCard's grid hit: no ancestor in this chain sets an
@@ -73,19 +73,6 @@ const STATS: { value: string; label: string }[] = [
   { value: '100%', label: 'human-reviewed' },
 ];
 
-// Same fade recipe as Hero's heading / HowItWorks — one GradientText per line.
-function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
-  return (
-    <GradientText
-      style={s.heading}
-      colors={[t.text, t.text, t.heroHeadingFade]}
-      locations={[0, 0.52, 1]}
-    >
-      {text}
-    </GradientText>
-  );
-}
-
 export function WhatsInsideSection() {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -94,15 +81,11 @@ export function WhatsInsideSection() {
     // No section backgroundColor — same as HowItWorks, so the shared
     // TwinkleDots backdrop keeps showing through here too.
     <View style={s.section}>
-      <View style={s.eyebrowRow}>
-        <View style={[s.eyebrowDot, { backgroundColor: t.accent }]} />
-        <Text style={[s.eyebrow, { color: t.tagText }]}>WHAT'S INSIDE</Text>
-      </View>
-
-      <View style={s.headingWrap}>
-        <HeadingLine text="AI speed," t={t} />
-        <HeadingLine text="human craft." t={t} />
-      </View>
+      <SectionHeading
+        eyebrow="WHAT'S INSIDE"
+        lines={['AI speed,', 'human craft.']}
+        t={t}
+      />
 
       <View style={s.grid}>
         {FEATURES.map((f) => (
@@ -143,33 +126,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 20,
     paddingBottom: 30,
-  },
-
-  eyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  eyebrow: {
-    fontFamily: F.sans700,
-    fontSize: 12,
-    letterSpacing: 1.6,
-  },
-
-  headingWrap: {
-    marginBottom: 26,
-  },
-  heading: {
-    fontFamily: F.display900,
-    fontSize: 34,
-    letterSpacing: -0.8,
-    lineHeight: 38,
   },
 
   grid: {

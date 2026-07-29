@@ -4,8 +4,8 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
+import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 // Same trap as WhatsInside's grid — an explicit pixel width, not '48%'.
@@ -79,19 +79,6 @@ const LLM_CHIPS: { name: string; gradient: [string, string]; core?: boolean }[] 
   { name: 'Gemini', gradient: ['#22D3EE', '#8B5CF6'] },
 ];
 
-// Same fade recipe as Hero's heading / the other new Home sections.
-function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
-  return (
-    <GradientText
-      style={s.heading}
-      colors={[t.text, t.text, t.heroHeadingFade]}
-      locations={[0, 0.52, 1]}
-    >
-      {text}
-    </GradientText>
-  );
-}
-
 function ShippedCard({
   item,
   t,
@@ -139,15 +126,12 @@ export function ShippedSection() {
     // No section backgroundColor — same as the other new sections, so the
     // shared TwinkleDots backdrop keeps showing through here too.
     <View style={s.section}>
-      <View style={[s.eyebrowRow, s.inset]}>
-        <View style={[s.eyebrowDot, { backgroundColor: t.accent }]} />
-        <Text style={[s.eyebrow, { color: t.tagText }]}>SHIPPED TO PRODUCTION</Text>
-      </View>
-
-      <View style={[s.headingWrap, s.inset]}>
-        <HeadingLine text="Real apps, running" t={t} />
-        <HeadingLine text="live." t={t} />
-      </View>
+      <SectionHeading
+        eyebrow="SHIPPED TO PRODUCTION"
+        lines={['Real apps, running', 'live.']}
+        t={t}
+        style={s.inset}
+      />
 
       <View style={[s.masonry, s.inset]}>
         {COLUMNS.map((column, ci) => (
@@ -200,33 +184,6 @@ const s = StyleSheet.create({
   },
   inset: {
     paddingHorizontal: 22,
-  },
-
-  eyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  eyebrow: {
-    fontFamily: F.sans700,
-    fontSize: 12,
-    letterSpacing: 1.6,
-  },
-
-  headingWrap: {
-    marginBottom: 26,
-  },
-  heading: {
-    fontFamily: F.display900,
-    fontSize: 34,
-    letterSpacing: -0.8,
-    lineHeight: 38,
   },
 
   masonry: {

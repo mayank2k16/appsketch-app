@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image as ExpoImage } from 'expo-image';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
+import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -16,43 +16,54 @@ const TESTIMONIALS: {
   quote: string;
   name: string;
   role: string;
-  avatarGradient: [string, string];
+  avatar: string;
+  companyName: string;
 }[] = [
     {
-      quote:
-        'AppSketch drafted our booking platform overnight and their engineers had it production-ready by the weekend — for a tenth of the agency quote.',
-      name: 'Maya Okafor',
-      role: 'Salon group owner',
-      avatarGradient: ['#8B5CF6', '#6C5CE7'],
+      quote: 'Appsketch gives us everything we need to move fast. We don\'t wait on dev. We don\'t compromise on design.',
+      name: 'Nitin Kshatriya',
+      role: 'Head of Design at Vijaya Eats',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+      companyName: 'Vijaya Eats'
     },
     {
-      quote:
-        'The proprietary LLM nailed our data model, then a real developer tuned it to our compliance rules. Live in 48 hours.',
-      name: 'Diego Ramos',
-      role: 'Clinic operations',
-      avatarGradient: ['#3B82F6', '#8B5CF6'],
+      quote: 'Launching on Appsketch was seamless. Live in no time, no friction.',
+      name: 'Sudhanshu Verma',
+      role: 'Product Lead at Rebuild Clinic',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
+      companyName: 'Rebuild Clinic'
     },
     {
-      quote:
-        'We shipped an internal logistics app agencies quoted six figures for. Real engineers, a fraction of the cost.',
-      name: 'Sana Kapoor',
-      role: 'Logistics founder',
-      avatarGradient: ['#22D3EE', '#3B82F6'],
+      quote: 'Appsketch gave us full creative freedom. No code limits, no handoffs.',
+      name: 'Ashish Dabariya',
+      role: 'Design Director at Prodigy Pawns',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      companyName: 'Prodigy Pawns'
     },
-  ];
 
-// Same fade recipe as Hero's heading / HowItWorks / WhatsInside.
-function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
-  return (
-    <GradientText
-      style={s.heading}
-      colors={[t.text, t.text, t.heroHeadingFade]}
-      locations={[0, 0.52, 1]}
-    >
-      {text}
-    </GradientText>
-  );
-}
+    {
+      quote: 'The speed of iteration with Appsketch is unmatched. It feels like designing in the future.',
+      name: 'Himanshi Verma',
+      role: 'Co-founder at Incito India',
+      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop',
+      companyName: 'Incito India'
+
+    },
+    {
+      quote: 'Finally a tool that understands designers. The output is exactly what I envisioned.',
+      name: 'Rashmi Singhal',
+      role: 'Design Systems Lead at RealValue Mart',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+      companyName: 'RealValue Mart'
+    },
+    {
+      quote: 'The performance is incredible. Lighthouse scores are all green without any extra effort.',
+      name: 'Sarah Johnson',
+      role: 'Engineering Manager at EatCake',
+      avatar: 'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=100&h=100&fit=crop',
+      companyName: 'EatCake'
+    }
+  ];
 
 function TestimonialCard({
   item,
@@ -70,22 +81,35 @@ function TestimonialCard({
     >
       <View style={s.stars}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <Ionicons key={i} name="star" size={14} color={item.avatarGradient[0]} />
+          <Ionicons key={i} name="star" size={14} color={t.accent} />
         ))}
       </View>
 
       <Text style={[s.quote, { color: t.text }]}>"{item.quote}"</Text>
 
       <View style={s.authorRow}>
-        <LinearGradient
-          colors={item.avatarGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={s.avatar}
-        />
-        <View>
-          <Text style={[s.authorName, { color: t.text }]}>{item.name}</Text>
-          <Text style={[s.authorRole, { color: t.textSub }]}>{item.role}</Text>
+        <View style={s.authorLeft}>
+          <ExpoImage
+            source={{ uri: item.avatar }}
+            style={s.avatar}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+          />
+          <View style={s.authorInfo}>
+            <Text style={[s.authorName, { color: t.text }]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={[s.authorRole, { color: t.textSub }]} numberOfLines={1}>
+              {item.role}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[s.companyTag, { backgroundColor: t.border }]}>
+          <Text style={[s.companyText, { color: t.textSub }]} numberOfLines={1}>
+            {item.companyName}
+          </Text>
         </View>
       </View>
     </View>
@@ -100,15 +124,12 @@ export function TestimonialsSection() {
     // No section backgroundColor — same as the other new sections, so the
     // shared TwinkleDots backdrop keeps showing through here too.
     <View style={s.section}>
-      <View style={[s.eyebrowRow, s.inset]}>
-        <View style={[s.eyebrowDot, { backgroundColor: t.accent }]} />
-        <Text style={[s.eyebrow, { color: t.tagText }]}>LOVED BY BUILDERS</Text>
-      </View>
-
-      <View style={[s.headingWrap, s.inset]}>
-        <HeadingLine text="Shipped by real" t={t} />
-        <HeadingLine text="makers." t={t} />
-      </View>
+      <SectionHeading
+        eyebrow="LOVED BY BUILDERS"
+        lines={['Shipped by real', 'makers.']}
+        t={t}
+        style={s.inset}
+      />
 
       <ScrollView
         horizontal
@@ -134,33 +155,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 22,
   },
 
-  eyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  eyebrow: {
-    fontFamily: F.sans700,
-    fontSize: 12,
-    letterSpacing: 1.6,
-  },
-
-  headingWrap: {
-    marginBottom: 26,
-  },
-  heading: {
-    fontFamily: F.display900,
-    fontSize: 34,
-    letterSpacing: -0.8,
-    lineHeight: 38,
-  },
-
   carousel: {
     paddingHorizontal: 22,
     gap: CARD_GAP,
@@ -183,10 +177,20 @@ const s = StyleSheet.create({
     marginBottom: 30,
   },
   authorRow: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: "auto"
+  },
+  authorLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: "auto"
+    flexShrink: 1,
+  },
+  authorInfo: {
+    flexShrink: 1,
+    gap: 3
   },
   avatar: {
     width: 40,
@@ -201,5 +205,17 @@ const s = StyleSheet.create({
     fontFamily: F.sans400,
     fontSize: 12,
     marginTop: 1,
+  },
+  companyTag: {
+    flexShrink: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 5,
+    width: 'max-content',
+    marginLeft: 45
+  },
+  companyText: {
+    fontFamily: F.sans600,
+    fontSize: 10.5,
   },
 });

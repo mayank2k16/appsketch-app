@@ -3,8 +3,8 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
+import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 // Answer copy isn't visible in the source design (every row renders
@@ -33,19 +33,6 @@ const FAQS: { question: string; answer: string }[] = [
       'Yes. Our engineers integrate with your existing stack, APIs, and workflows during the human-review pass.',
   },
 ];
-
-// Same fade recipe as Hero's heading / the other new Home sections.
-function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
-  return (
-    <GradientText
-      style={s.heading}
-      colors={[t.text, t.text, t.heroHeadingFade]}
-      locations={[0, 0.52, 1]}
-    >
-      {text}
-    </GradientText>
-  );
-}
 
 function FAQRow({
   item,
@@ -87,14 +74,11 @@ export function FAQSection() {
     // No section backgroundColor — same as the other new sections, so the
     // shared TwinkleDots backdrop keeps showing through here too.
     <View style={s.section}>
-      <View style={s.eyebrowRow}>
-        <View style={[s.eyebrowDot, { backgroundColor: t.accent }]} />
-        <Text style={[s.eyebrow, { color: t.tagText }]}>QUESTIONS</Text>
-      </View>
-
-      <View style={s.headingWrap}>
-        <HeadingLine text="Good to know." t={t} />
-      </View>
+      <SectionHeading
+        eyebrow="QUESTIONS"
+        lines={['Good to know.']}
+        t={t}
+      />
 
       <View>
         {FAQS.map((item, i) => (
@@ -112,33 +96,6 @@ const s = StyleSheet.create({
     paddingBottom: 56,
   },
 
-  eyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  eyebrow: {
-    fontFamily: F.sans700,
-    fontSize: 12,
-    letterSpacing: 1.6,
-  },
-
-  headingWrap: {
-    marginBottom: 22,
-  },
-  heading: {
-    fontFamily: F.display900,
-    fontSize: 30,
-    letterSpacing: -0.8,
-    lineHeight: 36,
-  },
-
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
@@ -147,16 +104,16 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    paddingVertical: 20,
+    paddingVertical: 15,
   },
   question: {
     flex: 1,
     fontFamily: F.sans700,
-    fontSize: 15.5,
+    fontSize: 16,
   },
   answer: {
     fontFamily: F.sans400,
-    fontSize: 13.5,
+    fontSize: 14,
     lineHeight: 20,
     marginTop: -8,
     paddingBottom: 20,
