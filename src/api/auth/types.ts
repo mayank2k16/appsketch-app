@@ -40,6 +40,10 @@ export type VerifyOtpRequest = {
   email?: string;
   phone?: string;
   session_id?: string;
+  /** FCM registration token (see `getFCMToken` in `@/lib/notifications`) —
+   * saved server-side as `TenantUser.device_id` so push notifications (e.g.
+   * new-order alerts) can reach this device. */
+  device_id?: string;
 };
 
 export type VerifyOtpResponse = {

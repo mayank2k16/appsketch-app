@@ -5,11 +5,8 @@
 
 import * as React from 'react';
 
+import { getFCMToken, setupNotifications } from '@/lib/notifications';
 import { requestAllPermissions } from '@/lib/permissions';
-import {
-  getExpoPushToken,
-  setupNotifications,
-} from '@/lib/notifications';
 
 let notificationCleanup: (() => void) | null = null;
 
@@ -30,9 +27,9 @@ export function useAppStartup() {
 
         if (mounted) notificationCleanup = cleanup;
 
-        const token = await getExpoPushToken();
+        const token = await getFCMToken();
         if (token && __DEV__) {
-          console.log('[AppStartup] Push token:', token);
+          console.log('[AppStartup] FCM token:', token);
         }
       } catch (err) {
         if (__DEV__) {
