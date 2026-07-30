@@ -61,6 +61,7 @@ type CmsTenantType = 'marketplace' | 'appointment';
 
 /** Plain e-commerce tenant (no `tenant_type`, or an unrecognized value). */
 const DEFAULT_TAB_KEYS: CmsTabKey[] = [
+  'analytics',
   'orders',
   'inventory',
   'invoices',
@@ -73,7 +74,6 @@ const DEFAULT_TAB_KEYS: CmsTabKey[] = [
   'notifications',
   'payments',
   'wallets',
-  'analytics',
   'products',
   'referAndEarn',
   'shortVideos',
@@ -101,6 +101,7 @@ export function getVisibleCmsTabs(tenantType: string | null | undefined): CmsTab
 }
 
 export const CMS_TABS: CmsTab[] = [
+  { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'orders', label: 'Orders', icon: 'receipt-outline', Component: OrdersScreen },
   { key: 'bookings', label: 'Bookings', icon: 'calendar-outline', Component: BookingsScreen },
   { key: 'inventory', label: 'Inventory', icon: 'cube-outline', Component: InventoryScreen },
@@ -114,7 +115,6 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
   { key: 'payments', label: 'Payments', icon: 'card-outline', Component: PaymentsScreen },
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },
-  { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
   { key: 'productRequests', label: 'Product Requests', icon: 'checkmark-done-outline', Component: ProductRequestsScreen },
   { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },

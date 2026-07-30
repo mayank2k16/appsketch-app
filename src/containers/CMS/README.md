@@ -54,7 +54,7 @@ src/containers/CMS/
 ├── CmsDrawer.tsx             # Slide-in tab switcher (top-level tabs only)
 ├── tabs.tsx                  # CMS_TABS registry — THE place to register a new top-level tab
 ├── components/                # Shared CMS UI kit — see "The kit" below
-├── theme/                     # useCmsTheme(), 5 switchable palettes, typography scale
+├── theme/                     # useCmsTheme(), 27 switchable palettes (each light+dark), typography scale
 ├── Orders/                    # A flat top-level tab: Screen + components/ + utils.ts
 ├── Inventory/                 # A flat top-level tab: Screen + components/ + index.tsx barrel
 ├── Notifications/              # A top-level tab that is ITSELF a nested shell — see below
@@ -161,8 +161,9 @@ NativeWind `font-inter` class, but `Inter` is never actually loaded as a font as
 this app (only ProximaNova is, via `useFonts()` in `src/app/_layout.tsx`) — so building CMS forms
 from those components means CMS's font rendering depends on an accident of platform font-fallback
 behavior instead of being intentional. The kit is plain `StyleSheet`, system font by construction,
-and themed via `useCmsTheme()` so it automatically follows whichever of the 5 CMS palettes
-(Ocean Blue/Slack Classic/Emerald Fresh/Charcoal Gray/Midnight Indigo) is active — `@/components/ui`
+and themed via `useCmsTheme()` so it automatically follows whichever of the CMS palettes
+(`cmsThemeOrder` in `theme/cms-theme.ts` — Ocean Blue, Classic, Emerald Fresh, and ~20 more grouped
+into Classics/Vision assistive/Fun and new/Updated classics) is active — `@/components/ui`
 has no concept of CMS theming at all.
 
 | Component | Use for |
@@ -214,6 +215,18 @@ CMS's theme system is **deliberately separate from the app's global theme** — 
 account/store-picker screen that links into CMS) intentionally uses the app's own brand palette
 instead, since it's part of the main account experience, not the CMS shell. Don't try to unify
 these; it's an intentional split, not an oversight.
+
+**Every CMS palette is light/dark-compatible by construction.** A `CmsThemeMeta` (see
+`theme/cms-theme.ts`) holds `{ light, dark }` — two full `CmsThemeColors` sets — instead of a
+single fixed set. The sidebar/accent colors that make a theme recognizable (e.g. Sea Glass's teal)
+stay identical across both; only the content-pane neutrals (`background`/`surface`/`textPrimary`/
+`textSecondary`/`border`) swap. `useCmsTheme()` picks `.light` or `.dark` off nativewind's
+`useColorScheme()` — the same app-wide light/dark/system setting `useSelectedTheme` writes to — so
+picking a CMS theme never locks the screen into one mode. This mirrors Slack: its sidebar theme
+picker and its light/dark toggle are two independent settings, not one. **To add a new palette**,
+call the `sidebarBrand()` factory in `cms-theme.ts` with just a label/group/sidebar/accent color —
+it derives both variants from the shared `lightBody`/`darkBody` neutrals automatically; only pass
+`lightOverride`/`darkOverride` if the palette needs a bespoke content-pane tint.
 
 ## API layer conventions (`src/api/<domain>/`)
 
