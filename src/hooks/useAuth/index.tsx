@@ -15,6 +15,7 @@ import { create } from 'zustand';
 import { continueAuth, continueGoogle, verifyOtp } from '@/api/auth';
 import type { AuthNextStep, AuthUser, ContinueAuthResponse, UserSubscription, VerifyOtpResponse } from '@/api/auth/types';
 import { Env } from '@env';
+import { getFCMToken } from '@/lib/notifications';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 import { toast } from '@/lib/toast';
 import { createSelectors } from '@/lib/utils';
@@ -294,9 +295,17 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
     }
     setLoading(true);
     try {
+      // Best-effort — a missing token (simulator, permission denied, etc.)
+      // shouldn't block sign-in; the staff member just won't get push alerts.
+      const device_id = (await getFCMToken().catch(() => null)) ?? undefined;
       const payload = authState.email
-        ? { otp: o, email: authState.email }
-        : { otp: o, phone: authState.phone, session_id: authState.sessionId };
+        ? { otp: o, email: authState.email, device_id }
+        : {
+            otp: o,
+            phone: authState.phone,
+            session_id: authState.sessionId,
+            device_id,
+          };
       const data = await verifyOtp(payload);
       signInAfterVerify(data);
       const saved = authState.phone || authState.email || '';

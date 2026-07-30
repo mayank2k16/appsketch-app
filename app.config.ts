@@ -68,6 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: Env.BUNDLE_ID,
+      googleServicesFile: './ios/Zorviaa/GoogleService-Info.plist',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationWhenInUseUsageDescription:
@@ -89,7 +90,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundColor: '#FFFFFF',
       },
       package: Env.PACKAGE,
-      // Add for FCM: googleServicesFile: './google-services.json',
+      googleServicesFile: './android/google-services.json',
       permissions: [
         'ACCESS_COARSE_LOCATION',
         'ACCESS_FINE_LOCATION',
@@ -103,12 +104,25 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundler: 'metro',
     },
     plugins: [
+      '@react-native-firebase/app',
+      '@react-native-firebase/messaging',
       [
         'expo-notifications',
         {
-          icon: './assets/logo.png',
+          // Android requires this to be a plain white silhouette on a
+          // transparent background — the OS re-tints it and ignores color, so
+          // a full-color source (e.g. the app logo) renders as a solid blob in
+          // the status bar. `assets/notification-icon.png` is a pre-converted
+          // silhouette derived from `assets/logo.png` for exactly this reason.
+          icon: './assets/notification-icon.png',
           color: '#ffffff',
-          sounds: [],
+          // Custom notification sound for new-order alerts (staff app), bundled
+          // for both platforms — res/raw on Android (bare resource name
+          // "notification"), app bundle on iOS ("notification.wav"). Must match
+          // STAFF_FCM_ANDROID_SOUND / the Android channel in
+          // src/lib/notifications/setup.ts and the backend's
+          // shop/services/delivery_service.py::STAFF_FCM_ANDROID_SOUND.
+          sounds: ['./assets/sounds/notification.wav'],
         },
       ],
       [

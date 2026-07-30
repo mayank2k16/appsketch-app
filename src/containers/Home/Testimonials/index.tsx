@@ -170,11 +170,11 @@ const s = StyleSheet.create({
     paddingBottom: 40,
   },
   inset: {
-    paddingHorizontal: 22,
+    paddingHorizontal: 8,
   },
 
   carousel: {
-    paddingHorizontal: 22,
+    paddingHorizontal: 8,
     gap: CARD_GAP,
   },
   card: {

@@ -128,9 +128,9 @@ export function FAQSection() {
 
 const s = StyleSheet.create({
   section: {
-    paddingHorizontal: 22,
+    paddingHorizontal: 8,
     paddingTop: 35,
-    paddingBottom: 45,
+    paddingBottom: 22,
   },
 
   rowBorder: {

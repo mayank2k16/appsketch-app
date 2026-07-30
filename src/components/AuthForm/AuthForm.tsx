@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -29,6 +29,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export function AuthForm() {
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = loginTheme[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -38,12 +39,25 @@ export function AuthForm() {
   // pushed `/login` onto the stack leave a back entry — flows that reach
   // login via a `replace` (splash, sign-out, the (app) route guard) have none,
   // so falling back to Home is the correct behaviour there.
+  //
+  // `splash` is never a valid back target: it's a one-shot screen that latches
+  // `navigated` after its first exit, so going back to it leaves the user on a
+  // screen that will never navigate away. Guard against it explicitly rather
+  // than trusting `canGoBack()` alone.
   const goBack = React.useCallback(() => {
-    if (router.canGoBack()) {
+    const state = navigation.getState();
+    const prevRoute = state?.routes?.[state.index - 1]?.name;
+    if (router.canGoBack() && prevRoute && prevRoute !== 'splash') {
       router.back();
     } else {
       router.replace('/home');
     }
+  }, [router, navigation]);
+
+  // After a successful sign-in go straight to Home — a verified user should
+  // land on the app, not be bounced back through the stack.
+  const goHome = React.useCallback(() => {
+    router.replace('/home');
   }, [router]);
 
   const [sheetVisible, setSheetVisible] = React.useState(false);
@@ -137,7 +151,7 @@ export function AuthForm() {
         visible={sheetVisible}
         method={method}
         onClose={() => setSheetVisible(false)}
-        onSuccess={goBack}
+        onSuccess={goHome}
       />
     </View>
   );
