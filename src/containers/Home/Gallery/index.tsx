@@ -272,12 +272,12 @@ const s = StyleSheet.create({
     fontSize: 28,
     letterSpacing: -0.3,
     textAlign: 'center',
-    lineHeight: 32,
-    marginBottom: 11,
+    lineHeight: 31,
+    marginBottom: 20,
   },
 
   subtitle: {
-    fontFamily: F.sans400,
+    fontFamily: F.sans500,
     fontSize: 12.5,
     textAlign: 'center',
     lineHeight: 18,
