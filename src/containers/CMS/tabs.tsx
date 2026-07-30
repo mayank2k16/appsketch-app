@@ -25,17 +25,6 @@ import { UsersScreen } from './Users';
 import { VendorsScreen } from './Vendors';
 import { WalletsScreen } from './Wallets';
 
-/**
- * Data-driven tab registry — the single place to add a new CMS tab. Mirrors
- * the data-driven `SECTIONS` array already used in
- * `src/containers/Studio/StudioScreen.tsx`, in place of Vite's
- * `TenantDashboard.jsx` which instead hand-writes a long chain of
- * `{activeComponent === "X" && <Component/>}` JSX conditionals per tab.
- *
- * Tabs are conditionally *mounted* (only the active one renders, so only its
- * data-fetching effects run) rather than code-split with `React.lazy` — see
- * the CMS shell architecture plan for why.
- */
 export type CmsTabKey =
   | 'orders'
   | 'bookings'
@@ -68,7 +57,51 @@ export type CmsTab = {
   Component: React.ComponentType<{ onMenuPress: () => void }>;
 };
 
+type CmsTenantType = 'marketplace' | 'appointment';
+
+/** Plain e-commerce tenant (no `tenant_type`, or an unrecognized value). */
+const DEFAULT_TAB_KEYS: CmsTabKey[] = [
+  'analytics',
+  'orders',
+  'inventory',
+  'invoices',
+  'categories',
+  'cart',
+  'collections',
+  'stories',
+  'creditDebitNotes',
+  'discounts',
+  'notifications',
+  'payments',
+  'wallets',
+  'products',
+  'referAndEarn',
+  'shortVideos',
+  'users',
+  'stockHistory',
+  'aiAssistant',
+  'support',
+];
+
+const TENANT_TYPE_TAB_KEYS: Record<CmsTenantType, CmsTabKey[]> = {
+  marketplace: [...DEFAULT_TAB_KEYS, 'vendors', 'productRequests'],
+  appointment: [
+    ...DEFAULT_TAB_KEYS.filter((key) => key !== 'orders' && key !== 'stockHistory' && key !== 'creditDebitNotes'),
+    'bookings',
+  ],
+};
+
+export function getVisibleCmsTabs(tenantType: string | null | undefined): CmsTab[] {
+  const allowedKeys = new Set(
+    tenantType && tenantType in TENANT_TYPE_TAB_KEYS
+      ? TENANT_TYPE_TAB_KEYS[tenantType as CmsTenantType]
+      : DEFAULT_TAB_KEYS
+  );
+  return CMS_TABS.filter((tab) => allowedKeys.has(tab.key));
+}
+
 export const CMS_TABS: CmsTab[] = [
+  { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'orders', label: 'Orders', icon: 'receipt-outline', Component: OrdersScreen },
   { key: 'bookings', label: 'Bookings', icon: 'calendar-outline', Component: BookingsScreen },
   { key: 'inventory', label: 'Inventory', icon: 'cube-outline', Component: InventoryScreen },
@@ -82,7 +115,6 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
   { key: 'payments', label: 'Payments', icon: 'card-outline', Component: PaymentsScreen },
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },
-  { key: 'analytics', label: 'Analytics', icon: 'analytics-outline', Component: AnalyticsScreen },
   { key: 'products', label: 'Products', icon: 'pricetags-outline', Component: ProductsScreen },
   { key: 'productRequests', label: 'Product Requests', icon: 'checkmark-done-outline', Component: ProductRequestsScreen },
   { key: 'referAndEarn', label: 'Refer & Earn', icon: 'gift-outline', Component: ReferAndEarnScreen },
@@ -93,3 +125,18 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'vendors', label: 'Vendors', icon: 'people-circle-outline', Component: VendorsScreen },
   { key: 'support', label: 'Support', icon: 'chatbubbles-outline', Component: SupportScreen },
 ];
+
+if (__DEV__) {
+  const coveredKeys = new Set<CmsTabKey>([
+    ...DEFAULT_TAB_KEYS,
+    ...TENANT_TYPE_TAB_KEYS.marketplace,
+    ...TENANT_TYPE_TAB_KEYS.appointment,
+  ]);
+  const uncoveredKeys = CMS_TABS.map((tab) => tab.key).filter((key) => !coveredKeys.has(key));
+  if (uncoveredKeys.length > 0) {
+    console.warn(
+      `[CMS] tabs.tsx: tab(s) not in DEFAULT_TAB_KEYS or any TENANT_TYPE_TAB_KEYS entry — ` +
+      `they will never render for any tenant type: ${uncoveredKeys.join(', ')}`
+    );
+  }
+}

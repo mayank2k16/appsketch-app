@@ -4,10 +4,11 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useStudio } from '@/lib/store/studio-store';
 import { useCmsTabIntent } from '@/lib/store/cms-tab-intent';
 
 import { CmsDrawer } from './CmsDrawer';
-import { CMS_TABS } from './tabs';
+import { getVisibleCmsTabs } from './tabs';
 import type { CmsTabKey } from './tabs';
 import { ThemeSwitcherButton, useCmsTheme } from './theme';
 
@@ -23,9 +24,19 @@ export function CmsShell() {
   const router = useRouter();
   const { colors } = useCmsTheme();
 
+  const tenantType = useStudio.use.attachedTenant()?.tenant_type;
+  const visibleTabs = React.useMemo(() => getVisibleCmsTabs(tenantType), [tenantType]);
+
   const [activeTab, setActiveTab] = React.useState<CmsTabKey>('analytics');
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    if (visibleTabs.length > 0 && !visibleTabs.some((t) => t.key === activeTab)) {
+      setActiveTab(visibleTabs[0].key);
+    }
+  }, [visibleTabs, activeTab]);
+
+  const activeMeta = visibleTabs.find((t) => t.key === activeTab);
   // A notification tap (e.g. "new order received") sets this before routing
   // here — jump straight to that tab, then clear the intent. Subscribed (not
   // just read on mount) because CmsShell may already be mounted when a second
@@ -35,7 +46,7 @@ export function CmsShell() {
   // rather than trusting an arbitrary push payload to name a real tab.
   React.useEffect(() => {
     const apply = (key: string | null) => {
-      if (key && CMS_TABS.some((t) => t.key === key)) {
+      if (key && visibleTabs.some((t) => t.key === key)) {
         setActiveTab(key as CmsTabKey);
       }
     };
@@ -49,7 +60,6 @@ export function CmsShell() {
     });
   }, []);
 
-  const activeMeta = CMS_TABS.find((t) => t.key === activeTab);
 
   function selectTab(key: CmsTabKey) {
     setActiveTab(key);
@@ -88,7 +98,7 @@ export function CmsShell() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {CMS_TABS.map(
+        {visibleTabs.map(
           (tab) =>
             activeTab === tab.key && (
               <tab.Component key={tab.key} onMenuPress={() => setDrawerOpen(true)} />
@@ -99,7 +109,7 @@ export function CmsShell() {
       <CmsDrawer
         visible={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        tabs={CMS_TABS}
+        tabs={visibleTabs}
         activeTab={activeTab}
         onSelectTab={selectTab}
       />

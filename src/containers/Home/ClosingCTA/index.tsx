@@ -579,7 +579,8 @@ const s = StyleSheet.create({
 
   typePillRow: {
     width: '100%',
-    marginBottom: 10,
+    marginTop: 5,
+    marginBottom: 15,
   },
 
   composerWrap: {

@@ -54,7 +54,7 @@ src/containers/CMS/
 ├── CmsDrawer.tsx             # Slide-in tab switcher (top-level tabs only)
 ├── tabs.tsx                  # CMS_TABS registry — THE place to register a new top-level tab
 ├── components/                # Shared CMS UI kit — see "The kit" below
-├── theme/                     # useCmsTheme(), 5 switchable palettes, typography scale
+├── theme/                     # useCmsTheme(), 27 switchable palettes (each light+dark), typography scale
 ├── Orders/                    # A flat top-level tab: Screen + components/ + utils.ts
 ├── Inventory/                 # A flat top-level tab: Screen + components/ + index.tsx barrel
 ├── Notifications/              # A top-level tab that is ITSELF a nested shell — see below
@@ -161,8 +161,9 @@ NativeWind `font-inter` class, but `Inter` is never actually loaded as a font as
 this app (only ProximaNova is, via `useFonts()` in `src/app/_layout.tsx`) — so building CMS forms
 from those components means CMS's font rendering depends on an accident of platform font-fallback
 behavior instead of being intentional. The kit is plain `StyleSheet`, system font by construction,
-and themed via `useCmsTheme()` so it automatically follows whichever of the 5 CMS palettes
-(Ocean Blue/Slack Classic/Emerald Fresh/Charcoal Gray/Midnight Indigo) is active — `@/components/ui`
+and themed via `useCmsTheme()` so it automatically follows whichever of the CMS palettes
+(`cmsThemeOrder` in `theme/cms-theme.ts` — Ocean Blue, Classic, Emerald Fresh, and ~20 more grouped
+into Classics/Vision assistive/Fun and new/Updated classics) is active — `@/components/ui`
 has no concept of CMS theming at all.
 
 | Component | Use for |
@@ -214,6 +215,18 @@ CMS's theme system is **deliberately separate from the app's global theme** — 
 account/store-picker screen that links into CMS) intentionally uses the app's own brand palette
 instead, since it's part of the main account experience, not the CMS shell. Don't try to unify
 these; it's an intentional split, not an oversight.
+
+**Every CMS palette is light/dark-compatible by construction.** A `CmsThemeMeta` (see
+`theme/cms-theme.ts`) holds `{ light, dark }` — two full `CmsThemeColors` sets — instead of a
+single fixed set. The sidebar/accent colors that make a theme recognizable (e.g. Sea Glass's teal)
+stay identical across both; only the content-pane neutrals (`background`/`surface`/`textPrimary`/
+`textSecondary`/`border`) swap. `useCmsTheme()` picks `.light` or `.dark` off nativewind's
+`useColorScheme()` — the same app-wide light/dark/system setting `useSelectedTheme` writes to — so
+picking a CMS theme never locks the screen into one mode. This mirrors Slack: its sidebar theme
+picker and its light/dark toggle are two independent settings, not one. **To add a new palette**,
+call the `sidebarBrand()` factory in `cms-theme.ts` with just a label/group/sidebar/accent color —
+it derives both variants from the shared `lightBody`/`darkBody` neutrals automatically; only pass
+`lightOverride`/`darkOverride` if the palette needs a bespoke content-pane tint.
 
 ## API layer conventions (`src/api/<domain>/`)
 
@@ -431,24 +444,30 @@ before reaching for a new package.
   options={{headerShown: false}}/>` entry (already present) — without it, React Navigation's
   default header renders a stray back-bar above `CmsShell`'s own top bar. If you ever add another
   top-level route that CMS-like screens live under, remember this.
-- **No marketplace/multi-tenant support anywhere in this app.** Vite's CMS has real
+- **No marketplace multi-tenant *hierarchy* support anywhere in this app.** Vite's CMS has real
   marketplace-tenant features (a parent tenant approving/managing sub-vendor tenants, per-vendor
   commissions, marketplace-only invoice types, marketplace-scoped category/discount filtering).
   appsketch-app has no such hierarchy today — drop marketplace-only *pieces* while keeping the
   rest of a tab (dropped in `Invoices`, `Categories`, `Discounts`, `Payments`'s Vendor Settlements
-  scope). `Vendors` was the one case where an *entire* tab is marketplace-gated in Vite
-  (`SideBar.jsx`: only rendered when `tenantType === "marketplace"`) — built anyway on explicit
-  request, readying the CMS ahead of marketplace support landing, with the tenant-ID gap above
-  flagged as an explicit follow-up. Default to dropping marketplace-only scope unless told
-  otherwise; when in doubt, ask rather than assume either way.
-- **Same gap, second tenant type: `tenantType === "appointment"`.** Vite also has an
-  appointment/healthcare-booking vertical that swaps `Orders`→`Bookings` and `Products`→`Doctors`
-  (`TenantDashboard.jsx`'s `activeComponent === "Orders" && (tenantType === "appointment" ?
-  <Bookings/> : <Dashboard/>)`, same pattern for `Product`/`Doctors`). appsketch-app can't detect
-  tenant type any more than it can for marketplace. `Bookings` was ported as its own always-visible
-  `CMS_TABS` entry rather than conditionally replacing `Orders` — same "build it standalone, ready
-  ahead of the gating concept landing" call as `Vendors`. `Doctors` (the `Products` replacement)
-  is still unported; apply the same treatment if/when it's picked up.
+  scope). Default to dropping marketplace-only scope unless told otherwise; when in doubt, ask
+  rather than assume either way.
+- **Tenant-type tab gating IS wired up** (this used to be a real gap — it isn't anymore).
+  `account/tenants/` returns a `tenant_type` field per tenant (`TenantSummary.tenant_type`,
+  `src/api/studio/types.ts`); `AppsScreen`'s "View CMS" flow persists the whole tenant object via
+  `useStudio.use.setAttachedTenant()` (`src/lib/store/studio-store.ts`), and `CmsShell` reads it
+  back and filters `CMS_TABS` through `getVisibleCmsTabs(tenantType)` (`tabs.tsx`) before handing
+  the result to both the drawer and the conditional-mount render — mirrors Vite's
+  `SideBar.jsx`/`TenantDashboard.jsx` `tenantType` checks for the tabs actually ported here:
+  `vendors`/`productRequests` show only for `"marketplace"`; `orders`/`bookings` are mutually
+  exclusive on `"appointment"`; `stockHistory`/`creditDebitNotes` hide for
+  `"appointment"`/`"ride-booking"`. `Vendors` and `Bookings` were originally built as
+  always-visible entries *because* tenant type couldn't be detected yet ("ready ahead of the
+  gating concept landing") — that workaround is gone now that it can be. Two things still don't
+  have a ported RN counterpart, so don't gate them even though Vite does: Vite's `"ride-booking"`
+  type replaces the *entire* sidebar with a dedicated RideManager menu (no RN equivalent at all,
+  out of scope); and Vite's `Doctors` (the appointment-tenant `Products` replacement) is unported,
+  so `products` stays visible for every tenant type rather than being hidden with nothing to show
+  instead — apply the same treatment to both if/when they're picked up.
 
 ## Verification
 

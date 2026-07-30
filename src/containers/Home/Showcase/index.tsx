@@ -35,7 +35,6 @@ export function Showcase() {
       <Text style={[s.heading, { color: t.text }]}>
         {'A single place to\ncreate and edit images'}
       </Text>
-
       <View style={s.features}>
         {FEATURES.map((f) => (
           <View key={f.title} style={s.featureRow}>

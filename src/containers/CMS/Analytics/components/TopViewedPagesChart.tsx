@@ -11,6 +11,8 @@ import { toNumber } from '../utils';
 type Props = { colors: CmsThemeColors; pathData: VisitorPath[] | undefined };
 
 export function TopViewedPagesChart({ colors, pathData }: Props) {
+  const [chartWidth, setChartWidth] = React.useState(0);
+
   const ranked = React.useMemo(() => {
     return (pathData ?? [])
       .map((p) => ({ path: p.path || '/', views: toNumber(p.page_views) }))
@@ -32,22 +34,28 @@ export function TopViewedPagesChart({ colors, pathData }: Props) {
         </View>
       ) : (
         <>
-          <View style={st.chartWrap}>
-            <BarChart
-              data={barData}
-              frontColor={colors.accent}
-              barBorderRadius={6}
-              barWidth={22}
-              spacing={18}
-              hideRules
-              isAnimated
-              yAxisColor="transparent"
-              xAxisColor={colors.border}
-              xAxisLabelTextStyle={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}
-              yAxisTextStyle={{ color: colors.textSecondary, fontSize: 10 }}
-              noOfSections={4}
-              height={160}
-            />
+          <View
+            style={st.chartWrap}
+            onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}
+          >
+            {chartWidth > 0 && (
+              <BarChart
+                data={barData}
+                frontColor={colors.accent}
+                barBorderRadius={6}
+                hideRules
+                isAnimated
+                yAxisColor="transparent"
+                xAxisColor={colors.border}
+                xAxisLabelTextStyle={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}
+                yAxisTextStyle={{ color: colors.textSecondary, fontSize: 10 }}
+                noOfSections={4}
+                height={160}
+                adjustToWidth
+                parentWidth={chartWidth}
+                disableScroll
+              />
+            )}
           </View>
 
           <View style={st.list}>

@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import type { SalesRangeValue } from '@/api/analytics';
 import { useSalesAnalytics } from '@/api/analytics';
 
 import { CmsSelect } from '../components';
 import { useCmsTheme } from '../theme';
+import { AnalyticsSkeleton } from './components/AnalyticsSkeleton';
 import { DonutChartCard } from './components/DonutChartCard';
 import { RevenueAreaChart } from './components/RevenueAreaChart';
 import { StatCard } from './components/StatCard';
@@ -50,14 +51,6 @@ export function AnalyticsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
     [summary]
   );
 
-  if (analyticsQuery.isLoading) {
-    return (
-      <View style={st.center}>
-        <Text style={{ color: colors.textSecondary }}>Loading analytics…</Text>
-      </View>
-    );
-  }
-
   return (
     <ScrollView
       style={[st.root, { backgroundColor: colors.background }]}
@@ -71,69 +64,74 @@ export function AnalyticsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
         onSelect={(v) => setRange(v as SalesRangeValue)}
       />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.statScroll}>
-        <StatCard
-          colors={colors}
-          icon="bag-handle-outline"
-          title="Total Income"
-          rawValue={salesChange.current}
-          formatValue={(v) => inr(v)}
-          percentage={Number(salesChange.percentage.toFixed(1))}
-          isPositive
-          meta={metaText}
-        />
-        <StatCard
-          colors={colors}
-          icon="people-outline"
-          title="Total Views"
-          rawValue={toNumber(summary?.visitor_stats?.total_unique_visitors)}
-          formatValue={(v) => Math.round(v).toLocaleString('en-IN')}
-          percentage={12.5}
-          isPositive
-          meta={metaText}
-        />
-        <StatCard
-          colors={colors}
-          icon="refresh-outline"
-          title="Refund Rate"
-          rawValue={0}
-          formatValue={(v) => v.toFixed(1)}
-          percentage={0}
-          isPositive={false}
-          meta={metaText}
-        />
-      </ScrollView>
+      {analyticsQuery.isLoading ? (
+        <AnalyticsSkeleton colors={colors} />
+      ) : (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.statScroll}>
+            <StatCard
+              colors={colors}
+              icon="bag-handle-outline"
+              title="Total Income"
+              rawValue={salesChange.current}
+              formatValue={(v) => inr(v)}
+              percentage={Number(salesChange.percentage.toFixed(1))}
+              isPositive
+              meta={metaText}
+            />
+            <StatCard
+              colors={colors}
+              icon="people-outline"
+              title="Total Views"
+              rawValue={toNumber(summary?.visitor_stats?.total_unique_visitors)}
+              formatValue={(v) => Math.round(v).toLocaleString('en-IN')}
+              percentage={12.5}
+              isPositive
+              meta={metaText}
+            />
+            <StatCard
+              colors={colors}
+              icon="refresh-outline"
+              title="Refund Rate"
+              rawValue={0}
+              formatValue={(v) => v.toFixed(1)}
+              percentage={0}
+              isPositive={false}
+              meta={metaText}
+            />
+          </ScrollView>
 
-      <RevenueAreaChart colors={colors} salesData={analyticsQuery.data?.orders_data} />
+          <RevenueAreaChart colors={colors} salesData={analyticsQuery.data?.orders_data} />
 
-      <DonutChartCard
-        colors={colors}
-        title="Traffic Sources"
-        data={trafficData}
-        emptyLabel="No traffic data available."
-        showCenterTotal
-        centerUnitLabel="Views"
-      />
+          <DonutChartCard
+            colors={colors}
+            title="Traffic Sources"
+            data={trafficData}
+            emptyLabel="No traffic data available."
+            showCenterTotal
+            centerUnitLabel="Views"
+          />
 
-      <DonutChartCard
-        colors={colors}
-        title="Top Categories"
-        data={categoriesData}
-        emptyLabel="No category sales in this period."
-      />
+          <DonutChartCard
+            colors={colors}
+            title="Top Categories"
+            data={categoriesData}
+            emptyLabel="No category sales in this period."
+          />
 
-      <TopProductsCard colors={colors} productsData={summary?.top_selling_products} />
+          <TopProductsCard colors={colors} productsData={summary?.top_selling_products} />
 
-      <TopReferrersCard colors={colors} referrerData={summary?.visitor_stats?.referrers} />
+          <TopReferrersCard colors={colors} referrerData={summary?.visitor_stats?.referrers} />
 
-      <TopViewedPagesChart colors={colors} pathData={summary?.visitor_stats?.paths} />
+          <TopViewedPagesChart colors={colors} pathData={summary?.visitor_stats?.paths} />
+        </>
+      )}
     </ScrollView>
   );
 }
 
 const st = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { padding: 16, gap: 14, paddingBottom: 40 },
+  scroll: { paddingVertical: 18, paddingHorizontal: 12, gap: 14, paddingBottom: 40 },
   statScroll: { gap: 10, paddingBottom: 2 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
 });

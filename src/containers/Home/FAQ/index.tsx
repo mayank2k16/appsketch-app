@@ -138,7 +138,7 @@ const s = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
     paddingVertical: 15,
@@ -146,8 +146,8 @@ const s = StyleSheet.create({
   question: {
     flex: 1,
     fontFamily: F.sans700,
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: 14.5,
+    lineHeight: 20,
   },
   answer: {
     fontFamily: F.sans400,

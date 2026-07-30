@@ -243,14 +243,16 @@ const s = StyleSheet.create({
   composer: {
     borderRadius: 17,
     borderWidth: 1,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingTop: 5,
+    paddingBottom: 10,
     gap: 8,
   },
   input: {
     fontFamily: F.sans400,
     fontSize: 14.5,
     lineHeight: 20,
-    minHeight: 75,
+    minHeight: 80,
     maxHeight: 150,
     paddingHorizontal: 2,
     textAlignVertical: 'top',

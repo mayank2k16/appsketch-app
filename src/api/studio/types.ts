@@ -17,4 +17,12 @@ export type TenantSummary = {
   website_url?: string;
   logo?: string;
   template_configs?: TenantTemplateConfig[];
+  /**
+   * Gates which CMS tabs render — mirrors the Vite reference's
+   * `?type=` query param (`SideBar.jsx`/`TenantDashboard.jsx`). Known values
+   * seen so far: `"marketplace"`, `"appointment"`. Plain e-commerce tenants
+   * omit it or send some other/empty value — treat anything unrecognized as
+   * the default e-commerce case, don't assume it's one of the known ones.
+   */
+  tenant_type?: string;
 };
