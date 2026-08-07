@@ -11,27 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import ReAnimated, {
-  useAnimatedStyle,
-  useSharedValue,
-  type SharedValue,
-} from 'react-native-reanimated';
-
 import { F } from '@/lib/fonts';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
-const { width: W, height: SCREEN_H } = Dimensions.get('window');
-
-// ── Parallax ──────────────────────────────────────────────────────────────────
-// Each column is offset vertically by the page's scroll position, at its own
-// rate, so the columns separate into depth planes as the section travels
-// through the viewport (rather than all moving as one flat sheet).
-//
-// `PARALLAX_BLEED` is how far above the clip window each column's content is
-// pushed. Without it, a column translated DOWN would expose an empty strip at
-// the top: the marquee's own translateY returns to 0 once per loop, putting
-// the first image flush with the top edge. Must be >= the largest |depth|.
-const PARALLAX_BLEED = 220;
+const { width: W } = Dimensions.get('window');
 
 const CDN = 'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/';
 
@@ -40,16 +23,8 @@ const COLUMNS: {
   speed: number;
   heights: number[];
   images: string[];
-  /** Parallax travel in px across the section's pass through the viewport.
-   *  SIGN sets the depth plane: positive lags behind the page (reads as a FAR
-   *  layer), negative runs ahead of it (reads as NEAR). Mixing both is what
-   *  makes the separation obvious — adjacent columns visibly slide against
-   *  each other instead of merely drifting at slightly different rates.
-   *  Magnitude must stay <= PARALLAX_BLEED. */
-  depth: number;
 }[] = [
     {
-      depth: 200,
       direction: 'up', speed: 48, heights: [130, 100, 152, 118, 140],
       images: [
         `${CDN}an-elegant-and-sleek-layout-for-chinese-restaurants.webp`,
@@ -60,7 +35,6 @@ const COLUMNS: {
       ],
     },
     {
-      depth: -70,
       direction: 'down', speed: 56, heights: [108, 150, 120, 132, 100],
       images: [
         `${CDN}compressed_Screenshot_2026-01-12_at_10_10.webp`,
@@ -71,7 +45,6 @@ const COLUMNS: {
       ],
     },
     {
-      depth: 140,
       direction: 'up', speed: 50, heights: [144, 110, 130, 150, 118],
       images: [
         `${CDN}compressed_Screenshot_2026-01-12_at_10_16.webp`,
@@ -82,7 +55,6 @@ const COLUMNS: {
       ],
     },
     {
-      depth: -30,
       direction: 'down', speed: 54, heights: [120, 140, 100, 150, 128],
       images: [
         `${CDN}a-sleek-website-for-beauty-and-skincare.webp`,
@@ -106,10 +78,6 @@ function MarqueeColumn({
   speed,
   heights,
   colWidth,
-  depth,
-  scrollY,
-  sectionY,
-  gridHeight,
   t,
 }: {
   images: string[];
@@ -117,10 +85,6 @@ function MarqueeColumn({
   speed: number;
   heights: number[];
   colWidth: number;
-  depth: number;
-  scrollY: SharedValue<number>;
-  sectionY: SharedValue<number>;
-  gridHeight: number;
   t: HomeColors;
 }) {
   const setHeight = heights.reduce((sum, h) => sum + h + IMG_GAP, 0);
@@ -141,37 +105,20 @@ function MarqueeColumn({
     return () => loop.stop();
   }, [setHeight]);
 
-  // Parallax lives on a WRAPPER around the marquee rather than being folded
-  // into it: the two transforms then compose (marquee keeps its exact original
-  // motion, parallax just shifts the whole column), and the continuous loop
-  // above stays on RN Animated with its native driver, untouched.
-  const parallaxStyle = useAnimatedStyle(() => {
-    // 0 → 1 as the section travels from "just below the fold" to "just above
-    // the top". Guarded against a zero-height denominator before layout.
-    const span = SCREEN_H + gridHeight;
-    const progress = span > 0 ? (scrollY.value - sectionY.value + SCREEN_H) / span : 0;
-    const clamped = progress < 0 ? 0 : progress > 1 ? 1 : progress;
-    // Centre the travel on the midpoint so the column sits at its natural
-    // offset when the section is centred in the viewport.
-    return { transform: [{ translateY: (clamped - 0.5) * depth }] };
-  });
-
-  // Three sets, not two. The loop translates by exactly one `setHeight`, so two
-  // sets covered the window with ~zero slack — once the parallax wrapper also
-  // shifts the column, the worst case (loop at full travel + parallax at its
-  // negative extreme) left the content's bottom edge flush with the clip
-  // window, which would flicker a gap. A third set makes that impossible; the
-  // images are the same handful of cached URLs, so it costs views, not memory.
-  const items = [...heights, ...heights, ...heights];
+  // Parallax removed. It cost a `useAnimatedScrollHandler` on the Home
+  // ScrollView plus one worklet per column recomputing a transform on every
+  // single scroll frame — for an effect that is invisible next to the
+  // continuous marquee already running underneath it. Dropping it lets Home
+  // scroll with no JS/UI scroll listener attached at all.
+  //
+  // Two sets, not three: the loop translates by exactly one `setHeight`, so
+  // two sets always cover the clip window. The third set only existed to give
+  // the parallax shift slack, and each set is 5 more decoded remote images.
+  const items = [...heights, ...heights];
 
   return (
     <View style={{ width: colWidth, height: '100%', overflow: 'hidden' }}>
-      <ReAnimated.View style={parallaxStyle}>
-        {/* Pulled up by the bleed so a downward parallax shift can never
-            expose an empty strip at the top of the clip window. */}
-        <Animated.View
-          style={{ marginTop: -PARALLAX_BLEED, transform: [{ translateY }] }}
-        >
+      <Animated.View style={{ transform: [{ translateY }] }}>
           {items.map((imgH, i) => (
             <View
               key={i}
@@ -188,12 +135,11 @@ function MarqueeColumn({
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
                 cachePolicy="memory-disk"
-                transition={200}
+                transition={0}
               />
             </View>
           ))}
-        </Animated.View>
-      </ReAnimated.View>
+      </Animated.View>
     </View>
   );
 }
@@ -248,25 +194,12 @@ function CenterContent({
 export function GallerySection({
   onStartPress,
   onLearnPress,
-  scrollY,
 }: {
   onStartPress?: () => void;
   onLearnPress?: () => void;
-  /** Page scroll offset, for the masonry parallax. Optional so the section
-   *  still renders standalone (it just sits at its neutral offset). */
-  scrollY?: SharedValue<number>;
 }) {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
-
-  // Hooks can't be conditional, so always create a fallback and pick between
-  // them — a standalone GallerySection then reads a constant 0 scroll.
-  const fallbackScrollY = useSharedValue(0);
-  const scroll = scrollY ?? fallbackScrollY;
-  // This section's y-offset inside the scroll content, needed to know when it
-  // is passing through the viewport. Measured rather than assumed because the
-  // sections above it (hero, agent) are not fixed-height.
-  const sectionY = useSharedValue(0);
 
   // 40:58 — full-bleed width, height derived from it (1.45× the width). Was
   // `min(H * 0.7, 560)`, which tracked screen height; deriving from width
@@ -278,12 +211,7 @@ export function GallerySection({
   const colWidth = (W - padH * 2 - colGap * (COLUMNS.length - 1)) / COLUMNS.length;
 
   return (
-    <View
-      style={[s.section, { backgroundColor: t.bg }]}
-      onLayout={(e) => {
-        sectionY.value = e.nativeEvent.layout.y;
-      }}
-    >
+    <View style={[s.section, { backgroundColor: t.bg }]}>
       {/* ── Image frame (moving columns) with empty centre ── */}
       <View style={{ height: gridHeight, overflow: 'hidden' }}>
         <View style={[s.columns, { paddingHorizontal: padH, gap: colGap }]}>
@@ -295,10 +223,6 @@ export function GallerySection({
               speed={c.speed}
               heights={c.heights}
               colWidth={colWidth}
-              depth={c.depth}
-              scrollY={scroll}
-              sectionY={sectionY}
-              gridHeight={gridHeight}
               t={t}
             />
           ))}

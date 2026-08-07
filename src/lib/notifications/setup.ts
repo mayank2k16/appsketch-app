@@ -16,6 +16,18 @@ import { useCmsTabIntent } from '@/lib/store/cms-tab-intent';
  */
 export const NOTIFICATION_CHANNEL_ID = 'appsketch_staff_orders_v1';
 
+/**
+ * Android channel for everything that ISN'T an order alert — support-chat
+ * replies today, anything else non-order-shaped tomorrow. Plays Android's own
+ * default notification sound (no custom `sound`/`vibrationPattern`) rather
+ * than the order channel's bundled "cha-ching"-style sound, which is what
+ * every foreground push — support included — was locked into before this
+ * existed (see `subscribeToForegroundPushes`). Same versioning rule as
+ * `NOTIFICATION_CHANNEL_ID`: a channel's settings are locked at creation, so
+ * bump the suffix if they ever need to change.
+ */
+export const GENERAL_NOTIFICATION_CHANNEL_ID = 'appsketch_general_v1';
+
 /** Vibration pattern used for both the Android channel and foreground receipts. */
 const VIBRATION_PATTERN = [0, 400, 200, 400];
 
@@ -57,21 +69,70 @@ type NotificationData = {
   [key: string]: unknown;
 };
 
-function handleNotificationResponse(
-  response: Notifications.NotificationResponse
-): void {
-  const data = response.notification.request.content.data as
-    | NotificationData
-    | undefined;
+/**
+ * Route a tapped notification from its `data` payload.
+ *
+ * Called from BOTH notification stacks, because they cover different states:
+ *   - expo-notifications' response listener — foreground taps, and pushes we
+ *     re-presented locally via `scheduleNotificationAsync`.
+ *   - Firebase's `onNotificationOpenedApp` / `getInitialNotification` — taps on
+ *     the tray notification FCM itself displayed while the app was backgrounded
+ *     or killed. expo-notifications never sees those on Android, which is why a
+ *     tap used to just open the app on its home screen.
+ *
+ * On a cold start the navigator isn't mounted yet and `router.push` would be a
+ * silent no-op, so navigation is deferred until it is (see `navigateWhenReady`).
+ */
+function routeFromNotificationData(data?: NotificationData | null): void {
   if (!data) return;
 
   const route = data.route ?? data.screen;
+  if (route === 'support-chat') {
+    // Tapping a support-agent reply — deep-link straight into that
+    // conversation (payload: {route: "support-chat", conversation_id}, see
+    // support/services.py maybe_push_customer).
+    const conversationId = data.conversation_id;
+    navigateWhenReady(() =>
+      router.push({
+        pathname: '/support-chat',
+        params: conversationId ? { id: String(conversationId) } : undefined,
+      })
+    );
+    return;
+  }
+
   const tab =
     typeof route === 'string' ? ROUTE_TO_TAB[route.toLowerCase()] : undefined;
   if (tab) {
     useCmsTabIntent.getState().setPendingTab(tab);
-    router.push('/cms' as never);
+    navigateWhenReady(() => router.push('/cms' as never));
   }
+}
+
+/**
+ * Retry a navigation until the router has actually mounted.
+ *
+ * A cold start driven by a notification tap runs this before the root layout
+ * has rendered; expo-router throws ("Attempted to navigate before mounting the
+ * Root Layout") or silently drops the push. Retrying on a short interval lands
+ * the navigation as soon as the tree is up, and gives up rather than looping
+ * forever if something is badly wrong.
+ */
+function navigateWhenReady(go: () => void, attempt = 0): void {
+  try {
+    go();
+  } catch {
+    if (attempt >= 40) return; // ~10s, then give up
+    setTimeout(() => navigateWhenReady(go, attempt + 1), 250);
+  }
+}
+
+function handleNotificationResponse(
+  response: Notifications.NotificationResponse
+): void {
+  routeFromNotificationData(
+    response.notification.request.content.data as NotificationData | undefined
+  );
 }
 
 /**
@@ -136,11 +197,24 @@ export async function ensureAndroidChannel(): Promise<void> {
   });
 }
 
+/** Companion to `ensureAndroidChannel` for `GENERAL_NOTIFICATION_CHANNEL_ID`
+ * — support-chat replies and anything else that isn't an order alert.
+ * Deliberately omits `sound`/`vibrationPattern` so Android applies its own
+ * default notification sound/vibration instead of a custom bundled one. */
+export async function ensureGeneralAndroidChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(GENERAL_NOTIFICATION_CHANNEL_ID, {
+    name: 'General',
+    importance: Notifications.AndroidImportance.HIGH,
+  });
+}
+
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!Device.isDevice) return false;
 
   // Android 13+ requires explicit runtime permission.
   await ensureAndroidChannel();
+  await ensureGeneralAndroidChannel();
 
   const { status: existing } = await Notifications.getPermissionsAsync();
   if (existing === 'granted') return true;
@@ -172,22 +246,33 @@ function subscribeToForegroundPushes(): () => void {
       const body = n?.body ?? (data.body as string | undefined) ?? '';
       if (!title && !body) return;
 
+      // Route decides the channel/sound — NOT a blanket "every push is an
+      // order alert" assumption. That assumption is what made a support-chat
+      // reply arriving in the foreground play the orders channel's bundled
+      // "cha-ching" sound instead of a normal notification chime.
+      const route = data.route ?? data.screen;
+      const isOrderAlert = typeof route === 'string' && route.toLowerCase() in ROUTE_TO_TAB;
+      const channelId = isOrderAlert ? NOTIFICATION_CHANNEL_ID : GENERAL_NOTIFICATION_CHANNEL_ID;
+
       if (Platform.OS === 'ios') Vibration.vibrate(VIBRATION_PATTERN);
 
       try {
         // Android drops notifications posted to a channel it doesn't know about.
         await ensureAndroidChannel();
+        await ensureGeneralAndroidChannel();
         await Notifications.scheduleNotificationAsync({
-          content: { title, body, data, sound: 'notification.wav' },
+          // `sound: true` on iOS plays the system's default notification
+          // sound; the bundled `notification.wav` is reserved for order
+          // alerts. On Android the channel's own locked-in sound wins
+          // regardless of this field, so it only matters here for iOS.
+          content: { title, body, data, sound: isOrderAlert ? 'notification.wav' : true },
           // `channelId` belongs on the TRIGGER — NotificationContentInput has
           // no such field, so passing it in `content` is silently ignored and
           // the notification lands on expo's fallback channel (default sound).
           // A bare `{channelId}` trigger presents immediately, on the right
           // channel.
           trigger:
-            Platform.OS === 'android'
-              ? ({ channelId: NOTIFICATION_CHANNEL_ID } as any)
-              : null,
+            Platform.OS === 'android' ? ({ channelId } as any) : null,
         });
       } catch {
         // Presenting is best-effort — never break the push pipeline.
@@ -235,10 +320,50 @@ export async function setupNotifications(): Promise<() => void> {
   );
 
   const unsubscribeOnMessage = subscribeToForegroundPushes();
+  const unsubscribeOnOpen = subscribeToNotificationOpens();
 
   return () => {
     subscriptionRespond.remove();
     subscriptionReceived.remove();
     unsubscribeOnMessage();
+    unsubscribeOnOpen();
   };
+}
+
+/**
+ * Handle taps on notifications that **FCM itself** put in the tray (app
+ * backgrounded or killed).
+ *
+ * expo-notifications' response listener only sees notifications posted through
+ * expo — on Android it never fires for FCM's own tray notification, so without
+ * this a tapped support reply just opened the app on whatever screen it last
+ * had. `getInitialNotification` covers "app was killed", `onNotificationOpenedApp`
+ * covers "app was backgrounded".
+ */
+function subscribeToNotificationOpens(): () => void {
+  try {
+    messaging()
+      .getInitialNotification()
+      .then((remoteMessage) => {
+        if (remoteMessage?.data) {
+          routeFromNotificationData(remoteMessage.data as NotificationData);
+        }
+      })
+      .catch(() => {});
+
+    return messaging().onNotificationOpenedApp((remoteMessage) => {
+      if (remoteMessage?.data) {
+        routeFromNotificationData(remoteMessage.data as NotificationData);
+      }
+    });
+  } catch (err) {
+    if (__DEV__) {
+      console.warn(
+        '[setupNotifications] Firebase messaging unavailable — background ' +
+          'notification taps will not deep-link.',
+        err
+      );
+    }
+    return () => {};
+  }
 }

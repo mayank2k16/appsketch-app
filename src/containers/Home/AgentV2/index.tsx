@@ -20,6 +20,7 @@ import {
   View,
 } from 'react-native';
 import Reanimated, {
+  cancelAnimation,
   Easing as ReanimatedEasing,
   useAnimatedStyle,
   useSharedValue,
@@ -35,10 +36,15 @@ import { toast } from '@/lib/toast';
 
 const RADIUS = 15;
 const BORDER_W = 2.75;
-const RING_SPIN_MS = 14000;
 const MAX_IMAGES = 3;
-const TYPE_MS = 28; // ms per character while "typing"
-const DELETE_MS = 16; // ms per character while "deleting"
+// Characters are revealed in chunks rather than one per tick. Per-character
+// at 28ms meant ~36 setState calls a second, permanently, on the JS thread —
+// the placeholder animation alone was re-rendering this card more often than
+// the display refreshes a scroll frame. Same perceived speed, ~4x the work.
+const TYPE_MS = 100; // ms per chunk while "typing"
+const TYPE_CHARS = 4;
+const DELETE_MS = 40; // ms per chunk while "deleting"
+const DELETE_CHARS = 6;
 const TYPE_HOLD_MS = 1500; // pause once a phrase is fully typed
 const TYPE_GAP_MS = 300; // pause once a phrase is fully deleted, before the next
 
@@ -151,7 +157,7 @@ function useTypewriter(phrases: string[], enabled: boolean): string {
       const phrase = phrases[phraseIndex % phrases.length];
       setText(phrase.slice(0, charIndex));
       if (charIndex < phrase.length) {
-        charIndex += 1;
+        charIndex = Math.min(charIndex + TYPE_CHARS, phrase.length);
         timer = setTimeout(typeStep, TYPE_MS);
       } else {
         timer = setTimeout(deleteStep, TYPE_HOLD_MS);
@@ -161,7 +167,7 @@ function useTypewriter(phrases: string[], enabled: boolean): string {
       if (cancelled) return;
       const phrase = phrases[phraseIndex % phrases.length];
       if (charIndex > 0) {
-        charIndex -= 1;
+        charIndex = Math.max(charIndex - DELETE_CHARS, 0);
         setText(phrase.slice(0, charIndex));
         timer = setTimeout(deleteStep, DELETE_MS);
       } else {
@@ -180,13 +186,20 @@ function useTypewriter(phrases: string[], enabled: boolean): string {
   return text;
 }
 
+// Blinks on the UI thread. Was two React re-renders a second, forever, to
+// toggle the opacity of a single pipe character.
 function BlinkingCursor({ color }: { color: string }) {
-  const [visible, setVisible] = React.useState(true);
+  const v = useSharedValue(1);
   React.useEffect(() => {
-    const id = setInterval(() => setVisible((v) => !v), 500);
-    return () => clearInterval(id);
-  }, []);
-  return <Text style={{ color, opacity: visible ? 1 : 0 }}>|</Text>;
+    v.value = withRepeat(
+      withTiming(0, { duration: 500, easing: ReanimatedEasing.linear }),
+      -1,
+      true
+    );
+    return () => cancelAnimation(v);
+  }, [v]);
+  const style = useAnimatedStyle(() => ({ opacity: v.value }));
+  return <Reanimated.Text style={[{ color }, style]}>|</Reanimated.Text>;
 }
 
 // Mirrors the web builder's model list (`coderModels.js`) — no tier/lock UI
@@ -252,32 +265,10 @@ export function AgentV2({
   // BORDER_W-wide window (see `ringSpinner` below) via a `transform` style,
   // not by animating the LinearGradient's own `start`/`end` props.
   //
-  // A `start`/`end` sweep (via `Reanimated.createAnimatedComponent(LinearGradient)`
-  // + `useAnimatedProps`) was tried first — it gives noticeably better colour
-  // variety around the ring since the gradient never needs oversizing — but
-  // it crashes on web: reanimated's web prop-patcher expects the animated
-  // component to expose a `_touchableNode` (only true for Touchable-based
-  // elements), and LinearGradient doesn't have one, so every animation frame
-  // throws "Cannot read properties of undefined (reading 'setAttribute')" and
-  // takes down the whole screen. `useAnimatedStyle` + `transform` has no such
-  // requirement and is the same pattern already used safely on web elsewhere
-  // in this app (see splash.tsx). Do not retry the props-sweep approach
-  // without a web-specific fallback.
-  const ringSpin = useSharedValue(0);
-  React.useEffect(() => {
-    ringSpin.value = withRepeat(
-      withTiming(360, {
-        duration: RING_SPIN_MS,
-        easing: ReanimatedEasing.linear,
-      }),
-      -1,
-      false
-    );
-  }, []);
-  const ringSpinStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${ringSpin.value}deg` }],
-  }));
-
+  // The rotating conic-ring sheen was removed: its `useAnimatedStyle` result
+  // was never attached to any view, so the 14s infinite rotation loop had been
+  // running permanently while driving nothing at all. The static
+  // `ringSpinner` gradient below is what actually renders the ring.
   // Mic button pulses while actively listening, settles back to rest
   // otherwise — same withRepeat/withTiming pattern as the ring spinner above.
   const micPulse = useSharedValue(1);

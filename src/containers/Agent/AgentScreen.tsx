@@ -176,7 +176,7 @@ export function AgentScreen() {
 const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 8,
     paddingBottom: 12,
     gap: 14,
   },
@@ -284,6 +284,7 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
   suggestionText: {
+    flex: 1,
     fontFamily: F.sans500,
     fontSize: 11,
     lineHeight: 15,
@@ -291,10 +292,10 @@ const s = StyleSheet.create({
   // Standalone type pills — a visible gap between each other and below to
   // the composer (deliberately not attached/flush, unlike Home's tabs).
   typePillRow: {
-    marginHorizontal: 18,
+    marginHorizontal: 8,
     marginBottom: 10,
   },
   composerWrap: {
-    marginHorizontal: 18,
+    marginHorizontal: 8,
   },
 });

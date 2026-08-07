@@ -16,7 +16,16 @@ async function requestMicPermission(): Promise<boolean> {
  * web implementation in @react-native-voice/voice) — `supported` gates the
  * mic button in the UI. While listening, both partial and final results
  * overwrite the text captured *after* whatever was already typed when
- * listening started, so typed text is preserved instead of being clobbered. */
+ * listening started, so typed text is preserved instead of being clobbered.
+ *
+ * `Voice.onSpeechResults` etc. are static properties on the native module —
+ * one global slot shared by every `useVoiceInput` instance in the tree, not
+ * one per hook call. Wiring them up in a mount-time effect meant whichever
+ * composer mounted *last* silently owned every transcript, no matter which
+ * mic button was actually tapped (Home renders both the hero composer and
+ * the ClosingCTA composer at once). Listeners are now claimed inside
+ * `start()` instead, right before `Voice.start()`, so the composer that's
+ * actually listening is always the one that owns them. */
 export function useVoiceInput(
   value: string,
   onChangeText: (text: string) => void
@@ -25,12 +34,18 @@ export function useVoiceInput(
   const baseTextRef = React.useRef('');
   const onChangeRef = React.useRef(onChangeText);
   onChangeRef.current = onChangeText;
+  const mountedRef = React.useRef(true);
 
   const supported = Platform.OS !== 'web';
 
   React.useEffect(() => {
-    if (!supported) return;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
+  function claimListeners() {
     const applyResult = (e: { value?: string[] }) => {
       const transcript = e.value?.[0];
       if (!transcript) return;
@@ -40,16 +55,14 @@ export function useVoiceInput(
 
     Voice.onSpeechPartialResults = applyResult;
     Voice.onSpeechResults = applyResult;
-    Voice.onSpeechEnd = () => setListening(false);
+    Voice.onSpeechEnd = () => {
+      if (mountedRef.current) setListening(false);
+    };
     Voice.onSpeechError = () => {
-      setListening(false);
+      if (mountedRef.current) setListening(false);
       toast.error("Couldn't hear that. Please try again.");
     };
-
-    return () => {
-      Voice.destroy().then(() => Voice.removeAllListeners());
-    };
-  }, [supported]);
+  }
 
   async function start() {
     if (!supported || listening) return;
@@ -58,6 +71,7 @@ export function useVoiceInput(
       return;
     }
     baseTextRef.current = value.trim();
+    claimListeners();
     try {
       await Voice.start('en-US');
       setListening(true);

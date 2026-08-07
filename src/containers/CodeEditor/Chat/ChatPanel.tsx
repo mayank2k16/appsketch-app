@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,9 +18,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ActivityStep, ChatMessage, ClarifyBlock } from '@/api/coder';
 import { F } from '@/lib/fonts';
+import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -233,6 +237,7 @@ function Composer({
   onAttach,
   onRemoveImage,
   colors,
+  bottomInset,
 }: {
   input: string;
   onChangeInput: (v: string) => void;
@@ -242,7 +247,38 @@ function Composer({
   onAttach: () => void;
   onRemoveImage: (index: number) => void;
   colors: ReturnType<typeof useAppTheme>;
+  /** Home-indicator clearance — the composer sat flush against it before. */
+  bottomInset: number;
 }) {
+  const voice = useVoiceInput(input, onChangeInput);
+
+  // Mic pulses while listening — same affordance as the Home/Agent composer.
+  const micPulse = React.useRef(new Animated.Value(1)).current;
+  React.useEffect(() => {
+    if (!voice.listening) {
+      micPulse.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(micPulse, {
+          toValue: 1.18,
+          duration: 550,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(micPulse, {
+          toValue: 1,
+          duration: 550,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [voice.listening, micPulse]);
+
   return (
     <View
       style={[
@@ -250,6 +286,7 @@ function Composer({
         {
           backgroundColor: colors.codeEditorActivityBg,
           borderColor: colors.codeEditorGlassBorder,
+          marginBottom: 10 + bottomInset,
         },
       ]}
     >
@@ -295,13 +332,39 @@ function Composer({
             },
           ]}
         >
-          <Ionicons name="attach" size={18} color={colors.textSub} />
+          <Ionicons name="add" size={20} color={colors.textSub} />
           {images.length > 0 ? (
             <View style={[st.countBadge, { backgroundColor: colors.accent }]}>
               <Text style={st.countBadgeText}>{images.length}</Text>
             </View>
           ) : null}
         </TouchableOpacity>
+
+        {voice.supported ? (
+          <TouchableOpacity
+            onPress={voice.toggle}
+            activeOpacity={0.7}
+            style={[
+              st.attachBtn,
+              {
+                backgroundColor: voice.listening
+                  ? `${colors.codeEditorDanger}1A`
+                  : colors.codeEditorTabBg,
+                borderColor: voice.listening
+                  ? colors.codeEditorDanger
+                  : colors.codeEditorBorder,
+              },
+            ]}
+          >
+            <Animated.View style={{ transform: [{ scale: micPulse }] }}>
+              <Ionicons
+                name={voice.listening ? 'mic' : 'mic-outline'}
+                size={17}
+                color={voice.listening ? colors.codeEditorDanger : colors.textSub}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        ) : null}
 
         <View style={{ flex: 1 }} />
 
@@ -380,6 +443,7 @@ export function ChatPanel() {
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     connected,
     busy,
@@ -497,6 +561,7 @@ export function ChatPanel() {
           onAttach={handleAttach}
           onRemoveImage={removeImage}
           colors={t}
+          bottomInset={insets.bottom}
         />
       </KeyboardAvoidingView>
     </View>
@@ -612,7 +677,8 @@ const st = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 24 },
 
   composerWrap: {
-    margin: 10,
+    marginHorizontal: 10,
+    marginTop: 10,
     borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 12,
@@ -627,6 +693,7 @@ const st = StyleSheet.create({
   composerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   attachBtn: {
     width: 34,

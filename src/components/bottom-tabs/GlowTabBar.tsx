@@ -8,7 +8,6 @@ import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-s
 import { F } from '@/lib/fonts';
 import { useAppTheme, type AppColors } from '@/lib/theme';
 
-import { TwinkleDots } from '@/containers/Home/Hero/TwinkleDots';
 import { TAB_CONFIG } from './tab-config';
 import { TabIcon } from './TabIcon';
 
@@ -95,31 +94,12 @@ function TabCard({
 export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const t = useAppTheme(colorScheme);
-
-  const [barHeight, setBarHeight] = React.useState(0);
-  const isHomeActive = state.routes[state.index]?.name === 'home';
 
   return (
     <View
       style={[s.root, { backgroundColor: t.tabBarBg, paddingBottom: Math.max(insets.bottom, 10) }]}
-      onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}
     >
-      {/* Same dotted backdrop used behind Header+Hero on Home — only shown while
-          the Home tab is active, so other tabs keep a plain bar background. */}
-      {isHomeActive && barHeight > 0 && (
-        <TwinkleDots
-          width={SCREEN_W}
-          height={barHeight}
-          color={t.dotColor}
-          spacing={31}
-          radius={1.1}
-          baseOpacity={isDark ? 0.16 : 0.08}
-          peakOpacity={isDark ? 0.42 : 0.24}
-        />
-      )}
-
       <View style={s.row}>
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;

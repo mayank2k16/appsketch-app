@@ -6,7 +6,9 @@ import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '@/hooks/useAuth';
+import { F } from '@/lib/fonts';
 import { useAppTheme } from '@/lib/theme';
+import { SectionHeading } from '../Home/components/SectionHeading';
 
 import { AppsScreen } from './Apps/AppsScreen';
 import { DiscoverScreen } from './Discover/DiscoverScreen';
@@ -20,6 +22,11 @@ const SECTIONS: { key: StudioSection; label: string; icon: React.ComponentProps<
   { key: 'settings', label: 'Settings', icon: 'settings-outline' },
 ];
 
+/** Narrow enough that the store cards keep almost the full width — the rail is
+ *  a navigation strip, not a panel. */
+const RAIL_W = 74;
+const SCREEN_INSET = 8;
+
 export function StudioScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -32,43 +39,59 @@ export function StudioScreen() {
 
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
-      <View style={[st.header, { paddingTop: insets.top + 14 }]}>
-        <Text style={[st.headerTitle, { color: t.text }]}>Studio</Text>
-        <Text style={[st.headerSubtitle, { color: t.textSub }]}>Manage every store on your account</Text>
-      </View>
+      {/* Same eyebrow + gradient-heading block every Home section uses, so
+          Studio's title matches the rest of the app instead of being its own
+          one-off bold Text. */}
+      <SectionHeading
+        eyebrow="MANAGE EVERY STORE"
+        lines={['Studio']}
+        t={t}
+        style={[st.header, { paddingTop: insets.top + 14 }]}
+      />
 
       {!isLoggedIn ? (
         <View style={st.gate}>
           <Ionicons name="lock-closed-outline" size={36} color={t.textMuted} />
           <Text style={[st.gateTitle, { color: t.text }]}>Sign in to view your stores</Text>
-          <Pressable style={[st.gateBtn, { backgroundColor: t.accent }]} onPress={() => router.push('/login' as never)}>
-            <Text style={st.gateBtnText}>Sign In</Text>
+          <Pressable onPress={() => router.push('/login' as never)}>
+            <View style={[st.gateBtn, { backgroundColor: t.accent }]}>
+              <Text style={st.gateBtnText}>Sign In</Text>
+            </View>
           </Pressable>
         </View>
       ) : (
-        <>
-          <View style={st.tabRow}>
+        <View style={st.body}>
+          {/* Vertical rail replaces the old horizontal pill row. */}
+          <View style={st.rail}>
             {SECTIONS.map((s) => {
               const active = s.key === section;
               return (
-                <Pressable
-                  key={s.key}
-                  onPress={() => setSection(s.key)}
-                  style={[st.tab, { backgroundColor: t.surface }, active && { backgroundColor: t.accentSoft }]}
-                >
-                  <Ionicons name={s.icon} size={15} color={active ? t.accent : t.textMuted} />
-                  <Text style={[st.tabText, { color: t.textMuted }, active && { color: t.accent }]}>{s.label}</Text>
+                <Pressable key={s.key} onPress={() => setSection(s.key)}>
+                  <View
+                    style={[
+                      st.railItem,
+                      { backgroundColor: active ? t.studioRailActiveBg : t.studioRailBg },
+                    ]}
+                  >
+                    <Ionicons name={s.icon} size={19} color={active ? t.accent : t.textMuted} />
+                    <Text
+                      style={[st.railText, { color: active ? t.accent : t.textMuted }]}
+                      numberOfLines={1}
+                    >
+                      {s.label}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
           </View>
 
-          <View style={{ flex: 1 }}>
+          <View style={st.content}>
             {section === 'apps' && <AppsScreen />}
             {section === 'discover' && <DiscoverScreen />}
             {section === 'settings' && <SettingsScreen />}
           </View>
-        </>
+        </View>
       )}
     </View>
   );
@@ -77,27 +100,31 @@ export function StudioScreen() {
 const st = StyleSheet.create({
   root: { flex: 1 },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: SCREEN_INSET,
+    paddingBottom: 4,
   },
-  headerTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 13, marginTop: 4 },
 
-  tabRow: {
+  body: {
+    flex: 1,
     flexDirection: 'row',
+    paddingHorizontal: SCREEN_INSET,
     gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
-  tab: {
-    flexDirection: 'row',
+  rail: {
+    width: RAIL_W,
+    gap: 8,
+    paddingTop: 4,
+  },
+  railItem: {
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 12,
+    borderRadius: 14,
   },
-  tabText: { fontSize: 13, fontWeight: '600' },
+  railText: { fontFamily: F.sans600, fontSize: 11 },
+
+  content: { flex: 1 },
 
   gate: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 32 },
   gateTitle: { fontSize: 15, fontWeight: '700', textAlign: 'center' },

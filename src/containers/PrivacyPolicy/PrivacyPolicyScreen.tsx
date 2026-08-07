@@ -361,7 +361,7 @@ const st = StyleSheet.create({
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: F.sans700, fontSize: 15 },
 
-  section: { paddingHorizontal: 20, paddingTop: 24 },
+  section: { paddingHorizontal: 8, paddingTop: 24 },
 
   badge: {
     alignSelf: 'flex-start',

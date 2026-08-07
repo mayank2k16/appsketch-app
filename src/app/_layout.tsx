@@ -3,6 +3,7 @@ import '../../global.css';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ThemeProvider } from '@react-navigation/native';
+import { Image as ExpoImage } from 'expo-image';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
@@ -26,6 +27,7 @@ import { appTheme } from '@/lib/theme';
 import { loadSelectedTheme } from '@/lib';
 import { hydrateAuth } from '@/hooks/useAuth';
 import { hydrateStudio } from '@/lib/store/studio-store';
+import { LOGIN_MONTAGE_IMAGES } from '@/lib/login-montage-images';
 import { TenantProvider } from '@/lib/tenant';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
@@ -39,6 +41,11 @@ export const unstable_settings = {
 hydrateAuth();
 loadSelectedTheme();
 hydrateStudio();
+// Fire at app-launch time (splash is shown for ~2.6s regardless), so the
+// login montage's images are already decoded and disk/memory-cached by the
+// time the login screen mounts — whichever path gets there (splash, sign-out,
+// session expiry, pricing gate, etc.), not just the splash->login route.
+ExpoImage.prefetch(LOGIN_MONTAGE_IMAGES, 'memory-disk');
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 // Set the animation options. This is optional.
@@ -89,6 +96,8 @@ function RootLayoutContent() {
       <Stack.Screen name="tnc" options={{ headerShown: false }} />
       <Stack.Screen name="pricing" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ headerShown: false }} />
+      <Stack.Screen name="support" options={{ headerShown: false }} />
+      <Stack.Screen name="support-chat" options={{ headerShown: false }} />
       <Stack.Screen name="cart" options={{ headerShown: false }} />
     </Stack>
   );

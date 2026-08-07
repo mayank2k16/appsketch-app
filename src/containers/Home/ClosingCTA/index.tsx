@@ -7,7 +7,6 @@ import {
   Dimensions,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   type StyleProp,
   type ViewStyle,
@@ -20,6 +19,7 @@ import { PromptComposer } from '@/components/ui/PromptComposer';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import { DEFAULT_MODEL, fmtContext, MODELS } from '../AgentV2';
+import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
 // Same fade recipe as Hero's own heading — one GradientText per line, over
@@ -36,14 +36,15 @@ function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
   );
 }
 
-// Real screenshot of an Appsketch-built site, shown on the two web devices.
+// One distinct screenshot per device.
+const DESKTOP_SCREEN_IMAGE =
+  'https://cdn.appsketch.ai/phurti-cloudfront/website_images/Screenshot_2026-07-30_at_11.30.48AM.webp';
 const LAPTOP_SCREEN_IMAGE =
-  'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/Screenshot_2025-07-28_at_9.07.21_PM.png';
-
-// Mobile counterpart — drop the app screenshot's URL here once you have one.
-// Left null for now, so the phone frame falls back to the skeleton mockup
-// below until a real image is supplied.
-const MOBILE_SCREEN_IMAGE: string | null = 'https://cdn.appsketch.ai/phurti-cloudfront/imagestore/Gemini_Generated_Image_5c81u85c81u85c81.png';
+  'https://cdn.appsketch.ai/phurti-cloudfront/website_images/Screenshot_2026-07-30_at_11.29.49AM.webp';
+const TABLET_SCREEN_IMAGE =
+  'https://cdn.appsketch.ai/phurti-cloudfront/website_images/Screenshot_2026-07-30_at_11.28.42AM.webp';
+const PHONE_SCREEN_IMAGE =
+  'https://cdn.appsketch.ai/phurti-cloudfront/website_images/Screenshot_2026-07-30_at_11.29.14AM.webp';
 
 // ── Metal ───────────────────────────────────────────────────────────────────
 // Space-black anodised aluminium. Even black metal is never a flat fill: it
@@ -75,20 +76,38 @@ const SHEEN_LOC = [0, 0.22, 0.62, 1] as const;
 // ── Composition ─────────────────────────────────────────────────────────────
 // Widths are fractions of the mockup box (the section width minus its 8px
 // gutters) so the whole family scales with the screen instead of being pinned
-// to one handset size. Overlaps come from the left/top offsets in the styles
-// below; paint order (display → laptop → tablet → phone) is what puts the
-// small devices in front.
+// to one handset size. Two stacked rows, not one overlapping stack: the
+// desktop display runs full-width on its own row, and the tablet/phone/laptop
+// sit below it side by side in normal flow (no absolute overlap).
 const MOCK_W = Dimensions.get('window').width - 16;
-const MOCK_H = 214;
-const MON_W = MOCK_W * 0.65;
-const LAP_W = MOCK_W * 0.45;
-const TAB_W = MOCK_W * 0.25;
-const PHONE_W = MOCK_W * 0.14;
+// Desktop now fills the whole row edge to edge — its height grows with it via
+// aspectRatio rather than being pinned to a fraction of a fixed box height.
+const MON_W = MOCK_W;
+
+// Row 2 (tablet/phone/laptop) sizes are derived from the space actually left
+// over after the two 8px gaps between them, not independent fractions of the
+// full row — that guarantees the three frames plus their gaps always sum to
+// exactly MOCK_W, so nothing overflows and no frame gets clipped at the
+// screen edge.
+const ROW_GAP = 8;
+const ROW_CONTENT_W = MOCK_W - ROW_GAP * 2;
+const TAB_W = ROW_CONTENT_W * 0.26;
+const PHONE_W = ROW_CONTENT_W * 0.15;
+const LAP_W = ROW_CONTENT_W * 0.59;
+
+// Same inset on every device's bezel — mismatched padding (monitor 3 vs
+// tablet 2.5 vs phone 1.8) is what made screenshots look clipped by
+// different amounts frame to frame.
+const FRAME_PAD = 3;
 
 // Screens are sized by aspect ratio, not by the source image's own
 // proportions — that is what makes each screenshot fill its display edge to
 // edge (cover-cropping the sides) instead of letterboxing top and bottom.
 const SCREEN_16_10 = 16 / 10;
+// Monitor screen only: width grew 20% but height should only grow 10%, so the
+// aspect ratio (width/height) widens by the ratio of those two factors —
+// changing the ratio, not the frame size, is what decouples the two axes.
+const SCREEN_MONITOR = SCREEN_16_10 * (1.2 / 1.1);
 const SCREEN_TABLET = 3 / 4;
 const SCREEN_PHONE = 9 / 19.5;
 
@@ -169,90 +188,87 @@ function Display({
 function DeviceMockup({ t }: { t: HomeColors }) {
   return (
     <View style={s.mockupWrap}>
-      {/* ── Desktop display (furthest back) ── */}
+      {/* ── Desktop display — its own full-width row ── */}
       <View style={s.monitorWrap}>
         <MetalShell style={s.monitorBezel}>
-          <Display uri={LAPTOP_SCREEN_IMAGE} style={s.monitorScreen} t={t} />
+          <Display uri={DESKTOP_SCREEN_IMAGE} style={s.monitorScreen} t={t} />
         </MetalShell>
         <MetalShell style={s.monitorNeck} />
         <MetalShell style={s.monitorFoot} />
       </View>
 
-      {/* ── MacBook Pro ── */}
-      <View style={s.laptopWrap}>
-        <MetalShell style={s.laptopBezel}>
-          <Display uri={LAPTOP_SCREEN_IMAGE} style={s.laptopScreen} t={t} />
-          {/* Camera pinhole — at this scale a real notch reads as grime, a
-              single lit dot reads as the machine. */}
-          <View style={s.camera} pointerEvents="none" />
-        </MetalShell>
+      {/* ── Second row: tablet, phone, laptop side by side — no overlap ── */}
+      <View style={s.deviceRow}>
+        {/* iPad Pro */}
+        <View style={s.tabletWrap}>
+          <MetalShell style={s.tablet} rail>
+            <View style={s.tabletScreen}>
+              <Display uri={TABLET_SCREEN_IMAGE} style={StyleSheet.absoluteFill} t={t} />
+              <View style={s.tabletCamera} pointerEvents="none" />
+            </View>
+          </MetalShell>
+        </View>
 
-        {/* Hinge deck — wider than the lid, thumb cutout centred, so the
-            silhouette reads as an open laptop rather than a floating card. */}
-        <LinearGradient
-          colors={METAL_DECK}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={s.laptopBase}
-        >
-          <View style={s.laptopBaseNotch} />
-        </LinearGradient>
-      </View>
+        {/* iPhone Pro */}
+        <View style={s.phoneWrap}>
+          <MetalShell style={s.phone} rail>
+            <View style={s.phoneScreen}>
+              <Display uri={PHONE_SCREEN_IMAGE} style={StyleSheet.absoluteFill} t={t} />
+              <View style={s.dynamicIsland} pointerEvents="none" />
+              <View style={s.phoneHomeIndicator} pointerEvents="none" />
+            </View>
+          </MetalShell>
 
-      {/* ── iPad Pro ── */}
-      <View style={s.tabletWrap}>
-        <MetalShell style={s.tablet} rail>
-          <View style={s.tabletScreen}>
-            <Display uri={MOBILE_SCREEN_IMAGE} style={StyleSheet.absoluteFill} t={t} />
-            <View style={s.tabletCamera} pointerEvents="none" />
-          </View>
-        </MetalShell>
-      </View>
+          {/* Machined side buttons, same rail metal so they catch the same light */}
+          <LinearGradient
+            colors={METAL_RAIL}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[s.sideBtn, s.volUp]}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={METAL_RAIL}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[s.sideBtn, s.volDown]}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={METAL_RAIL}
+            start={{ x: 1, y: 0 }}
+            end={{ x: 0, y: 0 }}
+            style={[s.sideBtn, s.power]}
+            pointerEvents="none"
+          />
+        </View>
 
-      {/* ── iPhone Pro ── */}
-      <View style={s.phoneWrap}>
-        <MetalShell style={s.phone} rail>
-          <View style={s.phoneScreen}>
-            <Display uri={MOBILE_SCREEN_IMAGE} style={StyleSheet.absoluteFill} t={t} />
-            <View style={s.dynamicIsland} pointerEvents="none" />
-            <View style={s.phoneHomeIndicator} pointerEvents="none" />
-          </View>
-        </MetalShell>
+        {/* MacBook Pro */}
+        <View style={s.laptopWrap}>
+          <MetalShell style={s.laptopBezel}>
+            <Display uri={LAPTOP_SCREEN_IMAGE} style={s.laptopScreen} t={t} />
+            {/* Camera pinhole — at this scale a real notch reads as grime, a
+                single lit dot reads as the machine. */}
+            <View style={s.camera} pointerEvents="none" />
+          </MetalShell>
 
-        {/* Machined side buttons, same rail metal so they catch the same light */}
-        <LinearGradient
-          colors={METAL_RAIL}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[s.sideBtn, s.volUp]}
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={METAL_RAIL}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[s.sideBtn, s.volDown]}
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={METAL_RAIL}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 0, y: 0 }}
-          style={[s.sideBtn, s.power]}
-          pointerEvents="none"
-        />
+          {/* Hinge deck — wider than the lid, thumb cutout centred, so the
+              silhouette reads as an open laptop rather than a floating card. */}
+          <LinearGradient
+            colors={METAL_DECK}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={s.laptopBase}
+          >
+            <View style={s.laptopBaseNotch} />
+          </LinearGradient>
+        </View>
       </View>
     </View>
   );
 }
 
-export function ClosingCTASection({
-  onStartPress,
-  onLearnPress,
-}: {
-  onStartPress?: () => void;
-  onLearnPress?: () => void;
-}) {
+export function ClosingCTASection() {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
@@ -297,6 +313,12 @@ export function ClosingCTASection({
     // No section backgroundColor — same as the other new sections, so the
     // shared TwinkleDots backdrop keeps showing through here too.
     <View style={s.section}>
+      <SectionHeading
+        eyebrow="EVERY SCREEN"
+        lines={['One build, every', 'screen.']}
+        t={t}
+        style={s.mockupHeadingWrap}
+      />
       <DeviceMockup t={t} />
 
       <View style={s.headingWrap}>
@@ -329,30 +351,6 @@ export function ClosingCTASection({
           sending={sending}
         />
       </View>
-
-      <View style={s.btns}>
-        <TouchableOpacity
-          onPress={onStartPress}
-          style={[s.btnPrimary, { backgroundColor: t.heroCtaBg }]}
-          activeOpacity={0.85}
-        >
-          <Text style={[s.btnPrimaryTxt, { color: t.heroCtaText }]}>
-            Get started →
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onLearnPress}
-          style={[
-            s.btnSecondary,
-            { backgroundColor: t.heroSecondaryBg, borderColor: t.heroSecondaryBorder },
-          ]}
-          activeOpacity={0.85}
-        >
-          <Text style={[s.btnSecondaryTxt, { color: t.heroSecondaryText }]}>
-            Learn more
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -365,31 +363,38 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Every device is absolutely positioned against this box, so the wrap needs
-  // an explicit height — nothing inside it participates in normal flow.
+  // Two stacked rows in normal flow — desktop on its own row, then
+  // tablet/phone/laptop side by side below it. Nothing here needs a fixed
+  // height any more; each row sizes itself from its content.
   mockupWrap: {
     width: '100%',
-    height: MOCK_H,
     marginBottom: 40,
   },
 
-  // ── Desktop display ──
+  // ── Desktop display — own row, full width ──
   monitorWrap: {
-    position: 'absolute',
-    left: MOCK_W * 0.28,
-    top: 0,
     width: MON_W,
     alignItems: 'center',
   },
+
+  // ── Row 2: tablet, phone, laptop ── widths + gap sum to exactly MOCK_W
+  // (see ROW_CONTENT_W above), so 'flex-start' never has slack to overflow.
+  deviceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    gap: ROW_GAP,
+    marginTop: 14,
+  },
   monitorBezel: {
     width: '100%',
-    padding: 3,
+    padding: FRAME_PAD,
     borderRadius: 7,
     overflow: 'hidden',
   },
   monitorScreen: {
     width: '100%',
-    aspectRatio: SCREEN_16_10,
+    aspectRatio: SCREEN_MONITOR,
     borderRadius: 4,
     overflow: 'hidden',
     backgroundColor: '#000',
@@ -408,17 +413,12 @@ const s = StyleSheet.create({
 
   // ── MacBook Pro ──
   laptopWrap: {
-    // Inset by the hinge deck's overhang (see laptopBase) so the deck stops at
-    // the gutter instead of running off the screen edge.
-    position: 'absolute',
-    right: 6,
-    top: MOCK_H * 0.36,
     width: LAP_W,
   },
   // Bottom corners stay near-square so the lid meets the hinge deck flush.
   laptopBezel: {
-    padding: 3,
-    paddingTop: 6,
+    padding: FRAME_PAD,
+    paddingTop: FRAME_PAD * 2,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     borderBottomLeftRadius: 3,
@@ -461,13 +461,10 @@ const s = StyleSheet.create({
 
   // ── iPad Pro ──
   tabletWrap: {
-    position: 'absolute',
-    left: 0,
-    top: MOCK_H * 0.34,
     width: TAB_W,
   },
   tablet: {
-    padding: 2.5,
+    padding: FRAME_PAD,
     borderRadius: 11,
     overflow: 'hidden',
   },
@@ -490,13 +487,10 @@ const s = StyleSheet.create({
 
   // ── iPhone Pro ──
   phoneWrap: {
-    position: 'absolute',
-    left: MOCK_W * 0.22,
-    top: MOCK_H * 0.46,
     width: PHONE_W,
   },
   phone: {
-    padding: 1.8,
+    padding: FRAME_PAD,
     borderRadius: 13,
     overflow: 'hidden',
   },
@@ -558,6 +552,13 @@ const s = StyleSheet.create({
     height: 6,
     borderRadius: 3,
   },
+  // The parent `section` centers its children (alignItems:'center'), which
+  // would otherwise shrink SectionHeading to its content width and center it
+  // — force it full-width so it stretches edge to edge and reads flush left
+  // like every other Home section's heading.
+  mockupHeadingWrap: {
+    width: '100%',
+  },
   headingWrap: {
     alignItems: 'center',
     marginBottom: 14,
@@ -585,36 +586,5 @@ const s = StyleSheet.create({
 
   composerWrap: {
     width: '100%',
-    marginBottom: 24,
-  },
-
-  btns: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  btnPrimary: {
-    height: 50,
-    paddingHorizontal: 26,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnPrimaryTxt: {
-    fontFamily: F.sans700,
-    fontSize: 13.5,
-    letterSpacing: 0.1,
-  },
-  btnSecondary: {
-    height: 50,
-    paddingHorizontal: 26,
-    borderRadius: 25,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnSecondaryTxt: {
-    fontFamily: F.sans700,
-    fontSize: 13.5,
-    letterSpacing: 0.1,
   },
 });
