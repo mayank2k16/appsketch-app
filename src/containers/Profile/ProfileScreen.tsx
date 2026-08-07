@@ -2,6 +2,8 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { updateOwnProfile, useSubscriptionPlans } from '@/api';
+import { accountClient } from '@/api/common/client';
 import { PlanBadge } from '@/components/ui/PlanBadge';
 import { getUserSubscription, signOut, updateUserFields, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
@@ -111,6 +114,38 @@ export function ProfileScreen() {
   function handleLogout() {
     signOut();
     router.replace('/login');
+  }
+
+  const [deletingAccount, setDeletingAccount] = React.useState(false);
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all associated data. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingAccount(true);
+            try {
+              // Self-service — acts on the authenticated caller (this app's
+              // users are account.TenantUser, not account.Profile, so this
+              // is a distinct endpoint from the Profile-based one other
+              // AppSketch storefront apps use).
+              await accountClient.post('account/tenant-users/delete_account/');
+              signOut();
+              router.replace('/login');
+            } catch {
+              toast.error('Could not delete account', 'Please try again.');
+            } finally {
+              setDeletingAccount(false);
+            }
+          },
+        },
+      ]
+    );
   }
 
   const initial = (original.name || '?').trim().charAt(0).toUpperCase();
@@ -254,6 +289,20 @@ export function ProfileScreen() {
 
               {!editing && (
                 <View style={st.section}>
+                  <GlassCard t={t} contentStyle={st.sectionCard}>
+                    <MenuRow
+                      t={t}
+                      icon="help-buoy-outline"
+                      label="Help & Support"
+                      onPress={() => router.push('/support')}
+                      isLast
+                    />
+                  </GlassCard>
+                </View>
+              )}
+
+              {!editing && (
+                <View style={[st.section, { gap: 10 }]}>
                   <TouchableOpacity
                     onPress={handleLogout}
                     activeOpacity={0.8}
@@ -261,6 +310,22 @@ export function ProfileScreen() {
                   >
                     <Ionicons name="log-out-outline" size={16} color="#EF4444" />
                     <Text style={[st.secondaryBtnText, { color: '#EF4444', marginLeft: 6 }]}>Log Out</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleDeleteAccount}
+                    activeOpacity={0.8}
+                    disabled={deletingAccount}
+                    style={[st.secondaryBtn, { borderColor: '#EF444440', opacity: deletingAccount ? 0.6 : 1 }]}
+                  >
+                    {deletingAccount ? (
+                      <ActivityIndicator size="small" color="#EF4444" />
+                    ) : (
+                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    )}
+                    <Text style={[st.secondaryBtnText, { color: '#EF4444', marginLeft: 6 }]}>
+                      {deletingAccount ? 'Deleting…' : 'Delete Account'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -331,6 +396,34 @@ function ProfileField({
   );
 }
 
+function MenuRow({
+  t,
+  icon,
+  label,
+  onPress,
+  isLast,
+}: {
+  t: AppColors;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+  isLast?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={[st.fieldRow, !isLast && { borderBottomWidth: 1, borderBottomColor: t.border }]}
+    >
+      <View style={[st.fieldIconWrap, { backgroundColor: t.accentSoft }]}>
+        <Ionicons name={icon} size={15} color={t.accent} />
+      </View>
+      <Text style={[st.fieldValue, { color: t.text, flex: 1 }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={16} color={t.textMuted} />
+    </TouchableOpacity>
+  );
+}
+
 const st = StyleSheet.create({
   root: { flex: 1 },
 
@@ -359,7 +452,7 @@ const st = StyleSheet.create({
   avatarName: { fontFamily: F.sans700, fontSize: 17, marginBottom: 2 },
   avatarSub: { fontFamily: F.sans400, fontSize: 13 },
 
-  section: { paddingHorizontal: 20, paddingTop: 20 },
+  section: { paddingHorizontal: 8, paddingTop: 20 },
 
   sectionCard: { padding: 18 },
   sectionHeading: { fontFamily: F.sans700, fontSize: 15 },

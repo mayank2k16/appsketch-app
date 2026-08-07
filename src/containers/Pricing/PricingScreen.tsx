@@ -281,7 +281,7 @@ const st = StyleSheet.create({
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: F.sans700, fontSize: 15 },
 
-  section: { paddingHorizontal: 20, paddingTop: 24 },
+  section: { paddingHorizontal: 8, paddingTop: 24 },
 
   subtitle: {
     fontFamily: F.sans600,
@@ -295,7 +295,7 @@ const st = StyleSheet.create({
   errorBox: { borderRadius: 12, borderWidth: 1, padding: 14 },
   errorText: { fontFamily: F.sans600, fontSize: 13.5, color: '#E0392B', textAlign: 'center' },
 
-  toggleSection: { paddingHorizontal: 20, paddingTop: 24, alignItems: 'center' },
+  toggleSection: { paddingHorizontal: 8, paddingTop: 24, alignItems: 'center' },
   toggleRow: { flexDirection: 'column-reverse', alignItems: 'center', gap: 10 },
   toggleTrack: {
     flexDirection: 'row',
@@ -322,7 +322,7 @@ const st = StyleSheet.create({
   saveBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
   saveBadgeText: { fontFamily: F.sans700, fontSize: 10.5, color: '#FFFFFF', letterSpacing: 0.3 },
 
-  plansWrap: { paddingHorizontal: 20, paddingTop: 28, gap: 16 },
+  plansWrap: { paddingHorizontal: 8, paddingTop: 28, gap: 16 },
 
   card: {
     borderRadius: 18,

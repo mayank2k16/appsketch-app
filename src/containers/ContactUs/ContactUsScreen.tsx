@@ -313,7 +313,7 @@ const st = StyleSheet.create({
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: F.sans700, fontSize: 15 },
 
-  section: { paddingHorizontal: 20, paddingTop: 30 },
+  section: { paddingHorizontal: 8, paddingTop: 30 },
 
   heroTitle: { fontFamily: F.display900, fontSize: 34, lineHeight: 40, letterSpacing: -0.5 },
   heroSubtitle: { fontFamily: F.sans400, fontSize: 15, lineHeight: 22, marginTop: 10 },

@@ -30,10 +30,12 @@ export type Conversation = {
   customer: number;
   customer_name?: string;
   customer_phone?: string;
+  subject?: string;
   status: ConversationStatus | string;
   last_message_at?: string;
   last_message_preview?: string;
   admin_unread?: number;
+  customer_unread?: number;
   order?: SupportOrder | null;
 };
 

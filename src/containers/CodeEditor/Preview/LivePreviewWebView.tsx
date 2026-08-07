@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Platform,
   StyleSheet,
   Text,
@@ -17,6 +16,7 @@ import { toast } from '@/lib/toast';
 import { useCodeEditor } from '../CodeEditorProvider';
 import { INSPECTOR_SCRIPT } from '../Inspector/injectedScript';
 import { InspectorOverlay } from '../Inspector/InspectorOverlay';
+import { DotFieldLoader } from './DotFieldLoader';
 
 // `react-native-webview` has no RN-Web implementation (same guard used by
 // `AppPreviewScreen`) — the web build falls back to a plain DOM `<iframe>`.
@@ -155,18 +155,8 @@ export function LivePreviewWebView({
       )}
 
       {status === 'loading' && (
-        <View
-          style={[
-            st.center,
-            StyleSheet.absoluteFill,
-            { backgroundColor: colors.bg },
-          ]}
-          pointerEvents="none"
-        >
-          <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={{ color: colors.textSub, marginTop: 8 }}>
-            Loading your preview…
-          </Text>
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <DotFieldLoader colors={colors} label="Loading your preview…" />
         </View>
       )}
 

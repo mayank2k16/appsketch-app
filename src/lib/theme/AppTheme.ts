@@ -180,6 +180,17 @@ export const appTheme = {
     templatesSkeletonBase: 'rgba(255,255,255,0.08)',
     templatesSkeletonHighlight: 'rgba(255,255,255,0.16)',
 
+    // ── Studio — store cards + section rail ───────────────────────────────────
+    // Store cards are a top-lit dark gradient (lighter at the top edge, sinking
+    // to near-black) with a hairline that's brighter at the top than the body,
+    // so the card reads as a lit surface rather than a flat fill.
+    studioCardGradient: ['#232329', '#18181C', '#101013'],
+    studioCardBorder: 'rgba(255,255,255,0.10)',
+    studioCardTopEdge: 'rgba(255,255,255,0.16)',
+    studioCardLogoBg: 'rgba(255,255,255,0.06)',
+    studioRailBg: 'rgba(255,255,255,0.04)',
+    studioRailActiveBg: 'rgba(108,92,231,0.18)',
+
     // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
     codeEditorTabBarBg: '#0A0A0C',
     codeEditorTabBg: 'rgba(255,255,255,0.05)',
@@ -422,6 +433,16 @@ export const appTheme = {
     templatesTagText: '#6C5CE7',
     templatesSkeletonBase: 'rgba(17,17,17,0.06)',
     templatesSkeletonHighlight: 'rgba(17,17,17,0.11)',
+
+    // ── Studio — store cards + section rail ───────────────────────────────────
+    // Light mode keeps the same top-lit direction, just inverted: pure white at
+    // the top edge sinking to a faint grey, so the card still reads as lit.
+    studioCardGradient: ['#FFFFFF', '#FAFAFB', '#F2F2F5'],
+    studioCardBorder: 'rgba(17,17,17,0.09)',
+    studioCardTopEdge: 'rgba(255,255,255,0.9)',
+    studioCardLogoBg: 'rgba(17,17,17,0.05)',
+    studioRailBg: 'rgba(17,17,17,0.04)',
+    studioRailActiveBg: 'rgba(108,92,231,0.12)',
 
     // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
     codeEditorTabBarBg: '#F7F7F9',

@@ -1,18 +1,50 @@
 import { useIsFocused } from '@react-navigation/native';
 import * as React from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Reanimated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 
-
-type Twinkle = {
-  key: string;
-  x: number;
-  y: number;
-  val: Animated.Value;
-  dur: number;
-  delay: number;
-  peak: number;
-};
+// Every dot on screen twinkles, exactly as before — but the field is painted
+// as three tiled SVG layers instead of one animated view per dot.
+//
+// The old version created an Animated.Value and an Animated.View per grid
+// cell, and `density` defaulted to 1: on a 390×844 screen at 31px spacing
+// that is 406 live animation drivers and 406 animated views running
+// permanently behind every section of the Home feed. It was the single
+// largest source of scroll jank.
+//
+// Each layer is ONE <Svg> whose pattern tile spans a 3×3 block of cells and
+// paints 3 of the 9 cells in that block. The three layers' cell positions form
+// a Latin square, so together they cover all 9 — i.e. every dot in the grid
+// belongs to exactly one layer. Animating each layer's opacity therefore
+// twinkles the whole field, scattered rather than in lockstep, at a cost of
+// three animation drivers and three SVG nodes.
+const LAYERS: [number, number][][] = [
+  [
+    [0, 0],
+    [1, 2],
+    [2, 1],
+  ],
+  [
+    [1, 0],
+    [2, 2],
+    [0, 1],
+  ],
+  [
+    [2, 0],
+    [0, 2],
+    [1, 1],
+  ],
+];
+const BLOCK = 3;
 
 type Props = {
   width: number;
@@ -24,9 +56,83 @@ type Props = {
   baseOpacity?: number;
   /** brightest opacity a twinkling dot reaches */
   peakOpacity?: number;
-  /** fraction of grid cells that twinkle (0–1) */
-  density?: number;
 };
+
+function TwinkleLayer({
+  index,
+  cells,
+  width,
+  height,
+  spacing,
+  radius,
+  color,
+  baseOpacity,
+  peakOpacity,
+}: {
+  index: number;
+  cells: [number, number][];
+  width: number;
+  height: number;
+  spacing: number;
+  radius: number;
+  color: string;
+  baseOpacity: number;
+  peakOpacity: number;
+}) {
+  const v = useSharedValue(0);
+
+  React.useEffect(() => {
+    // Staggered durations and delays keep the three layers permanently out of
+    // phase, so the field shimmers instead of pulsing as one sheet.
+    v.value = withDelay(
+      index * 900,
+      withRepeat(
+        withTiming(1, {
+          duration: 1900 + index * 650,
+          easing: Easing.inOut(Easing.sin),
+        }),
+        -1,
+        true
+      )
+    );
+    return () => cancelAnimation(v);
+  }, [v, index]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: baseOpacity + (peakOpacity - baseOpacity) * v.value,
+  }));
+
+  const tile = spacing * BLOCK;
+  const id = `twinkleLayer${index}`;
+
+  return (
+    <Reanimated.View style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
+      <Svg width={width} height={height}>
+        <Defs>
+          <Pattern
+            id={id}
+            x={0}
+            y={0}
+            width={tile}
+            height={tile}
+            patternUnits="userSpaceOnUse"
+          >
+            {cells.map(([cx, cy]) => (
+              <Circle
+                key={`${cx}-${cy}`}
+                cx={cx * spacing}
+                cy={cy * spacing}
+                r={radius}
+                fill={color}
+              />
+            ))}
+          </Pattern>
+        </Defs>
+        <Rect x={0} y={0} width={width} height={height} fill={`url(#${id})`} />
+      </Svg>
+    </Reanimated.View>
+  );
+}
 
 export function TwinkleDots({
   width,
@@ -36,77 +142,13 @@ export function TwinkleDots({
   radius = 1.4,
   baseOpacity = 0.6,
   peakOpacity = 0.9,
-  density = 1,
 }: Props) {
   const isFocused = useIsFocused();
 
-  const cols = Math.max(1, Math.ceil(width / spacing) + 1);
-  const rows = Math.max(1, Math.ceil(height / spacing) + 1);
-
-  const twinkles = React.useMemo<Twinkle[]>(() => {
-    const total = cols * rows;
-    const count = Math.round(total * density);
-    const used = new Set<number>();
-    const arr: Twinkle[] = [];
-    let guard = 0;
-    while (arr.length < count && guard < count * 6) {
-      guard++;
-      const cell = Math.floor(Math.random() * total);
-      if (used.has(cell)) continue;
-      used.add(cell);
-      const c = cell % cols;
-      const r = Math.floor(cell / cols);
-      arr.push({
-        key: `${cell}`,
-        x: c * spacing,
-        y: r * spacing,
-        val: new Animated.Value(Math.random()),
-        dur: 1400 + Math.random() * 2200, // 1.4s – 3.6s per half-cycle
-        delay: Math.random() * 2600,
-        peak: peakOpacity * (0.6 + Math.random() * 0.4),
-      });
-    }
-    return arr;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cols, rows, spacing, density, peakOpacity]);
-
-  React.useEffect(() => {
-    if (!isFocused) return;
-    const running = twinkles.map((d) => {
-      const loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(d.val, {
-            toValue: 1,
-            duration: d.dur,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-            isInteraction: false,
-          }),
-          Animated.timing(d.val, {
-            toValue: 0,
-            duration: d.dur,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-            isInteraction: false,
-          }),
-        ])
-      );
-      const t = setTimeout(() => loop.start(), d.delay);
-      return { loop, t };
-    });
-    return () => {
-      running.forEach(({ loop, t }) => {
-        clearTimeout(t);
-        loop.stop();
-      });
-    };
-  }, [twinkles, isFocused]);
-
-  const size = radius * 2;
-
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
-      {/* Static base grid — one cheap SVG node */}
+      {/* Constant base grid — holds the full dot field at rest, and is all
+          that remains when the screen is not focused. */}
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
         <Defs>
           <Pattern
@@ -123,25 +165,22 @@ export function TwinkleDots({
         <Rect x={0} y={0} width={width} height={height} fill="url(#twinkleGrid)" />
       </Svg>
 
-      {/* Sparse animated overlay — the actual twinkle */}
-      {twinkles.map((d) => (
-        <Animated.View
-          key={d.key}
-          style={{
-            position: 'absolute',
-            left: d.x - radius,
-            top: d.y - radius,
-            width: size,
-            height: size,
-            borderRadius: radius,
-            backgroundColor: color,
-            opacity: d.val.interpolate({
-              inputRange: [0, 1],
-              outputRange: [baseOpacity, d.peak],
-            }),
-          }}
-        />
-      ))}
+      {/* Animations stop entirely when Home is not the focused screen */}
+      {isFocused &&
+        LAYERS.map((cells, i) => (
+          <TwinkleLayer
+            key={i}
+            index={i}
+            cells={cells}
+            width={width}
+            height={height}
+            spacing={spacing}
+            radius={radius}
+            color={color}
+            baseOpacity={baseOpacity}
+            peakOpacity={peakOpacity}
+          />
+        ))}
     </View>
   );
 }

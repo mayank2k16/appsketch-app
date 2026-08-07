@@ -25,7 +25,7 @@ const HEADER_LOGO = require('../../assets/logo.png');
 import { Text } from '@/components/ui';
 import { signOut, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { drawerTheme } from '@/containers/Home/theme/HomeTheme';
+import { drawerTheme, type DrawerColors } from '@/containers/Home/theme/HomeTheme';
 import { useSelectedTheme } from '@/lib/hooks/use-selected-theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -54,6 +54,19 @@ const QUICK_ACCESS_ITEMS: MenuItem[] = [
   { id: 'profile', label: 'My Account', route: '/profile', icon: 'person-outline' },
   { id: 'cart', label: 'Cart', route: '/cart', icon: 'cart-outline' },
 ];
+
+// Signed-in only (matches Profile's own "Help & Support" entry) — a guest
+// has no account for a support agent to attach the conversation to.
+const SUPPORT_ITEM: MenuItem = {
+  id: 'support',
+  label: 'Help & Support',
+  route: '/support',
+  icon: 'help-buoy-outline',
+};
+// Reserved animation slots for Quick Access, sized for the signed-in case
+// (Quick Access + Support) so item indices stay stable whether or not the
+// guest variant actually renders every slot.
+const QUICK_SLOT_COUNT = QUICK_ACCESS_ITEMS.length + 1;
 
 const AUTH_MENU_ITEMS: MenuItem[] = [
   { id: 'pricing', label: 'Pricing & Plans', route: '/pricing', icon: 'pricetag-outline' },
@@ -125,6 +138,41 @@ const pill = StyleSheet.create({
   },
 });
 
+// ─── Elegant card row ──────────────────────────────────────────────────────────
+// Every menu row shares this: a bordered card with a tinted circular icon
+// badge, replacing the previous flat icon-next-to-label list.
+function DrawerRow({
+  dt,
+  icon,
+  label,
+  iconColor,
+  labelColor,
+  onPress,
+  right,
+}: {
+  dt: DrawerColors;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  iconColor?: string;
+  labelColor?: string;
+  onPress: () => void;
+  right?: React.ReactNode;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.65}
+      style={[st.row, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder }]}
+    >
+      <View style={[st.iconWrap, { backgroundColor: dt.iconWrapBg }]}>
+        <Ionicons name={icon} size={16} color={iconColor ?? ACCENT} />
+      </View>
+      <Text style={[st.rowLabel, { color: labelColor ?? dt.labelColor }]}>{label}</Text>
+      {right}
+    </TouchableOpacity>
+  );
+}
+
 // ─── DrawerMenu ────────────────────────────────────────────────────────────────
 export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const router = useRouter();
@@ -132,6 +180,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const isGuest = status === 'guest';
   const isSignedIn = status === 'signIn';
   const MENU_ITEMS = isGuest ? GUEST_MENU_ITEMS : AUTH_MENU_ITEMS;
+  const quickAccessItems = isSignedIn ? [...QUICK_ACCESS_ITEMS, SUPPORT_ITEM] : QUICK_ACCESS_ITEMS;
   const { colorScheme } = useColorScheme();
   const dt = drawerTheme[colorScheme === 'dark' ? 'dark' : 'light'];
   const { selectedTheme, setSelectedTheme } = useSelectedTheme();
@@ -142,9 +191,11 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
   // Allocate for the largest list (AUTH) plus a dedicated trailing slot for
   // the sign-in/logout row's own animation, so that row never shares an
-  // Animated.Value with the last menu item.
+  // Animated.Value with the last menu item. Quick Access always reserves
+  // QUICK_SLOT_COUNT slots (its signed-in size) so indices don't shift
+  // between guest/signed-in renders.
   const itemAnims = React.useRef(
-    Array.from({ length: QUICK_ACCESS_ITEMS.length + AUTH_MENU_ITEMS.length + 1 }, () => new Animated.Value(0))
+    Array.from({ length: QUICK_SLOT_COUNT + AUTH_MENU_ITEMS.length + 1 }, () => new Animated.Value(0))
   ).current;
 
   const [modalVisible, setModalVisible] = React.useState(false);
@@ -260,9 +311,10 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingTop: 10, paddingBottom: 24 }}
         >
-          {/* ── Quick access: account/profile + cart, kept separate from the general menu links ── */}
+          {/* ── Quick access: account/profile + cart (+ Help & Support when
+              signed in), kept separate from the general menu links ── */}
           <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Quick Access</Text>
-          {QUICK_ACCESS_ITEMS.map((item, idx) => {
+          {quickAccessItems.map((item, idx) => {
             const anim = itemAnims[idx];
             return (
               <Animated.View
@@ -276,14 +328,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                   }],
                 }}
               >
-                <TouchableOpacity
-                  onPress={() => handlePress(item.route)}
-                  activeOpacity={0.6}
-                  style={st.flatRow}
-                >
-                  <Ionicons name={item.icon} size={17} color={dt.labelColor} style={st.flatIcon} />
-                  <Text style={[st.flatLabel, { color: dt.labelColor }]}>{item.label}</Text>
-                </TouchableOpacity>
+                <DrawerRow dt={dt} icon={item.icon} label={item.label} onPress={() => handlePress(item.route)} />
               </Animated.View>
             );
           })}
@@ -292,7 +337,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             <>
               <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Menu</Text>
               {MENU_ITEMS.map((item, idx) => {
-                const anim = itemAnims[QUICK_ACCESS_ITEMS.length + idx];
+                const anim = itemAnims[QUICK_SLOT_COUNT + idx];
                 return (
                   <Animated.View
                     key={item.id}
@@ -305,14 +350,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                       }],
                     }}
                   >
-                    <TouchableOpacity
-                      onPress={() => handlePress(item.route)}
-                      activeOpacity={0.6}
-                      style={st.flatRow}
-                    >
-                      <Ionicons name={item.icon} size={17} color={dt.labelColor} style={st.flatIcon} />
-                      <Text style={[st.flatLabel, { color: dt.labelColor }]}>{item.label}</Text>
-                    </TouchableOpacity>
+                    <DrawerRow dt={dt} icon={item.icon} label={item.label} onPress={() => handlePress(item.route)} />
                   </Animated.View>
                 );
               })}
@@ -322,28 +360,19 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Preferences</Text>
 
           {/* ── Theme toggle ── */}
-          <TouchableOpacity
+          <DrawerRow
+            dt={dt}
+            icon={isDark ? 'moon' : 'sunny'}
+            label={themeLabel}
             onPress={handleThemeToggle}
-            activeOpacity={0.6}
-            style={st.flatRow}
-          >
-            <Ionicons name={isDark ? 'moon' : 'sunny'} size={17} color={dt.labelColor} style={st.flatIcon} />
-            <Text style={[st.flatLabel, { color: dt.labelColor }]}>{themeLabel}</Text>
-            <ThemeTogglePill isDark={isDark} />
-          </TouchableOpacity>
+            right={<ThemeTogglePill isDark={isDark} />}
+          />
 
           {/* ── Share ── */}
-          <TouchableOpacity
-            onPress={handleShare}
-            activeOpacity={0.6}
-            style={st.flatRow}
-          >
-            <Ionicons name="share-outline" size={17} color={dt.labelColor} style={st.flatIcon} />
-            <Text style={[st.flatLabel, { color: dt.labelColor }]}>Share Appsketch</Text>
-          </TouchableOpacity>
+          <DrawerRow dt={dt} icon="share-outline" label="Share Appsketch" onPress={handleShare} />
 
           {/* Divider */}
-          <View style={[st.divider, { backgroundColor: `${ACCENT}25` }]} />
+          <View style={[st.divider, { backgroundColor: dt.accentLine, opacity: 0.25 }]} />
 
           <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Session</Text>
 
@@ -359,23 +388,23 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             }}
           >
             {isSignedIn ? (
-              <TouchableOpacity
+              <DrawerRow
+                dt={dt}
+                icon="log-out-outline"
+                label="Log Out"
+                iconColor="#EF4444"
+                labelColor="#EF4444"
                 onPress={handleLogout}
-                activeOpacity={0.6}
-                style={st.flatRow}
-              >
-                <Ionicons name="log-out-outline" size={17} color="#EF4444" style={st.flatIcon} />
-                <Text style={[st.flatLabel, { color: '#EF4444' }]}>Log Out</Text>
-              </TouchableOpacity>
+              />
             ) : (
-              <TouchableOpacity
+              <DrawerRow
+                dt={dt}
+                icon="log-in-outline"
+                label="Sign In / Register"
+                iconColor={ACCENT}
+                labelColor={ACCENT}
                 onPress={handleSignIn}
-                activeOpacity={0.6}
-                style={st.flatRow}
-              >
-                <Ionicons name="log-in-outline" size={17} color={ACCENT} style={st.flatIcon} />
-                <Text style={[st.flatLabel, { color: ACCENT }]}>Sign In / Register</Text>
-              </TouchableOpacity>
+              />
             )}
           </Animated.View>
         </ScrollView>
@@ -531,21 +560,27 @@ const st = StyleSheet.create({
     lineHeight: 14,
   },
 
-  // Flat rows — no card background/border, icon sits plain next to the
-  // label. Full-width tap target instead of an inset pill.
-  flatRow: {
+  // Card row — bordered surface + tinted circular icon badge, replacing the
+  // previous flat icon-next-to-label list for a more polished, grouped feel.
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 7,
-    gap: 8,
+    marginHorizontal: 14,
+    marginBottom: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
   },
-  flatIcon: {
-    fontSize: 17,
-    width: 20,
-    textAlign: 'center',
+  iconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  flatLabel: {
+  rowLabel: {
     flex: 1,
     fontFamily: F.sans600,
     fontSize: 13.5,

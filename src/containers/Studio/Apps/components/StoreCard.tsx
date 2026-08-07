@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -25,9 +26,23 @@ export function StoreCard({
   const t = useAppTheme(colorScheme);
 
   return (
-    <View style={[st.card, { backgroundColor: t.card, borderColor: t.border }]}>
+    <View style={[st.card, { borderColor: t.studioCardBorder }]}>
+      {/* Top-lit gradient body — lighter along the top edge, sinking to
+          near-black at the bottom, so the card reads as a lit surface rather
+          than the flat `card` fill it used before. */}
+      <LinearGradient
+        colors={t.studioCardGradient as unknown as [string, string, ...string[]]}
+        locations={[0, 0.55, 1]}
+        start={{ x: 0.15, y: 0 }}
+        end={{ x: 0.85, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      {/* Hairline highlight sitting on the very top edge — the detail that
+          sells the "lit from above" read on a dark card. */}
+      <View pointerEvents="none" style={[st.topEdge, { backgroundColor: t.studioCardTopEdge }]} />
+
       <View style={st.topRow}>
-        <View style={[st.logoWrap, { backgroundColor: t.surface }]}>
+        <View style={[st.logoWrap, { backgroundColor: t.studioCardLogoBg, borderColor: t.studioCardBorder }]}>
           {tenant.logo ? (
             <Image source={{ uri: tenant.logo }} style={st.logo} resizeMode="cover" />
           ) : (
@@ -35,7 +50,7 @@ export function StoreCard({
           )}
         </View>
 
-        <View style={{ flex: 1 }}>
+        <View style={st.titleWrap}>
           <Text style={[st.title, { color: t.text }]} numberOfLines={1}>
             {(tenant.title || 'Untitled store').slice(0, 40)}
           </Text>
@@ -48,42 +63,54 @@ export function StoreCard({
       </View>
 
       <View style={st.actionsRow}>
-        <Pressable
-          style={[st.actionBtn, { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder }]}
-          onPress={onViewStore}
-        >
-          <Text style={[st.storeBtnText, { color: t.text }]}>View Store</Text>
-          <Ionicons name="open-outline" size={14} color={t.text} />
+        <Pressable style={st.actionSlot} onPress={onViewStore}>
+          <View
+            style={[
+              st.actionBtn,
+              { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder },
+            ]}
+          >
+            <Text style={[st.storeBtnText, { color: t.text }]}>View Store</Text>
+            <Ionicons name="open-outline" size={14} color={t.text} />
+          </View>
         </Pressable>
 
-        <Pressable style={[st.actionBtn, { backgroundColor: t.accent }]} onPress={onViewCms} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Text style={st.cmsBtnText}>View CMS</Text>
-              <Ionicons name="arrow-forward" size={14} color="#fff" />
-            </>
-          )}
+        <Pressable style={st.actionSlot} onPress={onViewCms} disabled={loading}>
+          <View style={[st.actionBtn, { backgroundColor: t.accent }]}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={st.cmsBtnText}>View CMS</Text>
+                <Ionicons name="arrow-forward" size={14} color="#fff" />
+              </>
+            )}
+          </View>
         </Pressable>
 
-        <Pressable style={[st.actionBtn, { backgroundColor: t.accent }]} onPress={onViewCrm} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Text style={st.cmsBtnText}>View CRM</Text>
-              <Ionicons name="arrow-forward" size={14} color="#fff" />
-            </>
-          )}
+        <Pressable style={st.actionSlot} onPress={onViewCrm} disabled={loading}>
+          <View style={[st.actionBtn, { backgroundColor: t.accent }]}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={st.cmsBtnText}>View CRM</Text>
+                <Ionicons name="arrow-forward" size={14} color="#fff" />
+              </>
+            )}
+          </View>
         </Pressable>
 
-        <Pressable
-          style={[st.actionBtn, { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder }]}
-          onPress={onViewCustomStore}
-        >
-          <Ionicons name="code-slash-outline" size={14} color={t.text} />
-          <Text style={[st.storeBtnText, { color: t.text }]}>Customise Store</Text>
+        <Pressable style={st.actionSlot} onPress={onViewCustomStore}>
+          <View
+            style={[
+              st.actionBtn,
+              { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder },
+            ]}
+          >
+            <Ionicons name="code-slash-outline" size={14} color={t.text} />
+            <Text style={[st.storeBtnText, { color: t.text }]}>Remix</Text>
+          </View>
         </Pressable>
       </View>
     </View>
@@ -92,12 +119,20 @@ export function StoreCard({
 
 const st = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 14,
-    marginHorizontal: 16,
-    marginBottom: 12,
+    marginHorizontal: 0,
+    marginBottom: 10,
     borderWidth: 1,
-    gap: 20,
+    gap: 18,
+    overflow: 'hidden',
+  },
+  topEdge: {
+    position: 'absolute',
+    top: 0,
+    left: 14,
+    right: 14,
+    height: StyleSheet.hairlineWidth,
   },
   topRow: {
     flexDirection: 'row',
@@ -107,28 +142,35 @@ const st = StyleSheet.create({
   logoWrap: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 13,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   logo: { width: '100%', height: '100%' },
+  titleWrap: { flex: 1 },
   title: { fontSize: 14.5, fontWeight: '700' },
   subtitle: { fontSize: 12, marginTop: 2 },
   actionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
-  actionBtn: {
+  // The Pressable owns the grid slot; the View inside owns the skin. NativeWind's
+  // JSX transform drops `style` callbacks on Pressable, so visual styling never
+  // goes on the Pressable itself in this codebase.
+  actionSlot: {
     flexBasis: '47%',
     flexGrow: 1,
+  },
+  actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    height: 36,
-    borderRadius: 18,
+    height: 38,
+    borderRadius: 19,
   },
   storeBtnText: { fontSize: 12.5, fontWeight: '700' },
   cmsBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },

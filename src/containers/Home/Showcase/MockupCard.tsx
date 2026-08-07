@@ -102,7 +102,7 @@ export function MockupCard({ t }: { t: HomeColors }) {
                   style={StyleSheet.absoluteFill}
                   contentFit="cover"
                   cachePolicy="memory-disk"
-                  transition={200}
+                  transition={0}
                 />
                 {i === 1 ? (
                   <View style={[s.tileBadge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>

@@ -6,23 +6,12 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
   cancelAnimation,
   Easing,
-  interpolate,
-  useAnimatedProps,
   useAnimatedStyle,
-  useFrameCallback,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, {
-  ClipPath,
-  Defs,
-  G,
-  Image as SvgImage,
-  LinearGradient as SvgLinearGradient,
-  Polygon,
-  Stop,
-} from 'react-native-svg';
+import Svg, { ClipPath, Defs, G, Image as SvgImage, Polygon } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
 import { SectionHeading } from '../components/SectionHeading';
@@ -54,15 +43,21 @@ const HEX_RY = (HEX_H / 2) * HEX_SHRINK;
 // The strip is one set of columns rendered twice; drifting past one set width
 // wraps back by exactly that amount, which is invisible because the two sets
 // are identical. That is the whole infinite-scroll trick.
-const COLS_PER_SET = 6;
+// Only needs to exceed SCREEN_W: at COL_STEP ~0.75·HEX_W, 5 columns already
+// spans ~1.1 screens. Six meant ~20% more cells (each one an SVG image + a
+// clipped group + a stroked polygon) for content that is never on screen.
+const COLS_PER_SET = 5;
 const SET_W = COLS_PER_SET * COL_STEP;
 const CONTENT_W = SET_W * 2;
 
-const FADE_H = Math.round(HEX_H * 0.5);
-
 const DRIFT_PX_S = 14; // right → left, slow enough to read as ambient
-const BEAM_W = SCREEN_W * 0.34;
-const BEAM_MS = 11000;
+// One full period of the drift loop, at the constant DRIFT_PX_S speed. Content
+// repeats every SET_W, so any SET_W-long leg — from whatever offset the drag
+// left behind — snaps back invisibly and the speed stays constant.
+const DRIFT_MS = (SET_W / DRIFT_PX_S) * 1000;
+// Height of the top/bottom fade that melts the sliced hex rows into the page
+// background, so the strip's `overflow:hidden` cut never shows as a line.
+const FADE_H = Math.round(HEX_H * 0.5);
 
 // One clip path, reused: every cell is a <G> translated into place and the
 // clip resolves in that translated user space, so N cells need N transforms
@@ -125,8 +120,6 @@ const CELLS: Cell[] = (() => {
   return out;
 })();
 
-const AnimatedGradient = Reanimated.createAnimatedComponent(SvgLinearGradient);
-
 /** `#RRGGBB` → `rgba(r,g,b,a)`, so a fade can end on the exact page colour. */
 function fade(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -135,31 +128,32 @@ function fade(hex: string, alpha: number): string {
 
 function Honeycomb({ t }: { t: HomeColors }) {
   const offset = useSharedValue(0);
-  const dragging = useSharedValue(false);
-  const beam = useSharedValue(0);
 
-  // Per-frame drift rather than a timing animation, so a drag can take over
-  // mid-flight and hand control straight back on release.
-  useFrameCallback((f) => {
-    if (dragging.value) return;
-    const dt = Math.min(f.timeSincePreviousFrame ?? 16, 50) / 1000;
-    let v = offset.value - DRIFT_PX_S * dt;
-    if (v <= -SET_W) v += SET_W;
-    offset.value = v;
-  }, true);
-
-  React.useEffect(() => {
-    beam.value = withRepeat(
-      withTiming(1, { duration: BEAM_MS, easing: Easing.linear }),
+  // UI-thread loop, not a per-frame JS callback: withRepeat's non-reversing
+  // mode snaps back to the start value each cycle on its own, and because the
+  // content is periodic every SET_W that snap lands on an identical frame —
+  // so a plain repeating withTiming gives the same endless drift the old
+  // frame callback did, without a JS callback running on every single frame.
+  const startDrift = () => {
+    'worklet';
+    offset.value = withRepeat(
+      withTiming(offset.value - SET_W, { duration: DRIFT_MS, easing: Easing.linear }),
       -1,
       false
     );
-    return () => cancelAnimation(beam);
-  }, [beam]);
+  };
+
+  React.useEffect(() => {
+    startDrift();
+    return () => {
+      cancelAnimation(offset);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pan = Gesture.Pan()
     .onBegin(() => {
-      dragging.value = true;
+      cancelAnimation(offset);
     })
     .onChange((e) => {
       let v = offset.value + e.changeX;
@@ -168,22 +162,12 @@ function Honeycomb({ t }: { t: HomeColors }) {
       offset.value = v;
     })
     .onFinalize(() => {
-      dragging.value = false;
+      startDrift();
     });
 
   const stripStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: offset.value }],
   }));
-
-  // Slides the gradient's own coordinates across the strip — the seam strokes
-  // are painted with it, so only the channels between cells light up.
-  // Subtracting the drift converts a screen-space path into content space, so
-  // the line crosses the visible band once per cycle instead of wandering off
-  // with the honeycomb and disappearing for most of the loop.
-  const beamProps = useAnimatedProps(() => {
-    const x = interpolate(beam.value, [0, 1], [-BEAM_W, SCREEN_W]) - offset.value;
-    return { x1: x, x2: x + BEAM_W };
-  });
 
   return (
     <GestureDetector gesture={pan}>
@@ -194,21 +178,6 @@ function Honeycomb({ t }: { t: HomeColors }) {
               <ClipPath id="hcClip">
                 <Polygon points={HEX_POINTS} />
               </ClipPath>
-              <AnimatedGradient
-                id="hcBeam"
-                gradientUnits="userSpaceOnUse"
-                y1={0}
-                y2={GRID_H * 0.6}
-                animatedProps={beamProps}
-              >
-                <Stop offset="0" stopColor="#6C5CE7" stopOpacity="0" />
-                <Stop offset="0.42" stopColor="#6C5CE7" stopOpacity="0.35" />
-                <Stop offset="0.48" stopColor="#8B7CFF" stopOpacity="0.9" />
-                <Stop offset="0.5" stopColor="#E9EDFF" stopOpacity="1" />
-                <Stop offset="0.52" stopColor="#8B7CFF" stopOpacity="0.9" />
-                <Stop offset="0.58" stopColor="#6C5CE7" stopOpacity="0.35" />
-                <Stop offset="1" stopColor="#6C5CE7" stopOpacity="0" />
-              </AnimatedGradient>
             </Defs>
 
             {CELLS.map((c) => (
@@ -231,27 +200,27 @@ function Honeycomb({ t }: { t: HomeColors }) {
                   strokeWidth={1}
                   strokeLinejoin="round"
                 />
-                <Polygon
-                  points={HEX_POINTS}
-                  fill="none"
-                  stroke="url(#hcBeam)"
-                  strokeWidth={1.8}
-                  strokeLinejoin="round"
-                />
               </G>
             ))}
           </Svg>
         </Reanimated.View>
 
         {/* Melts the sliced top and bottom rows into the page so the band has
-            no hard cut line across the combs. */}
+            no hard cut line across the combs. Explicit vertical start/end —
+            expo-linear-gradient's default angle is diagonal, which is what
+            made this read as a slant instead of a flat band parallel to the
+            device edge. */}
         <LinearGradient
           colors={[t.bg, fade(t.bg, 0)]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
           style={[s.fade, { top: 0, height: FADE_H }]}
           pointerEvents="none"
         />
         <LinearGradient
           colors={[fade(t.bg, 0), t.bg]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
           style={[s.fade, { bottom: 0, height: FADE_H }]}
           pointerEvents="none"
         />

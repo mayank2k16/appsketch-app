@@ -3,12 +3,9 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, StatusBar, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import {
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from 'react-native-reanimated';
 
 import { DrawerMenu } from '@/components/drawer-menu';
+import { LazySection } from './components/LazySection';
 import { useAppStartup } from '@/lib';
 import { homeTheme } from './theme/HomeTheme';
 import { HomeHeader } from './Header';
@@ -18,11 +15,13 @@ import { GallerySection } from './Gallery';
 import { AgentV2 } from './AgentV2';
 import { Showcase } from './Showcase';
 import { HowItWorksSection } from './HowItWorks';
+import { IntegrationsCatalogSection } from './IntegrationsCatalog';
 import { WhatsInsideSection } from './WhatsInside';
 import { ShippedSection } from './Shipped';
 import { TestimonialsSection } from './Testimonials';
 import { FAQSection } from './FAQ';
 import { ClosingCTASection } from './ClosingCTA';
+import { FooterSection } from './Footer';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -33,15 +32,10 @@ export function HomeScreen() {
   // more often than granted.
   useAppStartup();
 
-  // Drives the gallery masonry's parallax. `KeyboardAwareScrollView` already
-  // renders a `Reanimated.ScrollView` under the hood and spreads unknown props
-  // (including `onScroll`) straight onto it, so this needs no extra wrapper and
-  // stays on the UI thread — no JS-thread scroll listener.
-  const scrollY = useSharedValue(0);
-  const onScroll = useAnimatedScrollHandler((e) => {
-    scrollY.value = e.contentOffset.y;
-  });
-
+  // No scroll listener at all. The gallery masonry used to consume a
+  // `useAnimatedScrollHandler` for its parallax; with that effect gone, Home
+  // scrolls with nothing subscribed to the offset — no worklet and no JS
+  // callback runs per scroll frame.
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -97,7 +91,10 @@ export function HomeScreen() {
         bounces={false}
         bottomOffset={24}
         keyboardShouldPersistTaps="handled"
-        onScroll={onScroll}
+        // Detaches off-screen section subtrees from the native view hierarchy
+        // while they are scrolled away, so the compositor only ever walks the
+        // handful of sections actually near the viewport.
+        removeClippedSubviews
       >
         {/* ── Full-screen hero ── */}
         <HeroBanner
@@ -114,25 +111,48 @@ export function HomeScreen() {
         <GallerySection
           onStartPress={handleGalleryStartPress}
           onLearnPress={handleGalleryLearnPress}
-          scrollY={scrollY}
         />
 
-        <Showcase />
+        {/* Everything below the fold mounts after first paint, in order, each
+            reserving its height so the scroll content never resizes under the
+            user. Previously all of these mounted synchronously on first render
+            — hundreds of views plus ~70 remote images before the hero was
+            even interactive. */}
+        <LazySection minHeight={620} order={0}>
+          <Showcase />
+        </LazySection>
 
-        <HowItWorksSection />
+        <LazySection minHeight={900} order={1}>
+          <HowItWorksSection />
+        </LazySection>
 
-        <WhatsInsideSection />
+        <LazySection minHeight={880} order={2}>
+          <WhatsInsideSection />
+        </LazySection>
 
-        <ShippedSection />
+        <LazySection minHeight={Math.round((Dimensions.get('window').width * 70) / 40)} order={3}>
+          <IntegrationsCatalogSection />
+        </LazySection>
 
-        <TestimonialsSection />
+        <LazySection minHeight={620} order={4}>
+          <ShippedSection />
+        </LazySection>
 
-        <FAQSection />
+        <LazySection minHeight={520} order={5}>
+          <TestimonialsSection />
+        </LazySection>
 
-        <ClosingCTASection
-          onStartPress={handleStartPress}
-          onLearnPress={handleLearnPress}
-        />
+        <LazySection minHeight={760} order={6}>
+          <FAQSection />
+        </LazySection>
+
+        <LazySection minHeight={1000} order={7}>
+          <ClosingCTASection />
+        </LazySection>
+
+        <LazySection minHeight={Math.round((Dimensions.get('window').width * 6) / 16)} order={8}>
+          <FooterSection />
+        </LazySection>
 
         {/* ── Future home sections slot in here ── */}
       </KeyboardAwareScrollView>

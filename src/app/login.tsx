@@ -1,10 +1,10 @@
+import { Image as ExpoImage } from 'expo-image';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Animated,
   Dimensions,
   Easing,
-  Image,
   StatusBar,
   StyleSheet,
   View,
@@ -12,21 +12,9 @@ import {
 
 import { AuthForm } from '@/components/AuthForm';
 import { loginTheme } from '@/components/AuthForm/AuthTheme';
+import { LOGIN_MONTAGE_IMAGES as IMGS } from '@/lib/login-montage-images';
 
 const { width, height } = Dimensions.get('window');
-
-
-const IMGS = [
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/an-elegant-and-sleek-layout-for-chinese-restaurants.webp?w=400', // 0 warm
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/a-website-template-for-grocery-and-supermarts.webp?w=400',        // 1 green
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/a-luxury-and-premium-wellness-brand-website.webp?w=400',          // 2 dark
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/a-modern-sleek-and-elegant-real-estate-website.webp?w=400',       // 3 dark
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/Screenshot_2026-04-22_at_8.54.13PM.png?w=400',                    // 4 neutral
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/Screenshot_2026-04-16_at_8.40.13PM.png?w=400',                    // 5 dark
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/Screenshot_2026-02-11_at_3.29.19PM.webp?w=400',                   // 6 neutral
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/compressed_Screenshot_2026-01-12_at_10_14.webp?w=400',            // 7 green
-  'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/compressed_Screenshot_2026-01-12_at_10_15.webp?w=400',            // 8 neutral
-];
 
 // A steep -40° tilt leaves the top-right/top corners empty unless the band of
 // columns is WIDE enough to reach into them. Rather than scaling the tiles up
@@ -92,16 +80,19 @@ function ScrollColumn({
     <View style={{ width: COL_W, overflow: 'hidden' }}>
       <Animated.View style={{ transform: [{ translateY: anim }] }}>
         {imgs.map((uri, i) => (
-          <Image
+          <ExpoImage
             key={i}
-            source={{ uri }}
+            source={uri}
             style={{
               width: COL_W, height: tileH,
               marginBottom: TILE_GAP, borderRadius: 12,
               backgroundColor: '#000',
-              opacity: 1,
             }}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            recyclingKey={uri}
+            transition={0}
+            priority="high"
           />
         ))}
       </Animated.View>

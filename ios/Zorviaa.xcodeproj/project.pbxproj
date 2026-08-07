@@ -13,10 +13,10 @@
 		69BE47203D507875BF549E27 /* libPods-Zorviaa.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 94D4753CE2DB213BB9972109 /* libPods-Zorviaa.a */; };
 		6BB1812E1B8B966A93A9F143 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0425AD70986998208DFAFFED /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		BDE05C2DC4274243B030D4E0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E469272FA12743A581400C6E /* GoogleService-Info.plist */; };
 		D8CEC370E10A4C188DBA61FA /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 90537245221A40C8B0FAD21F /* Inter.ttf */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 		F42816F898FE44D3BBCDEF55 /* notification.wav in Resources */ = {isa = PBXBuildFile; fileRef = 72925A7519254B138DA8A5C1 /* notification.wav */; };
-		BDE05C2DC4274243B030D4E0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E469272FA12743A581400C6E /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,11 +28,11 @@
 		1D4453A0B3EDDCF0F68D90E0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Zorviaa/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		50C4A35825AFF27C91291FC4 /* Pods-Zorviaa.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zorviaa.debug.xcconfig"; path = "Target Support Files/Pods-Zorviaa/Pods-Zorviaa.debug.xcconfig"; sourceTree = "<group>"; };
 		72925A7519254B138DA8A5C1 /* notification.wav */ = {isa = PBXFileReference; includeInIndex = 1; name = notification.wav; path = Zorviaa/notification.wav; sourceTree = "<group>"; };
-		E469272FA12743A581400C6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Zorviaa/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		90537245221A40C8B0FAD21F /* Inter.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Inter.ttf; path = ../assets/fonts/Inter.ttf; sourceTree = "<group>"; };
 		94D4753CE2DB213BB9972109 /* libPods-Zorviaa.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Zorviaa.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Zorviaa/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		E469272FA12743A581400C6E /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Zorviaa/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Zorviaa/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Zorviaa-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Zorviaa-Bridging-Header.h"; path = "Zorviaa/Zorviaa-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -414,7 +414,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zorviaa/Mandiify.entitlements;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 40;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -450,7 +450,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Zorviaa/Mandiify.entitlements;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 40;
 				INFOPLIST_FILE = Zorviaa/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -89,16 +89,43 @@ export async function closeConversation(id: number): Promise<void> {
   await authenticatedClient.post(`api/support/conversations/${id}/close/`);
 }
 
+export async function fetchUnreadCount(): Promise<number> {
+  const { data } = await authenticatedClient.get<{ data?: { unread?: number } }>(
+    'api/support/unread_count/'
+  );
+  return data?.data?.unread ?? 0;
+}
+
+/** This app isn't a per-tenant storefront (baseURL has no `/app/<uuid>`
+ * segment) — its own users/conversations always belong to the platform's
+ * own tenant. */
+export const SUPPORT_TENANT_ID = 1;
+
+/** Customer-side: get-or-create the caller's own support conversation.
+ * There's no order/storefront concept in this app, so unlike the sibling
+ * customer apps this never scopes a conversation to an order — one general
+ * thread per user. */
+export async function startConversation(subject = 'General support'): Promise<Conversation | null> {
+  const { data } = await authenticatedClient.post<{ data?: Conversation } | Conversation>(
+    'api/support/conversations/',
+    { subject }
+  );
+  return unwrapEnvelope(data);
+}
+
 // ── WebSocket URLs ───────────────────────────────────────────────────────
 
 /** Best-effort tenant hint — optional here (Vite itself falls back to an
  * empty string when there's no `?tenant=` on the CMS URL, for a "null-tenant
  * operator account" edge case), unlike Vendors' hard path-segment
- * requirement. Same lookup shape as `src/api/vendors/client.ts`. */
+ * requirement. Same lookup shape as `src/api/vendors/client.ts`. Falls back
+ * to this app's own tenant (`SUPPORT_TENANT_ID`) rather than an empty string
+ * — a customer's Profile here has no `tenant_id` of its own to read, unlike
+ * a CMS agent's TenantUser. */
 function getTenantHint(): string {
   const user = useAuth.getState().user as Record<string, unknown> | null;
   const tenantId = user?.tenant_id ?? user?.tenant_uuid ?? user?.tenant;
-  return tenantId ? String(tenantId) : '';
+  return tenantId ? String(tenantId) : String(SUPPORT_TENANT_ID);
 }
 
 function wsOrigin(): string {

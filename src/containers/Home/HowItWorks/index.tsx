@@ -11,7 +11,6 @@ import Reanimated, {
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
@@ -57,24 +56,22 @@ const STEPS: {
 
 const PROMPT_PHRASE =
   'Build an inventory app for my 3 warehouses with role-based access';
-const TYPE_MS = 32;
+// Chunked, not per-character. At TYPE_MS=32 with one character per tick this
+// hook fired ~31 setState calls a second, each re-rendering the bubble on the
+// JS thread for the whole time Home was mounted. Same apparent speed, ~4x
+// fewer renders.
+const TYPE_MS = 110;
+const TYPE_CHARS = 4;
 const HOLD_MS = 1800;
-const DELETE_MS = 18;
+const DELETE_MS = 45;
+const DELETE_CHARS = 6;
 const GAP_MS = 500;
 
-// One step at a time is "live" — its badge haloes, its rail pulses and its
-// visual card lifts. Cycling the highlight is what keeps the whole section
-// moving without three unrelated loops fighting for attention.
-const STEP_CYCLE_MS = 3400;
-
-function useCycle(count: number, ms: number): number {
-  const [i, setI] = React.useState(0);
-  React.useEffect(() => {
-    const id = setInterval(() => setI((v) => (v + 1) % count), ms);
-    return () => clearInterval(id);
-  }, [count, ms]);
-  return i;
-}
+// The rotating "live step" highlight is gone. A setInterval re-rendered this
+// entire section every 3.4s, and each rotation restarted five separate repeat
+// loops (badge halo, rail pulse, card lift, chip stagger) that were all
+// running permanently regardless of whether the section was on screen. The
+// signature draw below is the one animation worth its cost here.
 
 // Loops: type the phrase out, hold, delete it, pause, repeat — same rhythm
 // as AgentV2's typewriter but a single fixed phrase (no phrase list/tab
@@ -91,7 +88,7 @@ function useTypewriter(phrase: string): string {
       if (cancelled) return;
       setText(phrase.slice(0, i));
       if (i < phrase.length) {
-        i += 1;
+        i = Math.min(i + TYPE_CHARS, phrase.length);
         timer = setTimeout(typeStep, TYPE_MS);
       } else {
         timer = setTimeout(deleteStep, HOLD_MS);
@@ -100,7 +97,7 @@ function useTypewriter(phrase: string): string {
     const deleteStep = () => {
       if (cancelled) return;
       if (i > 0) {
-        i -= 1;
+        i = Math.max(i - DELETE_CHARS, 0);
         setText(phrase.slice(0, i));
         timer = setTimeout(deleteStep, DELETE_MS);
       } else {
@@ -118,54 +115,36 @@ function useTypewriter(phrase: string): string {
   return text;
 }
 
+// Opacity driven on the UI thread. The old version toggled React state twice
+// a second purely to blink one glyph.
 function BlinkingCursor({ color }: { color: string }) {
-  const [visible, setVisible] = React.useState(true);
+  const v = useSharedValue(1);
   React.useEffect(() => {
-    const id = setInterval(() => setVisible((v) => !v), 500);
-    return () => clearInterval(id);
-  }, []);
-  return <Text style={{ color, opacity: visible ? 1 : 0 }}>|</Text>;
+    v.value = withRepeat(withTiming(0, { duration: 500, easing: Easing.linear }), -1, true);
+    return () => cancelAnimation(v);
+  }, [v]);
+  const style = useAnimatedStyle(() => ({ opacity: v.value }));
+  return (
+    <Reanimated.Text style={[{ color }, style]}>|</Reanimated.Text>
+  );
 }
 
-// Wraps every step visual: a hairline card that brightens and lifts while its
-// step is the live one, so the eye is pulled down the rail in order.
-function VisualCard({
-  t,
-  active,
-  children,
-}: {
-  t: HomeColors;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  const a = useSharedValue(0);
-  React.useEffect(() => {
-    a.value = withTiming(active ? 1 : 0, { duration: 420 });
-  }, [active, a]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: interpolate(a.value, [0, 1], [1, 1.015]) }],
-    opacity: interpolate(a.value, [0, 1], [0.82, 1]),
-  }));
-
+// Wraps every step visual: a plain hairline card.
+function VisualCard({ t, children }: { t: HomeColors; children: React.ReactNode }) {
   return (
-    <Reanimated.View
-      style={[
-        s.mockCard,
-        { backgroundColor: t.agentTabBg, borderColor: active ? t.accent : t.agentTabBorder },
-        style,
-      ]}
+    <View
+      style={[s.mockCard, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}
     >
       {children}
-    </Reanimated.View>
+    </View>
   );
 }
 
 // ── Step 01 visual: the prompt being typed into the agent ──
-function PromptBubble({ t, active }: { t: HomeColors; active: boolean }) {
+function PromptBubble({ t }: { t: HomeColors }) {
   const typed = useTypewriter(PROMPT_PHRASE);
   return (
-    <VisualCard t={t} active={active}>
+    <VisualCard t={t}>
       <Text style={[s.promptText, { color: t.text }]}>
         {typed}
         <BlinkingCursor color={t.accent} />
@@ -302,29 +281,19 @@ const REVIEWERS: { initials: string; gradient: [string, string] }[] = [
   { initials: 'JD', gradient: ['#EC4899', '#8B5CF6'] },
 ];
 
+// Static. This was apermanently pulsing ring; a 6px dot does not justify a permanent
+// animation driver.
 function LiveDot({ color }: { color: string }) {
-  const p = useSharedValue(0);
-  React.useEffect(() => {
-    p.value = withRepeat(withTiming(1, { duration: 1400, easing: Easing.out(Easing.quad) }), -1, false);
-    return () => cancelAnimation(p);
-  }, [p]);
-
-  const ring = useAnimatedStyle(() => ({
-    opacity: interpolate(p.value, [0, 1], [0.55, 0]),
-    transform: [{ scale: interpolate(p.value, [0, 1], [1, 2.6]) }],
-  }));
-
   return (
     <View style={s.liveDotWrap}>
-      <Reanimated.View style={[s.liveDotRing, { borderColor: color }, ring]} />
       <View style={[s.liveDot, { backgroundColor: color }]} />
     </View>
   );
 }
 
-function HumanTouchCard({ t, active }: { t: HomeColors; active: boolean }) {
+function HumanTouchCard({ t }: { t: HomeColors }) {
   return (
-    <VisualCard t={t} active={active}>
+    <VisualCard t={t}>
       <View style={s.reviewHeader}>
         <View style={s.dots}>
           <View style={[s.dot, { backgroundColor: '#FF5F57' }]} />
@@ -370,168 +339,63 @@ function HumanTouchCard({ t, active }: { t: HomeColors; active: boolean }) {
 // ── Step 03 visual: the outcome, as a row of pill tags ──
 const OUTCOME_CHIPS = ['Production-ready', 'You own it', 'Fraction of cost'];
 
-function OutcomeChip({
-  label,
-  index,
-  t,
-  active,
-}: {
-  label: string;
-  index: number;
-  t: HomeColors;
-  active: boolean;
-}) {
-  const a = useSharedValue(0);
-  React.useEffect(() => {
-    a.value = withDelay(
-      active ? index * 140 : 0,
-      withTiming(active ? 1 : 0, { duration: 380 })
-    );
-  }, [active, index, a]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: interpolate(a.value, [0, 1], [0, -3]) }],
-    opacity: interpolate(a.value, [0, 1], [0.7, 1]),
-  }));
-
-  return (
-    <Reanimated.View
-      style={[
-        s.chip,
-        { backgroundColor: t.agentTabBg, borderColor: active ? t.accent : t.agentTabBorder },
-        style,
-      ]}
-    >
-      <Text style={[s.chipText, { color: t.text }]}>{label}</Text>
-    </Reanimated.View>
-  );
-}
-
-function ChipsRow({ t, active }: { t: HomeColors; active: boolean }) {
+// Static pills. The stagger only ever fired when the removed step-cycle
+// flipped `active`, so it cost one shared value + one worklet per chip for an
+// animation the user saw once every 10 seconds.
+function ChipsRow({ t }: { t: HomeColors }) {
   return (
     <View style={s.chipsRow}>
-      {OUTCOME_CHIPS.map((c, i) => (
-        <OutcomeChip key={c} label={c} index={i} t={t} active={active} />
+      {OUTCOME_CHIPS.map((c) => (
+        <View
+          key={c}
+          style={[s.chip, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}
+        >
+          <Text style={[s.chipText, { color: t.text }]}>{c}</Text>
+        </View>
       ))}
     </View>
   );
 }
 
-function StepVisual({ index, t, active }: { index: number; t: HomeColors; active: boolean }) {
-  if (index === 0) return <PromptBubble t={t} active={active} />;
-  if (index === 1) return <HumanTouchCard t={t} active={active} />;
-  return <ChipsRow t={t} active={active} />;
+function StepVisual({ index, t }: { index: number; t: HomeColors }) {
+  if (index === 0) return <PromptBubble t={t} />;
+  if (index === 1) return <HumanTouchCard t={t} />;
+  return <ChipsRow t={t} />;
 }
 
 // Badge for the step number: a halo ripples out of it while its step is live.
-function StepBadge({
-  step,
-  active,
-}: {
-  step: (typeof STEPS)[number];
-  active: boolean;
-}) {
-  const halo = useSharedValue(0);
-  const lift = useSharedValue(0);
-
-  React.useEffect(() => {
-    if (active) {
-      halo.value = 0;
-      halo.value = withRepeat(
-        withTiming(1, { duration: 1700, easing: Easing.out(Easing.quad) }),
-        -1,
-        false
-      );
-    } else {
-      cancelAnimation(halo);
-      halo.value = withTiming(0, { duration: 250 });
-    }
-    lift.value = withTiming(active ? 1 : 0, { duration: 320 });
-  }, [active, halo, lift]);
-
-  const haloStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(halo.value, [0, 1], [0.5, 0]),
-    transform: [{ scale: interpolate(halo.value, [0, 1], [1, 2]) }],
-  }));
-  const coreStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: interpolate(lift.value, [0, 1], [1, 1.1]) }],
-  }));
-
+// Static badge. The halo was an always-on repeating scale+fade per step.
+function StepBadge({ step }: { step: (typeof STEPS)[number] }) {
   return (
     <View style={s.badgeWrap}>
-      <Reanimated.View
-        style={[s.halo, { borderColor: step.gradient[0] }, haloStyle]}
-        pointerEvents="none"
-      />
-      <Reanimated.View style={coreStyle}>
-        <LinearGradient
-          colors={step.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={s.badge}
-        >
-          <Text style={s.badgeText}>{step.number}</Text>
-        </LinearGradient>
-      </Reanimated.View>
+      <LinearGradient
+        colors={step.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={s.badge}
+      >
+        <Text style={s.badgeText}>{step.number}</Text>
+      </LinearGradient>
     </View>
   );
 }
 
-// The connector between two badges, with a light pulse falling down it —
-// reads as the build flowing from one stage into the next.
-function RailLine({
-  from,
-  to,
-  index,
-}: {
-  from: string;
-  to: string;
-  index: number;
-}) {
-  const [h, setH] = React.useState(0);
-  const p = useSharedValue(0);
-
-  React.useEffect(() => {
-    if (!h) return;
-    p.value = 0;
-    p.value = withDelay(
-      index * 500,
-      withRepeat(withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.quad) }), -1, false)
-    );
-    return () => cancelAnimation(p);
-  }, [h, index, p]);
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: interpolate(p.value, [0, 1], [-30, h]) }],
-    opacity: interpolate(p.value, [0, 0.15, 0.85, 1], [0, 1, 1, 0]),
-  }));
-
+// Static connector. The travelling pulse needed an onLayout -> setState
+// (re-rendering the section) plus a repeat loop per rail.
+function RailLine({ from, to }: { from: string; to: string }) {
   return (
-    <View style={s.railLine} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
-      <LinearGradient
-        colors={[from, to]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {h > 0 && (
-        <Reanimated.View style={[s.railPulse, pulseStyle]} pointerEvents="none">
-          <LinearGradient
-            colors={['transparent', PULSE_COLOR, 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-        </Reanimated.View>
-      )}
-    </View>
+    <LinearGradient
+      colors={[from, to]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={s.railLine}
+    />
   );
 }
 
 export function HowItWorksSection() {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
-  const activeStep = useCycle(STEPS.length, STEP_CYCLE_MS);
 
   return (
     // No section backgroundColor here — the shared TwinkleDots backdrop
@@ -547,24 +411,19 @@ export function HowItWorksSection() {
       <View>
         {STEPS.map((step, i) => {
           const isLast = i === STEPS.length - 1;
-          const active = activeStep === i;
           return (
             <View key={step.number} style={s.stepRow}>
               <View style={s.rail}>
-                <StepBadge step={step} active={active} />
+                <StepBadge step={step} />
                 {!isLast && (
-                  <RailLine
-                    from={step.gradient[0]}
-                    to={STEPS[i + 1].gradient[0]}
-                    index={i}
-                  />
+                  <RailLine from={step.gradient[0]} to={STEPS[i + 1].gradient[0]} />
                 )}
               </View>
 
               <View style={s.stepContent}>
                 <Text style={[s.stepTitle, { color: t.text }]}>{step.title}</Text>
                 <Text style={[s.stepDesc, { color: t.textSub }]}>{step.desc}</Text>
-                <StepVisual index={i} t={t} active={active} />
+                <StepVisual index={i} t={t} />
               </View>
             </View>
           );
