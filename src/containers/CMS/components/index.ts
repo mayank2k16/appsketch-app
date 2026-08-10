@@ -4,6 +4,7 @@ export * from './CmsConfirmModal';
 export * from './CmsField';
 export * from './CmsModal';
 export * from './CmsSelect';
+export * from './CmsSheetScrollView';
 export * from './CmsStatusBadge';
 export * from './CmsSummaryRow';
 export * from './CmsSwitch';

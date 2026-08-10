@@ -13,6 +13,9 @@ export type InventoryLocation = {
   address: string;
   code: string;
   pincode: string;
+  longitude: string;
+  latitude: string;
+  delivery_distance: number;
   is_active: boolean;
 };
 
@@ -21,5 +24,8 @@ export type InventoryLocationPayload = {
   address: string;
   code: string;
   pincode: string;
+  longitude: string;
+  latitude: string;
+  delivery_distance: number;
   is_active: boolean;
 };

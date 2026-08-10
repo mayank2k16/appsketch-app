@@ -8,16 +8,37 @@ import { Ionicons } from '@expo/vector-icons';
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
 
-type CmsModalProps = BottomSheetModalProps & {
+type CmsModalProps = Omit<BottomSheetModalProps, 'children'> & {
   title?: string;
   colors: CmsThemeColors;
+  children?: React.ReactNode;
 };
+
+/** Tracks whether the current render tree is inside a `CmsModal` bottom
+ * sheet — `CmsInput`/`CmsVariableInput` read this to swap in
+ * `BottomSheetTextInput`, which is required for the keyboard to push the
+ * sheet up instead of covering the focused field. Defaults to `false` so
+ * those inputs keep working unchanged on plain (non-sheet) CMS screens. */
+export const CmsBottomSheetInputContext = React.createContext(false);
 
 /** CMS's own bottom-sheet wrapper — built directly on `@gorhom/bottom-sheet`
  * rather than `@/components/ui`'s `Modal`, so the header is always CMS-theme
  * colored and never pulls in the app-wide shared `Text` component. */
 export const CmsModal = React.forwardRef<BottomSheetModal, CmsModalProps>(
-  ({ snapPoints: snapPointsProp = ['60%'], title, colors, backdropComponent, ...props }, ref) => {
+  (
+    {
+      snapPoints: snapPointsProp = ['60%'],
+      title,
+      colors,
+      backdropComponent,
+      children,
+      keyboardBehavior = 'interactive',
+      keyboardBlurBehavior = 'restore',
+      android_keyboardInputMode = 'adjustResize',
+      ...props
+    },
+    ref
+  ) => {
     const snapPoints = React.useMemo(() => snapPointsProp, [snapPointsProp]);
 
     const renderBackdrop = React.useCallback(
@@ -40,7 +61,12 @@ export const CmsModal = React.forwardRef<BottomSheetModal, CmsModalProps>(
         enableDynamicSizing={false}
         handleComponent={renderHandleComponent}
         backgroundStyle={{ backgroundColor: colors.background }}
-      />
+        keyboardBehavior={keyboardBehavior}
+        keyboardBlurBehavior={keyboardBlurBehavior}
+        android_keyboardInputMode={android_keyboardInputMode}
+      >
+        <CmsBottomSheetInputContext.Provider value={true}>{children}</CmsBottomSheetInputContext.Provider>
+      </BottomSheetModal>
     );
   }
 );

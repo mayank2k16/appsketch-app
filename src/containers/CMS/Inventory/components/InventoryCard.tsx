@@ -54,6 +54,10 @@ export const InventoryCard = React.memo(function InventoryCard({
           <Text style={[st.metaLabel, { color: colors.textSecondary }]}>Pincode</Text>
           <Text style={[st.metaValue, { color: colors.textPrimary }]}>{location.pincode}</Text>
         </View>
+        <View style={st.metaRow}>
+          <Text style={[st.metaLabel, { color: colors.textSecondary }]}>Del. Dist.</Text>
+          <Text style={[st.metaValue, { color: colors.textPrimary }]}>{location.delivery_distance ?? 0}m</Text>
+        </View>
         <Ionicons name="create-outline" size={16} color={colors.textSecondary} />
       </View>
     </Pressable>
@@ -96,19 +100,26 @@ const st = StyleSheet.create({
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 16,
+    rowGap: 6,
     marginTop: 4,
   },
   metaRow: {
+    // flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
   },
   metaLabel: {
     fontSize: 11,
+    flexShrink: 0,
+    minWidth: 44,
   },
   metaValue: {
     fontSize: 12,
     fontWeight: '700',
+    // flexShrink: 1,
   },
 });

@@ -1,25 +1,35 @@
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { TextInputProps } from 'react-native';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
+import { CmsBottomSheetInputContext } from './CmsModal';
 
 type Props = Omit<TextInputProps, 'style'> & {
   colors: CmsThemeColors;
   label?: string;
   error?: string;
+  /** Shows a `*` next to the label so the field reads as required before the
+   * user ever submits, instead of only surfacing via the post-submit `error`. */
+  required?: boolean;
 };
 
-/** Labeled text field for CMS forms — replaces `@/components/ui`'s `Input`
- * inside the CMS so form text renders at the CMS's own scale/system font
- * instead of the app-wide NativeWind styling. Omit `label` for a bare field
- * (e.g. a quantity input sitting next to a picker). */
-export function CmsInput({ colors, label, error, ...inputProps }: Props) {
+
+export function CmsInput({ colors, label, error, required, ...inputProps }: Props) {
+  const isInsideBottomSheet = React.useContext(CmsBottomSheetInputContext);
+  const Field = isInsideBottomSheet ? BottomSheetTextInput : TextInput;
+
   return (
     <View style={st.group}>
-      {label ? <Text style={[st.label, { color: colors.textSecondary }]}>{label}</Text> : null}
-      <TextInput
+      {label ? (
+        <Text style={[st.label, { color: colors.textSecondary }]}>
+          {label}
+          {required ? <Text style={{ color: colors.danger }}> *</Text> : null}
+        </Text>
+      ) : null}
+      <Field
         placeholderTextColor={colors.textSecondary}
         style={[
           st.field,
