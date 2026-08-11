@@ -1,6 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import type { InventoryLocation } from '@/api/inventory';
 
@@ -20,45 +20,80 @@ export const InventoryCard = React.memo(function InventoryCard({
   return (
     <Pressable
       onPress={onEdit}
-      style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      style={[
+        st.card,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+      ]}
     >
       <View style={st.headerRow}>
-        <Text style={[st.name, { color: colors.textPrimary }]} numberOfLines={1}>
+        <Text
+          style={[st.name, { color: colors.textPrimary }]}
+          numberOfLines={1}
+        >
           {location.name}
         </Text>
         <View
           style={[
             st.badge,
             {
-              backgroundColor: location.is_active ? `${colors.success}18` : `${colors.danger}18`,
-              borderColor: location.is_active ? `${colors.success}40` : `${colors.danger}40`,
+              backgroundColor: location.is_active
+                ? `${colors.success}18`
+                : `${colors.danger}18`,
+              borderColor: location.is_active
+                ? `${colors.success}40`
+                : `${colors.danger}40`,
             },
           ]}
         >
-          <Text style={[st.badgeLabel, { color: location.is_active ? colors.success : colors.danger }]}>
+          <Text
+            style={[
+              st.badgeLabel,
+              { color: location.is_active ? colors.success : colors.danger },
+            ]}
+          >
             {location.is_active ? 'Active' : 'Inactive'}
           </Text>
         </View>
       </View>
 
-      <Text style={[st.address, { color: colors.textSecondary }]} numberOfLines={2}>
+      <Text
+        style={[st.address, { color: colors.textSecondary }]}
+        numberOfLines={2}
+      >
         {location.address}
       </Text>
 
       <View style={st.footerRow}>
         <View style={st.metaRow}>
-          <Text style={[st.metaLabel, { color: colors.textSecondary }]}>Code</Text>
-          <Text style={[st.metaValue, { color: colors.textPrimary }]}>{location.code}</Text>
+          <Text style={[st.metaLabel, st.metaLabelCode, { color: colors.textSecondary }]}>
+            Code
+          </Text>
+          <Text style={[st.metaValue, { color: colors.textPrimary }]}>
+            {location.code}
+          </Text>
         </View>
         <View style={st.metaRow}>
-          <Text style={[st.metaLabel, { color: colors.textSecondary }]}>Pincode</Text>
-          <Text style={[st.metaValue, { color: colors.textPrimary }]}>{location.pincode}</Text>
+          <Text style={[st.metaLabel, st.metaLabelPinCode, { color: colors.textSecondary }]}>
+            Pincode
+          </Text>
+          <Text style={[st.metaValue, { color: colors.textPrimary }]}>
+            {location.pincode ?? 'NA'}
+          </Text>
         </View>
         <View style={st.metaRow}>
-          <Text style={[st.metaLabel, { color: colors.textSecondary }]}>Del. Dist.</Text>
-          <Text style={[st.metaValue, { color: colors.textPrimary }]}>{location.delivery_distance ?? 0}m</Text>
+          <Text style={[st.metaLabel, st.metaLabelDist, { color: colors.textSecondary }]}>
+            Del. Dist.
+          </Text>
+          <Text style={[st.metaValue, { color: colors.textPrimary }]}>
+            {location.delivery_distance ?? 0}m
+          </Text>
         </View>
-        <Ionicons name="create-outline" size={16} color={colors.textSecondary} />
+        <Ionicons
+          name="create-outline"
+          size={16}
+          color={colors.textSecondary}
+          style={{ marginLeft: 'auto' }}
+        />
       </View>
     </Pressable>
   );
@@ -66,10 +101,10 @@ export const InventoryCard = React.memo(function InventoryCard({
 
 const st = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     padding: 14,
-    marginHorizontal: 16,
+    marginHorizontal: 14,
     marginBottom: 12,
     gap: 6,
   },
@@ -106,20 +141,31 @@ const st = StyleSheet.create({
     marginTop: 4,
   },
   metaRow: {
-    // flex: 1,
     minWidth: 0,
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 4,
+    gap: 3,
+
   },
   metaLabel: {
     fontSize: 11,
+    // flex: 1,
+    paddingRight: 0,
     flexShrink: 0,
-    minWidth: 44,
+  },
+  metaLabelCode: {
+    minWidth: 35,
+  },
+  metaLabelPinCode: {
+    minWidth: 48,
+  },
+  metaLabelDist: {
+    minWidth: 53,
   },
   metaValue: {
     fontSize: 12,
     fontWeight: '700',
-    // flexShrink: 1,
+    flexShrink: 0,
+    paddingRight: 1,
   },
 });

@@ -2,10 +2,23 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
 
-import type { InventoryLocation, InventoryLocationPayload } from '@/api/inventory';
-import { useCreateInventoryLocation, useUpdateInventoryLocation } from '@/api/inventory';
+import type {
+  InventoryLocation,
+  InventoryLocationPayload,
+} from '@/api/inventory';
+import {
+  useCreateInventoryLocation,
+  useUpdateInventoryLocation,
+} from '@/api/inventory';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSheetScrollView, CmsSwitch } from '../../components';
+import {
+  CmsButton,
+  CmsCard,
+  CmsInput,
+  CmsModal,
+  CmsSheetScrollView,
+  CmsSwitch,
+} from '../../components';
 import type { CmsThemeColors } from '../../theme';
 
 type FormState = {
@@ -38,7 +51,10 @@ function formFromLocation(location: InventoryLocation): FormState {
     pincode: location.pincode,
     longitude: location.longitude ?? '',
     latitude: location.latitude ?? '',
-    delivery_distance: location.delivery_distance != null ? String(location.delivery_distance) : '',
+    delivery_distance:
+      location.delivery_distance != null
+        ? String(location.delivery_distance)
+        : '',
     is_active: location.is_active,
   };
 }
@@ -56,7 +72,9 @@ export const ManageInventoryModal = React.forwardRef<BottomSheetModal, Props>(
     const [errors, setErrors] = React.useState<Record<string, string>>({});
 
     React.useEffect(() => {
-      setForm(selectedLocation ? formFromLocation(selectedLocation) : EMPTY_FORM);
+      setForm(
+        selectedLocation ? formFromLocation(selectedLocation) : EMPTY_FORM
+      );
       setErrors({});
     }, [selectedLocation]);
 
@@ -75,7 +93,8 @@ export const ManageInventoryModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.address.trim()) next.address = 'Address is required';
       if (!form.code.trim()) next.code = 'Code is required';
       if (!form.pincode.trim()) next.pincode = 'Pincode is required';
-      if (!form.delivery_distance.trim()) next.delivery_distance = 'Deliverable distance is required';
+      if (!form.delivery_distance.trim())
+        next.delivery_distance = 'Deliverable distance is required';
       setErrors(next);
       return Object.keys(next).length === 0;
     }
@@ -89,7 +108,9 @@ export const ManageInventoryModal = React.forwardRef<BottomSheetModal, Props>(
         pincode: form.pincode.trim(),
         longitude: form.longitude.trim(),
         latitude: form.latitude.trim(),
-        delivery_distance: form.delivery_distance.trim() ? parseInt(form.delivery_distance, 10) : 0,
+        delivery_distance: form.delivery_distance.trim()
+          ? parseInt(form.delivery_distance, 10)
+          : 0,
         is_active: form.is_active,
       };
       if (isEdit && selectedLocation) {
@@ -103,7 +124,20 @@ export const ManageInventoryModal = React.forwardRef<BottomSheetModal, Props>(
     }
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['60%']} title={isEdit ? 'Edit Inventory Location' : 'Add Inventory Location'}>
+      <CmsModal
+        ref={ref}
+        colors={colors}
+        snapPoints={['70%']}
+        title={isEdit ? 'Edit Inventory Location' : 'Add Inventory Location'}
+        footer={
+          <CmsButton
+            colors={colors}
+            label={isEdit ? 'Save Changes' : 'Add Location'}
+            onPress={handleSubmit}
+            loading={isSubmitting}
+          />
+        }
+      >
         <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={st.scroll}
@@ -167,16 +201,13 @@ export const ManageInventoryModal = React.forwardRef<BottomSheetModal, Props>(
               onChangeText={(v) => set('latitude', v)}
               keyboardType="numbers-and-punctuation"
             />
-            <CmsSwitch colors={colors} label="Active" value={form.is_active} onChange={(v) => set('is_active', v)} />
+            <CmsSwitch
+              colors={colors}
+              label="Active"
+              value={form.is_active}
+              onChange={(v) => set('is_active', v)}
+            />
           </CmsCard>
-
-          <CmsButton
-            colors={colors}
-            label={isEdit ? 'Save Changes' : 'Add Location'}
-            onPress={handleSubmit}
-            loading={isSubmitting}
-            style={st.submitBtn}
-          />
         </CmsSheetScrollView>
       </CmsModal>
     );
@@ -187,7 +218,6 @@ const st = StyleSheet.create({
   scroll: {
     padding: 16,
     gap: 12,
-    paddingBottom: 32,
+    paddingBottom: 16,
   },
-  submitBtn: { marginTop: 4 },
 });
