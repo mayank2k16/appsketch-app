@@ -46,11 +46,6 @@ export const StoryCard = React.memo(function StoryCard({ story, colors, onEdit, 
         <Text style={[st.title, { color: colors.textPrimary }]} numberOfLines={1}>
           {story.title}
         </Text>
-        {story.subtitle ? (
-          <Text style={{ color: colors.textSecondary, fontSize: 12.5 }} numberOfLines={2}>
-            {story.subtitle}
-          </Text>
-        ) : null}
         {story.timestamp_label ? (
           <Text style={[st.timestamp, { color: colors.textSecondary }]} numberOfLines={1}>
             {story.timestamp_label}
@@ -74,28 +69,33 @@ export const StoryCard = React.memo(function StoryCard({ story, colors, onEdit, 
 
 const st = StyleSheet.create({
   card: {
+    flexDirection: 'row',
     borderRadius: 14,
     borderWidth: 1,
     marginHorizontal: 16,
     marginBottom: 12,
     overflow: 'hidden',
   },
-  image: { width: '100%', height: 110 },
+  // No explicit height: the row's default `alignItems: 'stretch'` grows the
+  // image to match `body`'s content height instead, so it fills the card's
+  // left edge exactly regardless of how much text the card holds.
+  image: { width: 100 },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  body: { padding: 12, gap: 4 },
-  badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  body: { flex: 1, padding: 12, gap: 0, justifyContent: 'center' },
+  badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 8 },
   title: { ...cmsType.listTitle },
   timestamp: { fontSize: 11.5 },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
   actionBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
     borderWidth: 1,
     borderRadius: 8,
-    paddingVertical: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    marginTop: 8,
   },
   actionLabel: cmsType.buttonLabel,
 });

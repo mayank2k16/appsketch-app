@@ -119,7 +119,7 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
           contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <CmsCard colors={colors}>
+          <CmsCard colors={colors} style={{ ...st.cmsCard }}>
             <Pressable onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={st.imagePreview} contentFit="cover" />
@@ -131,7 +131,14 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
               )}
             </Pressable>
 
-            <CmsInput colors={colors} label="Title" placeholder="e.g. Top Seller, Today's Special…" value={form.title} onChangeText={(v) => set('title', v)} />
+            <CmsInput
+              colors={colors}
+              label="Title"
+              placeholder="e.g. Top Seller, Today's Special…"
+              value={form.title}
+              onChangeText={(v) => set('title', v)}
+              required
+            />
             <CmsInput
               colors={colors}
               label="Description"
@@ -190,8 +197,11 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
 const st = StyleSheet.create({
   scroll: {
     padding: 16,
-    gap: 12,
+    gap: 15,
     paddingBottom: 16,
+  },
+  cmsCard: {
+    gap: 14,
   },
   imageTile: {
     height: 150,
