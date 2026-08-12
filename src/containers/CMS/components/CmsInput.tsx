@@ -11,20 +11,21 @@ type Props = Omit<TextInputProps, 'style'> & {
   colors: CmsThemeColors;
   label?: string;
   error?: string;
-  /** Shows a `*` next to the label so the field reads as required before the
-   * user ever submits, instead of only surfacing via the post-submit `error`. */
   required?: boolean;
+  groupStyle?: any;
+  labelStyle?: any;
+  inputStyle?: any;
 };
 
 
-export function CmsInput({ colors, label, error, required, ...inputProps }: Props) {
+export function CmsInput({ colors, label, error, required, groupStyle, labelStyle, inputStyle, ...inputProps }: Props) {
   const isInsideBottomSheet = React.useContext(CmsBottomSheetInputContext);
   const Field = isInsideBottomSheet ? BottomSheetTextInput : TextInput;
 
   return (
-    <View style={st.group}>
+    <View style={[st.group, groupStyle]}>
       {label ? (
-        <Text style={[st.label, { color: colors.textSecondary }]}>
+        <Text style={[st.label, { color: colors.textSecondary }, labelStyle]}>
           {label}
           {required ? <Text style={{ color: colors.danger }}> *</Text> : null}
         </Text>
@@ -33,6 +34,7 @@ export function CmsInput({ colors, label, error, required, ...inputProps }: Prop
         placeholderTextColor={colors.textSecondary}
         style={[
           st.field,
+          inputStyle,
           {
             backgroundColor: colors.background,
             borderColor: error ? colors.danger : colors.border,

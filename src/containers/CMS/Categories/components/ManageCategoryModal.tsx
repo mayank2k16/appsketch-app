@@ -1,16 +1,27 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import type { CategoryNode, PickedCategoryAsset } from '@/api/categories';
-import { useAddSubCategory, useCreateCategory, useUpdateCategory } from '@/api/categories';
+import {
+  useAddSubCategory,
+  useCreateCategory,
+  useUpdateCategory,
+} from '@/api/categories';
+import { resolveMediaUrl } from '@/lib/media-url';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSwitch } from '../../components';
+import {
+  CmsButton,
+  CmsCard,
+  CmsInput,
+  CmsModal,
+  CmsSwitch,
+} from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 
@@ -23,7 +34,13 @@ type FormState = {
 };
 
 function getDefaultForm(): FormState {
-  return { name: '', description: '', home_page: false, href_path: '', colour: '' };
+  return {
+    name: '',
+    description: '',
+    home_page: false,
+    href_path: '',
+    colour: '',
+  };
 }
 
 const HEX_RE = /^#([0-9a-f]{6})$/i;
@@ -41,13 +58,17 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
   ({ colors, mode, category, parentId, openKey, onDone }, ref) => {
     const [form, setForm] = React.useState<FormState>(getDefaultForm());
     const [image, setImage] = React.useState<PickedCategoryAsset | null>(null);
-    const [bannerImage, setBannerImage] = React.useState<PickedCategoryAsset | null>(null);
+    const [bannerImage, setBannerImage] =
+      React.useState<PickedCategoryAsset | null>(null);
     const [icon, setIcon] = React.useState<PickedCategoryAsset | null>(null);
 
     const createCategory = useCreateCategory();
     const updateCategory = useUpdateCategory();
     const addSubCategory = useAddSubCategory();
-    const isSubmitting = createCategory.isPending || updateCategory.isPending || addSubCategory.isPending;
+    const isSubmitting =
+      createCategory.isPending ||
+      updateCategory.isPending ||
+      addSubCategory.isPending;
 
     React.useEffect(() => {
       setImage(null);
@@ -64,7 +85,6 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
       } else {
         setForm(getDefaultForm());
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openKey, mode, category]);
 
     function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -77,7 +97,10 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
         toast.error('Media library permission is required to upload.');
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', quality: 0.8 });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        quality: 0.8,
+      });
       if (result.canceled || result.assets.length === 0) return;
       const asset = result.assets[0];
       setter({
@@ -108,19 +131,30 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
       };
 
       if (mode === 'edit' && category) {
-        updateCategory.mutate({ ...fields, id: category.id }, { onSuccess: () => onDone() });
+        updateCategory.mutate(
+          { ...fields, id: category.id },
+          { onSuccess: () => onDone() }
+        );
       } else if (mode === 'addSub' && parentId !== null) {
-        addSubCategory.mutate({ ...fields, category_id: parentId }, { onSuccess: () => onDone() });
+        addSubCategory.mutate(
+          { ...fields, category_id: parentId },
+          { onSuccess: () => onDone() }
+        );
       } else {
         createCategory.mutate(fields, { onSuccess: () => onDone() });
       }
     }
 
-    const title = mode === 'edit' ? 'Edit Category' : mode === 'addSub' ? 'Add Subcategory' : 'Add Category';
+    const title =
+      mode === 'edit'
+        ? 'Edit Category'
+        : mode === 'addSub'
+          ? 'Add Subcategory'
+          : 'Add Category';
     const nameLabel = mode === 'addSub' ? 'Subcategory Name' : 'Category Name';
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['90%']} title={title}>
+      <CmsModal ref={ref} colors={colors} snapPoints={['75%']} title={title}>
         <BottomSheetScrollView
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
@@ -153,7 +187,13 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
           </CmsCard>
 
           <CmsCard colors={colors}>
-            <CmsInput colors={colors} label={nameLabel} placeholder="Enter name here…" value={form.name} onChangeText={(v) => set('name', v)} />
+            <CmsInput
+              colors={colors}
+              label={nameLabel}
+              placeholder="Enter name here…"
+              value={form.name}
+              onChangeText={(v) => set('name', v)}
+            />
             <CmsInput
               colors={colors}
               label="Description"
@@ -172,21 +212,38 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
             />
 
             <View style={st.colourGroup}>
-              <Text style={[st.colourLabel, { color: colors.textSecondary }]}>Category Colour</Text>
+              <Text style={[st.colourLabel, { color: colors.textSecondary }]}>
+                Category Colour
+              </Text>
               <View style={st.colourRow}>
                 <View
                   style={[
                     st.swatch,
-                    { borderColor: colors.border, backgroundColor: HEX_RE.test(form.colour) ? form.colour : 'transparent' },
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: HEX_RE.test(form.colour)
+                        ? form.colour
+                        : 'transparent',
+                    },
                   ]}
                 />
                 <View style={{ flex: 1 }}>
-                  <CmsInput colors={colors} placeholder="#7C3AED" value={form.colour} onChangeText={(v) => set('colour', v)} />
+                  <CmsInput
+                    colors={colors}
+                    placeholder="#7C3AED"
+                    value={form.colour}
+                    onChangeText={(v) => set('colour', v)}
+                  />
                 </View>
               </View>
             </View>
 
-            <CmsSwitch colors={colors} label="Show on Home Page" value={form.home_page} onChange={(v) => set('home_page', v)} />
+            <CmsSwitch
+              colors={colors}
+              label="Show on Home Page"
+              value={form.home_page}
+              onChange={(v) => set('home_page', v)}
+            />
           </CmsCard>
 
           <CmsButton
@@ -214,17 +271,28 @@ function ImagePickerTile({
   existingUrl?: string | null;
   onPick: () => void;
 }) {
-  const uri = localAsset?.uri ?? existingUrl ?? undefined;
+  const uri = localAsset?.uri ?? resolveMediaUrl(existingUrl);
   return (
     <Pressable onPress={onPick} style={st.tileWrap}>
-      <View style={[st.tile, { borderColor: colors.border, backgroundColor: colors.background }]}>
+      <View
+        style={[
+          st.tile,
+          { borderColor: colors.border, backgroundColor: colors.background },
+        ]}
+      >
         {uri ? (
           <Image source={{ uri }} style={st.tileImg} contentFit="cover" />
         ) : (
-          <Ionicons name="image-outline" size={18} color={colors.textSecondary} />
+          <Ionicons
+            name="image-outline"
+            size={18}
+            color={colors.textSecondary}
+          />
         )}
       </View>
-      <Text style={[st.tileLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[st.tileLabel, { color: colors.textSecondary }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -232,7 +300,15 @@ function ImagePickerTile({
 const st = StyleSheet.create({
   imagesRow: { flexDirection: 'row', gap: 12 },
   tileWrap: { alignItems: 'center', gap: 4 },
-  tile: { width: 64, height: 64, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  tile: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   tileImg: { width: '100%', height: '100%' },
   tileLabel: cmsType.fieldLabel,
   colourGroup: { gap: 6 },
