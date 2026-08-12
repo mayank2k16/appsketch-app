@@ -10,6 +10,7 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { CollectionCard } from './components/CollectionCard';
+import { CollectionsSkeleton } from './components/CollectionsSkeleton';
 import { ManageCollectionModal } from './components/ManageCollectionModal';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -85,9 +86,7 @@ export function CollectionsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
       </Pressable>
 
       {collectionsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading collections…</Text>
-        </View>
+        <CollectionsSkeleton colors={colors} />
       ) : visible.length === 0 ? (
         <View style={st.center}>
           <Text style={[st.emptyTitle, { color: colors.textPrimary }]}>No collections yet</Text>
@@ -138,7 +137,7 @@ const st = StyleSheet.create({
     height: 42,
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 42, borderRadius: 10, maxWidth: 150, marginLeft: 'auto', marginRight: 14 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 42, borderRadius: 10, maxWidth: 150, marginLeft: 'auto', marginRight: 14, marginBottom: 5 },
   addBtnText: { fontSize: 13, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 6 },
   emptyIcon: { fontSize: 32 },
