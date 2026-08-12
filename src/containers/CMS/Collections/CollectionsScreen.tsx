@@ -78,11 +78,11 @@ export function CollectionsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
             returnKeyType="search"
           />
         </View>
-        <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
-          <Ionicons name="add" size={16} color={colors.accentText} />
-          <Text style={[st.addBtnText, { color: colors.accentText }]}>Add</Text>
-        </Pressable>
       </View>
+      <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <Ionicons name="add" size={16} color={colors.accentText} />
+        <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Collection</Text>
+      </Pressable>
 
       {collectionsQuery.isLoading ? (
         <View style={st.center}>
@@ -90,7 +90,6 @@ export function CollectionsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
         </View>
       ) : visible.length === 0 ? (
         <View style={st.center}>
-          <Text style={st.emptyIcon}>🗂️</Text>
           <Text style={[st.emptyTitle, { color: colors.textPrimary }]}>No collections yet</Text>
           <Text style={[st.emptySubtitle, { color: colors.textSecondary }]}>
             Group products into a collection — Top Seller, Best Seller, Today's Special — and it'll show up here.
@@ -127,7 +126,7 @@ export function CollectionsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
 }
 
 const st = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12 },
   searchWrap: {
     flex: 1,
     flexDirection: 'row',
@@ -139,10 +138,10 @@ const st = StyleSheet.create({
     height: 42,
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 42, borderRadius: 10 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 42, borderRadius: 10, maxWidth: 150, marginLeft: 'auto', marginRight: 14 },
   addBtnText: { fontSize: 13, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 6 },
   emptyIcon: { fontSize: 32 },
-  emptyTitle: { fontSize: 15, fontWeight: '700' },
+  emptyTitle: { fontSize: 16, fontWeight: '700' },
   emptySubtitle: { fontSize: 12.5, textAlign: 'center', lineHeight: 18, maxWidth: 280 },
 });

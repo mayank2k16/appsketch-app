@@ -106,7 +106,7 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
     const imageUri = image?.uri ?? (isEdit ? collection?.image : null) ?? undefined;
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['90%']} title={isEdit ? 'Edit Collection' : 'Add Collection'}>
+      <CmsModal ref={ref} colors={colors} snapPoints={['70%']} title={isEdit ? 'Edit Collection' : 'Add Collection'}>
         <BottomSheetScrollView
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}

@@ -6,6 +6,7 @@ import { useAbandonedCarts, useDiscardCart } from '@/api/cart';
 
 import { useCmsTheme } from '../../theme';
 import { AbandonedCartCard } from './components/AbandonedCartCard';
+import { AbandonedCartsSkeleton } from './components/AbandonedCartsSkeleton';
 
 /** Read-only list of ACTIVE carts that never became an Order at all — the
  * one allowed mutation is "Discard" (Cart.status -> DISCARDED), for ops
@@ -32,17 +33,13 @@ export function AbandonedCartsScreen() {
   );
 
   if (cartsQuery.isLoading) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.textSecondary }}>Loading abandoned carts…</Text>
-      </View>
-    );
+    return <AbandonedCartsSkeleton colors={colors} />;
   }
 
   if (carts.length === 0) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-        <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>No abandoned carts.</Text>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', width: '100%' }}>No abandoned carts.</Text>
       </View>
     );
   }
