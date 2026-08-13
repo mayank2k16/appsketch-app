@@ -65,11 +65,11 @@ export function RegularPaymentsScreen() {
             returnKeyType="search"
           />
         </View>
-        <Pressable onPress={openAdd} style={[st.addBtn, { backgroundColor: colors.accent }]}>
-          <Ionicons name="add" size={16} color={colors.accentText} />
-          <Text style={[st.addBtnText, { color: colors.accentText }]}>Add</Text>
-        </Pressable>
       </View>
+      <Pressable onPress={openAdd} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <Ionicons name="add" size={16} color={colors.accentText} />
+        <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Payment</Text>
+      </Pressable>
 
       {paymentsQuery.isLoading ? (
         <View style={st.center}>
