@@ -83,7 +83,7 @@ function getDefaultForm(): FormState {
     applyType: 'cart',
     firstOrderPerUser: false,
     oneTimePerUser: false,
-    applyOnAllItems: false,
+    applyOnAllItems: true,
     selectedItems: [],
     isActive: true,
     isRecurring: false,
@@ -144,6 +144,16 @@ export const ManageDiscountModal = React.forwardRef<BottomSheetModal, Props>(
 
     function set<K extends keyof FormState>(key: K, value: FormState[K]) {
       setForm((prev) => ({ ...prev, [key]: value }));
+    }
+
+    // Selected item ids belong to whichever scope they were picked under
+    // (a product id, an inventory id, ...). Switching the scope without
+    // clearing them leaves stale ids attached to the new picker — at best
+    // they silently miss every item in the new list, at worst they
+    // coincidentally match a same-numbered item there and appear "selected"
+    // for the wrong record, including in the saved payload.
+    function setAppliedOn(next: DiscountAppliedOn) {
+      setForm((prev) => (prev.appliedOn === next ? prev : { ...prev, appliedOn: next, selectedItems: [] }));
     }
 
     const inventoriesQuery = useInvoiceInventories();
@@ -350,7 +360,7 @@ export const ManageDiscountModal = React.forwardRef<BottomSheetModal, Props>(
           </CmsCard>
 
           <CmsCard colors={colors} title="Scope" style={{ gap: 12 }}>
-            <CmsSelect colors={colors} label="Apply On" placeholder="Select scope" value={form.appliedOn} options={APPLIED_ON_OPTIONS} onSelect={(v) => set('appliedOn', v as DiscountAppliedOn)} error={errors.appliedOn} required />
+            <CmsSelect colors={colors} label="Apply On" placeholder="Select scope" value={form.appliedOn} options={APPLIED_ON_OPTIONS} onSelect={(v) => setAppliedOn(v as DiscountAppliedOn)} error={errors.appliedOn} required />
             <Hint text={FIELD_INFO.appliedOn} colors={colors} />
             <CmsSwitch colors={colors} label="Apply For All" value={form.applyOnAllItems} onChange={(v) => set('applyOnAllItems', v)} />
             <Hint text={FIELD_INFO.applyOnAllItems} colors={colors} />

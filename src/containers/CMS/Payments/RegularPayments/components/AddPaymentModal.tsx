@@ -1,12 +1,12 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
+import { StyleSheet } from 'react-native';
 
 import { searchInvoices, useCreatePayment } from '@/api/payments';
 import type { PaymentTransactionType, PaymentTxnMode } from '@/api/payments';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect } from '../../../components';
+import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
 
 const TXN_TYPE_OPTIONS = [
@@ -80,10 +80,23 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
   }
 
   return (
-    <CmsModal ref={ref} colors={colors} snapPoints={['80%']} title="Add Payment">
-      <BottomSheetScrollView
+    <CmsModal
+      ref={ref}
+      colors={colors}
+      snapPoints={['80%']}
+      title="Add Payment"
+      footer={
+        <CmsButton
+          colors={colors}
+          label={createPayment.isPending ? 'Adding…' : 'Add Payment'}
+          onPress={handleSubmit}
+          loading={createPayment.isPending}
+        />
+      }
+    >
+      <CmsSheetScrollView
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        contentContainerStyle={st.scroll}
         keyboardShouldPersistTaps="handled"
       >
         <CmsCard colors={colors}>
@@ -98,6 +111,7 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
               set('invoice_label', String(option.label));
             }}
             error={errors.invoice_id}
+            required
           />
 
           <CmsInput
@@ -108,6 +122,7 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             value={form.amount}
             onChangeText={(v) => set('amount', v)}
             error={errors.amount}
+            required
           />
 
           <CmsSelect
@@ -118,6 +133,7 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             options={TXN_TYPE_OPTIONS}
             onSelect={(v) => set('transaction_type', v as PaymentTransactionType)}
             error={errors.transaction_type}
+            required
           />
 
           <CmsSelect
@@ -128,6 +144,7 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             options={TXN_MODE_OPTIONS}
             onSelect={(v) => set('mode', v as PaymentTxnMode)}
             error={errors.mode}
+            required
           />
 
           <CmsInput
@@ -137,16 +154,18 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             value={form.date}
             onChangeText={(v) => set('date', v)}
             error={errors.date}
+            required
           />
         </CmsCard>
-
-        <CmsButton
-          colors={colors}
-          label={createPayment.isPending ? 'Adding…' : 'Add Payment'}
-          onPress={handleSubmit}
-          loading={createPayment.isPending}
-        />
-      </BottomSheetScrollView>
+      </CmsSheetScrollView>
     </CmsModal>
   );
+});
+
+const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 16,
+  },
 });

@@ -11,6 +11,7 @@ import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { FilterModal } from './components/FilterModal';
 import { InvoiceListCard } from './components/InvoiceListCard';
+import { InvoicesSkeleton } from './components/InvoicesSkeleton';
 import { ManageInvoiceModal } from './components/ManageInvoiceModal';
 
 const EMPTY_FILTERS: InvoiceFilters = { entity: [], type: [], startDate: '', endDate: '' };
@@ -142,9 +143,7 @@ export function InvoicesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
       </View>
 
       {loading && invoices.length === 0 ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading invoices…</Text>
-        </View>
+        <InvoicesSkeleton colors={colors} />
       ) : invoices.length === 0 ? (
         <View style={st.center}>
           <Text style={[st.emptyText, { color: colors.textSecondary }]}>No Invoices Found.</Text>

@@ -30,7 +30,7 @@ const HEADER_FIELDS_BY_TYPE: Record<InvoiceType, InvoiceHeaderField[]> = {
   GENERAL: [
     { name: 'invoiceDate', label: 'Invoice Date', type: 'date', required: true },
     { name: 'invoiceNo', label: 'Invoice Number', type: 'text', required: true },
-    { name: 'challan', label: 'Challan', type: 'searchable-select', required: true },
+    { name: 'challan', label: 'Challan', type: 'searchable-select', required: false },
   ],
   CONTRACTOR: [
     { name: 'invoiceDate', label: 'Invoice Date', type: 'date', required: true },

@@ -11,6 +11,7 @@ import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { SettlementDetailModal } from './components/SettlementDetailModal';
 import { SettlementListCard } from './components/SettlementListCard';
+import { VendorSettlementsSkeleton } from './components/VendorSettlementsSkeleton';
 
 export function VendorSettlementsScreen() {
   const { colors } = useCmsTheme();
@@ -79,9 +80,7 @@ export function VendorSettlementsScreen() {
       </View>
 
       {settlementsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading settlements…</Text>
-        </View>
+        <VendorSettlementsSkeleton colors={colors} />
       ) : filteredSettlements.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No settlement records available.</Text>

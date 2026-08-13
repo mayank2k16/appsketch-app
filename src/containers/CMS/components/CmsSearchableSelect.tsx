@@ -34,6 +34,7 @@ type Props = {
   searchPlaceholder?: string;
   error?: string;
   disabled?: boolean;
+  required?: boolean;
 };
 
 /** Search-as-you-type picker for CMS forms — same trigger/theming as
@@ -55,13 +56,17 @@ export function CmsSearchableSelect({
   searchPlaceholder = 'Search…',
   error,
   disabled = false,
+  required,
 }: Props) {
   const modal = useModal();
   const displayLabel = value !== undefined ? displayValue : undefined;
 
   return (
     <View style={st.group}>
-      <Text style={[st.label, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[st.label, { color: colors.textSecondary }]}>
+        {label}
+        {required ? <Text style={{ color: colors.danger }}> *</Text> : null}
+      </Text>
       <Pressable
         onPress={modal.present}
         disabled={disabled}

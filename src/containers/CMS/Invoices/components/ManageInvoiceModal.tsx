@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -20,11 +19,13 @@ import { toast } from '@/lib/toast';
 import {
   CmsButton,
   CmsCard,
+  CmsDateTimeInput,
   CmsField,
   CmsInput,
   CmsModal,
   CmsSearchableSelect,
   CmsSelect,
+  CmsSheetScrollView,
   CmsSummaryRow,
   CmsSwitch,
 } from '../../components';
@@ -164,6 +165,20 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
       return results.map((c) => ({ label: c.challan_id, value: c.id }));
     }, []);
 
+    // `useInvoiceProducts` already fetches every product for the selected
+    // inventory in one go — no server-side product search exists to call —
+    // so this just filters that list locally, but through
+    // `CmsSearchableSelect`'s search box rather than the plain flat
+    // `CmsSelect` list, which is what made the "product search" field a
+    // list with no way to actually search it.
+    const searchProductOptions = React.useCallback(
+      async (query: string) => {
+        const q = query.trim().toLowerCase();
+        return q ? productOptions.filter((p) => p.label.toLowerCase().includes(q)) : productOptions;
+      },
+      [productOptions]
+    );
+
     function handleProductChange(
       index: number,
       field: keyof InvoiceProductRow,
@@ -212,7 +227,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
         inventory_id: form.inventoryId as string | number,
         invoice: {
           type: form.invoiceType,
-          customer_name: form.customerName,
+          // customer_name: form.customerName,
           invoice_date: form.invoiceDate,
           invoice_id: form.invoiceNo,
           challan_id: form.challan,
@@ -315,9 +330,9 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
           </View>
         }
       >
-        <BottomSheetScrollView
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 16 }}
+          contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
         >
           <CmsCard colors={colors}>
@@ -328,6 +343,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
               value={form.invoiceType}
               options={INVOICE_TYPE_OPTIONS}
               onSelect={(v) => set('invoiceType', v as InvoiceType)}
+              required
             />
             {!isEdit ? (
               <CmsSelect
@@ -337,6 +353,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                 value={form.inventoryId ?? undefined}
                 options={inventoryOptions}
                 onSelect={(v) => set('inventoryId', v)}
+                required
               />
             ) : (
               <CmsField
@@ -379,20 +396,32 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
 
           <CmsCard colors={colors} title="Invoice Details">
             {headerFields.map((field) => {
-              if (field.type === 'date' || field.type === 'text') {
+              if (field.type === 'date') {
+                return (
+                  <CmsDateTimeInput
+                    key={field.name}
+                    colors={colors}
+                    mode="date"
+                    label={field.label}
+                    value={form[field.name] as string}
+                    onChange={(v) =>
+                      set(field.name as 'invoiceDate', v)
+                    }
+                    required={field.required}
+                  />
+                );
+              }
+              if (field.type === 'text') {
                 return (
                   <CmsInput
                     key={field.name}
                     colors={colors}
-                    label={
-                      field.type === 'date'
-                        ? `${field.label} (YYYY-MM-DD)`
-                        : field.label
-                    }
+                    label={field.label}
                     value={form[field.name] as string}
                     onChangeText={(v) =>
-                      set(field.name as 'invoiceDate' | 'invoiceNo', v)
+                      set(field.name as 'invoiceNo', v)
                     }
+                    required={field.required}
                   />
                 );
               }
@@ -412,6 +441,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                       set('challanLabel', String(opt.label));
                     }}
                     disabled={isEdit}
+                    required={field.required}
                   />
                 );
               }
@@ -436,7 +466,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                 key={index}
                 style={[st.productRow, { borderColor: colors.border }]}
               >
-                <CmsSelect
+                <CmsSearchableSelect
                   colors={colors}
                   label="Product"
                   placeholder={
@@ -444,11 +474,18 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                       ? 'Select product'
                       : 'Select an inventory first'
                   }
+                  searchPlaceholder="Search product"
                   value={product.productId || undefined}
-                  options={productOptions}
-                  onSelect={(v) =>
-                    handleProductChange(index, 'productId', String(v))
+                  displayValue={
+                    productOptions.find(
+                      (p) => p.value === Number(product.productId)
+                    )?.label
                   }
+                  onSearch={searchProductOptions}
+                  onSelect={(opt) =>
+                    handleProductChange(index, 'productId', String(opt.value))
+                  }
+                  disabled={!form.inventoryId}
                 />
                 <View style={st.productFieldsGrid}>
                   <CmsInput
@@ -585,13 +622,18 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
               }
             />
           </CmsCard>
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
       </CmsModal>
     );
   }
 );
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 16,
+  },
   footer: { gap: 8 },
   fieldGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   productRow: {

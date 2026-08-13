@@ -9,10 +9,13 @@ import { Ionicons } from '@expo/vector-icons';
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
 
+type Mode = 'date' | 'datetime';
+
 type Props = {
   colors: CmsThemeColors;
   label: string;
-  /** "YYYY-MM-DDTHH:mm" — the same wire format these forms already send, so
+  /** "YYYY-MM-DD" in `mode="date"`, "YYYY-MM-DDTHH:mm" in `mode="datetime"`
+   * (the default) — the same wire formats these forms already send, so
    * swapping this in for a plain `CmsInput` doesn't touch the payload. */
   value: string;
   onChange: (value: string) => void;
@@ -21,38 +24,63 @@ type Props = {
   /** Disallow picking a moment before this — e.g. an End Time field passing
    * the parsed Start Time, so the two can't be picked out of order. */
   minimumDate?: Date;
+  /** 'date' drops the time step entirely (single date dialog on Android, a
+   * date-only wheel on iOS) for fields like Invoice Date that only ever
+   * carry a calendar date. Defaults to 'datetime'. */
+  mode?: Mode;
 };
 
-/** Parses the "YYYY-MM-DDTHH:mm" wire format this input reads/writes —
- * exported so callers can derive things like a `minimumDate` for a paired
- * field (e.g. an End Time picker that can't precede its Start Time) without
- * re-implementing the same parse. */
+/** Parses either wire format this input reads/writes ("YYYY-MM-DD" or
+ * "YYYY-MM-DDTHH:mm") — exported so callers can derive things like a
+ * `minimumDate` for a paired field (e.g. an End Time picker that can't
+ * precede its Start Time) without re-implementing the same parse. */
 export function parseValue(value: string): Date | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function formatValue(date: Date): string {
+function formatValue(date: Date, mode: Mode): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const datePart = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return mode === 'date' ? datePart : `${datePart}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function formatDisplay(date: Date): string {
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatDisplay(date: Date, mode: Mode): string {
+  return date.toLocaleString(
+    undefined,
+    mode === 'date'
+      ? { year: 'numeric', month: 'short', day: 'numeric' }
+      : { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+  );
 }
 
 /** Android has no combined date+time mode — its picker only ever shows one
- * of the two — so this opens the date dialog, then immediately chains into
- * the time dialog carrying the date the user just picked, and only commits
- * once both are confirmed. */
-function openAndroidPicker(current: Date, minimumDate: Date | undefined, onDone: (date: Date) => void) {
+ * of the two. In `datetime` mode this opens the date dialog, then chains
+ * into the time dialog carrying the date just picked, committing once both
+ * are confirmed; in `date` mode it's just the one dialog. */
+function openAndroidPicker({
+  current,
+  minimumDate,
+  mode,
+  onDone,
+}: {
+  current: Date;
+  minimumDate: Date | undefined;
+  mode: Mode;
+  onDone: (date: Date) => void;
+}) {
+  if (mode === 'date') {
+    DateTimePickerAndroid.open({
+      value: current,
+      mode: 'date',
+      minimumDate,
+      onChange: (event: DateTimePickerEvent, picked?: Date) => {
+        if (event.type === 'set' && picked) onDone(picked);
+      },
+    });
+    return;
+  }
   DateTimePickerAndroid.open({
     value: current,
     mode: 'date',
@@ -73,25 +101,26 @@ function openAndroidPicker(current: Date, minimumDate: Date | undefined, onDone:
   });
 }
 
-/** Native date + time picker for CMS forms — replaces free-text
- * "YYYY-MM-DDTHH:mm" entry with the platform's own picker UI. iOS shows one
- * combined date+time wheel inline; Android chains its separate date/time
- * dialogs via `DateTimePickerAndroid` (see `openAndroidPicker`). */
-export function CmsDateTimeInput({ colors, label, value, onChange, error, required, minimumDate }: Props) {
+/** Native date (+ time) picker for CMS forms — replaces free-text
+ * "YYYY-MM-DD"/"YYYY-MM-DDTHH:mm" entry with the platform's own picker UI.
+ * iOS shows one inline wheel (date-only or combined, per `mode`); Android
+ * chains its separate date/time dialogs via `DateTimePickerAndroid` (see
+ * `openAndroidPicker`) — skipping the time step entirely in `mode="date"`. */
+export function CmsDateTimeInput({ colors, label, value, onChange, error, required, minimumDate, mode = 'datetime' }: Props) {
   const [iosOpen, setIosOpen] = React.useState(false);
   const parsed = parseValue(value);
   const current = parsed ?? new Date();
 
   function open() {
     if (Platform.OS === 'android') {
-      openAndroidPicker(current, minimumDate, (date) => onChange(formatValue(date)));
+      openAndroidPicker({ current, minimumDate, mode, onDone: (date) => onChange(formatValue(date, mode)) });
     } else {
       setIosOpen((prev) => !prev);
     }
   }
 
   function handleIosChange(_event: DateTimePickerEvent, picked?: Date) {
-    if (picked) onChange(formatValue(picked));
+    if (picked) onChange(formatValue(picked, mode));
   }
 
   return (
@@ -105,7 +134,7 @@ export function CmsDateTimeInput({ colors, label, value, onChange, error, requir
         style={[st.field, { backgroundColor: colors.background, borderColor: error ? colors.danger : colors.border }]}
       >
         <Text style={[st.value, { color: parsed ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
-          {parsed ? formatDisplay(parsed) : 'Select date & time'}
+          {parsed ? formatDisplay(parsed, mode) : mode === 'date' ? 'Select date' : 'Select date & time'}
         </Text>
         <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
       </Pressable>
@@ -114,7 +143,7 @@ export function CmsDateTimeInput({ colors, label, value, onChange, error, requir
       {Platform.OS === 'ios' && iosOpen ? (
         <View style={[st.iosPicker, { borderColor: colors.border, backgroundColor: colors.background }]}>
           <DateTimePicker
-            mode="datetime"
+            mode={mode}
             display="spinner"
             value={current}
             minimumDate={minimumDate}

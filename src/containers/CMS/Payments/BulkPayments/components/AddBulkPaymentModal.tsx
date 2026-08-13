@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -10,7 +9,7 @@ import { searchEntities, useCreateBulkPayment, usePendingPaymentsForEntity } fro
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSwitch } from '../../../components';
+import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
 import { cmsType } from '../../../theme/cms-typography';
 import { money } from '../utils';
@@ -119,10 +118,23 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
   const pendingPayments = pendingQuery.data ?? [];
 
   return (
-    <CmsModal ref={ref} colors={colors} snapPoints={['90%']} title="Add Bulk Payment">
-      <BottomSheetScrollView
+    <CmsModal
+      ref={ref}
+      colors={colors}
+      snapPoints={['90%']}
+      title="Add Bulk Payment"
+      footer={
+        <CmsButton
+          colors={colors}
+          label={createBulkPayment.isPending ? 'Adding…' : 'Add Bulk Payment'}
+          onPress={handleSubmit}
+          loading={createBulkPayment.isPending}
+        />
+      }
+    >
+      <CmsSheetScrollView
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        contentContainerStyle={st.scroll}
         keyboardShouldPersistTaps="handled"
       >
         <CmsCard colors={colors}>
@@ -139,6 +151,7 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
               setSelectedIds([]);
               setSelectedAmount(0);
             }}
+            required
           />
 
           <CmsSelect
@@ -148,10 +161,11 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
             value={form.type}
             options={TXN_TYPE_OPTIONS}
             onSelect={(v) => set('type', v as PaymentTransactionType)}
+            required
           />
 
-          <CmsInput colors={colors} label="Amount" keyboardType="decimal-pad" placeholder="Amount" value={form.amount} onChangeText={(v) => set('amount', v)} />
-          <CmsInput colors={colors} label="Date (YYYY-MM-DD)" placeholder="Select date" value={form.date} onChangeText={(v) => set('date', v)} />
+          <CmsInput colors={colors} label="Amount" keyboardType="decimal-pad" placeholder="Amount" value={form.amount} onChangeText={(v) => set('amount', v)} required />
+          <CmsInput colors={colors} label="Date (YYYY-MM-DD)" placeholder="Select date" value={form.date} onChangeText={(v) => set('date', v)} required />
           <CmsInput colors={colors} label="Payment Ref No." placeholder="Enter ref no" value={form.refNo} onChangeText={(v) => set('refNo', v)} />
           <CmsInput colors={colors} label="Comments" placeholder="Write a comment…" value={form.comment} onChangeText={(v) => set('comment', v)} />
 
@@ -224,19 +238,17 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
         ) : null}
 
         {error ? <Text style={{ color: colors.danger, fontSize: 12.5, fontWeight: '600' }}>{error}</Text> : null}
-
-        <CmsButton
-          colors={colors}
-          label={createBulkPayment.isPending ? 'Adding…' : 'Add Bulk Payment'}
-          onPress={handleSubmit}
-          loading={createBulkPayment.isPending}
-        />
-      </BottomSheetScrollView>
+      </CmsSheetScrollView>
     </CmsModal>
   );
 });
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 16,
+  },
   group: { gap: 6 },
   label: cmsType.inputLabel,
   attachmentsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },

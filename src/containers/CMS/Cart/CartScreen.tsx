@@ -17,7 +17,7 @@ export function CartScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => v
   const [activeTab, setActiveTab] = React.useState<CartTabKey>('abandonedCarts');
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, flexDirection: 'row' }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -55,9 +55,9 @@ export function CartScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => v
 }
 
 const st = StyleSheet.create({
-  tabScroll: { flexGrow: 0 },
+  tabScroll: { flexGrow: 0, maxWidth: 150 },
   tabRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: 8,
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -72,5 +72,7 @@ const st = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  tabLabel: cmsType.listBadge,
+  tabLabel: {
+    ...cmsType.listBadge
+  },
 });
