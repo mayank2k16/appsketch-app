@@ -40,22 +40,28 @@ export const UserListCard = React.memo(function UserListCard({ user, colors, rol
           <Text style={[st.name, { color: colors.textPrimary }]} numberOfLines={1}>
             {user.name || '—'}
           </Text>
-          <Text style={[st.meta, { color: colors.textSecondary }]} numberOfLines={1}>
-            {user.phone_number || '—'}
-            {user.email ? ` · ${user.email}` : ''}
-          </Text>
         </View>
-        <CmsStatusBadge
-          meta={
-            active
-              ? { label: 'Active', color: colors.success, kind: 'success' }
-              : { label: 'Inactive', color: colors.danger, kind: 'danger' }
-          }
-        />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[st.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+          {`Phone: `}{user.phone_number || '—'}
+        </Text>
+        <Text style={[st.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+          {`Email: `}{user.email || '—'}
+        </Text>
       </View>
 
       <View style={st.footerRow}>
-        {user.role ? <CmsStatusBadge meta={{ label: roleLabel, color: roleColor, kind: 'info' }} /> : <View />}
+        <View style={{ flexDirection: 'row', gap: 8, flex: 1, justifyContent: 'flex-start', width: '100%', marginBottom: 15 }}>
+          {user.role ? <CmsStatusBadge meta={{ label: roleLabel, color: roleColor, kind: 'info' }} /> : <View />}
+          <CmsStatusBadge
+            meta={
+              active
+                ? { label: 'Active', color: colors.success, kind: 'success' }
+                : { label: 'Inactive', color: colors.danger, kind: 'danger' }
+            }
+          />
+        </View>
         <View style={st.actions}>
           <Pressable onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="create-outline" size={15} color={colors.textPrimary} />
@@ -75,24 +81,23 @@ const st = StyleSheet.create({
   card: {
     borderRadius: 14,
     borderWidth: 1,
-    padding: 14,
-    marginHorizontal: 16,
+    padding: 12,
+    marginHorizontal: 10,
     marginBottom: 12,
     gap: 10,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
   avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   name: cmsType.listTitle,
   meta: cmsType.listMeta,
   footerRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 10,
+    paddingTop: 5,
   },
-  actions: { flexDirection: 'row', gap: 8 },
+  actions: { flexDirection: 'row', gap: 8, marginLeft: 'auto' },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   actionLabel: cmsType.buttonLabel,
 });

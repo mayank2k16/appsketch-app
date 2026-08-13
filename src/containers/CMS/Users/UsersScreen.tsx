@@ -1,14 +1,16 @@
 import * as React from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { AppUserProfile, StaffUser, UsersListParams } from '@/api/users';
 import {
+  flattenAppUsersPages,
   useAppUsers,
   useDeleteAppUser,
   useDeleteStaffUser,
   useStaffUsers,
   useUsersMeta,
+  USERS_PAGE_SIZE,
 } from '@/api/users';
 import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
@@ -16,11 +18,10 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { UserListCard } from './components/UserListCard';
+import { FilterModal } from './components/FilterModal';
 import { ManageUserModal } from './components/ManageUserModal';
+import { UsersSkeleton } from './components/UsersSkeleton';
 import type { UserSegment } from './utils';
-import { STATUS_OPTS } from './utils';
-
-const PAGE_SIZE = 10;
 
 type Row = AppUserProfile | StaffUser;
 
@@ -34,18 +35,27 @@ function buildParams(role: string, search: string, status: 'active' | 'inactive'
   return p;
 }
 
+const SEGMENTS: { key: UserSegment; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'app', label: 'App Users', icon: 'people-outline' },
+  { key: 'staff', label: 'Staff', icon: 'briefcase-outline' },
+];
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
   const { colors } = useCmsTheme();
   const [segment, setSegment] = React.useState<UserSegment>('app');
   const [roleFilter, setRoleFilter] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<'active' | 'inactive' | 'all'>('active');
+  const [statusFilter, setStatusFilter] = React.useState<'active' | 'inactive' | 'all'>('all');
   const [search, setSearch] = React.useState('');
   const debouncedSearch = useDebouncedValue(search, 400);
-  const [pageIdx, setPageIdx] = React.useState(0);
+
+  // Staff has no confirmed server-side pagination (its endpoint always
+  // returns the full list) — infinite scroll there just reveals more of the
+  // already-fetched array, growing by one page per `onEndReached`.
+  const [staffVisibleCount, setStaffVisibleCount] = React.useState(USERS_PAGE_SIZE);
 
   React.useEffect(() => {
-    setPageIdx(0);
+    setStaffVisibleCount(USERS_PAGE_SIZE);
   }, [segment, roleFilter, statusFilter, debouncedSearch]);
 
   const baseParams = React.useMemo(
@@ -62,36 +72,44 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
     return m;
   }, [metaQuery.data]);
 
-  const appParams = React.useMemo(
-    () => ({ ...baseParams, limit: PAGE_SIZE, offset: pageIdx * PAGE_SIZE }),
-    [baseParams, pageIdx]
-  );
-  const appUsersQuery = useAppUsers(appParams, segment === 'app');
+  const appUsersQuery = useAppUsers(baseParams, segment === 'app');
   const staffUsersQuery = useStaffUsers(baseParams, segment === 'staff');
 
-  const { rows, total, loading } = React.useMemo(() => {
+  const { rows, total, loading, isFetchingMore } = React.useMemo(() => {
     if (segment === 'app') {
-      const data = appUsersQuery.data;
-      if (!data) return { rows: [] as Row[], total: 0, loading: appUsersQuery.isLoading };
-      if (Array.isArray(data)) {
-        return {
-          rows: data.slice(pageIdx * PAGE_SIZE, pageIdx * PAGE_SIZE + PAGE_SIZE),
-          total: data.length,
-          loading: appUsersQuery.isLoading,
-        };
-      }
-      return { rows: data.results, total: data.count ?? data.results.length, loading: appUsersQuery.isLoading };
+      const appRows = flattenAppUsersPages(appUsersQuery.data?.pages);
+      return {
+        rows: appRows as Row[],
+        total: appRows.length,
+        loading: appUsersQuery.isLoading,
+        isFetchingMore: appUsersQuery.isFetchingNextPage,
+      };
     }
     const data = staffUsersQuery.data;
     const arr = !data ? [] : Array.isArray(data) ? data : data.results;
     return {
-      rows: arr.slice(pageIdx * PAGE_SIZE, pageIdx * PAGE_SIZE + PAGE_SIZE),
+      rows: arr.slice(0, staffVisibleCount) as Row[],
       total: arr.length,
       loading: staffUsersQuery.isLoading,
+      isFetchingMore: false,
     };
-  }, [segment, appUsersQuery.data, appUsersQuery.isLoading, staffUsersQuery.data, staffUsersQuery.isLoading, pageIdx]);
+  }, [
+    segment,
+    appUsersQuery.data,
+    appUsersQuery.isLoading,
+    appUsersQuery.isFetchingNextPage,
+    staffUsersQuery.data,
+    staffUsersQuery.isLoading,
+    staffVisibleCount,
+  ]);
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  function loadMore() {
+    if (segment === 'app') {
+      if (appUsersQuery.hasNextPage && !appUsersQuery.isFetchingNextPage) appUsersQuery.fetchNextPage();
+    } else {
+      setStaffVisibleCount((prev) => Math.min(prev + USERS_PAGE_SIZE, total));
+    }
+  }
 
   const deleteAppUser = useDeleteAppUser();
   const deleteStaffUser = useDeleteStaffUser();
@@ -100,6 +118,7 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
   const [deletingUser, setDeletingUser] = React.useState<Row | null>(null);
   const manageModal = useModal();
   const confirmModal = useModal();
+  const filterModal = useModal();
 
   function openCreate() {
     setManageTarget((prev) => ({ user: null, key: prev.key + 1 }));
@@ -142,83 +161,88 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
   );
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={st.segmentRow}>
-        <Pressable
-          onPress={() => setSegment('app')}
-          style={[st.segBtn, { borderColor: colors.border }, isApp && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-        >
-          <Text style={[st.segLabel, { color: isApp ? colors.accentText : colors.textPrimary }]}>App Users</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setSegment('staff')}
-          style={[st.segBtn, { borderColor: colors.border }, !isApp && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-        >
-          <Text style={[st.segLabel, { color: !isApp ? colors.accentText : colors.textPrimary }]}>Staff</Text>
-        </Pressable>
-        <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
-          <Ionicons name="add" size={16} color={colors.accentText} />
-          <Text style={[st.addBtnText, { color: colors.accentText }]}>Add</Text>
-        </Pressable>
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      <View style={[st.sidebar, { backgroundColor: colors.sidebarBg, borderColor: colors.border }]}>
+        {SEGMENTS.map((s) => {
+          const active = s.key === segment;
+          return (
+            <Pressable
+              key={s.key}
+              onPress={() => setSegment(s.key)}
+              style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}
+            >
+              <Ionicons name={s.icon} size={20} color={active ? colors.accent : colors.sidebarText} />
+              <Text style={[st.tabLabel, { color: active ? colors.accent : colors.sidebarText }]} numberOfLines={2}>
+                {s.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      <View style={[st.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Ionicons name="search" size={16} color={colors.textSecondary} />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search name / phone / email…"
-          placeholderTextColor={colors.textSecondary}
-          style={[st.searchInput, { color: colors.textPrimary }]}
-        />
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.filterScroll} contentContainerStyle={st.filterScrollContent}>
-        <FilterChip colors={colors} label="All roles" active={!roleFilter} onPress={() => setRoleFilter('')} />
-        {(metaQuery.data?.roles ?? []).map((r) => (
-          <FilterChip key={r.value} colors={colors} label={r.label} active={roleFilter === r.value} onPress={() => setRoleFilter(r.value)} />
-        ))}
-      </ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.filterScroll} contentContainerStyle={st.filterScrollContent}>
-        {STATUS_OPTS.map((s) => (
-          <FilterChip key={s.value} colors={colors} label={s.label} active={statusFilter === s.value} onPress={() => setStatusFilter(s.value)} />
-        ))}
-      </ScrollView>
-
-      {loading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading…</Text>
+      <View style={{ flex: 1 }}>
+        <View style={st.searchRow}>
+          <View style={[st.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border, flex: 1, marginHorizontal: 0 }]}>
+            <Ionicons name="search" size={16} color={colors.textSecondary} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search name / phone / email…"
+              placeholderTextColor={colors.textSecondary}
+              style={[st.searchInput, { color: colors.textPrimary }]}
+            />
+          </View>
+          <Pressable onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
+            <Ionicons name="filter-outline" size={18} color={colors.textPrimary} />
+          </Pressable>
         </View>
-      ) : rows.length === 0 ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>No users found.</Text>
+        <View style={st.headerRow}>
+          <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+            <Ionicons name="add" size={16} color={colors.accentText} />
+            <Text style={[st.addBtnText, { color: colors.accentText }]}>Add {segment === 'app' ? 'App User' : 'Staff User'}</Text>
+          </Pressable>
         </View>
-      ) : (
-        <FlatList data={rows} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={{ paddingTop: 4, paddingBottom: 12 }} />
-      )}
 
-      <View style={st.pagerRow}>
-        <Text style={{ color: colors.textSecondary, fontSize: 12.5 }}>
-          {total} {total === 1 ? 'user' : 'users'} · page {pageIdx + 1} of {totalPages}
+        <Text style={[st.countText, { color: colors.textSecondary }]}>
+          {total} {total === 1 ? 'user' : 'users'}
         </Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable
-            disabled={pageIdx === 0}
-            onPress={() => setPageIdx((i) => Math.max(0, i - 1))}
-            style={[st.pagerBtn, { borderColor: colors.border, opacity: pageIdx === 0 ? 0.5 : 1 }]}
-          >
-            <Text style={{ color: colors.textPrimary, fontSize: 12.5, fontWeight: '600' }}>Prev</Text>
-          </Pressable>
-          <Pressable
-            disabled={pageIdx + 1 >= totalPages}
-            onPress={() => setPageIdx((i) => i + 1)}
-            style={[st.pagerBtn, { borderColor: colors.border, opacity: pageIdx + 1 >= totalPages ? 0.5 : 1 }]}
-          >
-            <Text style={{ color: colors.textPrimary, fontSize: 12.5, fontWeight: '600' }}>Next</Text>
-          </Pressable>
-        </View>
+
+        {loading ? (
+          <UsersSkeleton colors={colors} />
+        ) : rows.length === 0 ? (
+          <View style={st.center}>
+            <Text style={{ color: colors.textSecondary, width: '100%', textAlign: 'center' }}>No users found.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={rows}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingTop: 4, paddingBottom: 24 }}
+            onEndReachedThreshold={0.4}
+            onEndReached={loadMore}
+            ListFooterComponent={
+              isFetchingMore ? (
+                <View style={{ paddingVertical: 16 }}>
+                  <ActivityIndicator size="small" color={colors.accent} />
+                </View>
+              ) : null
+            }
+          />
+        )}
       </View>
 
+      <FilterModal
+        ref={filterModal.ref}
+        colors={colors}
+        roles={metaQuery.data?.roles ?? []}
+        filters={{ role: roleFilter, status: statusFilter }}
+        onApply={(f) => {
+          setRoleFilter(f.role);
+          setStatusFilter(f.status);
+          filterModal.dismiss();
+        }}
+      />
       <ManageUserModal
         ref={manageModal.ref}
         colors={colors}
@@ -241,22 +265,24 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
   );
 }
 
-function FilterChip({ colors, label, active, onPress }: { colors: ReturnType<typeof useCmsTheme>['colors']; label: string; active: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[st.chip, { borderColor: colors.border }, active && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-    >
-      <Text style={{ color: active ? colors.accentText : colors.textSecondary, fontSize: 12.5, fontWeight: '600' }}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const st = StyleSheet.create({
-  segmentRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 14 },
-  segBtn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, borderWidth: 1 },
-  segLabel: { fontSize: 13, fontWeight: '700' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, marginLeft: 'auto' },
+  sidebar: {
+    width: 70,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    gap: 4,
+  },
+  tab: {
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 0,
+  },
+  tabLabel: { fontSize: 9, fontWeight: '700', textAlign: 'center' },
+  headerRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingTop: 14 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   addBtnText: { fontSize: 13, fontWeight: '700' },
   searchWrap: {
     flexDirection: 'row',
@@ -266,20 +292,12 @@ const st = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     height: 42,
-    marginHorizontal: 16,
-    marginTop: 12,
+    marginHorizontal: 6,
+    marginTop: 0,
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
-  filterScroll: { flexGrow: 0, marginTop: 10, flexShrink: 0 },
-  filterScrollContent: { paddingHorizontal: 16, gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, flexShrink: 0 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, marginTop: 15 },
+  iconBtn: { width: 42, height: 42, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  countText: { fontSize: 12.5, paddingHorizontal: 16, paddingTop: 10 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  pagerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  pagerBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1 },
 });
