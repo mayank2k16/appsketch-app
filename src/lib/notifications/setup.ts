@@ -101,6 +101,28 @@ function routeFromNotificationData(data?: NotificationData | null): void {
     return;
   }
 
+  if (route === 'coder-chat') {
+    // "Your build is done" — deep-link back into the workspace chat that
+    // produced it (payload: {route: "coder-chat", tenant_id, tenant_uid,
+    // app_type, thread_id}, see builder/agent/coder/notify.py). No
+    // `userPrompt`, so `useCoderSocket` resumes the thread rather than
+    // starting a new build.
+    const tenantId = data.tenant_id;
+    const tenantUid = data.tenant_uid ?? tenantId;
+    if (!tenantId) return;
+    navigateWhenReady(() =>
+      router.push({
+        pathname: '/code-editor/chat',
+        params: {
+          tenantId: String(tenantId),
+          tenantUid: String(tenantUid),
+          appType: String(data.app_type || 'web'),
+        },
+      } as never)
+    );
+    return;
+  }
+
   const tab =
     typeof route === 'string' ? ROUTE_TO_TAB[route.toLowerCase()] : undefined;
   if (tab) {
@@ -203,10 +225,13 @@ export async function ensureAndroidChannel(): Promise<void> {
  * default notification sound/vibration instead of a custom bundled one. */
 export async function ensureGeneralAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(GENERAL_NOTIFICATION_CHANNEL_ID, {
-    name: 'General',
-    importance: Notifications.AndroidImportance.HIGH,
-  });
+  await Notifications.setNotificationChannelAsync(
+    GENERAL_NOTIFICATION_CHANNEL_ID,
+    {
+      name: 'General',
+      importance: Notifications.AndroidImportance.HIGH,
+    }
+  );
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
@@ -251,8 +276,11 @@ function subscribeToForegroundPushes(): () => void {
       // reply arriving in the foreground play the orders channel's bundled
       // "cha-ching" sound instead of a normal notification chime.
       const route = data.route ?? data.screen;
-      const isOrderAlert = typeof route === 'string' && route.toLowerCase() in ROUTE_TO_TAB;
-      const channelId = isOrderAlert ? NOTIFICATION_CHANNEL_ID : GENERAL_NOTIFICATION_CHANNEL_ID;
+      const isOrderAlert =
+        typeof route === 'string' && route.toLowerCase() in ROUTE_TO_TAB;
+      const channelId = isOrderAlert
+        ? NOTIFICATION_CHANNEL_ID
+        : GENERAL_NOTIFICATION_CHANNEL_ID;
 
       if (Platform.OS === 'ios') Vibration.vibrate(VIBRATION_PATTERN);
 
@@ -265,14 +293,18 @@ function subscribeToForegroundPushes(): () => void {
           // sound; the bundled `notification.wav` is reserved for order
           // alerts. On Android the channel's own locked-in sound wins
           // regardless of this field, so it only matters here for iOS.
-          content: { title, body, data, sound: isOrderAlert ? 'notification.wav' : true },
+          content: {
+            title,
+            body,
+            data,
+            sound: isOrderAlert ? 'notification.wav' : true,
+          },
           // `channelId` belongs on the TRIGGER — NotificationContentInput has
           // no such field, so passing it in `content` is silently ignored and
           // the notification lands on expo's fallback channel (default sound).
           // A bare `{channelId}` trigger presents immediately, on the right
           // channel.
-          trigger:
-            Platform.OS === 'android' ? ({ channelId } as any) : null,
+          trigger: Platform.OS === 'android' ? ({ channelId } as any) : null,
         });
       } catch {
         // Presenting is best-effort — never break the push pipeline.

@@ -15,7 +15,7 @@ export async function loadDefaultConfig(): Promise<TenantConfig> {
   // The require() will be resolved by Metro bundler
   const defaultConfig = require('@/configs/default-ecommerce.json') as TenantConfig;
   await setItem(DEFAULT_CONFIG_KEY, defaultConfig);
-  return {};
+  return defaultConfig;
 }
 
 export function getDefaultTenant() {

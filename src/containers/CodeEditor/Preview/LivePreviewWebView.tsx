@@ -60,6 +60,48 @@ const ERROR_CAPTURE_JS = `
 // (window.__cwInspector) return;`), so combining them here is safe.
 const COMBINED_INJECTED_JS = `${ERROR_CAPTURE_JS}\n${INSPECTOR_SCRIPT}`;
 
+/** Pins the page to the device width before first paint.
+ *
+ * The generated site already ships `width=device-width` in its own <meta>
+ * tag (see `contract.py`), so a cold load is fine. The overflow only shows up
+ * mid-session: the dev server's HMR client swaps a page in without a full
+ * navigation, and for one frame the incoming DOM has no stylesheet applied
+ * yet (default `<ul>`/`<nav>` layout, no flex, no padding) — which is wider
+ * than the screen and gets rendered before the CSS catches up. A real
+ * navigation re-runs `injectedJavaScript` from scratch, so
+ * `injectedJavaScriptBeforeContentLoaded` is what actually reaches an HMR
+ * swap: it forces a `<meta name=viewport>` and a hard `overflow-x: hidden`
+ * BEFORE any of the page's own content paints, so that unstyled frame is
+ * clipped instead of visible.
+ */
+const VIEWPORT_LOCK_JS = `
+(function () {
+  function lock() {
+    var m = document.querySelector('meta[name="viewport"]');
+    if (!m) {
+      m = document.createElement('meta');
+      m.name = 'viewport';
+      document.head && document.head.appendChild(m);
+    }
+    m.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+    var style = document.getElementById('__cw_viewport_lock__');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = '__cw_viewport_lock__';
+      (document.head || document.documentElement).appendChild(style);
+    }
+    style.textContent =
+      'html,body{max-width:100vw!important;overflow-x:hidden!important}';
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', lock);
+  } else {
+    lock();
+  }
+  true;
+})();
+`;
+
 export function LivePreviewWebView({
   url,
   colors,
@@ -112,7 +154,7 @@ export function LivePreviewWebView({
   return (
     <View
       ref={captureContainerRef}
-      style={{ flex: 1, backgroundColor: colors.bg }}
+      style={{ flex: 1, backgroundColor: colors.bg, overflow: 'hidden' }}
       collapsable={false}
     >
       {isWeb
@@ -133,12 +175,23 @@ export function LivePreviewWebView({
               ref={webviewRef}
               source={{ uri: url }}
               style={StyleSheet.absoluteFill}
+              injectedJavaScriptBeforeContentLoaded={VIEWPORT_LOCK_JS}
               injectedJavaScript={COMBINED_INJECTED_JS}
               onMessage={handleMessage}
               onLoadStart={() => setStatus('loading')}
               onLoadEnd={() => setStatus((s) => (s === 'error' ? s : 'loaded'))}
               onError={() => setStatus('error')}
               onHttpError={() => setStatus('error')}
+              // The dev-server HMR client patches the live DOM in place — no
+              // new navigation, so nothing here re-fires per swap. What makes
+              // this hold across swaps is that VIEWPORT_LOCK_JS's style tag
+              // just sits in <head> for the life of the document; only a real
+              // reload needs re-injecting, which onLoadStart's remount covers.
+              scalesPageToFit={false}
+              bounces={false}
+              overScrollMode="never"
+              automaticallyAdjustContentInsets={false}
+              contentInsetAdjustmentBehavior="never"
             />
           )}
 

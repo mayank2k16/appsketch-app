@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  Alert,
   Animated,
   Easing,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -21,7 +22,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ActivityStep, ChatMessage, ClarifyBlock } from '@/api/coder';
+import { GallerySheet } from '@/components/ui/GallerySheet';
+import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
+import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
+import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
 import { F } from '@/lib/fonts';
+import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
@@ -31,9 +37,11 @@ import { ActivityStream, LiveActivity } from './ActivityStream';
 import { ClarifyBlockView } from './ClarifyBlock';
 import { PulsingDot } from './PulsingDot';
 import { StatusBanner } from './StatusBanner';
+import { ThinkingDots } from './ThinkingDots';
 import { TokenMeter } from './TokenMeter';
 
 const MAX_IMAGES = 3;
+type Model = (typeof MODELS)[number];
 
 function AgentAvatar({
   size,
@@ -59,18 +67,178 @@ function AgentAvatar({
   );
 }
 
+/** Rename sheet. `Alert.prompt` would have been one line, but it is iOS-only —
+ * on Android it silently renders a text-less alert with no input at all, which
+ * is exactly the kind of half-working affordance this turn is meant to remove. */
+function RenameModal({
+  visible,
+  initial,
+  colors,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  initial: string;
+  colors: ReturnType<typeof useAppTheme>;
+  onClose: () => void;
+  onSubmit: (next: string) => void;
+}) {
+  const [value, setValue] = React.useState(initial);
+  // Re-seed each time it opens — otherwise a rename, a close, and a re-open
+  // shows the stale draft rather than the name that is actually current.
+  React.useEffect(() => {
+    if (visible) setValue(initial);
+  }, [visible, initial]);
+
+  const trimmed = value.trim();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable style={st.backdrop} onPress={onClose}>
+        <Pressable
+          style={[
+            st.sheet,
+            {
+              backgroundColor: colors.sheetBg,
+              borderColor: colors.codeEditorBorder,
+            },
+          ]}
+        >
+          <Text style={[st.sheetTitle, { color: colors.text }]}>
+            Rename project
+          </Text>
+          <TextInput
+            value={value}
+            onChangeText={setValue}
+            autoFocus
+            selectTextOnFocus
+            placeholder="Project name"
+            placeholderTextColor={colors.codeEditorTextMuted}
+            style={[
+              st.renameInput,
+              {
+                color: colors.text,
+                backgroundColor: colors.codeEditorActivityBg,
+                borderColor: colors.codeEditorBorder,
+              },
+            ]}
+            returnKeyType="done"
+            onSubmitEditing={() => trimmed && onSubmit(trimmed)}
+          />
+          <View style={st.sheetActions}>
+            <TouchableOpacity onPress={onClose} style={st.sheetBtn} hitSlop={6}>
+              <Text style={[st.sheetBtnText, { color: colors.textSub }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => trimmed && onSubmit(trimmed)}
+              disabled={!trimmed}
+              style={[st.sheetBtn, !trimmed && { opacity: 0.4 }]}
+              hitSlop={6}
+            >
+              <Text style={[st.sheetBtnText, { color: colors.accent }]}>
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+/** The ⋮ menu from the design: Rename (pencil) and Delete (red trash). */
+function WorkMenu({
+  visible,
+  colors,
+  onClose,
+  onRename,
+  onDelete,
+}: {
+  visible: boolean;
+  colors: ReturnType<typeof useAppTheme>;
+  onClose: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable style={st.menuBackdrop} onPress={onClose}>
+        <View
+          style={[
+            st.menu,
+            {
+              backgroundColor: colors.sheetBg,
+              borderColor: colors.codeEditorBorder,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={st.menuRow}
+            onPress={() => {
+              onClose();
+              onRename();
+            }}
+          >
+            <Ionicons name="pencil-outline" size={16} color={colors.text} />
+            <Text style={[st.menuText, { color: colors.text }]}>Rename</Text>
+          </TouchableOpacity>
+          <View
+            style={[
+              st.menuDivider,
+              { backgroundColor: colors.codeEditorBorder },
+            ]}
+          />
+          <TouchableOpacity
+            style={st.menuRow}
+            onPress={() => {
+              onClose();
+              onDelete();
+            }}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={16}
+              color={colors.codeEditorDanger}
+            />
+            <Text style={[st.menuText, { color: colors.codeEditorDanger }]}>
+              Delete
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+}
+
 function ChatHeader({
   connected,
   busy,
   needsInput,
+  title,
   colors,
   onClose,
+  onMenu,
 }: {
   connected: boolean;
   busy: boolean;
   needsInput: boolean;
+  /** The agent-written project name — empty until it lands. */
+  title: string;
   colors: ReturnType<typeof useAppTheme>;
   onClose: () => void;
+  onMenu: () => void;
 }) {
   const statusLabel = !connected
     ? 'Disconnected'
@@ -90,7 +258,15 @@ function ChatHeader({
       <AgentAvatar size={30} iconSize={15} colors={colors} />
       <View style={{ flex: 1 }}>
         <View style={st.headerTitleRow}>
-          <Text style={[st.headerTitle, { color: colors.text }]}>Agent</Text>
+          {/* The heading is the agent's name for the work, not the word
+           * "Agent" — until the naming call lands there is nothing better to
+           * show, so it falls back rather than flashing an empty row. */}
+          <Text
+            style={[st.headerTitle, { color: colors.text }]}
+            numberOfLines={1}
+          >
+            {title || 'Agent'}
+          </Text>
           <PulsingDot
             active={connected && (busy || needsInput)}
             color={dotColor}
@@ -106,6 +282,19 @@ function ChatHeader({
           {statusLabel}
         </Text>
       </View>
+      <TouchableOpacity
+        onPress={onMenu}
+        hitSlop={8}
+        style={[
+          st.closeBtn,
+          {
+            backgroundColor: colors.codeEditorTabBg,
+            borderColor: colors.codeEditorBorder,
+          },
+        ]}
+      >
+        <Ionicons name="ellipsis-vertical" size={15} color={colors.textSub} />
+      </TouchableOpacity>
       <TouchableOpacity
         onPress={onClose}
         hitSlop={8}
@@ -154,18 +343,17 @@ function MessageBubble({
   return (
     <View style={st.bubbleRow}>
       <View
-        style={[st.assistantCard, { borderColor: colors.codeEditorBorder, backgroundColor: colors.codeEditorActivityBg }]}
+        style={[
+          st.assistantCard,
+          {
+            borderColor: colors.codeEditorBorder,
+            backgroundColor: colors.codeEditorActivityBg,
+          },
+        ]}
       >
-        <View
-          style={[
-            st.assistantCardHeader,
-
-          ]}
-        >
+        <View style={[st.assistantCardHeader]}>
           <AgentAvatar size={20} iconSize={11} colors={colors} />
-          <Text style={[st.assistantName, { color: colors.text }]}>
-            Agent
-          </Text>
+          <Text style={[st.assistantName, { color: colors.text }]}>Agent</Text>
           <View style={{ flex: 1 }} />
           <View
             style={[
@@ -238,6 +426,10 @@ function Composer({
   onRemoveImage,
   colors,
   bottomInset,
+  model,
+  onModelChange,
+  allowedModels,
+  onLockedModelPress,
 }: {
   input: string;
   onChangeInput: (v: string) => void;
@@ -249,8 +441,15 @@ function Composer({
   colors: ReturnType<typeof useAppTheme>;
   /** Home-indicator clearance — the composer sat flush against it before. */
   bottomInset: number;
+  model: string;
+  onModelChange: (value: string) => void;
+  /** `null` fails open — see `useCoderQuota`. */
+  allowedModels: string[] | null;
+  onLockedModelPress: (m: Model) => void;
 }) {
   const voice = useVoiceInput(input, onChangeInput);
+  const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
+  const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
 
   // Mic pulses while listening — same affordance as the Home/Agent composer.
   const micPulse = React.useRef(new Animated.Value(1)).current;
@@ -309,7 +508,10 @@ function Composer({
               <Image source={{ uri }} style={st.thumbImg} contentFit="cover" />
               <Pressable
                 onPress={() => onRemoveImage(i)}
-                style={[st.thumbRemove, { backgroundColor: colors.codeEditorTabBg }]}
+                style={[
+                  st.thumbRemove,
+                  { backgroundColor: colors.codeEditorTabBg },
+                ]}
                 hitSlop={6}
               >
                 <Ionicons name="close" size={11} color={colors.textSub} />
@@ -320,6 +522,29 @@ function Composer({
       ) : null}
 
       <View style={st.composerRow}>
+        {/* Follow-ups were stuck on whatever model started the thread — the
+         * workspace chat is where most of a project's turns happen, so the
+         * picker has to exist here too, not only on the launch composer. */}
+        <TouchableOpacity
+          onPress={() => setModelPickerOpen(true)}
+          activeOpacity={0.7}
+          style={[
+            st.modelChip,
+            {
+              backgroundColor: colors.codeEditorTabBg,
+              borderColor: colors.codeEditorBorder,
+            },
+          ]}
+        >
+          <Text
+            style={[st.modelChipLabel, { color: colors.textSub }]}
+            numberOfLines={1}
+          >
+            {selectedModel?.label}
+          </Text>
+          <Ionicons name="chevron-down" size={12} color={colors.textSub} />
+        </TouchableOpacity>
+
         <TouchableOpacity
           onPress={onAttach}
           activeOpacity={0.7}
@@ -360,7 +585,9 @@ function Composer({
               <Ionicons
                 name={voice.listening ? 'mic' : 'mic-outline'}
                 size={17}
-                color={voice.listening ? colors.codeEditorDanger : colors.textSub}
+                color={
+                  voice.listening ? colors.codeEditorDanger : colors.textSub
+                }
               />
             </Animated.View>
           </TouchableOpacity>
@@ -386,6 +613,18 @@ function Composer({
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      <ModelPickerModal
+        visible={modelPickerOpen}
+        onClose={() => setModelPickerOpen(false)}
+        t={colors}
+        models={MODELS}
+        value={model}
+        onChange={onModelChange}
+        formatContext={fmtContext}
+        allowedModels={allowedModels}
+        onLockedPress={onLockedModelPress}
+      />
     </View>
   );
 }
@@ -396,12 +635,14 @@ function ChatFooter({
   clarifyAnswers,
   colors,
   onSubmitClarify,
+  busy,
 }: {
   activity: ActivityStep[];
   clarifyBlock: ClarifyBlock | null;
   clarifyAnswers: Record<string, string> | null;
   colors: ReturnType<typeof useAppTheme>;
   onSubmitClarify: (value: Record<string, string>) => void;
+  busy: boolean;
 }) {
   // Clarify (the agent asking the user something) always sits above the
   // live "Working…" activity — the currently-in-flight step is the most
@@ -417,6 +658,13 @@ function ChatFooter({
         />
       ) : null}
       <LiveActivity steps={activity} colors={colors} />
+      {/* Last thing in the feed while a turn is live: the only element that
+       * keeps moving through the long silent gaps between steps. */}
+      {busy ? (
+        <View style={st.dotsRow}>
+          <ThinkingDots colors={colors} />
+        </View>
+      ) : null}
     </>
   );
 }
@@ -454,10 +702,21 @@ export function ChatPanel() {
     clarifyAnswers,
     send,
     answerClarify,
+    title,
+    eta,
+    backgroundRun,
+    rename,
+    remove,
   } = useCodeEditor();
 
   const [input, setInput] = React.useState('');
   const [images, setImages] = React.useState<string[]>([]);
+  const [model, setModel] = React.useState<string>(DEFAULT_MODEL);
+  const [upgradeModel, setUpgradeModel] = React.useState<Model | null>(null);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [galleryOpen, setGalleryOpen] = React.useState(false);
+  const [renameOpen, setRenameOpen] = React.useState(false);
+  const allowedModels = useCoderQuota();
   const listRef = React.useRef<ScrollView>(null);
 
   const needsInput = !!clarifyBlock && !clarifyAnswers;
@@ -475,22 +734,9 @@ export function ChatPanel() {
       );
   }, [messages.length, activity.length, clarifyBlock]);
 
-  async function handleAttach() {
+  function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted') {
-      toast.error('Media library permission is required to attach images.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (result.canceled || result.assets.length === 0) return;
-    setImages((prev) =>
-      [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_IMAGES)
-    );
+    setGalleryOpen(true);
   }
 
   function removeImage(index: number) {
@@ -500,9 +746,53 @@ export function ChatPanel() {
   function handleSend() {
     const text = input.trim();
     if (!text || !connected || busy) return;
-    send(text, images.length > 0 ? { images } : undefined);
+    send(text, { model, images: images.length > 0 ? images : undefined });
     setInput('');
     setImages([]);
+  }
+
+  // "Background" is a leave-and-be-told affordance, not a mode switch: a
+  // durable run already survives this screen closing (see `runs.py`), and the
+  // backend now pushes a notification when it lands (`notify.py`). So the
+  // honest button is "go do something else", not a second kind of run.
+  function handleBackground() {
+    toast.success(
+      "Running in the background — we'll notify you when it's done."
+    );
+    router.back();
+  }
+
+  async function handleRename(next: string) {
+    setRenameOpen(false);
+    try {
+      await rename(next);
+    } catch {
+      toast.error("Couldn't rename this project.");
+    }
+  }
+
+  function handleDelete() {
+    // Deleting the conversation is not reversible from the app, so it asks
+    // once. It does NOT delete the built site — see the backend endpoint.
+    Alert.alert(
+      'Delete this project?',
+      'The chat and its history are removed. Your generated files stay on the server.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await remove();
+              router.back();
+            } catch {
+              toast.error("Couldn't delete this project.");
+            }
+          },
+        },
+      ]
+    );
   }
 
   return (
@@ -511,8 +801,10 @@ export function ChatPanel() {
         connected={connected}
         busy={busy}
         needsInput={needsInput}
+        title={title}
         colors={t}
         onClose={() => router.back()}
+        onMenu={() => setMenuOpen(true)}
       />
 
       <KeyboardAvoidingView
@@ -539,10 +831,18 @@ export function ChatPanel() {
             clarifyAnswers={clarifyAnswers}
             colors={t}
             onSubmitClarify={answerClarify}
+            busy={busy}
           />
         </ScrollView>
 
-        <TokenMeter tokens={tokens} colors={t} />
+        <TokenMeter
+          tokens={tokens}
+          colors={t}
+          eta={eta}
+          busy={busy}
+          backgroundRun={backgroundRun}
+          onBackground={handleBackground}
+        />
 
         {needsInput ? (
           <StatusBanner
@@ -562,8 +862,42 @@ export function ChatPanel() {
           onRemoveImage={removeImage}
           colors={t}
           bottomInset={insets.bottom}
+          model={model}
+          onModelChange={setModel}
+          allowedModels={allowedModels}
+          onLockedModelPress={setUpgradeModel}
         />
       </KeyboardAvoidingView>
+
+      <WorkMenu
+        visible={menuOpen}
+        colors={t}
+        onClose={() => setMenuOpen(false)}
+        onRename={() => setRenameOpen(true)}
+        onDelete={handleDelete}
+      />
+      <RenameModal
+        visible={renameOpen}
+        initial={title}
+        colors={t}
+        onClose={() => setRenameOpen(false)}
+        onSubmit={handleRename}
+      />
+      <GallerySheet
+        visible={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        onConfirm={(uris) =>
+          setImages((prev) => [...prev, ...uris].slice(0, MAX_IMAGES))
+        }
+        t={t}
+        max={MAX_IMAGES - images.length}
+      />
+      <UpgradeSheet
+        visible={!!upgradeModel}
+        onClose={() => setUpgradeModel(null)}
+        t={t}
+        modelLabel={upgradeModel?.label}
+      />
     </View>
   );
 }
@@ -589,6 +923,9 @@ const st = StyleSheet.create({
   headerTitle: {
     fontFamily: F.sans600,
     fontSize: 15,
+    // A generated name can be up to 60 chars — it has to give way to the
+    // status dot and the two buttons rather than push them off-screen.
+    flexShrink: 1,
   },
   headerStatus: {
     fontFamily: F.sans500,
@@ -666,7 +1003,7 @@ const st = StyleSheet.create({
     paddingVertical: 12,
     // margin: 7,
     borderRadius: 20,
-    paddingTop: 6
+    paddingTop: 6,
   },
   assistantText: {
     fontFamily: F.sans400,
@@ -675,6 +1012,96 @@ const st = StyleSheet.create({
   },
 
   empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 24 },
+
+  dotsRow: {
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: 4,
+  },
+
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  sheet: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+  },
+  sheetTitle: {
+    fontFamily: F.sans600,
+    fontSize: 15,
+    marginBottom: 12,
+  },
+  renameInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14.5,
+    fontFamily: F.sans400,
+  },
+  sheetActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 14,
+  },
+  sheetBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sheetBtnText: {
+    fontFamily: F.sans600,
+    fontSize: 14,
+  },
+
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    // Anchored under the ⋮, which lives in the header's top-right.
+    alignItems: 'flex-end',
+    paddingTop: 96,
+    paddingRight: 12,
+  },
+  menu: {
+    minWidth: 176,
+    borderWidth: 1,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  menuDivider: { height: StyleSheet.hairlineWidth },
+  menuText: {
+    fontFamily: F.sans500,
+    fontSize: 14.5,
+  },
+
+  modelChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    maxWidth: 150,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+  },
+  modelChipLabel: {
+    fontFamily: F.sans600,
+    fontSize: 11.5,
+    flexShrink: 1,
+  },
 
   composerWrap: {
     marginHorizontal: 10,

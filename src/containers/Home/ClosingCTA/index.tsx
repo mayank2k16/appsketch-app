@@ -5,22 +5,23 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Dimensions,
+  type StyleProp,
   StyleSheet,
   Text,
   View,
-  type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
-import { createCoderTenant, type AppTypeKey } from '@/api/coder';
+import { type AppTypeKey, createCoderTenant } from '@/api/coder';
 import { AppTypePills } from '@/components/ui/AppTypePills';
 import { GradientText } from '@/components/ui/GradientText';
 import { PromptComposer } from '@/components/ui/PromptComposer';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
+
 import { DEFAULT_MODEL, fmtContext, MODELS } from '../AgentV2';
 import { SectionHeading } from '../components/SectionHeading';
-import { homeTheme, type HomeColors } from '../theme/HomeTheme';
+import { type HomeColors, homeTheme } from '../theme/HomeTheme';
 
 // Same fade recipe as Hero's own heading — one GradientText per line, over
 // the same 3-line wrap the source design shows for this heading.
@@ -51,12 +52,24 @@ const PHONE_SCREEN_IMAGE =
 // needs a bright catch at the edge, a near-black body, then a *second*, weaker
 // highlight further along. That double highlight is the whole trick — drop it
 // and the frames read as black cardboard.
-const METAL_FRAME = ['#5A5F68', '#22252A', '#0A0B0D', '#3E434B', '#111316'] as const;
+const METAL_FRAME = [
+  '#5A5F68',
+  '#22252A',
+  '#0A0B0D',
+  '#3E434B',
+  '#111316',
+] as const;
 const METAL_FRAME_LOC = [0, 0.15, 0.45, 0.82, 1] as const;
 
 // Phone rail — same ramp, marginally brighter so it separates from the laptop
 // screen it overlaps.
-const METAL_RAIL = ['#6A6F79', '#282C32', '#0D0F12', '#4A4F58', '#15171B'] as const;
+const METAL_RAIL = [
+  '#6A6F79',
+  '#282C32',
+  '#0D0F12',
+  '#4A4F58',
+  '#15171B',
+] as const;
 const METAL_RAIL_LOC = [0, 0.18, 0.5, 0.84, 1] as const;
 
 // Front lip of the hinge deck, lit from above.
@@ -177,8 +190,12 @@ function Display({
         />
       ) : (
         <View style={s.fallbackBody}>
-          <View style={[s.skeletonBar, { backgroundColor: t.border, width: '80%' }]} />
-          <View style={[s.skeletonBar, { backgroundColor: t.border, width: '55%' }]} />
+          <View
+            style={[s.skeletonBar, { backgroundColor: t.border, width: '80%' }]}
+          />
+          <View
+            style={[s.skeletonBar, { backgroundColor: t.border, width: '55%' }]}
+          />
         </View>
       )}
     </View>
@@ -203,7 +220,11 @@ function DeviceMockup({ t }: { t: HomeColors }) {
         <View style={s.tabletWrap}>
           <MetalShell style={s.tablet} rail>
             <View style={s.tabletScreen}>
-              <Display uri={TABLET_SCREEN_IMAGE} style={StyleSheet.absoluteFill} t={t} />
+              <Display
+                uri={TABLET_SCREEN_IMAGE}
+                style={StyleSheet.absoluteFill}
+                t={t}
+              />
               <View style={s.tabletCamera} pointerEvents="none" />
             </View>
           </MetalShell>
@@ -213,7 +234,11 @@ function DeviceMockup({ t }: { t: HomeColors }) {
         <View style={s.phoneWrap}>
           <MetalShell style={s.phone} rail>
             <View style={s.phoneScreen}>
-              <Display uri={PHONE_SCREEN_IMAGE} style={StyleSheet.absoluteFill} t={t} />
+              <Display
+                uri={PHONE_SCREEN_IMAGE}
+                style={StyleSheet.absoluteFill}
+                t={t}
+              />
               <View style={s.dynamicIsland} pointerEvents="none" />
               <View style={s.phoneHomeIndicator} pointerEvents="none" />
             </View>
@@ -279,18 +304,16 @@ export function ClosingCTASection() {
   const [images, setImages] = React.useState<string[]>([]);
   const [sending, setSending] = React.useState(false);
 
-  async function handleSend() {
-    const text = prompt.trim();
+  async function handleSend(overrideText?: string) {
+    const text = (overrideText ?? prompt).trim();
     if (!text || sending) return;
-
-    if (appType === 'game') {
-      toast.error('Game builds are coming soon — try Web or Mobile for now.');
-      return;
-    }
 
     setSending(true);
     try {
-      const tenant = await createCoderTenant({ title: text.slice(0, 60), appType });
+      const tenant = await createCoderTenant({
+        title: text.slice(0, 60),
+        appType,
+      });
       router.push({
         pathname: '/code-editor/chat',
         params: {

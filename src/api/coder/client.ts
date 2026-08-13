@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import type {
   AppTypeKey,
   CollectionsResponse,
+  CoderQuota,
   CreateCoderTenantResponse,
   FileTreeNode,
   OAuthConfig,
@@ -17,6 +18,16 @@ import type {
   WebBuildStatus,
   WorkspaceFile,
 } from './types';
+
+/** Best-effort — `authenticatedClient` only attaches a token when one exists,
+ * so this is safe to call for anonymous/guest users too (resolves to the free
+ * tier server-side, same as an anonymous hero-flow build). */
+export async function getCoderQuota(): Promise<CoderQuota> {
+  const { data } = await authenticatedClient.get<CoderQuota>(
+    'api/builder/coder/quota/'
+  );
+  return data;
+}
 
 /** Mirrors Vite's `HeroBanner.jsx` tenant-create call (`Api/tenantAPI.js` →
  * `createTenant`), but with `render_engine: 'code'` so the backend spins up
@@ -61,6 +72,28 @@ export async function getLatestThread(
 ): Promise<{ thread_id: string | null }> {
   const { data } = await authenticatedClient.get(
     `api/builder/coder/${tenantId}/latest-thread/`
+  );
+  return data;
+}
+
+/** Rename this conversation. Also stops the agent's auto-namer from ever
+ * overwriting the user's choice — see the backend's `coder_thread`. */
+export async function renameThread(
+  threadId: string,
+  title: string
+): Promise<{ ok: boolean; title: string }> {
+  const { data } = await authenticatedClient.patch(
+    `api/builder/coder/thread/${threadId}/`,
+    { title }
+  );
+  return data;
+}
+
+/** Delete this conversation and its runs. The workspace, the collections and
+ * anything deployed are deliberately untouched — this throws away a chat. */
+export async function deleteThread(threadId: string): Promise<{ ok: boolean }> {
+  const { data } = await authenticatedClient.delete(
+    `api/builder/coder/thread/${threadId}/`
   );
   return data;
 }

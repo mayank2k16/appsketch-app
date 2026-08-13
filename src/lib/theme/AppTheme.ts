@@ -234,7 +234,12 @@ export const appTheme = {
     codeEditorToolChipActiveBg: 'rgba(108,92,231,0.16)',
     codeEditorToolChipActiveBorder: 'rgba(108,92,231,0.40)',
     codeEditorToolChipActiveText: '#C9C0FF',
-    codeEditorShimmerHighlight: '#9C8CFF',
+    // The band that sweeps across the live activity row. PURE WHITE, not the
+    // brand violet it used to be: a coloured sweep over grey text reads as a
+    // colour change, and on a row that already carries a violet accent bar and
+    // a violet tool chip it read as more of the same. White reads as *light*
+    // moving across the text — which is what a shine is.
+    codeEditorShimmerHighlight: '#FFFFFF',
 
     // Token meter + plan/todos/review activity rows
     codeEditorTokenIn: '#8FB2E8',
@@ -487,7 +492,11 @@ export const appTheme = {
     codeEditorToolChipActiveBg: 'rgba(108,92,231,0.10)',
     codeEditorToolChipActiveBorder: 'rgba(108,92,231,0.35)',
     codeEditorToolChipActiveText: '#4B3FC4',
-    codeEditorShimmerHighlight: '#4B3FC4',
+    // Light theme cannot use white here — the base text is dark, so a white
+    // band would blank the words out for the length of the sweep. A bright
+    // neutral gives the same "light passing over it" motion while staying
+    // legible. (Dark theme is the pure-white one; see above.)
+    codeEditorShimmerHighlight: '#9AA3B2',
 
     // Token meter + plan/todos/review activity rows
     codeEditorTokenIn: '#3B6FB8',

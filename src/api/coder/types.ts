@@ -6,7 +6,7 @@
  * phase 2 (terminal/collections/git/inspector) doesn't need a breaking type change.
  */
 
-export type AppTypeKey = 'web' | 'mobile' | 'game';
+export type AppTypeKey = 'web' | 'mobile';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -137,9 +137,34 @@ export type WebBuildStatus = {
 // ── Incoming WS events (ws/coder/<thread_id>/) ──────────────────────────────
 
 export type CoderReadyHistoryMessage = { role: ChatRole; content: string };
+/** One row of `builder/agent/coder/runs.py`'s `serialize()` — a turn that was
+ * already in flight when this socket connected (see `runs.live_runs`). This
+ * is what a reconnect (tab refresh, or the app reopening after being closed
+ * mid-run) replays from instead of showing an empty chat. */
+export type CoderLiveRun = {
+  run_id: number;
+  status: string;
+  mode: 'foreground' | 'background';
+  kind: 'turn' | 'subagent';
+  label?: string;
+  question?: string;
+  model?: string;
+  effort?: string;
+  activity?: Array<Record<string, unknown>>;
+  answer?: string;
+  error?: string;
+  built?: boolean;
+  parent_id?: number | null;
+  created_at?: string | null;
+};
 export type CoderReadyEvent = {
   event: 'ready';
   history?: CoderReadyHistoryMessage[];
+  /** The agent-written name for this project — see the backend's `title.py`. */
+  title?: string;
+  /** In-flight turns to re-attach to — this is what makes a mid-build
+   * reconnect resume the live turn instead of losing it. */
+  live_runs?: CoderLiveRun[];
 };
 export type CoderTokenEvent = { event: 'token'; content: string };
 export type CoderNodeEvent = {
@@ -216,8 +241,33 @@ export type CoderFinalEvent = {
   event: 'final';
   content?: string;
   tree?: FileTreeNode[];
+  /** 'done' | 'cancelled' | 'error' — a stopped turn must not be treated as a
+   * finished, previewable build. */
+  status?: string;
+  /** A file actually changed this turn — a pure-chat reply has nothing new
+   * to preview. */
+  built?: boolean;
+  /** 'chat' | 'build' — mirrors `status`'s "was this even a build" question
+   * from the intent the graph classified, not the outcome. */
+  intent?: string;
+  /** This turn was a /compact pass, not a build. */
+  compacted?: boolean;
 };
 export type CoderErrorEvent = { event: 'error'; detail?: string };
+/** How long the backend expects this turn to take. Re-emitted mid-run as the
+ * forecast is corrected against measured pace, so treat each one as the new
+ * truth rather than accumulating them. */
+export type CoderEtaEvent = { event: 'eta'; seconds?: number; live?: boolean };
+/** The agent finished naming this project (or a user renamed it elsewhere). */
+export type CoderTitleEvent = { event: 'title'; title?: string };
+/** Plan doesn't allow another detached run. */
+export type CoderBackgroundLimitEvent = {
+  event: 'background_limit';
+  used?: number;
+  limit?: number;
+  upgrade?: boolean;
+  detail?: string;
+};
 
 export type CoderWsEvent =
   | CoderReadyEvent
@@ -238,6 +288,9 @@ export type CoderWsEvent =
   | CoderBuildStartedEvent
   | CoderBuildDoneEvent
   | CoderFinalEvent
+  | CoderEtaEvent
+  | CoderTitleEvent
+  | CoderBackgroundLimitEvent
   | CoderErrorEvent;
 
 // ── Outgoing WS messages ─────────────────────────────────────────────────────
@@ -247,6 +300,9 @@ export type CoderSendMessagePayload = {
   content: string;
   model?: string;
   images?: string[];
+  /** Detach the turn: it survives leaving the screen and pushes a
+   * notification when it lands. Subject to per-plan slots. */
+  background?: boolean;
 };
 export type CoderInteractionPayload = {
   type: 'interaction';
@@ -371,3 +427,22 @@ export type OAuthRepo = {
 // ── Visual inspector (phase 2) ──────────────────────────────────────────────
 
 export type VisualEditResponse = { ok: boolean; reason?: string };
+
+// ── Model quota / paywall ────────────────────────────────────────────────────
+
+/** Mirrors `builder/agent/coder/quota.py`'s `check()` — same shape the
+ * workspace socket sends on `ready`/`final`, fetched over plain HTTP here so
+ * the model picker can lock paid models BEFORE a chat session exists. */
+export type CoderQuota = {
+  allowed: boolean;
+  used: number;
+  limit: number;
+  tier: string;
+  free: boolean;
+  root: boolean;
+  remaining: number;
+  upgrade: boolean;
+  /** Model ids this caller may run, default first. */
+  models: string[];
+  free_model: boolean;
+};

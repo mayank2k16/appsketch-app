@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -29,8 +28,16 @@ import Reanimated, {
 } from 'react-native-reanimated';
 
 import { createCoderTenant } from '@/api/coder';
+import { AuthGateModal } from '@/components/AuthForm/AuthGateModal';
+import {
+  type ModelOption,
+  ModelPickerModal,
+} from '@/components/ui/ModelPickerModal';
+import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
+import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
+import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { useVoiceInput } from '@/lib/hooks/use-voice-input';
+import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -48,7 +55,7 @@ const DELETE_CHARS = 6;
 const TYPE_HOLD_MS = 1500; // pause once a phrase is fully typed
 const TYPE_GAP_MS = 300; // pause once a phrase is fully deleted, before the next
 
-type AppTypeKey = 'web' | 'mobile' | 'game';
+type AppTypeKey = 'web' | 'mobile';
 
 export const APP_TABS: {
   key: AppTypeKey;
@@ -58,34 +65,25 @@ export const APP_TABS: {
   // rotating typewriter placeholder inside it — one list, two uses.
   suggestions: string[];
 }[] = [
-    {
-      key: 'web',
-      label: 'Web App',
-      icon: 'globe-outline',
-      suggestions: [
-        'Build a landing page for my product launch with an email signup and countdown timer',
-        'Build an online store for my clothing brand with product listings and a shopping cart',
-      ],
-    },
-    {
-      key: 'mobile',
-      label: 'Mobile App',
-      icon: 'phone-portrait-outline',
-      suggestions: [
-        'Build a habit tracker app with daily reminders and streak tracking',
-        'Build a food delivery app with restaurant listings and live order tracking',
-      ],
-    },
-    {
-      key: 'game',
-      label: 'Game',
-      icon: 'game-controller-outline',
-      suggestions: [
-        'Build a 2D platformer game with power-ups and multiple levels',
-        'Build an endless runner game with obstacles and a live score counter',
-      ],
-    },
-  ];
+  {
+    key: 'web',
+    label: 'Web App',
+    icon: 'globe-outline',
+    suggestions: [
+      'Build a landing page for my product launch with an email signup and countdown timer',
+      'Build an online store for my clothing brand with product listings and a shopping cart',
+    ],
+  },
+  {
+    key: 'mobile',
+    label: 'Mobile App',
+    icon: 'phone-portrait-outline',
+    suggestions: [
+      'Build a habit tracker app with daily reminders and streak tracking',
+      'Build a food delivery app with restaurant listings and live order tracking',
+    ],
+  },
+];
 
 // ─── Concave "flare" for the base of the active tab ────────────────────────────
 // Browser tabs don't just have rounded TOP corners — the active tab also flares
@@ -202,25 +200,39 @@ function BlinkingCursor({ color }: { color: string }) {
   return <Reanimated.Text style={[{ color }, style]}>|</Reanimated.Text>;
 }
 
-// Mirrors the web builder's model list (`coderModels.js`) — no tier/lock UI
-// here since Home has no auth/plan context wired in yet, just plain options.
+// Mirrors the web builder's model list (`coderModels.js`) exactly, including
+// the paywall: DeepSeek runs on every tier (Flash is the default for every
+// user, Pro a free upgrade anyone can pick); every GPT model is PAID-ONLY.
+// The old open-source NVIDIA NIM pool (MiniMax / GLM / Nemotron) is RETIRED —
+// zero-cost but unreliable under load and a weaker tool-caller than DeepSeek.
 // Exported so the standalone Agent tab screen (../Agent) reuses the same
 // list/picker instead of maintaining a second copy.
 export const MODELS = [
   {
-    value: 'minimaxai/minimax-m3',
-    label: 'MiniMax M3 · free',
+    value: 'deepseek-v4-flash',
+    label: 'Default · fast & free',
     context: 1_000_000,
   },
-  { value: 'z-ai/glm-5.2', label: 'GLM 5.2 · free', context: 200_000 },
   {
-    value: 'nvidia/nemotron-3-ultra-550b-a55b',
-    label: 'Nemotron · free',
+    value: 'deepseek-v4-pro',
+    label: 'Default Pro · deeper reasoning',
     context: 128_000,
   },
-  { value: 'gpt-4.1', label: 'GPT-4.1 · best quality', context: 1_047_576 },
-  { value: 'gpt-4.1-mini', label: 'GPT-4.1 mini · fast', context: 1_047_576 },
-  { value: 'gpt-4o-mini', label: 'GPT-4o mini · cheapest', context: 128_000 },
+  {
+    value: 'gpt-4.1',
+    label: 'GPT-4.1 · best quality (Pro)',
+    context: 1_047_576,
+  },
+  {
+    value: 'gpt-4.1-mini',
+    label: 'GPT-4.1 mini · fast (Pro)',
+    context: 1_047_576,
+  },
+  {
+    value: 'gpt-4o-mini',
+    label: 'GPT-4o mini · cheapest (Pro)',
+    context: 128_000,
+  },
   { value: 'gpt-5-mini', label: 'GPT-5 mini · advanced', context: 400_000 },
   { value: 'gpt-5', label: 'GPT-5 · most capable', context: 400_000 },
 ];
@@ -250,13 +262,20 @@ export function AgentV2({
   const [model, setModel] = React.useState(DEFAULT_MODEL);
   const [images, setImages] = React.useState<string[]>([]);
   const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
+  const [upgradeModel, setUpgradeModel] = React.useState<ModelOption | null>(
+    null
+  );
   const [sending, setSending] = React.useState(false);
   const [inputFocused, setInputFocused] = React.useState(false);
+  const [gateOpen, setGateOpen] = React.useState(false);
+  const [voiceOpen, setVoiceOpen] = React.useState(false);
+
+  const allowedModels = useCoderQuota();
 
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
 
-  const voice = useVoiceInput(prompt, setPrompt);
+  const voiceSupported = Platform.OS !== 'web';
 
   const showTypewriter = !inputFocused && prompt.length === 0;
   const typedPlaceholder = useTypewriter(activeTab.suggestions, showTypewriter);
@@ -269,24 +288,6 @@ export function AgentV2({
   // was never attached to any view, so the 14s infinite rotation loop had been
   // running permanently while driving nothing at all. The static
   // `ringSpinner` gradient below is what actually renders the ring.
-  // Mic button pulses while actively listening, settles back to rest
-  // otherwise — same withRepeat/withTiming pattern as the ring spinner above.
-  const micPulse = useSharedValue(1);
-  React.useEffect(() => {
-    if (voice.listening) {
-      micPulse.value = withRepeat(
-        withTiming(1.18, { duration: 550, easing: ReanimatedEasing.inOut(ReanimatedEasing.quad) }),
-        -1,
-        true
-      );
-    } else {
-      micPulse.value = withTiming(1, { duration: 150 });
-    }
-  }, [voice.listening]);
-  const micPulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: micPulse.value }],
-  }));
-
   // Send button — a slow light sheen sweeps across the glass button every
   // few seconds instead of sitting fully static between presses.
   const sheenX = React.useRef(new Animated.Value(-1)).current;
@@ -335,12 +336,12 @@ export function AgentV2({
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function handleSend() {
-    const text = prompt.trim();
+  async function handleSend(overrideText?: string) {
+    const text = (overrideText ?? prompt).trim();
     if (!text || sending) return;
 
-    if (appType === 'game') {
-      toast.error('Game builds are coming soon — try Web or Mobile for now.');
+    if (useAuth.getState().status !== 'signIn') {
+      setGateOpen(true);
       return;
     }
 
@@ -549,36 +550,30 @@ export function AgentV2({
                     )}
                   </TouchableOpacity>
 
-                  {voice.supported && (
+                  {voiceSupported && (
                     <TouchableOpacity
-                      onPress={voice.toggle}
+                      onPress={() => setVoiceOpen(true)}
                       activeOpacity={0.7}
                       style={[
                         s.circleBtn,
                         {
-                          backgroundColor: voice.listening
-                            ? `${t.codeEditorDanger}1A`
-                            : t.agentBtnBg,
-                          borderColor: voice.listening
-                            ? t.codeEditorDanger
-                            : t.agentBtnBorder,
+                          backgroundColor: t.agentBtnBg,
+                          borderColor: t.agentBtnBorder,
                         },
                       ]}
                     >
-                      <Reanimated.View style={micPulseStyle}>
-                        <Ionicons
-                          name={voice.listening ? 'mic' : 'mic-outline'}
-                          size={19}
-                          color={voice.listening ? t.codeEditorDanger : t.agentBtnIcon}
-                        />
-                      </Reanimated.View>
+                      <Ionicons
+                        name="mic-outline"
+                        size={19}
+                        color={t.agentBtnIcon}
+                      />
                     </TouchableOpacity>
                   )}
 
                   <View style={{ flex: 1 }} />
 
                   <TouchableOpacity
-                    onPress={handleSend}
+                    onPress={() => handleSend()}
                     activeOpacity={0.8}
                     disabled={sending || !prompt.trim()}
                   >
@@ -655,56 +650,44 @@ export function AgentV2({
         </View>
       </View>
 
-      <Modal
+      <ModelPickerModal
         visible={modelPickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModelPickerOpen(false)}
-      >
-        <Pressable
-          style={s.modalBackdrop}
-          onPress={() => setModelPickerOpen(false)}
-        >
-          <Pressable
-            style={[
-              s.modelSheet,
-              { backgroundColor: t.sheetBg, borderColor: t.agentInputBorder },
-            ]}
-          >
-            <Text style={[s.modelSheetTitle, { color: t.text }]}>AI model</Text>
-            {MODELS.map((m) => {
-              const selected = m.value === model;
-              return (
-                <TouchableOpacity
-                  key={m.value}
-                  onPress={() => {
-                    setModel(m.value);
-                    setModelPickerOpen(false);
-                  }}
-                  activeOpacity={0.7}
-                  style={s.modelOption}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.modelOptionLabel, { color: t.text }]}>
-                      {m.label}
-                    </Text>
-                    <Text style={[s.modelOptionMeta, { color: t.textSub }]}>
-                      {fmtContext(m.context)}
-                    </Text>
-                  </View>
-                  {selected && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={18}
-                      color={t.accent}
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setModelPickerOpen(false)}
+        t={t}
+        models={MODELS}
+        value={model}
+        onChange={setModel}
+        formatContext={fmtContext}
+        allowedModels={allowedModels}
+        onLockedPress={setUpgradeModel}
+      />
+
+      <UpgradeSheet
+        visible={!!upgradeModel}
+        onClose={() => setUpgradeModel(null)}
+        t={t}
+        modelLabel={upgradeModel?.label}
+      />
+
+      <AuthGateModal
+        visible={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onSuccess={() => {
+          setGateOpen(false);
+          handleSend();
+        }}
+      />
+
+      <VoiceInputModal
+        visible={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onSubmit={(text) => {
+          setPrompt(text);
+          setVoiceOpen(false);
+          handleSend(text);
+        }}
+        t={t}
+      />
     </View>
   );
 }
@@ -968,40 +951,6 @@ const s = StyleSheet.create({
     bottom: -10,
     width: 10,
     backgroundColor: 'rgba(255,255,255,0.55)',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modelSheet: {
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    padding: 18,
-    paddingBottom: 34,
-    gap: 4,
-  },
-  modelSheetTitle: {
-    fontFamily: F.sans700,
-    fontSize: 15,
-    marginBottom: 8,
-  },
-  modelOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-  },
-  modelOptionLabel: {
-    fontFamily: F.sans600,
-    fontSize: 13.5,
-  },
-  modelOptionMeta: {
-    fontFamily: F.sans400,
-    fontSize: 11.5,
-    marginTop: 2,
   },
 });
 

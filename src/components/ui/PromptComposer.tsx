@@ -1,13 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
-  Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -16,10 +13,11 @@ import {
   View,
 } from 'react-native';
 
+import { GallerySheet } from '@/components/ui/GallerySheet';
+import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
+import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { F } from '@/lib/fonts';
-import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import type { AppColors } from '@/lib/theme';
-import { toast } from '@/lib/toast';
 
 export type PromptModel = { value: string; label: string; context: number };
 
@@ -35,8 +33,16 @@ type Props = {
   model: string;
   onModelChange: (value: string) => void;
   formatContext: (tokens: number) => string;
-  onSend: () => void;
+  /** Called with the final text when submitting — either from the composer
+   * (reads current `value`) or straight from the voice modal, which passes
+   * its transcript directly rather than round-tripping through `value`'s
+   * state update first. */
+  onSend: (overrideText?: string) => void;
   sending?: boolean;
+  /** Ids the caller may run — `null`/undefined locks nothing (fail open). */
+  allowedModels?: string[] | null;
+  /** Tapping a locked model calls this instead of selecting it. */
+  onLockedModelPress?: (model: PromptModel) => void;
 };
 
 // Shared prompt-composer card — the same input + model picker + attach/mic/
@@ -57,52 +63,21 @@ export function PromptComposer({
   formatContext,
   onSend,
   sending = false,
+  allowedModels,
+  onLockedModelPress,
 }: Props) {
   const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
+  const [galleryOpen, setGalleryOpen] = React.useState(false);
+  const [voiceOpen, setVoiceOpen] = React.useState(false);
   const selectedModel = models.find((m) => m.value === model) ?? models[0];
 
-  const voice = useVoiceInput(value, onChangeText);
+  const voiceSupported = Platform.OS !== 'web';
 
-  // Mic button pulses while actively listening.
-  const micPulse = React.useRef(new Animated.Value(1)).current;
-  React.useEffect(() => {
-    if (voice.listening) {
-      const loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(micPulse, {
-            toValue: 1.18,
-            duration: 550,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(micPulse, {
-            toValue: 1,
-            duration: 550,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      loop.start();
-      return () => loop.stop();
-    }
-    micPulse.setValue(1);
-  }, [voice.listening, micPulse]);
-
-  async function handleAttach() {
+  // Our own grid rather than the system sheet — see `GallerySheet` for why the
+  // iOS picker's Cancel and Add could come up inert.
+  function handleAttach() {
     if (images.length >= maxImages) return;
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted') {
-      toast.error('Media library permission is required to attach images.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (result.canceled || result.assets.length === 0) return;
-    onImagesChange([...images, ...result.assets.map((a) => a.uri)].slice(0, maxImages));
+    setGalleryOpen(true);
   }
 
   function removeImage(index: number) {
@@ -110,7 +85,12 @@ export function PromptComposer({
   }
 
   return (
-    <View style={[s.composer, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
+    <View
+      style={[
+        s.composer,
+        { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
+      ]}
+    >
       <TextInput
         placeholder={placeholder}
         placeholderTextColor={t.agentInputPlaceholder}
@@ -123,7 +103,10 @@ export function PromptComposer({
       {images.length > 0 && (
         <View style={s.thumbRow}>
           {images.map((uri, i) => (
-            <View key={`${uri}-${i}`} style={[s.thumb, { borderColor: t.agentInputBorder }]}>
+            <View
+              key={`${uri}-${i}`}
+              style={[s.thumb, { borderColor: t.agentInputBorder }]}
+            >
               <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
               <Pressable
                 onPress={() => removeImage(i)}
@@ -141,9 +124,15 @@ export function PromptComposer({
         <TouchableOpacity
           onPress={() => setModelPickerOpen(true)}
           activeOpacity={0.7}
-          style={[s.modelChip, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
+          style={[
+            s.modelChip,
+            { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
+          ]}
         >
-          <Text style={[s.modelChipLabel, { color: t.agentBtnIcon }]} numberOfLines={1}>
+          <Text
+            style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
+            numberOfLines={1}
+          >
             {selectedModel?.label}
           </Text>
           <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
@@ -153,41 +142,41 @@ export function PromptComposer({
           onPress={handleAttach}
           activeOpacity={0.7}
           disabled={images.length >= maxImages}
-          style={[s.circleBtn, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
+          style={[
+            s.circleBtn,
+            { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
+          ]}
         >
           <Ionicons name="add" size={20} color={t.agentBtnIcon} />
           {images.length > 0 && (
-            <View style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}>
+            <View
+              style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}
+            >
               <Text style={s.countBadgeText}>{images.length}</Text>
             </View>
           )}
         </TouchableOpacity>
 
-        {voice.supported && (
+        {voiceSupported && (
           <TouchableOpacity
-            onPress={voice.toggle}
+            onPress={() => setVoiceOpen(true)}
             activeOpacity={0.7}
             style={[
               s.circleBtn,
-              {
-                backgroundColor: voice.listening ? `${t.codeEditorDanger}1A` : t.agentBtnBg,
-                borderColor: voice.listening ? t.codeEditorDanger : t.agentBtnBorder,
-              },
+              { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
             ]}
           >
-            <Animated.View style={{ transform: [{ scale: micPulse }] }}>
-              <Ionicons
-                name={voice.listening ? 'mic' : 'mic-outline'}
-                size={18}
-                color={voice.listening ? t.codeEditorDanger : t.agentBtnIcon}
-              />
-            </Animated.View>
+            <Ionicons name="mic-outline" size={18} color={t.agentBtnIcon} />
           </TouchableOpacity>
         )}
 
         <View style={{ flex: 1 }} />
 
-        <TouchableOpacity onPress={onSend} activeOpacity={0.8} disabled={sending || !value.trim()}>
+        <TouchableOpacity
+          onPress={() => onSend()}
+          activeOpacity={0.8}
+          disabled={sending || !value.trim()}
+        >
           <LinearGradient
             colors={[...t.agentSendGradient] as [string, string, ...string[]]}
             start={{ x: 0, y: 0 }}
@@ -203,38 +192,38 @@ export function PromptComposer({
         </TouchableOpacity>
       </View>
 
-      <Modal
+      <GallerySheet
+        visible={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        onConfirm={(uris) =>
+          onImagesChange([...images, ...uris].slice(0, maxImages))
+        }
+        t={t}
+        max={maxImages - images.length}
+      />
+
+      <ModelPickerModal
         visible={modelPickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModelPickerOpen(false)}
-      >
-        <Pressable style={s.modalBackdrop} onPress={() => setModelPickerOpen(false)}>
-          <Pressable style={[s.modelSheet, { backgroundColor: t.sheetBg, borderColor: t.agentInputBorder }]}>
-            <Text style={[s.modelSheetTitle, { color: t.text }]}>AI model</Text>
-            {models.map((m) => {
-              const selected = m.value === model;
-              return (
-                <TouchableOpacity
-                  key={m.value}
-                  onPress={() => {
-                    onModelChange(m.value);
-                    setModelPickerOpen(false);
-                  }}
-                  activeOpacity={0.7}
-                  style={s.modelOption}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.modelOptionLabel, { color: t.text }]}>{m.label}</Text>
-                    <Text style={[s.modelOptionMeta, { color: t.textSub }]}>{formatContext(m.context)}</Text>
-                  </View>
-                  {selected && <Ionicons name="checkmark-circle" size={18} color={t.accent} />}
-                </TouchableOpacity>
-              );
-            })}
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setModelPickerOpen(false)}
+        t={t}
+        models={models}
+        value={model}
+        onChange={onModelChange}
+        formatContext={formatContext}
+        allowedModels={allowedModels}
+        onLockedPress={onLockedModelPress}
+      />
+
+      <VoiceInputModal
+        visible={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onSubmit={(text) => {
+          onChangeText(text);
+          setVoiceOpen(false);
+          onSend(text);
+        }}
+        t={t}
+      />
     </View>
   );
 }
@@ -329,39 +318,5 @@ const s = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modelSheet: {
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    padding: 18,
-    paddingBottom: 34,
-    gap: 4,
-  },
-  modelSheetTitle: {
-    fontFamily: F.sans700,
-    fontSize: 15,
-    marginBottom: 8,
-  },
-  modelOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-  },
-  modelOptionLabel: {
-    fontFamily: F.sans600,
-    fontSize: 13.5,
-  },
-  modelOptionMeta: {
-    fontFamily: F.sans400,
-    fontSize: 11.5,
-    marginTop: 2,
   },
 });

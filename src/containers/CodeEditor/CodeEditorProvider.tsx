@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import * as React from 'react';
 
 import type { AppTypeKey } from '@/api/coder';
@@ -44,6 +45,25 @@ export function CodeEditorProvider({
     images: params.images,
   });
   const buildLog = useBuildLog(params.tenantId);
+
+  // Jump to the Preview tab the moment the agent's own verification says the
+  // build is ready and clean — see `previewReady` in `useCoderSocket`. Lives
+  // here (above the tab navigator) rather than in the hook because the hook
+  // has no navigator to reach; `router.navigate` on a route already mounted
+  // inside this same top-tab group just switches the active tab, it does not
+  // remount `_layout` or touch this provider's state. Skips the very first
+  // render so mounting the screen doesn't itself count as "ready".
+  const seenPreviewReadyRef = React.useRef<number | null>(null);
+  const router = useRouter();
+  React.useEffect(() => {
+    if (seenPreviewReadyRef.current === null) {
+      seenPreviewReadyRef.current = coder.previewReady;
+      return;
+    }
+    if (coder.previewReady === seenPreviewReadyRef.current) return;
+    seenPreviewReadyRef.current = coder.previewReady;
+    router.navigate('/code-editor/preview');
+  }, [coder.previewReady, router]);
 
   const value = React.useMemo<CodeEditorContextValue>(
     () => ({ ...coder, params, buildLog }),
