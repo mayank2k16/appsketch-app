@@ -6,10 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { PaymentTransactionType } from '@/api/payments';
 import { searchEntities, useCreateBulkPayment, usePendingPaymentsForEntity } from '@/api/payments';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../../components';
+import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
 import { cmsType } from '../../../theme/cms-typography';
 import { money } from '../utils';
@@ -138,7 +137,8 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
         keyboardShouldPersistTaps="handled"
       >
         <CmsCard colors={colors}>
-          <SearchableSelect
+          <CmsSearchableSelect
+            colors={colors}
             label="Entity"
             placeholder="Select entity"
             value={form.entity || undefined}

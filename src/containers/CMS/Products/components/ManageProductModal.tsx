@@ -1,12 +1,11 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
 
 import type { ProductListItem } from '@/api/products';
 import { useLeafCategories, useManufacturers, useProductInventories, useSaveProduct } from '@/api/products';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect } from '../../components';
+import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { EMPTY_PRODUCT_FORM, formFromProduct, formToSaveInput, MEDIA_PRIORITY_OPTIONS } from '../utils';
 import type { ProductFormState } from '../utils';
@@ -30,12 +29,15 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
   ({ colors, product, onSuccess }, ref) => {
     const isEdit = Boolean(product);
     const [form, setForm] = React.useState<ProductFormState>(EMPTY_PRODUCT_FORM);
+    const [errors, setErrors] = React.useState<Record<string, string>>({});
 
     React.useEffect(() => {
       setForm(product ? formFromProduct(product) : EMPTY_PRODUCT_FORM);
+      setErrors({});
     }, [product]);
 
     function set<K extends keyof ProductFormState>(key: K, value: ProductFormState[K]) {
+      setErrors((prev) => ({ ...prev, [key]: '' }));
       setForm((prev) => ({ ...prev, [key]: value }));
     }
 
@@ -44,13 +46,36 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
     const manufacturersQuery = useManufacturers();
     const saveProduct = useSaveProduct();
 
+    function validate() {
+      const next: Record<string, string> = {};
+      if (!form.product_name.trim()) next.product_name = 'Product name is required';
+      if (!form.description.trim()) next.description = 'Description is required';
+      if (!form.quantity.trim()) next.quantity = 'Quantity is required';
+      setErrors(next);
+      return Object.keys(next).length === 0;
+    }
+
     function handleSubmit() {
+      if (!validate()) return;
       saveProduct.mutate(formToSaveInput(form), { onSuccess: () => onSuccess() });
     }
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['92%']} title={isEdit ? 'Edit Product' : 'Add Product'}>
-        <BottomSheetScrollView
+      <CmsModal
+        ref={ref}
+        colors={colors}
+        snapPoints={['75%']}
+        title={isEdit ? 'Edit Product' : 'Add Product'}
+        footer={
+          <CmsButton
+            colors={colors}
+            label={isEdit ? 'Save Changes' : 'Add Product'}
+            onPress={handleSubmit}
+            loading={saveProduct.isPending}
+          />
+        }
+      >
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
@@ -96,6 +121,8 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
               placeholder="Product name"
               value={form.product_name}
               onChangeText={(v) => set('product_name', v)}
+              error={errors.product_name}
+              required
             />
             <CmsInput
               colors={colors}
@@ -105,6 +132,8 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
               onChangeText={(v) => set('description', v)}
               multiline
               numberOfLines={3}
+              error={errors.description}
+              required
             />
             <CmsInput
               colors={colors}
@@ -143,6 +172,8 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
               keyboardType="number-pad"
               value={form.quantity}
               onChangeText={(v) => set('quantity', v)}
+              error={errors.quantity}
+              required
             />
             <CmsSelect
               colors={colors}
@@ -311,20 +342,12 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
             <CustomHtmlField colors={colors} value={form.custom_html} onChange={(v) => set('custom_html', v)} />
           </CmsCard>
 
-          <CmsButton
-            colors={colors}
-            label={isEdit ? 'Save Changes' : 'Add Product'}
-            onPress={handleSubmit}
-            loading={saveProduct.isPending}
-            style={st.submitBtn}
-          />
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
       </CmsModal>
     );
   }
 );
 
 const st = StyleSheet.create({
-  scroll: { padding: 16, gap: 12, paddingBottom: 40 },
-  submitBtn: { marginTop: 4 },
+  scroll: { padding: 16, gap: 12, paddingBottom: 16 },
 });

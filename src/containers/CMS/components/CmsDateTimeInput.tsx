@@ -21,6 +21,7 @@ type Props = {
   onChange: (value: string) => void;
   error?: string;
   required?: boolean;
+  disabled?: boolean;
   /** Disallow picking a moment before this — e.g. an End Time field passing
    * the parsed Start Time, so the two can't be picked out of order. */
   minimumDate?: Date;
@@ -106,12 +107,13 @@ function openAndroidPicker({
  * iOS shows one inline wheel (date-only or combined, per `mode`); Android
  * chains its separate date/time dialogs via `DateTimePickerAndroid` (see
  * `openAndroidPicker`) — skipping the time step entirely in `mode="date"`. */
-export function CmsDateTimeInput({ colors, label, value, onChange, error, required, minimumDate, mode = 'datetime' }: Props) {
+export function CmsDateTimeInput({ colors, label, value, onChange, error, required, disabled, minimumDate, mode = 'datetime' }: Props) {
   const [iosOpen, setIosOpen] = React.useState(false);
   const parsed = parseValue(value);
   const current = parsed ?? new Date();
 
   function open() {
+    if (disabled) return;
     if (Platform.OS === 'android') {
       openAndroidPicker({ current, minimumDate, mode, onDone: (date) => onChange(formatValue(date, mode)) });
     } else {
@@ -131,7 +133,15 @@ export function CmsDateTimeInput({ colors, label, value, onChange, error, requir
       </Text>
       <Pressable
         onPress={open}
-        style={[st.field, { backgroundColor: colors.background, borderColor: error ? colors.danger : colors.border }]}
+        disabled={disabled}
+        style={[
+          st.field,
+          {
+            backgroundColor: colors.background,
+            borderColor: error ? colors.danger : colors.border,
+            opacity: disabled ? 0.6 : 1,
+          },
+        ]}
       >
         <Text style={[st.value, { color: parsed ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
           {parsed ? formatDisplay(parsed, mode) : mode === 'date' ? 'Select date' : 'Select date & time'}

@@ -11,6 +11,7 @@ import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { ManageProductModal } from './components/ManageProductModal';
 import { ProductListCard } from './components/ProductListCard';
+import { ProductsSkeleton } from './components/ProductsSkeleton';
 
 // `onMenuPress` is part of `CmsTab['Component']`'s contract but unused here —
 // the shell's persistent header already owns the hamburger button.
@@ -68,12 +69,6 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
 
   return (
     <View style={[st.root, { backgroundColor: colors.background }]}>
-      <View style={st.header}>
-        <Pressable onPress={openCreate} style={[st.createBtn, { backgroundColor: colors.accent }]}>
-          <Ionicons name="add" size={16} color={colors.accentText} />
-          <Text style={[st.createBtnText, { color: colors.accentText }]}>Add Product</Text>
-        </Pressable>
-      </View>
 
       <View style={[st.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Ionicons name="search" size={16} color={colors.textSecondary} />
@@ -86,11 +81,14 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
           returnKeyType="search"
         />
       </View>
-
+      <View style={st.header}>
+        <Pressable onPress={openCreate} style={[st.createBtn, { backgroundColor: colors.accent }]}>
+          <Ionicons name="add" size={16} color={colors.accentText} />
+          <Text style={[st.createBtnText, { color: colors.accentText }]}>Add Product</Text>
+        </Pressable>
+      </View>
       {productsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading products…</Text>
-        </View>
+        <ProductsSkeleton colors={colors} />
       ) : products.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No products yet — add your first one</Text>
@@ -135,9 +133,9 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
 const st = StyleSheet.create({
   root: { flex: 1 },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 8,
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
@@ -146,8 +144,8 @@ const st = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 14,
-    height: 36,
-    borderRadius: 18,
+    height: 38,
+    borderRadius: 6,
   },
   createBtnText: { fontSize: 13, fontWeight: '700' },
   searchWrap: {
@@ -158,8 +156,8 @@ const st = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     height: 42,
-    marginHorizontal: 16,
-    marginBottom: 12,
+    marginHorizontal: 14,
+    marginTop: 12,
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 24 },

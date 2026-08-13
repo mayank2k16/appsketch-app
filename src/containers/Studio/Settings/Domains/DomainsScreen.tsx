@@ -39,11 +39,11 @@ export function DomainsScreen() {
           <Text style={[st.heading, { color: t.text }]}>Domains</Text>
           <Text style={[st.subheading, { color: t.textSub }]}>View and manage all your domains in one place.</Text>
         </View>
-        <Pressable onPress={goAddDomain} style={[st.addBtn, { backgroundColor: t.accent }]}>
-          <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={st.addBtnText}>Add domain</Text>
-        </Pressable>
       </View>
+      <Pressable onPress={goAddDomain} style={[st.addBtn, { backgroundColor: t.accent }]}>
+        <Ionicons name="add" size={16} color="#FFFFFF" />
+        <Text style={st.addBtnText}>Add domain</Text>
+      </Pressable>
 
       {isLoading ? (
         <ActivityIndicator color={t.accent} style={{ marginTop: 40 }} />
@@ -115,8 +115,8 @@ function DetailRow({ t, label, value }: { t: AppColors; label: string; value: st
 }
 
 const st = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 20 },
+  content: { paddingHorizontal: 10, paddingTop: 20, paddingBottom: 40 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 10 },
   heading: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
   subheading: { fontSize: 13, marginTop: 4, lineHeight: 18 },
   addBtn: {
@@ -125,7 +125,10 @@ const st = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 10,
+    borderRadius: 8,
+    marginLeft: 'auto',
+    maxWidth: 150,
+    marginBottom: 10
   },
   addBtnText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
 

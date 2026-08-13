@@ -107,7 +107,7 @@ function FeaturedPlayer({ video, t }: { video: Tutorial; t: AppColors }) {
 }
 
 const st = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 10, paddingTop: 20, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
   subheading: { fontSize: 13, marginTop: 4, marginBottom: 18, lineHeight: 18 },
 

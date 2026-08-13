@@ -96,7 +96,7 @@ export function RegularPaymentsScreen() {
 }
 
 const st = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingTop: 14, paddingBottom: 12 },
   searchWrap: {
     flex: 1,
     flexDirection: 'row',

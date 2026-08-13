@@ -142,7 +142,7 @@ const st = StyleSheet.create({
   logoWrap: {
     width: 44,
     height: 44,
-    borderRadius: 13,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -172,6 +172,6 @@ const st = StyleSheet.create({
     height: 38,
     borderRadius: 19,
   },
-  storeBtnText: { fontSize: 12.5, fontWeight: '700' },
-  cmsBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
+  storeBtnText: { fontSize: 12, fontWeight: '700' },
+  cmsBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });

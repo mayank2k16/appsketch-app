@@ -4,9 +4,8 @@ import { StyleSheet } from 'react-native';
 
 import { searchInvoices, useCreatePayment } from '@/api/payments';
 import type { PaymentTransactionType, PaymentTxnMode } from '@/api/payments';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView } from '../../../components';
+import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
 
 const TXN_TYPE_OPTIONS = [
@@ -83,7 +82,7 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     <CmsModal
       ref={ref}
       colors={colors}
-      snapPoints={['80%']}
+      snapPoints={['75%']}
       title="Add Payment"
       footer={
         <CmsButton
@@ -100,7 +99,8 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
         keyboardShouldPersistTaps="handled"
       >
         <CmsCard colors={colors}>
-          <SearchableSelect
+          <CmsSearchableSelect
+            colors={colors}
             label="Invoice"
             placeholder="Select invoice"
             value={form.invoice_id || undefined}
@@ -147,12 +147,12 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             required
           />
 
-          <CmsInput
+          <CmsDateTimeInput
             colors={colors}
-            label="Date (YYYY-MM-DD)"
-            placeholder="Select date"
+            mode="date"
+            label="Date"
             value={form.date}
-            onChangeText={(v) => set('date', v)}
+            onChange={(v) => set('date', v)}
             error={errors.date}
             required
           />

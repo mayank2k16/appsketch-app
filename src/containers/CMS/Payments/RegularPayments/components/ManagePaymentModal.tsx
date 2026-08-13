@@ -16,7 +16,7 @@ import {
 } from '@/api/payments';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView, CmsStatusBadge } from '../../../components';
+import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView, CmsStatusBadge } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
 import { cmsType } from '../../../theme/cms-typography';
 import { getPaymentStatusMeta } from '../../../Orders/utils';
@@ -138,7 +138,7 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
     <CmsModal
       ref={ref}
       colors={colors}
-      snapPoints={['90%']}
+      snapPoints={['75%']}
       title="Update Payment Details"
       footer={
         !isPaid ? (
@@ -186,13 +186,13 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
             required
           />
 
-          <CmsInput
+          <CmsDateTimeInput
             colors={colors}
-            label="Date (YYYY-MM-DD)"
-            placeholder="Select date"
+            mode="date"
+            label="Date"
             value={date}
-            onChangeText={setDate}
-            editable={!isPaid}
+            onChange={setDate}
+            disabled={isPaid}
             required
           />
 
