@@ -8,6 +8,7 @@ import { useModal } from '@/components/ui';
 import { CmsButton, CmsConfirmModal, CmsSelect } from '../components';
 import { useCmsTheme } from '../theme';
 import { ProductRequestCard } from './components/ProductRequestCard';
+import { ProductRequestsSkeleton } from './components/ProductRequestsSkeleton';
 
 type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -84,9 +85,7 @@ export function ProductRequestsScreen({ onMenuPress: _onMenuPress }: { onMenuPre
       </View>
 
       {productRequestsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading product requests…</Text>
-        </View>
+        <ProductRequestsSkeleton colors={colors} />
       ) : filteredProducts.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No pending product requests.</Text>

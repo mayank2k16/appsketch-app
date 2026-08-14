@@ -9,6 +9,7 @@ import type {
   DeleteCategoryAtAnyLevelPayload,
   LinkProductPayload,
   PickedCategoryAsset,
+  ReorderCategoryProductsPayload,
   UnlinkProductPayload,
   UpdateCategoryPayload,
 } from './types';
@@ -99,4 +100,15 @@ export async function deleteProductFromCategory(payload: UnlinkProductPayload): 
 
 export async function linkProductToCategory(payload: LinkProductPayload): Promise<void> {
   await authenticatedClient.put('api/shop/category/product/', payload);
+}
+
+// Same endpoint serves root-category and subcategory reorders — the request
+// carries only the ids of one sibling group, never a parent id. Ported from
+// the web CMS's `reorderCategories` (Vite `Api/cmsAPI.js`).
+export async function reorderCategories(ids: number[]): Promise<void> {
+  await authenticatedClient.post('api/shop/categories/reorder/', { ids });
+}
+
+export async function reorderCategoryProducts(payload: ReorderCategoryProductsPayload): Promise<void> {
+  await authenticatedClient.post('api/shop/category/products/reorder/', payload);
 }

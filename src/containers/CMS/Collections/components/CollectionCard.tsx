@@ -68,28 +68,32 @@ export const CollectionCard = React.memo(function CollectionCard({ collection, c
 
 const st = StyleSheet.create({
   card: {
+    flexDirection: 'row',
     borderRadius: 14,
     borderWidth: 1,
     marginHorizontal: 16,
     marginBottom: 12,
     overflow: 'hidden',
   },
-  image: { width: '100%', height: 110 },
+  // No explicit height: the row's default `alignItems: 'stretch'` grows the
+  // image to match `body`'s content height instead, so it fills the card's
+  // left edge exactly regardless of how much text the card holds.
+  image: { width: 96 },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  body: { padding: 12, gap: 4 },
+  body: { flex: 1, padding: 12, gap: 0, justifyContent: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   title: { ...cmsType.listTitle, flex: 1 },
   count: cmsType.listMeta,
-  actions: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
   actionBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
     borderWidth: 1,
     borderRadius: 8,
-    paddingVertical: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 15,
   },
   actionLabel: cmsType.buttonLabel,
 });

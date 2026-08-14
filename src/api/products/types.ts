@@ -103,6 +103,33 @@ export type ProductListItem = {
   amenities?: AmenityItem[];
   feedbacks?: FeedbackItem[];
   attributes?: ProductAttributes;
+  /** Only present on rows returned by the marketplace products endpoint
+   * (`fetchMarketplaceProducts`) — absent for a plain single-tenant fetch,
+   * which is what naturally gates the "Sold By"/"Tenant" lines on the list
+   * card without needing to thread tenant type into that component too. */
+  sold_by_id?: number | null;
+  sold_by_name?: string;
+  tenant_id?: number;
+  tenant_name?: string;
+};
+
+/** One row of the marketplace products endpoint (`/shop/marketplace/products/all/`)
+ * — grouped by owning tenant, each carrying that tenant's own product list. */
+export type MarketplaceProductGroup = {
+  tenant_id: number;
+  tenant_name: string;
+  products: ProductListItem[];
+};
+
+export type ProductReviewAction = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'RESUBMITTED';
+
+export type ProductReviewHistoryEntry = {
+  id: number;
+  action: ProductReviewAction | string;
+  created_on: string;
+  actor_name?: string;
+  actor_tenant_name?: string;
+  notes?: string;
 };
 
 /** Structured input the screen builds up; `client.ts` serializes this into

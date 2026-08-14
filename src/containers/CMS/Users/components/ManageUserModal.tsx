@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 
 import type { AppUserProfile, StaffUser } from '@/api/users';
@@ -11,9 +10,8 @@ import {
   useUserInventories,
   useUsersMeta,
 } from '@/api/users';
-import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsSelect, CmsSwitch, CmsModal } from '../../components';
+import { CmsButton, CmsCard, CmsInput, CmsSelect, CmsSheetScrollView, CmsSwitch, CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import type { UserSegment } from '../utils';
 import { GroupsPermissionsMultiSelect } from './GroupsPermissionsMultiSelect';
@@ -58,6 +56,7 @@ export const ManageUserModal = React.forwardRef<BottomSheetModal, Props>(({ colo
   const isEdit = user !== null;
   const isApp = segment === 'app';
   const [form, setForm] = React.useState<FormState>(EMPTY_FORM);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const metaQuery = useUsersMeta();
   const inventoriesQuery = useUserInventories();
@@ -89,10 +88,12 @@ export const ManageUserModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     } else {
       setForm(EMPTY_FORM);
     }
+    setErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openKey, isEdit, user]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setErrors((prev) => ({ ...prev, [key]: '' }));
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -101,11 +102,16 @@ export const ManageUserModal = React.forwardRef<BottomSheetModal, Props>(({ colo
   const groupItems = (metaQuery.data?.groups ?? []).map((g) => ({ id: g.id, label: g.name }));
   const permissionItems = (metaQuery.data?.permissions ?? []).map((p) => ({ id: p.id, label: p.codename }));
 
+  function validate() {
+    const next: Record<string, string> = {};
+    if (!form.name.trim()) next.name = 'Name is required';
+    if (!form.phone_number.trim()) next.phone_number = 'Phone is required';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
   function handleSubmit() {
-    if (!form.name || !form.phone_number) {
-      toast.error('Name and phone are required');
-      return;
-    }
+    if (!validate()) return;
 
     if (isApp) {
       const payload = {
@@ -148,17 +154,40 @@ export const ManageUserModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     <CmsModal
       ref={ref}
       colors={colors}
-      snapPoints={['90%']}
-      title={`${isEdit ? 'Edit' : 'Add'} ${isApp ? 'App User' : 'Staff'}`}
+      snapPoints={['75%']}
+      title={`${isEdit ? 'Edit' : 'Add'} ${isApp ? 'App User' : 'Staff User'}`}
+      footer={
+        <CmsButton
+          colors={colors}
+          label={isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create user'}
+          onPress={handleSubmit}
+          loading={isSubmitting}
+        />
+      }
     >
-      <BottomSheetScrollView
+      <CmsSheetScrollView
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         <CmsCard colors={colors}>
-          <CmsInput colors={colors} label="Name" value={form.name} onChangeText={(v) => set('name', v)} />
-          <CmsInput colors={colors} label="Phone" keyboardType="phone-pad" value={form.phone_number} onChangeText={(v) => set('phone_number', v)} />
+          <CmsInput
+            colors={colors}
+            label="Name"
+            value={form.name}
+            onChangeText={(v) => set('name', v)}
+            error={errors.name}
+            required
+          />
+          <CmsInput
+            colors={colors}
+            label="Phone"
+            keyboardType="phone-pad"
+            value={form.phone_number}
+            onChangeText={(v) => set('phone_number', v)}
+            error={errors.phone_number}
+            required
+          />
           <CmsInput colors={colors} label="Email" keyboardType="email-address" autoCapitalize="none" value={form.email} onChangeText={(v) => set('email', v)} />
           <CmsInput
             colors={colors}
@@ -203,13 +232,7 @@ export const ManageUserModal = React.forwardRef<BottomSheetModal, Props>(({ colo
           <CmsSwitch colors={colors} label="Verified" value={form.is_verified} onChange={(v) => set('is_verified', v)} />
         </CmsCard>
 
-        <CmsButton
-          colors={colors}
-          label={isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create user'}
-          onPress={handleSubmit}
-          loading={isSubmitting}
-        />
-      </BottomSheetScrollView>
+      </CmsSheetScrollView>
     </CmsModal>
   );
 });

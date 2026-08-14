@@ -12,6 +12,7 @@ export * from './discounts';
 export * from './domains';
 export * from './inventory';
 export * from './invoices';
+export * from './newsletter';
 export * from './notifications';
 export * from './orders';
 export * from './payment-merchants';

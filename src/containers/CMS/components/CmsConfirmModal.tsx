@@ -65,7 +65,7 @@ export const CmsConfirmModal = React.forwardRef<BottomSheetModal, CmsConfirmModa
       <BottomSheetModal
         ref={ref}
         index={0}
-        snapPoints={['35%']}
+        snapPoints={['32%']}
         backdropComponent={renderBackdrop}
         enableDynamicSizing={false}
         handleComponent={renderHandle}
@@ -124,7 +124,7 @@ const st = StyleSheet.create({
     marginBottom: 14,
   },
   title: { ...cmsType.modalTitle, textAlign: 'center', marginBottom: 6 },
-  description: { fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  description: { fontSize: 13, lineHeight: 19, textAlign: 'center', width: '100%' },
   btnRow: { flexDirection: 'row', gap: 10, marginTop: 40, width: '100%' },
   btn: { flex: 1, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.6 },

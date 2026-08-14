@@ -10,6 +10,7 @@ import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { ManageRuleModal } from './components/ManageRuleModal';
 import { RuleRow } from './components/RuleRow';
+import { RulesSkeleton } from './components/RulesSkeleton';
 
 export function RulesScreen() {
   const { colors } = useCmsTheme();
@@ -61,9 +62,7 @@ export function RulesScreen() {
       </View>
 
       {rulesQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading rules…</Text>
-        </View>
+        <RulesSkeleton colors={colors} />
       ) : rules.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No event rules yet</Text>

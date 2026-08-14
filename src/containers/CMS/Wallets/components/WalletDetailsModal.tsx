@@ -10,6 +10,7 @@ import { CmsCard, CmsField, CmsModal, CmsStatusBadge as StatusBadge } from '../.
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { formatLedgerDate, getTransactionSourceLabel, getTransactionStatusMeta, inr } from '../utils';
+import { LedgerSkeleton } from './WalletsSkeleton';
 
 type Props = { colors: CmsThemeColors; wallet: WalletListItem | null };
 
@@ -55,7 +56,7 @@ export const WalletDetailsModal = React.forwardRef<BottomSheetModal, Props>(({ c
 
         <CmsCard colors={colors} title="Recent Ledger">
           {txQuery.isLoading ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Loading ledger…</Text>
+            <LedgerSkeleton colors={colors} />
           ) : txQuery.isError ? (
             <Text style={{ color: colors.danger, fontSize: 13 }}>
               Could not load transactions. Ledger view may require an admin-scoped endpoint.

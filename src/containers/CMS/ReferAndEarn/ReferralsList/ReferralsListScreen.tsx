@@ -1,21 +1,29 @@
 import * as React from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import type { ReferralListItem, ReferralStatus } from '@/api/referrals';
 import { useReferralsAnalytics, useReferralsList } from '@/api/referrals';
+import { useModal } from '@/components/ui';
 
-import { CmsCard, CmsStatusBadge } from '../../components';
+import { CmsCard, CmsModal, CmsStatusBadge } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { getReferralStatusMeta, inr } from '../utils';
+import { ReferralsListSkeleton, ReferralsStatsSkeleton } from './components/ReferralsListSkeleton';
 
 const PLATFORM_LABEL: Record<string, string> = { ios: 'iOS', android: 'Android', web: 'Web', unknown: 'Unknown' };
 const STATUS_FILTERS: (ReferralStatus | 'ALL')[] = ['ALL', 'PENDING', 'QUALIFIED', 'EXPIRED', 'REJECTED'];
+
+function statusFilterLabel(f: ReferralStatus | 'ALL') {
+  return f === 'ALL' ? 'All' : f.charAt(0) + f.slice(1).toLowerCase();
+}
 
 export function ReferralsListScreen() {
   const { colors } = useCmsTheme();
   const [statusFilter, setStatusFilter] = React.useState<ReferralStatus | 'ALL'>('ALL');
   const [search, setSearch] = React.useState('');
+  const filterModal = useModal();
 
   const analyticsQuery = useReferralsAnalytics();
   const listQuery = useReferralsList(statusFilter);
@@ -55,7 +63,7 @@ export function ReferralsListScreen() {
         ListHeaderComponent={
           <View>
             {analyticsQuery.isLoading ? (
-              <Text style={[st.loadingText, { color: colors.textSecondary }]}>Loading analytics…</Text>
+              <ReferralsStatsSkeleton colors={colors} />
             ) : analytics ? (
               <>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.statScroll} contentContainerStyle={st.statScrollContent}>
@@ -108,36 +116,29 @@ export function ReferralsListScreen() {
             ) : null}
 
             <View style={st.controls}>
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search by referrer/referee name, phone or ID…"
-                placeholderTextColor={colors.textSecondary}
-                style={[st.searchInput, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
-              />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 10 }}>
-                {STATUS_FILTERS.map((f) => {
-                  const active = f === statusFilter;
-                  return (
-                    <Pressable
-                      key={f}
-                      onPress={() => setStatusFilter(f)}
-                      style={[
-                        st.chip,
-                        { borderColor: colors.border },
-                        active && { backgroundColor: colors.accent, borderColor: colors.accent },
-                      ]}
-                    >
-                      <Text style={[st.chipLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
-                        {f === 'ALL' ? 'All' : f.charAt(0) + f.slice(1).toLowerCase()}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
+              <View style={st.controlsRow}>
+                <TextInput
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Search by referrer/referee name, phone or ID…"
+                  placeholderTextColor={colors.textSecondary}
+                  style={[st.searchInput, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
+                />
+                <Pressable onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
+                  <Ionicons name="filter-outline" size={18} color={colors.textPrimary} />
+                </Pressable>
+              </View>
+              {statusFilter !== 'ALL' ? (
+                <View style={[st.activeFilterChip, { backgroundColor: colors.accent }]}>
+                  <Text style={[st.activeFilterLabel, { color: colors.accentText }]}>{statusFilterLabel(statusFilter)}</Text>
+                  <Pressable onPress={() => setStatusFilter('ALL')} hitSlop={8}>
+                    <Ionicons name="close" size={13} color={colors.accentText} />
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
 
-            {listQuery.isLoading ? <Text style={[st.loadingText, { color: colors.textSecondary }]}>Loading referrals…</Text> : null}
+            {listQuery.isLoading ? <ReferralsListSkeleton colors={colors} /> : null}
           </View>
         }
         ListEmptyComponent={
@@ -153,6 +154,27 @@ export function ReferralsListScreen() {
           ) : null
         }
       />
+
+      <CmsModal ref={filterModal.ref} colors={colors} title="Filter Referrals" snapPoints={[340]}>
+        <View style={st.filterList}>
+          {STATUS_FILTERS.map((f) => {
+            const checked = statusFilter === f;
+            return (
+              <Pressable
+                key={f}
+                onPress={() => {
+                  setStatusFilter(f);
+                  filterModal.dismiss();
+                }}
+                style={[st.filterRow, { borderColor: colors.border }]}
+              >
+                <Text style={{ color: colors.textPrimary, fontSize: 14, flex: 1 }}>{statusFilterLabel(f)}</Text>
+                {checked ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </CmsModal>
     </View>
   );
 }
@@ -200,7 +222,6 @@ function ReferralRow({ colors, item }: { colors: ReturnType<typeof useCmsTheme>[
 }
 
 const st = StyleSheet.create({
-  loadingText: { fontSize: 13, paddingHorizontal: 16, paddingVertical: 12 },
   statScroll: { flexGrow: 0, marginTop: 12 },
   statScrollContent: { paddingHorizontal: 16, gap: 10 },
   statTile: { width: 118, borderWidth: 1, borderLeftWidth: 3, borderRadius: 12, padding: 10, gap: 4 },
@@ -211,10 +232,27 @@ const st = StyleSheet.create({
   rank: { width: 28, fontSize: 12.5, fontWeight: '700' },
   leaderName: cmsType.listSubtitle,
   leaderMeta: { ...cmsType.listMeta, marginTop: 2 },
-  controls: { paddingHorizontal: 16, paddingTop: 14 },
-  searchInput: { height: 42, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, fontSize: 14 },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  chipLabel: cmsType.listBadge,
+  controls: { paddingHorizontal: 16, paddingTop: 14, gap: 8 },
+  controlsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  searchInput: { flex: 1, height: 42, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, fontSize: 14 },
+  iconBtn: { width: 42, height: 42, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  activeFilterLabel: { fontSize: 12.5, fontWeight: '700' },
+  filterList: { paddingHorizontal: 16, paddingTop: 8 },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   emptyText: { textAlign: 'center', paddingVertical: 24, paddingHorizontal: 32, fontSize: 13 },
   row: { borderWidth: 1, borderRadius: 12, padding: 12, marginHorizontal: 16, marginTop: 12, gap: 6 },
   rowHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },

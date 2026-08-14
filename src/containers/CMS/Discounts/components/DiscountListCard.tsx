@@ -84,7 +84,6 @@ const st = StyleSheet.create({
   footerRow: {
     flexDirection: 'row',
     gap: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 10,
     marginTop: 2,
   },

@@ -67,14 +67,14 @@ export function PaymentsScreen() {
   if (showForm) {
     const initialFormData: PaymentFormData | undefined = editing
       ? {
-          email: editing.email ?? '',
-          phone: editing.phone ?? '',
-          apiKey: editing._api_key ?? '',
-          secretKey: editing._api_secret ?? '',
-          provider: editing.provider ?? 'razorpay',
-          contactName: '',
-          legalBusinessName: editing.legal_business_name ?? editing.legalBusinessName ?? '',
-        }
+        email: editing.email ?? '',
+        phone: editing.phone ?? '',
+        apiKey: editing._api_key ?? '',
+        secretKey: editing._api_secret ?? '',
+        provider: editing.provider ?? 'razorpay',
+        contactName: '',
+        legalBusinessName: editing.legal_business_name ?? editing.legalBusinessName ?? '',
+      }
       : emptyPaymentFormData;
     const initialTenant = editing ? (tenants ?? []).find((tn) => tn.id === editing.tenant) ?? null : filterTenant;
 
@@ -129,11 +129,11 @@ export function PaymentsScreen() {
           })}
         </ScrollView>
 
-        <TouchableOpacity onPress={openAddForm} style={[st.addBtn, { backgroundColor: t.accent }]}>
-          <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={st.addBtnText}>Add</Text>
-        </TouchableOpacity>
       </View>
+      <TouchableOpacity onPress={openAddForm} style={[st.addBtn, { backgroundColor: t.accent }]}>
+        <Ionicons name="add" size={16} color="#FFFFFF" />
+        <Text style={st.addBtnText}>Add Payment</Text>
+      </TouchableOpacity>
 
       {isLoading ? (
         <ActivityIndicator color={t.accent} style={{ marginTop: 40 }} />
@@ -191,7 +191,7 @@ const st = StyleSheet.create({
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
   tenantChip: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8, maxWidth: 150 },
   tenantChipText: { fontFamily: F.sans600, fontSize: 12.5 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, marginLeft: 'auto', maxWidth: 150 },
   addBtnText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
 
   empty: { alignItems: 'center', gap: 10, paddingTop: 50, paddingHorizontal: 20 },

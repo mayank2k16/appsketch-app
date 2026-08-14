@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as React from 'react';
@@ -17,7 +16,7 @@ import {
 } from '@/api/payments';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsStatusBadge } from '../../../components';
+import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView, CmsStatusBadge } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
 import { cmsType } from '../../../theme/cms-typography';
 import { getPaymentStatusMeta } from '../../../Orders/utils';
@@ -136,10 +135,20 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
   }
 
   return (
-    <CmsModal ref={ref} colors={colors} snapPoints={['90%']} title="Update Payment Details">
-      <BottomSheetScrollView
+    <CmsModal
+      ref={ref}
+      colors={colors}
+      snapPoints={['75%']}
+      title="Update Payment Details"
+      footer={
+        !isPaid ? (
+          <CmsButton colors={colors} label="Update Payment" onPress={handleSave} loading={updatePayment.isPending} />
+        ) : undefined
+      }
+    >
+      <CmsSheetScrollView
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}
+        contentContainerStyle={st.scroll}
         keyboardShouldPersistTaps="handled"
       >
         <CmsCard colors={colors}>
@@ -164,6 +173,7 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
             value={refNo}
             onChangeText={setRefNo}
             editable={!isPaid}
+            required
           />
 
           <CmsSelect
@@ -173,24 +183,24 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
             value={txnMode}
             options={TXN_MODE_OPTIONS}
             onSelect={(v) => setTxnMode(String(v))}
+            required
           />
 
-          <CmsInput
+          <CmsDateTimeInput
             colors={colors}
-            label="Date (YYYY-MM-DD)"
-            placeholder="Select date"
+            mode="date"
+            label="Date"
             value={date}
-            onChangeText={setDate}
-            editable={!isPaid}
+            onChange={setDate}
+            disabled={isPaid}
+            required
           />
 
-          {!isPaid ? (
-            <CmsButton colors={colors} label="Update Payment" onPress={handleSave} loading={updatePayment.isPending} />
-          ) : (
+          {isPaid ? (
             <Text style={[st.paidText, { color: colors.success }]}>
               ✅ This payment of Rs. {money(payment.amount)} is completely paid.
             </Text>
-          )}
+          ) : null}
 
           {!isPaid ? (
             <View style={st.amountsRow}>
@@ -251,12 +261,17 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
             loading={createComment.isPending}
           />
         </CmsCard>
-      </BottomSheetScrollView>
+      </CmsSheetScrollView>
     </CmsModal>
   );
 });
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 14,
+    paddingBottom: 16,
+  },
   badgeRow: { flexDirection: 'row', marginBottom: 4 },
   paidText: { fontSize: 14, fontWeight: '700' },
   amountsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },

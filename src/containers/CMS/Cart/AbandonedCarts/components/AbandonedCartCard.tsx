@@ -40,7 +40,7 @@ const st = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginBottom: 12,
     gap: 10,
   },

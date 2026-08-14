@@ -1,13 +1,22 @@
 import * as Haptics from 'expo-haptics';
 import * as React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import type { Conversation, ConversationStatus, InboxEvent } from '@/api/support';
 import { fetchConversations, supportInboxSocketUrl } from '@/api/support';
+import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
+import { CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { ConversationRow } from './ConversationRow';
+import { ConversationsSkeleton } from './ConversationsSkeleton';
+
+const STATUS_OPTIONS: { label: string; value: ConversationStatus }[] = [
+  { label: 'Open', value: 'OPEN' },
+  { label: 'Closed', value: 'CLOSED' },
+];
 
 type Props = {
   colors: CmsThemeColors;
@@ -21,6 +30,7 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
   const [search, setSearch] = React.useState('');
   const debouncedSearch = useDebouncedValue(search, 400);
   const [listLoading, setListLoading] = React.useState(true);
+  const filterModal = useModal();
 
   const activeIdRef = React.useRef<number | null>(null);
   activeIdRef.current = activeId;
@@ -112,7 +122,7 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={st.headerRow}>
+      <View style={st.titleRow}>
         <Text style={[st.title, { color: colors.textPrimary }]}>Support</Text>
         {totalUnread > 0 ? (
           <View style={[st.headerBadge, { backgroundColor: colors.accent }]}>
@@ -123,35 +133,24 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
         ) : null}
       </View>
 
-      <View style={st.filterRow}>
-        {(['OPEN', 'CLOSED'] as ConversationStatus[]).map((s) => {
-          const active = statusFilter === s;
-          return (
-            <Pressable
-              key={s}
-              onPress={() => setStatusFilter(s)}
-              style={[st.chip, { borderColor: colors.border }, active && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-            >
-              <Text style={{ color: active ? colors.accentText : colors.textSecondary, fontSize: 12.5, fontWeight: '600' }}>
-                {s === 'OPEN' ? 'Open' : 'Closed'}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={st.headerRow}>
+        <View style={[st.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={16} color={colors.textSecondary} />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search name / phone / order…"
+            placeholderTextColor={colors.textSecondary}
+            style={[st.searchInput, { color: colors.textPrimary }]}
+          />
+        </View>
+        <Pressable onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
+          <Ionicons name="filter-outline" size={18} color={colors.textPrimary} />
+        </Pressable>
       </View>
 
-      <TextInput
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Search name / phone / order…"
-        placeholderTextColor={colors.textSecondary}
-        style={[st.search, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
-      />
-
       {listLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading…</Text>
-        </View>
+        <ConversationsSkeleton colors={colors} />
       ) : conversations.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No conversations.</Text>
@@ -159,17 +158,55 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
       ) : (
         <FlatList data={conversations} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={{ paddingBottom: 24 }} />
       )}
+
+      <CmsModal ref={filterModal.ref} colors={colors} title="Filter Conversations" snapPoints={[220]}>
+        <View style={st.filterList}>
+          {STATUS_OPTIONS.map((opt) => {
+            const checked = statusFilter === opt.value;
+            return (
+              <Pressable
+                key={opt.value}
+                onPress={() => {
+                  setStatusFilter(opt.value);
+                  filterModal.dismiss();
+                }}
+                style={[st.filterRow, { borderColor: colors.border }]}
+              >
+                <Text style={{ color: colors.textPrimary, fontSize: 14, flex: 1 }}>{opt.label}</Text>
+                {checked ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </CmsModal>
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 14 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 14 },
   title: { fontSize: 20, fontWeight: '800' },
   headerBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   headerBadgeText: { fontSize: 11, fontWeight: '700' },
-  filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  search: { marginHorizontal: 16, marginTop: 10, marginBottom: 8, height: 40, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, fontSize: 13.5 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 10 },
+  searchWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    height: 42,
+  },
+  searchInput: { flex: 1, fontSize: 14, height: '100%' },
+  iconBtn: { width: 42, height: 42, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
+  filterList: { paddingHorizontal: 16, paddingTop: 8 },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
 });

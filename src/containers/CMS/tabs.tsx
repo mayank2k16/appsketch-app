@@ -11,6 +11,7 @@ import { CreditDebitNotesScreen } from './CreditDebitNotes';
 import { DiscountsScreen } from './Discounts';
 import { InventoryScreen } from './Inventory';
 import { InvoicesScreen } from './Invoices';
+import { NewsletterScreen } from './Newsletter';
 import { NotificationsScreen } from './Notifications';
 import { OrdersScreen } from './Orders';
 import { PaymentsScreen } from './Payments';
@@ -36,6 +37,7 @@ export type CmsTabKey =
   | 'stories'
   | 'creditDebitNotes'
   | 'discounts'
+  | 'newsletter'
   | 'notifications'
   | 'payments'
   | 'wallets'
@@ -71,6 +73,7 @@ const DEFAULT_TAB_KEYS: CmsTabKey[] = [
   'stories',
   'creditDebitNotes',
   'discounts',
+  'newsletter',
   'notifications',
   'payments',
   'wallets',
@@ -112,6 +115,7 @@ export const CMS_TABS: CmsTab[] = [
   { key: 'stories', label: 'Stories', icon: 'book-outline', Component: StoriesScreen },
   { key: 'creditDebitNotes', label: 'Credit/Debit Notes', icon: 'swap-horizontal-outline', Component: CreditDebitNotesScreen },
   { key: 'discounts', label: 'Discount Codes', icon: 'pricetag-outline', Component: DiscountsScreen },
+  { key: 'newsletter', label: 'Newsletter', icon: 'mail-outline', Component: NewsletterScreen },
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline', Component: NotificationsScreen },
   { key: 'payments', label: 'Payments', icon: 'card-outline', Component: PaymentsScreen },
   { key: 'wallets', label: 'Wallets', icon: 'wallet-outline', Component: WalletsScreen },

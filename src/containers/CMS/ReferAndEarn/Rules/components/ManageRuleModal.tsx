@@ -1,12 +1,11 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { ReferralRule, ReferralTrigger } from '@/api/referrals';
 import { useCreateReferralRule, useUpdateReferralRule } from '@/api/referrals';
 
-import { CmsButton, CmsCard, CmsInput, CmsSelect, CmsSwitch, CmsModal } from '../../../components';
+import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsSelect, CmsSheetScrollView, CmsSwitch, CmsModal, parseValue } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
 import { cmsType } from '../../../theme/cms-typography';
 import {
@@ -217,11 +216,23 @@ export const ManageRuleModal = React.forwardRef<BottomSheetModal, Props>(({ colo
   }
 
   return (
-    <CmsModal ref={ref} colors={colors} snapPoints={['95%']} title={isEdit ? 'Edit Referral Rule' : 'New Referral Rule'}>
-      <BottomSheetScrollView
+    <CmsModal
+      ref={ref}
+      colors={colors}
+      snapPoints={['75%']}
+      title={isEdit ? 'Edit Referral Rule' : 'New Referral Rule'}
+      footer={
+        <CmsButton
+          colors={colors}
+          label={isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create rule'}
+          onPress={handleSubmit}
+          loading={isSubmitting}
+        />
+      }
+    >
+      <CmsSheetScrollView
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 16 }}
       >
         <CmsCard colors={colors} title="Basics">
           <CmsInput colors={colors} label="Rule name" placeholder="e.g. Diwali 2026" value={form.name} onChangeText={(v) => set('name', v)} />
@@ -365,19 +376,18 @@ export const ManageRuleModal = React.forwardRef<BottomSheetModal, Props>(({ colo
         </CmsCard>
 
         <CmsCard colors={colors} title="Validity window (optional)">
-          <CmsInput
+          <CmsDateTimeInput
             colors={colors}
-            label="Valid from (YYYY-MM-DDTHH:mm)"
-            placeholder="2026-01-01T00:00"
+            label="Valid from"
             value={form.valid_from}
-            onChangeText={(v) => set('valid_from', v)}
+            onChange={(v) => set('valid_from', v)}
           />
-          <CmsInput
+          <CmsDateTimeInput
             colors={colors}
-            label="Valid to (YYYY-MM-DDTHH:mm)"
-            placeholder="2026-12-31T23:59"
+            label="Valid to"
             value={form.valid_to}
-            onChangeText={(v) => set('valid_to', v)}
+            onChange={(v) => set('valid_to', v)}
+            minimumDate={parseValue(form.valid_from) ?? undefined}
           />
         </CmsCard>
 
@@ -390,8 +400,7 @@ export const ManageRuleModal = React.forwardRef<BottomSheetModal, Props>(({ colo
           />
         </CmsCard>
 
-        <CmsButton colors={colors} label={isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create rule'} onPress={handleSubmit} loading={isSubmitting} />
-      </BottomSheetScrollView>
+      </CmsSheetScrollView>
     </CmsModal>
   );
 });

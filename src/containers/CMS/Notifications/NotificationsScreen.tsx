@@ -3,27 +3,19 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useCmsTheme } from '../theme';
-import { cmsType } from '../theme/cms-typography';
 import { NOTIFICATION_TABS } from './tabs';
 import type { NotificationTabKey } from './tabs';
 
-/** Nested shell for the Notifications tab — same recipe as `CmsShell` one
- * level deeper: a registry of sub-tabs + conditional mounting, except the
- * sub-tab switcher is a horizontal strip rather than a drawer (the top-level
- * CmsDrawer already owns tab-switching for the whole CMS; this is a second,
- * smaller switcher scoped to Notifications' own 8 sub-sections). */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function NotificationsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
   const { colors } = useCmsTheme();
   const [activeTab, setActiveTab] = React.useState<NotificationTabKey>('channels');
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, flexDirection: 'row' }}>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={st.tabScroll}
-        contentContainerStyle={st.tabRow}
+        style={[st.sidebar, { backgroundColor: colors.sidebarBg, borderColor: colors.border }]}
+        contentContainerStyle={st.sidebarContent}
+        showsVerticalScrollIndicator={false}
       >
         {NOTIFICATION_TABS.map((tab) => {
           const active = tab.key === activeTab;
@@ -31,14 +23,10 @@ export function NotificationsScreen({ onMenuPress: _onMenuPress }: { onMenuPress
             <Pressable
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
-              style={[
-                st.tab,
-                { borderColor: colors.border },
-                active && { backgroundColor: colors.accent, borderColor: colors.accent },
-              ]}
+              style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}
             >
-              <Ionicons name={tab.icon} size={14} color={active ? colors.accentText : colors.textSecondary} />
-              <Text style={[st.tabLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
+              <Ionicons name={tab.icon} size={20} color={active ? colors.accent : colors.sidebarText} />
+              <Text style={[st.tabLabel, { color: active ? colors.accent : colors.sidebarText }]} numberOfLines={2}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -56,22 +44,23 @@ export function NotificationsScreen({ onMenuPress: _onMenuPress }: { onMenuPress
 }
 
 const st = StyleSheet.create({
-  tabScroll: { flexGrow: 0 },
-  tabRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+  sidebar: {
+    width: 70,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 70,
+    borderRightWidth: StyleSheet.hairlineWidth,
+  },
+  sidebarContent: {
+    paddingVertical: 0,
+    gap: 4,
   },
   tab: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
+    gap: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 0,
   },
-  tabLabel: cmsType.listBadge,
+  tabLabel: { fontSize: 9, fontWeight: '700', textAlign: 'center' },
 });

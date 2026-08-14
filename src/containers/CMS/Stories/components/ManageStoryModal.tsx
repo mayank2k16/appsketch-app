@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as React from 'react';
@@ -10,7 +9,7 @@ import type { PickedStoryAsset, StoryItem } from '@/api/stories';
 import { useCreateStory, useUpdateStory } from '@/api/stories';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSwitch } from '../../components';
+import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSheetScrollView, CmsSwitch } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 
 type FormState = {
@@ -111,20 +110,28 @@ export const ManageStoryModal = React.forwardRef<BottomSheetModal, Props>(
     const imageUri = image?.uri ?? (isEdit ? (story?.thumbnailUrl ?? story?.imageUrl) : null) ?? undefined;
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['90%']} title={isEdit ? 'Edit story' : 'Add Story'}>
-        <BottomSheetScrollView
+      <CmsModal
+        ref={ref}
+        colors={colors}
+        snapPoints={['75%']}
+        title={isEdit ? 'Edit story' : 'Add Story'}
+        footer={
+          <CmsButton colors={colors} label={isSubmitting ? 'Saving…' : 'Save'} onPress={handleSubmit} loading={isSubmitting} />
+        }
+      >
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <CmsCard colors={colors}>
+          <CmsCard colors={colors} style={{ gap: 14 }}>
             <Pressable onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={st.imagePreview} contentFit="cover" />
               ) : (
                 <>
-                  <Ionicons name="image-outline" size={20} color={colors.textSecondary} />
-                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Story Image</Text>
+                  <Ionicons name="image-outline" size={25} color={colors.textSecondary} />
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, width: '100%', textAlign: 'center' }}>Story Image</Text>
                 </>
               )}
             </Pressable>
@@ -135,6 +142,7 @@ export const ManageStoryModal = React.forwardRef<BottomSheetModal, Props>(
               placeholder="e.g. 6:14 AM: today's harvest arrived…"
               value={form.title}
               onChangeText={(v) => set('title', v)}
+              required
             />
             <CmsInput
               colors={colors}
@@ -186,17 +194,20 @@ export const ManageStoryModal = React.forwardRef<BottomSheetModal, Props>(
             <CmsSwitch colors={colors} label="Featured (shows in home hero)" value={form.is_featured} onChange={(v) => set('is_featured', v)} />
             <CmsSwitch colors={colors} label="Active" value={form.is_active} onChange={(v) => set('is_active', v)} />
           </CmsCard>
-
-          <CmsButton colors={colors} label={isSubmitting ? 'Saving…' : 'Save'} onPress={handleSubmit} loading={isSubmitting} />
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
       </CmsModal>
     );
   }
 );
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 16,
+  },
   imageTile: {
-    height: 90,
+    height: 150,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',

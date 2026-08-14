@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -9,7 +8,7 @@ import { useLeafCategories, useProducts } from '@/api/products';
 import type { DiscountAppliedOn, DiscountAttribute, DiscountCodeItem, DiscountPayload } from '@/api/discounts';
 import { useAllInvoicesForDiscount, useCreateDiscount, useUpdateDiscount } from '@/api/discounts';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSwitch } from '../../components';
+import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView, CmsSwitch, parseValue } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { ScopedItemsMultiSelect } from './ScopedItemsMultiSelect';
 
@@ -84,7 +83,7 @@ function getDefaultForm(): FormState {
     applyType: 'cart',
     firstOrderPerUser: false,
     oneTimePerUser: false,
-    applyOnAllItems: false,
+    applyOnAllItems: true,
     selectedItems: [],
     isActive: true,
     isRecurring: false,
@@ -145,6 +144,16 @@ export const ManageDiscountModal = React.forwardRef<BottomSheetModal, Props>(
 
     function set<K extends keyof FormState>(key: K, value: FormState[K]) {
       setForm((prev) => ({ ...prev, [key]: value }));
+    }
+
+    // Selected item ids belong to whichever scope they were picked under
+    // (a product id, an inventory id, ...). Switching the scope without
+    // clearing them leaves stale ids attached to the new picker — at best
+    // they silently miss every item in the new list, at worst they
+    // coincidentally match a same-numbered item there and appear "selected"
+    // for the wrong record, including in the saved payload.
+    function setAppliedOn(next: DiscountAppliedOn) {
+      setForm((prev) => (prev.appliedOn === next ? prev : { ...prev, appliedOn: next, selectedItems: [] }));
     }
 
     const inventoriesQuery = useInvoiceInventories();
@@ -294,34 +303,55 @@ export const ManageDiscountModal = React.forwardRef<BottomSheetModal, Props>(
     const isSubmitting = createDiscount.isPending || updateDiscount.isPending;
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['95%']} title={isEdit ? 'Update Discount Code' : 'Create Discount Code'}>
-        <BottomSheetScrollView
+      <CmsModal
+        ref={ref}
+        colors={colors}
+        snapPoints={['75%']}
+        title={isEdit ? 'Update Discount Code' : 'Create Discount Code'}
+        footer={
+          <CmsButton
+            colors={colors}
+            label={isSubmitting ? 'Processing…' : isEdit ? 'Update Discount' : 'Create Discount'}
+            onPress={handleSave}
+            loading={isSubmitting}
+          />
+        }
+      >
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <CmsCard colors={colors} title="Basic Info">
-            <CmsInput colors={colors} label="Discount Code" placeholder="Enter discount code" value={form.discountCode} onChangeText={(v) => set('discountCode', v)} error={errors.discountCode} />
+          <CmsCard colors={colors} title="Basic Info" style={{ gap: 12 }}>
+            <CmsInput colors={colors} label="Discount Code" placeholder="Enter discount code" value={form.discountCode} onChangeText={(v) => set('discountCode', v)} error={errors.discountCode} required />
             <Hint text={FIELD_INFO.discountCode} colors={colors} />
             <CmsInput colors={colors} label="Description" placeholder="Enter description" value={form.codeDesc} onChangeText={(v) => set('codeDesc', v)} />
             <Hint text={FIELD_INFO.codeDesc} colors={colors} />
           </CmsCard>
 
-          <CmsCard colors={colors} title="Timing">
-            <CmsInput colors={colors} label="Start Time (YYYY-MM-DDTHH:mm)" value={form.discountStartTime} onChangeText={(v) => set('discountStartTime', v)} error={errors.discountStartTime} />
+          <CmsCard colors={colors} title="Timing" style={{ gap: 12 }}>
+            <CmsDateTimeInput colors={colors} label="Start Time" value={form.discountStartTime} onChange={(v) => set('discountStartTime', v)} error={errors.discountStartTime} required />
             <Hint text={FIELD_INFO.discountStartTime} colors={colors} />
-            <CmsInput colors={colors} label="End Time (YYYY-MM-DDTHH:mm)" value={form.discountEndTime} onChangeText={(v) => set('discountEndTime', v)} error={errors.discountEndTime} />
+            <CmsDateTimeInput
+              colors={colors}
+              label="End Time"
+              value={form.discountEndTime}
+              onChange={(v) => set('discountEndTime', v)}
+              error={errors.discountEndTime}
+              required
+              minimumDate={parseValue(form.discountStartTime) ?? undefined}
+            />
             <Hint text={FIELD_INFO.discountEndTime} colors={colors} />
           </CmsCard>
 
-          <CmsCard colors={colors} title="Value">
+          <CmsCard colors={colors} title="Value" style={{ gap: 12 }}>
             <CmsSelect colors={colors} label="Discount Type" value={form.discountType} options={[{ value: 'Percentage', label: 'Percentage' }, { value: 'Absolute', label: 'Absolute' }]} onSelect={(v) => set('discountType', v as 'Percentage' | 'Absolute')} />
             <Hint text={FIELD_INFO.discountType} colors={colors} />
-            <CmsInput colors={colors} label="Discount Value" keyboardType="decimal-pad" value={form.discountValue} onChangeText={(v) => set('discountValue', v)} error={errors.discountValue} />
+            <CmsInput colors={colors} label="Discount Value" keyboardType="decimal-pad" value={form.discountValue} onChangeText={(v) => set('discountValue', v)} error={errors.discountValue} required />
             <Hint text={FIELD_INFO.discountValue} colors={colors} />
-            <CmsInput colors={colors} label="Maximum Discount" keyboardType="decimal-pad" value={form.maxDiscount} onChangeText={(v) => set('maxDiscount', v)} error={errors.maxDiscount} />
+            <CmsInput colors={colors} label="Maximum Discount" keyboardType="decimal-pad" value={form.maxDiscount} onChangeText={(v) => set('maxDiscount', v)} error={errors.maxDiscount} required />
             <Hint text={FIELD_INFO.maxDiscount} colors={colors} />
-            <CmsInput colors={colors} label="Minimum Order Value" keyboardType="decimal-pad" value={form.minOrderValue} onChangeText={(v) => set('minOrderValue', v)} error={errors.minOrderValue} />
+            <CmsInput colors={colors} label="Minimum Order Value" keyboardType="decimal-pad" value={form.minOrderValue} onChangeText={(v) => set('minOrderValue', v)} error={errors.minOrderValue} required />
             <Hint text={FIELD_INFO.minOrderValue} colors={colors} />
             <CmsSelect colors={colors} label="Apply Type" value={form.applyType} options={[{ value: 'cart', label: 'Cart' }, { value: 'items', label: 'Items' }]} onSelect={(v) => set('applyType', v as 'cart' | 'items')} />
             <Hint text={FIELD_INFO.applyType} colors={colors} />
@@ -329,15 +359,15 @@ export const ManageDiscountModal = React.forwardRef<BottomSheetModal, Props>(
             <Hint text={FIELD_INFO.recursionDepth} colors={colors} />
           </CmsCard>
 
-          <CmsCard colors={colors} title="Scope">
-            <CmsSelect colors={colors} label="Apply On" placeholder="Select scope" value={form.appliedOn} options={APPLIED_ON_OPTIONS} onSelect={(v) => set('appliedOn', v as DiscountAppliedOn)} error={errors.appliedOn} />
+          <CmsCard colors={colors} title="Scope" style={{ gap: 12 }}>
+            <CmsSelect colors={colors} label="Apply On" placeholder="Select scope" value={form.appliedOn} options={APPLIED_ON_OPTIONS} onSelect={(v) => setAppliedOn(v as DiscountAppliedOn)} error={errors.appliedOn} required />
             <Hint text={FIELD_INFO.appliedOn} colors={colors} />
             <CmsSwitch colors={colors} label="Apply For All" value={form.applyOnAllItems} onChange={(v) => set('applyOnAllItems', v)} />
             <Hint text={FIELD_INFO.applyOnAllItems} colors={colors} />
             {renderScopedItemsPicker()}
           </CmsCard>
 
-          <CmsCard colors={colors} title="Rules">
+          <CmsCard colors={colors} title="Rules" style={{ gap: 12 }}>
             <CmsSwitch colors={colors} label="Is Active" value={form.isActive} onChange={(v) => set('isActive', v)} />
             <Hint text={FIELD_INFO.isActive} colors={colors} />
             <CmsSwitch colors={colors} label="Recurring" value={form.isRecurring} onChange={(v) => set('isRecurring', v)} />
@@ -347,14 +377,7 @@ export const ManageDiscountModal = React.forwardRef<BottomSheetModal, Props>(
             <CmsSwitch colors={colors} label="First Order Per User" value={form.firstOrderPerUser} onChange={(v) => set('firstOrderPerUser', v)} />
             <Hint text={FIELD_INFO.firstOrderPerUser} colors={colors} />
           </CmsCard>
-
-          <CmsButton
-            colors={colors}
-            label={isSubmitting ? 'Processing…' : isEdit ? 'Update Discount' : 'Create Discount'}
-            onPress={handleSave}
-            loading={isSubmitting}
-          />
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
       </CmsModal>
     );
   }
@@ -365,5 +388,10 @@ function Hint({ text, colors }: { text: string; colors: CmsThemeColors }) {
 }
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 16,
+  },
   hint: { fontSize: 11, lineHeight: 15, marginTop: -6 },
 });

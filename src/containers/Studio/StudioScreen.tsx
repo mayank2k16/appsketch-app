@@ -24,7 +24,7 @@ const SECTIONS: { key: StudioSection; label: string; icon: React.ComponentProps<
 
 /** Narrow enough that the store cards keep almost the full width — the rail is
  *  a navigation strip, not a panel. */
-const RAIL_W = 74;
+const RAIL_W = 65;
 const SCREEN_INSET = 8;
 
 export function StudioScreen() {
@@ -46,7 +46,7 @@ export function StudioScreen() {
         eyebrow="MANAGE EVERY STORE"
         lines={['Studio']}
         t={t}
-        style={[st.header, { paddingTop: insets.top + 14 }]}
+        style={[st.header, { paddingTop: insets.top + 20 }, { marginBottom: 0 }]}
       />
 
       {!isLoggedIn ? (
@@ -120,9 +120,9 @@ const st = StyleSheet.create({
     justifyContent: 'center',
     gap: 5,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 10,
   },
-  railText: { fontFamily: F.sans600, fontSize: 11 },
+  railText: { fontFamily: F.sans600, fontSize: 10.5 },
 
   content: { flex: 1 },
 

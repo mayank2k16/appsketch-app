@@ -1,8 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import type { InvoiceType } from '@/api/invoices';
 import {
@@ -15,18 +14,29 @@ import {
   useUpdateInvoice,
   useUpdateInvoiceDateAndNo,
 } from '@/api/invoices';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsField, CmsInput, CmsModal, CmsSelect, CmsSummaryRow, CmsSwitch } from '../../components';
+import {
+  CmsButton,
+  CmsCard,
+  CmsDateTimeInput,
+  CmsField,
+  CmsInput,
+  CmsModal,
+  CmsSearchableSelect,
+  CmsSelect,
+  CmsSheetScrollView,
+  CmsSummaryRow,
+  CmsSwitch,
+} from '../../components';
 import type { CmsThemeColors } from '../../theme';
+import type { InvoiceFormData, InvoiceProductRow } from '../invoiceTypeConfig';
 import {
   EMPTY_PRODUCT_ROW,
   getDefaultInvoiceFormData,
   getHeaderFieldsForInvoiceType,
   INVOICE_TYPE_OPTIONS,
 } from '../invoiceTypeConfig';
-import type { InvoiceFormData, InvoiceProductRow } from '../invoiceTypeConfig';
 
 type Props = {
   colors: CmsThemeColors;
@@ -51,7 +61,9 @@ function computeTotals(products: InvoiceProductRow[]) {
 
 export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
   ({ colors, invoiceId, openKey, onDone }, ref) => {
-    const [form, setForm] = React.useState<InvoiceFormData>(getDefaultInvoiceFormData());
+    const [form, setForm] = React.useState<InvoiceFormData>(
+      getDefaultInvoiceFormData()
+    );
     const isEdit = invoiceId !== null;
 
     const inventoriesQuery = useInvoiceInventories();
@@ -62,7 +74,10 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
     const updateInvoice = useUpdateInvoice();
     const updateDateAndNo = useUpdateInvoiceDateAndNo();
 
-    const inventoryOptions = (inventoriesQuery.data ?? []).map((i) => ({ value: i.id, label: i.name }));
+    const inventoryOptions = (inventoriesQuery.data ?? []).map((i) => ({
+      value: i.id,
+      label: i.name,
+    }));
     const productOptions = (productsQuery.data ?? []).map((p) => ({
       value: p.id,
       label: p.product_name,
@@ -78,7 +93,6 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
       if (!isEdit) {
         setForm(getDefaultInvoiceFormData());
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openKey, isEdit]);
 
     React.useEffect(() => {
@@ -106,24 +120,27 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
         const addedProducts: InvoiceProductRow[] =
           items.length > 0
             ? items.map((item) => ({
-                productId: item.product_id,
-                quantity: String(Math.trunc(Number(item.quantity)) || 0),
-                mrp: String(item.price ?? ''),
-                rate: String(item.price ?? ''),
-                cgst: String(item.cgst ?? ''),
-                sgst: String(item.sgst ?? ''),
-                igst: String(item.igst ?? ''),
-                finalPrice: String(item.final_price ?? ''),
-              }))
+              productId: item.product_id,
+              quantity: String(Math.trunc(Number(item.quantity)) || 0),
+              mrp: String(item.price ?? ''),
+              rate: String(item.price ?? ''),
+              cgst: String(item.cgst ?? ''),
+              sgst: String(item.sgst ?? ''),
+              igst: String(item.igst ?? ''),
+              finalPrice: String(item.final_price ?? ''),
+            }))
             : [{ ...EMPTY_PRODUCT_ROW }];
 
         if (cancelled) return;
         setForm({
           invoiceType: (invData!.type as InvoiceType) || 'PROFORMA',
           inventoryId: invData!.inventory ?? null,
-          invoiceDate: invData!.invoice_date || new Date(invData!.created_on).toISOString().split('T')[0],
+          invoiceDate:
+            invData!.invoice_date ||
+            new Date(invData!.created_on).toISOString().split('T')[0],
           invoiceNo: invData!.invoice_id || '',
-          customerName: invData!.customer_details?.customer_details?.customer_name || '',
+          customerName:
+            invData!.customer_details?.customer_details?.customer_name || '',
           challan,
           challanLabel,
           addedProducts,
@@ -136,7 +153,10 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
       };
     }, [detailsQuery.data]);
 
-    function set<K extends keyof InvoiceFormData>(key: K, value: InvoiceFormData[K]) {
+    function set<K extends keyof InvoiceFormData>(
+      key: K,
+      value: InvoiceFormData[K]
+    ) {
       setForm((prev) => ({ ...prev, [key]: value }));
     }
 
@@ -145,15 +165,37 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
       return results.map((c) => ({ label: c.challan_id, value: c.id }));
     }, []);
 
-    function handleProductChange(index: number, field: keyof InvoiceProductRow, value: string) {
+    // `useInvoiceProducts` already fetches every product for the selected
+    // inventory in one go — no server-side product search exists to call —
+    // so this just filters that list locally, but through
+    // `CmsSearchableSelect`'s search box rather than the plain flat
+    // `CmsSelect` list, which is what made the "product search" field a
+    // list with no way to actually search it.
+    const searchProductOptions = React.useCallback(
+      async (query: string) => {
+        const q = query.trim().toLowerCase();
+        return q ? productOptions.filter((p) => p.label.toLowerCase().includes(q)) : productOptions;
+      },
+      [productOptions]
+    );
+
+    function handleProductChange(
+      index: number,
+      field: keyof InvoiceProductRow,
+      value: string
+    ) {
       setForm((prev) => {
         const rows = [...prev.addedProducts];
         const row = { ...rows[index], [field]: value };
         if (field === 'productId') {
-          const selected = productOptions.find((p) => p.value === Number(value));
+          const selected = productOptions.find(
+            (p) => p.value === Number(value)
+          );
           if (selected) {
-            row.rate = selected.rate !== undefined ? String(selected.rate) : row.rate;
-            row.mrp = selected.mrp !== undefined ? String(selected.mrp) : row.mrp;
+            row.rate =
+              selected.rate !== undefined ? String(selected.rate) : row.rate;
+            row.mrp =
+              selected.mrp !== undefined ? String(selected.mrp) : row.mrp;
           }
         }
         const rate = Number(row.rate) || 0;
@@ -165,12 +207,18 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
     }
 
     function addProductRow() {
-      setForm((prev) => ({ ...prev, addedProducts: [...prev.addedProducts, { ...EMPTY_PRODUCT_ROW }] }));
+      setForm((prev) => ({
+        ...prev,
+        addedProducts: [...prev.addedProducts, { ...EMPTY_PRODUCT_ROW }],
+      }));
     }
 
     function deleteProductRow(index: number) {
       if (index === 0) return;
-      setForm((prev) => ({ ...prev, addedProducts: prev.addedProducts.filter((_, i) => i !== index) }));
+      setForm((prev) => ({
+        ...prev,
+        addedProducts: prev.addedProducts.filter((_, i) => i !== index),
+      }));
     }
 
     function buildPayload() {
@@ -179,7 +227,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
         inventory_id: form.inventoryId as string | number,
         invoice: {
           type: form.invoiceType,
-          customer_name: form.customerName,
+          // customer_name: form.customerName,
           invoice_date: form.invoiceDate,
           invoice_id: form.invoiceNo,
           challan_id: form.challan,
@@ -201,9 +249,9 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
         toast.error('Select an Inventory');
         return false;
       }
-      const challanRequired = getHeaderFieldsForInvoiceType(form.invoiceType).some(
-        (f) => f.name === 'challan' && f.required
-      );
+      const challanRequired = getHeaderFieldsForInvoiceType(
+        form.invoiceType
+      ).some((f) => f.name === 'challan' && f.required);
       if (challanRequired && !form.challan) {
         toast.error('Select a Challan');
         return false;
@@ -218,14 +266,21 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
 
     function handleUpdate() {
       if (!validate() || invoiceId === null) return;
-      updateInvoice.mutate({ id: invoiceId, payload: buildPayload() }, { onSuccess: () => onDone() });
+      updateInvoice.mutate(
+        { id: invoiceId, payload: buildPayload() },
+        { onSuccess: () => onDone() }
+      );
     }
 
     function handleSaveDateAndNo() {
       if (invoiceId === null) return;
       updateDateAndNo.mutate({
         id: invoiceId,
-        payload: { invoice_id: form.invoiceNo, invoice_date: form.invoiceDate, challan_id: form.challan },
+        payload: {
+          invoice_id: form.invoiceNo,
+          invoice_date: form.invoiceDate,
+          challan_id: form.challan,
+        },
       });
     }
 
@@ -237,12 +292,47 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
       <CmsModal
         ref={ref}
         colors={colors}
-        snapPoints={['95%']}
-        title={isEdit ? `Update ${form.invoiceType} Invoice` : `Generate ${form.invoiceType} Invoice`}
+        snapPoints={['85%']}
+        title={
+          isEdit
+            ? `Update ${form.invoiceType} Invoice`
+            : `Generate ${form.invoiceType} Invoice`
+        }
+        footer={
+          <View style={st.footer}>
+            {isEdit ? (
+              <CmsButton
+                colors={colors}
+                variant="ghost"
+                label={
+                  updateDateAndNo.isPending ? 'Saving…' : 'Save Invoice Details'
+                }
+                onPress={handleSaveDateAndNo}
+                loading={updateDateAndNo.isPending}
+              />
+            ) : null}
+            <CmsButton
+              colors={colors}
+              label={
+                isEdit
+                  ? updateInvoice.isPending
+                    ? 'Updating…'
+                    : 'Update Invoice'
+                  : createInvoice.isPending
+                    ? 'Generating…'
+                    : 'Generate Invoice'
+              }
+              onPress={isEdit ? handleUpdate : handleGenerate}
+              loading={
+                isEdit ? updateInvoice.isPending : createInvoice.isPending
+              }
+            />
+          </View>
+        }
       >
-        <BottomSheetScrollView
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
         >
           <CmsCard colors={colors}>
@@ -253,6 +343,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
               value={form.invoiceType}
               options={INVOICE_TYPE_OPTIONS}
               onSelect={(v) => set('invoiceType', v as InvoiceType)}
+              required
             />
             {!isEdit ? (
               <CmsSelect
@@ -262,42 +353,86 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                 value={form.inventoryId ?? undefined}
                 options={inventoryOptions}
                 onSelect={(v) => set('inventoryId', v)}
+                required
               />
             ) : (
-              <CmsField label="Inventory" value={inventoryOptions.find((o) => o.value === form.inventoryId)?.label} colors={colors} />
+              <CmsField
+                label="Inventory"
+                value={
+                  inventoryOptions.find((o) => o.value === form.inventoryId)
+                    ?.label
+                }
+                colors={colors}
+              />
             )}
           </CmsCard>
 
           {isEdit ? (
             <CmsCard colors={colors}>
               <View style={st.fieldGrid}>
-                <CmsField label="Order ID" value={invData?.order_id ? `#${invData.order_id}` : 'NA'} colors={colors} />
-                <CmsField label="Invoice Number" value={invData?.invoice_id ?? 'NA'} colors={colors} />
-                <CmsField label="Tenant Name" value={companyQuery.data?.title ?? 'NA'} colors={colors} />
-                <CmsField label="Tenant Address" value={companyQuery.data?.address ?? 'NA'} colors={colors} />
+                <CmsField
+                  label="Order ID"
+                  value={invData?.order_id ? `#${invData.order_id}` : 'NA'}
+                  colors={colors}
+                />
+                <CmsField
+                  label="Invoice Number"
+                  value={invData?.invoice_id ?? 'NA'}
+                  colors={colors}
+                />
+                <CmsField
+                  label="Tenant Name"
+                  value={companyQuery.data?.title ?? 'NA'}
+                  colors={colors}
+                />
+                <CmsField
+                  label="Tenant Address"
+                  value={companyQuery.data?.address ?? 'NA'}
+                  colors={colors}
+                />
               </View>
             </CmsCard>
           ) : null}
 
           <CmsCard colors={colors} title="Invoice Details">
             {headerFields.map((field) => {
-              if (field.type === 'date' || field.type === 'text') {
+              if (field.type === 'date') {
+                return (
+                  <CmsDateTimeInput
+                    key={field.name}
+                    colors={colors}
+                    mode="date"
+                    label={field.label}
+                    value={form[field.name] as string}
+                    onChange={(v) =>
+                      set(field.name as 'invoiceDate', v)
+                    }
+                    required={field.required}
+                  />
+                );
+              }
+              if (field.type === 'text') {
                 return (
                   <CmsInput
                     key={field.name}
                     colors={colors}
-                    label={field.type === 'date' ? `${field.label} (YYYY-MM-DD)` : field.label}
+                    label={field.label}
                     value={form[field.name] as string}
-                    onChangeText={(v) => set(field.name as 'invoiceDate' | 'invoiceNo', v)}
+                    onChangeText={(v) =>
+                      set(field.name as 'invoiceNo', v)
+                    }
+                    required={field.required}
                   />
                 );
               }
               if (field.type === 'searchable-select') {
                 return (
-                  <SearchableSelect
+                  <CmsSearchableSelect
                     key={field.name}
+                    colors={colors}
                     label={field.label}
                     placeholder="Search challan"
+                    searchPlaceholder="Search challan"
                     value={form.challan ?? undefined}
                     displayValue={form.challanLabel || undefined}
                     onSearch={searchChallanOptions}
@@ -306,6 +441,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                       set('challanLabel', String(opt.label));
                     }}
                     disabled={isEdit}
+                    required={field.required}
                   />
                 );
               }
@@ -326,34 +462,134 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
 
           <CmsCard colors={colors} title="Products">
             {form.addedProducts.map((product, index) => (
-              <View key={index} style={[st.productRow, { borderColor: colors.border }]}>
-                <CmsSelect
+              <View
+                key={index}
+                style={[st.productRow, { borderColor: colors.border }]}
+              >
+                <CmsSearchableSelect
                   colors={colors}
                   label="Product"
-                  placeholder={form.inventoryId ? 'Select product' : 'Select an inventory first'}
+                  placeholder={
+                    form.inventoryId
+                      ? 'Select product'
+                      : 'Select an inventory first'
+                  }
+                  searchPlaceholder="Search product"
                   value={product.productId || undefined}
-                  options={productOptions}
-                  onSelect={(v) => handleProductChange(index, 'productId', String(v))}
+                  displayValue={
+                    productOptions.find(
+                      (p) => p.value === Number(product.productId)
+                    )?.label
+                  }
+                  onSearch={searchProductOptions}
+                  onSelect={(opt) =>
+                    handleProductChange(index, 'productId', String(opt.value))
+                  }
+                  disabled={!form.inventoryId}
                 />
                 <View style={st.productFieldsGrid}>
-                  <CmsInput colors={colors} label="Quantity" keyboardType="number-pad" value={product.quantity} onChangeText={(v) => handleProductChange(index, 'quantity', v)} />
-                  <CmsInput colors={colors} label="MRP" keyboardType="decimal-pad" value={product.mrp} onChangeText={(v) => handleProductChange(index, 'mrp', v)} />
-                  <CmsInput colors={colors} label="Rate" keyboardType="decimal-pad" value={product.rate} onChangeText={(v) => handleProductChange(index, 'rate', v)} />
-                  <CmsInput colors={colors} label="CGST" keyboardType="decimal-pad" value={product.cgst} editable={false} onChangeText={() => {}} />
-                  <CmsInput colors={colors} label="SGST" keyboardType="decimal-pad" value={product.sgst} editable={false} onChangeText={() => {}} />
-                  <CmsInput colors={colors} label="IGST" keyboardType="decimal-pad" value={product.igst} editable={false} onChangeText={() => {}} />
-                  <CmsInput colors={colors} label="Total" value={product.finalPrice} editable={false} onChangeText={() => {}} />
+                  <CmsInput
+                    colors={colors}
+                    label="Quantity"
+                    keyboardType="number-pad"
+                    value={product.quantity}
+                    onChangeText={(v) =>
+                      handleProductChange(index, 'quantity', v)
+                    }
+                    groupStyle={st.groupStyle}
+                    inputStyle={st.inputStyle}
+                  />
+                  <CmsInput
+                    colors={colors}
+                    label="MRP"
+                    keyboardType="decimal-pad"
+                    value={product.mrp}
+                    onChangeText={(v) => handleProductChange(index, 'mrp', v)}
+                    groupStyle={st.groupStyle}
+                    inputStyle={st.inputStyle}
+                  />
+                  <CmsInput
+                    colors={colors}
+                    label="Rate"
+                    keyboardType="decimal-pad"
+                    value={product.rate}
+                    onChangeText={(v) => handleProductChange(index, 'rate', v)}
+                    groupStyle={st.groupStyle}
+                    inputStyle={st.inputStyle}
+                  />
+                  <CmsInput
+                    colors={colors}
+                    label="CGST"
+                    keyboardType="decimal-pad"
+                    value={product.cgst}
+                    editable={false}
+                    onChangeText={() => { }}
+                    groupStyle={st.groupStyle}
+                    inputStyle={st.inputStyle}
+                  />
+                </View>
+                <View style={st.productFieldsGrid}>
+                  <CmsInput
+                    colors={colors}
+                    label="SGST"
+                    keyboardType="decimal-pad"
+                    value={product.sgst}
+                    editable={false}
+                    onChangeText={() => { }}
+                    groupStyle={st.groupStyle}
+                    inputStyle={st.inputStyle}
+                  />
+                  <CmsInput
+                    colors={colors}
+                    label="IGST"
+                    keyboardType="decimal-pad"
+                    value={product.igst}
+                    editable={false}
+                    onChangeText={() => { }}
+                    groupStyle={st.groupStyle}
+                    inputStyle={st.inputStyle}
+                  />
+                  <CmsInput
+                    colors={colors}
+                    label="Total"
+                    value={product.finalPrice}
+                    editable={false}
+                    onChangeText={() => { }}
+                    groupStyle={st.groupStyle}
+                    inputStyle={st.inputStyle}
+                  />
                 </View>
                 {index > 0 ? (
-                  <Pressable onPress={() => deleteProductRow(index)} style={st.deleteRowBtn} hitSlop={6}>
-                    <Ionicons name="trash-outline" size={16} color={colors.danger} />
-                    <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '700' }}>Remove</Text>
+                  <Pressable
+                    onPress={() => deleteProductRow(index)}
+                    style={st.deleteRowBtn}
+                    hitSlop={6}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={16}
+                      color={colors.danger}
+                    />
+                    <Text
+                      style={{
+                        color: colors.danger,
+                        fontSize: 12,
+                        fontWeight: '700',
+                      }}
+                    >
+                      Remove
+                    </Text>
                   </Pressable>
                 ) : null}
               </View>
             ))}
             {!isEdit ? (
-              <CmsButton colors={colors} label="Add Product" variant="ghost" onPress={addProductRow} />
+              <CmsButton
+                colors={colors}
+                label="Add Product"
+                variant="ghost"
+                onPress={addProductRow}
+              />
             ) : null}
           </CmsCard>
 
@@ -361,51 +597,59 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
             <CmsSummaryRow
               colors={colors}
               label="Sub Total"
-              value={isEdit ? Number(invData?.sub_total ?? invData?.subtotal ?? 0) : totals.subtotal}
+              value={
+                isEdit
+                  ? Number(invData?.sub_total ?? invData?.subtotal ?? 0)
+                  : totals.subtotal
+              }
             />
-            <CmsSummaryRow colors={colors} label="CGST" value={isEdit ? Number(invData?.cgst ?? 0) : totals.totalCgst} />
-            <CmsSummaryRow colors={colors} label="SGST" value={isEdit ? Number(invData?.sgst ?? 0) : totals.totalSgst} />
+            <CmsSummaryRow
+              colors={colors}
+              label="CGST"
+              value={isEdit ? Number(invData?.cgst ?? 0) : totals.totalCgst}
+            />
+            <CmsSummaryRow
+              colors={colors}
+              label="SGST"
+              value={isEdit ? Number(invData?.sgst ?? 0) : totals.totalSgst}
+            />
             <CmsSummaryRow
               colors={colors}
               bold
               label="Grand Total"
-              value={isEdit ? Number(invData?.final_price ?? 0) : totals.totalFinal}
+              value={
+                isEdit ? Number(invData?.final_price ?? 0) : totals.totalFinal
+              }
             />
           </CmsCard>
-
-          {isEdit ? (
-            <CmsButton
-              colors={colors}
-              variant="ghost"
-              label={updateDateAndNo.isPending ? 'Saving…' : 'Save Invoice Details'}
-              onPress={handleSaveDateAndNo}
-              loading={updateDateAndNo.isPending}
-            />
-          ) : null}
-
-          <CmsButton
-            colors={colors}
-            label={
-              isEdit
-                ? updateInvoice.isPending
-                  ? 'Updating…'
-                  : 'Update Invoice'
-                : createInvoice.isPending
-                  ? 'Generating…'
-                  : 'Generate Invoice'
-            }
-            onPress={isEdit ? handleUpdate : handleGenerate}
-            loading={isEdit ? updateInvoice.isPending : createInvoice.isPending}
-          />
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
       </CmsModal>
     );
   }
 );
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 16,
+  },
+  footer: { gap: 8 },
   fieldGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-  productRow: { borderWidth: 1, borderRadius: 10, padding: 10, gap: 10, marginBottom: 10 },
+  productRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    gap: 10,
+    marginBottom: 10,
+  },
   productFieldsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  deleteRowBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end' },
+  deleteRowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-end',
+  },
+  groupStyle: { flex: 1 },
+  inputStyle: { paddingVertical: 8 }
 });

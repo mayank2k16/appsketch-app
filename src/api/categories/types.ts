@@ -15,6 +15,9 @@ export type CategoryNode = {
   banner_image?: string | null;
   icon?: string | null;
   parent: number | null;
+  // Sort rank driving both root and subcategory order; NULL sorts last. Set
+  // by POST api/shop/categories/reorder/, never edited directly by the UI.
+  priority?: number | null;
   products: number[];
   sub_categories: CategoryNode[];
 };
@@ -64,4 +67,21 @@ export type LinkProductPayload = {
 export type UnlinkProductPayload = {
   category_id: number;
   id: number;
+};
+
+// `parentId`/`from`/`to` are not sent over the wire — the client-side
+// optimistic update needs them to know which sibling group to rewrite.
+// `ids` is the full reordered sibling list; the server reindexes priority
+// from 0 over exactly the ids it receives (see backend `CategorySerializer`,
+// which already orders `sub_categories` by `priority` nulls-last).
+export type ReorderCategoriesPayload = {
+  ids: number[];
+  parentId: number | null;
+  from: number;
+  to: number;
+};
+
+export type ReorderCategoryProductsPayload = {
+  category_id: number;
+  product_ids: number[];
 };

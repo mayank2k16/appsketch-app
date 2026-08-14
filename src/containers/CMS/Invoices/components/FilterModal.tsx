@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { InvoiceFilters } from '@/api/invoices';
 import { useAllEntities } from '@/api/invoices';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal } from '../../components';
+import { CmsButton, CmsCard, CmsDateTimeInput, CmsModal, CmsSheetScrollView, parseValue } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 
 // Kept literal to Vite's `FilterModal.jsx` — these values don't line up with
@@ -58,10 +57,21 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
   }
 
   return (
-    <CmsModal ref={ref} colors={colors} snapPoints={['85%']} title="Filter Invoices">
-      <BottomSheetScrollView
+    <CmsModal
+      ref={ref}
+      colors={colors}
+      snapPoints={['85%']}
+      title="Filter Invoices"
+      footer={
+        <View style={st.footer}>
+          <CmsButton colors={colors} label="Clear All" variant="ghost" onPress={handleClear} style={{ flex: 1 }} />
+          <CmsButton colors={colors} label="Apply Filters" onPress={handleApply} style={{ flex: 1 }} />
+        </View>
+      }
+    >
+      <CmsSheetScrollView
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        contentContainerStyle={st.scroll}
       >
         <CmsCard colors={colors} title="Filter by Party">
           {entitiesQuery.isLoading ? (
@@ -112,30 +122,33 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
         </CmsCard>
 
         <CmsCard colors={colors} title="Date Range">
-          <CmsInput
+          <CmsDateTimeInput
             colors={colors}
-            label="Start Date (YYYY-MM-DD)"
-            value={temp.startDate}
-            onChangeText={(v) => setTemp((prev) => ({ ...prev, startDate: v }))}
+            mode="date"
+            label="Start Date"
+            value={temp.startDate ?? ''}
+            onChange={(v) => setTemp((prev) => ({ ...prev, startDate: v }))}
           />
-          <CmsInput
+          <CmsDateTimeInput
             colors={colors}
-            label="End Date (YYYY-MM-DD)"
-            value={temp.endDate}
-            onChangeText={(v) => setTemp((prev) => ({ ...prev, endDate: v }))}
+            mode="date"
+            label="End Date"
+            value={temp.endDate ?? ''}
+            onChange={(v) => setTemp((prev) => ({ ...prev, endDate: v }))}
+            minimumDate={parseValue(temp.startDate ?? '') ?? undefined}
           />
         </CmsCard>
-
-        <View style={st.footer}>
-          <CmsButton colors={colors} label="Clear All" variant="ghost" onPress={handleClear} style={{ flex: 1 }} />
-          <CmsButton colors={colors} label="Apply Filters" onPress={handleApply} style={{ flex: 1 }} />
-        </View>
-      </BottomSheetScrollView>
+      </CmsSheetScrollView>
     </CmsModal>
   );
 });
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 16,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

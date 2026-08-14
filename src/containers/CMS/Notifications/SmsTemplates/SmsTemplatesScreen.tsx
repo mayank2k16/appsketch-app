@@ -10,6 +10,7 @@ import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { ManageSmsTemplateModal } from './components/ManageSmsTemplateModal';
 import { SmsTemplateRow } from './components/SmsTemplateRow';
+import { SmsTemplatesSkeleton } from './components/SmsTemplatesSkeleton';
 
 export function SmsTemplatesScreen() {
   const { colors } = useCmsTheme();
@@ -55,9 +56,7 @@ export function SmsTemplatesScreen() {
       </View>
 
       {templatesQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading SMS templates…</Text>
-        </View>
+        <SmsTemplatesSkeleton colors={colors} />
       ) : templates.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No SMS templates yet</Text>

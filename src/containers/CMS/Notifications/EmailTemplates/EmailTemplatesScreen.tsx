@@ -9,6 +9,7 @@ import { useModal } from '@/components/ui';
 import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
 import { EmailTemplateRow } from './components/EmailTemplateRow';
+import { EmailTemplatesSkeleton } from './components/EmailTemplatesSkeleton';
 import { ManageEmailTemplateModal } from './components/ManageEmailTemplateModal';
 
 export function EmailTemplatesScreen() {
@@ -55,9 +56,7 @@ export function EmailTemplatesScreen() {
       </View>
 
       {templatesQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading email templates…</Text>
-        </View>
+        <EmailTemplatesSkeleton colors={colors} />
       ) : templates.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No email templates yet</Text>

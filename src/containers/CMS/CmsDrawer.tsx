@@ -124,7 +124,7 @@ const st = StyleSheet.create({
     justifyContent: "space-between"
   },
   brand: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '800',
     letterSpacing: 2,
   },
@@ -132,7 +132,7 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 12,
     borderRadius: 10,
     marginBottom: 4,

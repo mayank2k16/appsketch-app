@@ -1,5 +1,26 @@
 import axios from 'axios';
-import { useAuth } from '@/hooks/useAuth';
+import type { AxiosError } from 'axios';
+import { router } from 'expo-router';
+
+import { signOut, useAuth } from '@/hooks/useAuth';
+import { toast } from '@/lib/toast';
+
+/** Any authenticated request that comes back 401 means the access token is
+ * expired/invalid — DRF SimpleJWT's standard signal for this. Handled once
+ * here rather than in every screen's catch block: clear the session and kick
+ * the user back to `/login`. Guarded on current status so a burst of
+ * concurrently in-flight requests after expiry doesn't fire this repeatedly. */
+function handleAuthError(error: AxiosError) {
+  console.log(error);
+  const errorStatus = error.response?.status;
+  const errorMsg = error.response?.data?.error;
+  if (errorStatus == 400 && errorMsg == 'Invalid authentication token.' && useAuth.getState().status !== 'signOut') {
+    signOut();
+    toast.error('Your session has expired. Please log in again.');
+    router.replace('/login');
+  }
+  return Promise.reject(error);
+}
 
 export const client = axios.create({
   baseURL: 'https://appsketch.ai/',
@@ -33,6 +54,8 @@ authenticatedClient.interceptors.request.use((config) => {
   return config;
 });
 
+authenticatedClient.interceptors.response.use((res) => res, handleAuthError);
+
 
 export const accountClient = axios.create({
   baseURL: 'https://appsketch.ai/api',
@@ -53,4 +76,6 @@ accountClient.interceptors.request.use((config) => {
 
   return config;
 });
+
+accountClient.interceptors.response.use((res) => res, handleAuthError);
 

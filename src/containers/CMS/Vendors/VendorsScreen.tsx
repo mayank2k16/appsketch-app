@@ -11,6 +11,7 @@ import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { VendorDetailSheet } from './components/VendorDetailSheet';
 import { VendorListCard } from './components/VendorListCard';
+import { VendorsSkeleton } from './components/VendorsSkeleton';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function VendorsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
@@ -82,9 +83,7 @@ export function VendorsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
       </View>
 
       {vendorsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading vendors…</Text>
-        </View>
+        <VendorsSkeleton colors={colors} />
       ) : filteredVendors.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No vendors found</Text>

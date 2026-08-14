@@ -1,5 +1,5 @@
 import type { AxiosError } from 'axios';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { toast } from '@/lib/toast';
 
@@ -15,7 +15,9 @@ import {
   updateProfile,
   updateStaff,
 } from './client';
-import type { AppUserPayload, StaffPayload, UsersListParams } from './types';
+import type { AppUserPayload, AppUserProfile, StaffPayload, UsersListParams } from './types';
+
+export const USERS_PAGE_SIZE = 10;
 
 export const userKeys = {
   all: ['users'] as const,
@@ -39,12 +41,33 @@ export function useUserInventories() {
   });
 }
 
-export function useAppUsers(params: UsersListParams, enabled = true) {
-  return useQuery<Awaited<ReturnType<typeof fetchProfiles>>, AxiosError>({
+/** App Users' list endpoint genuinely paginates (`{results, count}` +
+ * `limit`/`offset`, confirmed by the pager this replaced) — real
+ * infinite-scroll, one network page per `fetchNextPage()` call. */
+export function useAppUsers(params: Omit<UsersListParams, 'limit' | 'offset'>, enabled = true) {
+  return useInfiniteQuery<Awaited<ReturnType<typeof fetchProfiles>>, AxiosError>({
     queryKey: userKeys.appUsers(params),
-    queryFn: () => fetchProfiles(params),
+    queryFn: ({ pageParam }) =>
+      fetchProfiles({ ...params, limit: USERS_PAGE_SIZE, offset: pageParam as number }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const pageResults = Array.isArray(lastPage) ? lastPage : lastPage.results;
+      const loaded = allPages.reduce(
+        (sum, p) => sum + (Array.isArray(p) ? p.length : p.results.length),
+        0
+      );
+      const count = Array.isArray(lastPage) ? undefined : lastPage.count;
+      if (count != null) return loaded < count ? loaded : undefined;
+      return pageResults.length < USERS_PAGE_SIZE ? undefined : loaded;
+    },
     enabled,
   });
+}
+
+export function flattenAppUsersPages(
+  pages: Awaited<ReturnType<typeof fetchProfiles>>[] | undefined
+): AppUserProfile[] {
+  return (pages ?? []).flatMap((p) => (Array.isArray(p) ? p : p.results));
 }
 
 export function useStaffUsers(params: UsersListParams, enabled = true) {

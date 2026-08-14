@@ -11,6 +11,7 @@ import { CmsSelect } from '../components';
 import { useCmsTheme } from '../theme';
 import { BookingCard } from './components/BookingCard';
 import { BookingDetailModal } from './components/BookingDetailModal';
+import { BookingsSkeleton } from './components/BookingsSkeleton';
 import { MiniCalendar } from './components/MiniCalendar';
 import { sameDay } from './utils';
 
@@ -163,9 +164,7 @@ export function BookingsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
       </View>
 
       {bookingsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading bookings…</Text>
-        </View>
+        <BookingsSkeleton colors={colors} />
       ) : view === 'list' ? (
         bookings.length === 0 ? (
           <View style={st.center}>
