@@ -12,6 +12,7 @@ import { CmsButton, CmsCard, CmsConfirmModal, CmsField, CmsModal, CmsStatusBadge
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { getVendorStatusMeta, money } from '../utils';
+import { CommissionsSkeleton } from './VendorsSkeleton';
 import { ManageCommissionModal } from './ManageCommissionModal';
 
 type Props = {
@@ -94,7 +95,7 @@ export const VendorDetailSheet = React.forwardRef<BottomSheetModal, Props>(({ co
             </View>
 
             {commissionsQuery.isLoading ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Loading commissions…</Text>
+              <CommissionsSkeleton colors={colors} />
             ) : vendorCommissions.length === 0 ? (
               <Text style={{ color: colors.textSecondary, fontSize: 13 }}>No commissions configured for this vendor.</Text>
             ) : (

@@ -6,6 +6,7 @@ import { useStockHistory } from '@/api/stock-history';
 
 import { useCmsTheme } from '../theme';
 import { StockHistoryCard } from './components/StockHistoryCard';
+import { StockHistorySkeleton } from './components/StockHistorySkeleton';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StockHistoryScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
@@ -19,11 +20,7 @@ export function StockHistoryScreen({ onMenuPress: _onMenuPress }: { onMenuPress:
   );
 
   if (stockQuery.isLoading) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.textSecondary }}>Loading Stock History…</Text>
-      </View>
-    );
+    return <StockHistorySkeleton colors={colors} />;
   }
 
   if (rows.length === 0) {

@@ -9,6 +9,7 @@ import { useModal } from '@/components/ui';
 
 import { useCmsTheme } from '../theme';
 import { InventoryCard } from './components/InventoryCard';
+import { InventorySkeleton } from './components/InventorySkeleton';
 import { ManageInventoryModal } from './components/ManageInventoryModal';
 
 // `onMenuPress` isn't used here — the shell's persistent header already owns
@@ -50,9 +51,7 @@ export function InventoryScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
       </View>
 
       {locationsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading inventory locations…</Text>
-        </View>
+        <InventorySkeleton colors={colors} />
       ) : locations.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>Your inventory locations will be shown here</Text>

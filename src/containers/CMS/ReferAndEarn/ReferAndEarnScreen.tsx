@@ -49,7 +49,7 @@ const st = StyleSheet.create({
   sidebar: {
     width: 70,
     borderRightWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 12,
+    paddingVertical: 0,
     paddingHorizontal: 0,
     gap: 4,
   },

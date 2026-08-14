@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type {
   EmailChannelConfig,
@@ -12,6 +13,7 @@ import { EMPTY_NOTIFICATION_CONFIG, useNotificationConfig, useUpdateNotification
 
 import { CmsButton, CmsCard, CmsInput, CmsSwitch } from '../../components';
 import { useCmsTheme } from '../../theme';
+import { ChannelsSkeleton } from './components/ChannelsSkeleton';
 
 /** Secret fields come back from the API masked as this placeholder. If the
  * user never touches the field, it's omitted from the save payload entirely
@@ -28,6 +30,7 @@ function omitIfMasked<T extends Record<string, unknown>>(section: T, secretKey: 
 
 export function ChannelsScreen() {
   const { colors } = useCmsTheme();
+  const insets = useSafeAreaInsets();
   const configQuery = useNotificationConfig();
   const updateConfig = useUpdateNotificationConfig();
 
@@ -55,15 +58,12 @@ export function ChannelsScreen() {
   }
 
   if (configQuery.isLoading) {
-    return (
-      <View style={st.center}>
-        <Text style={{ color: colors.textSecondary }}>Loading channel settings…</Text>
-      </View>
-    );
+    return <ChannelsSkeleton colors={colors} />;
   }
 
   return (
-    <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled">
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled">
       <CmsCard colors={colors} title="Email (SMTP)">
         <CmsInput colors={colors} label="Sender Email" value={email.sender_email} onChangeText={(v) => setEmail((p) => ({ ...p, sender_email: v }))} keyboardType="email-address" autoCapitalize="none" />
         <CmsInput colors={colors} label="Sender Name" value={email.sender_name} onChangeText={(v) => setEmail((p) => ({ ...p, sender_name: v }))} />
@@ -86,14 +86,20 @@ export function ChannelsScreen() {
         <CmsInput colors={colors} label="Access Token" value={whatsapp.token} onChangeText={(v) => setWhatsapp((p) => ({ ...p, token: v }))} secureTextEntry />
         <CmsInput colors={colors} label="Phone ID" value={whatsapp.phone_id} onChangeText={(v) => setWhatsapp((p) => ({ ...p, phone_id: v }))} />
       </CmsCard>
+      </ScrollView>
 
-      <CmsButton colors={colors} label="Save Channel Settings" onPress={handleSave} loading={updateConfig.isPending} style={st.saveBtn} />
-    </ScrollView>
+      <View style={[st.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <CmsButton colors={colors} label="Save Channel Settings" onPress={handleSave} loading={updateConfig.isPending} />
+      </View>
+    </View>
   );
 }
 
 const st = StyleSheet.create({
-  scroll: { padding: 16, gap: 12, paddingBottom: 40 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  saveBtn: { marginTop: 4 },
+  scroll: { padding: 12, gap: 12, paddingBottom: 24 },
+  footer: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
 });

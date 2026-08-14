@@ -14,6 +14,7 @@ import { AdjustWalletModal } from './components/AdjustWalletModal';
 import { WalletCard } from './components/WalletCard';
 import { WalletDetailsModal } from './components/WalletDetailsModal';
 import { WalletSearchBar } from './components/WalletSearchBar';
+import { WalletsSkeleton } from './components/WalletsSkeleton';
 import { inr, WALLET_FILTER_OPTIONS } from './utils';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -119,10 +120,7 @@ export function WalletsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
       />
 
       {walletsQuery.isLoading ? (
-        <View style={st.center}>
-          <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[st.centerText, { color: colors.textSecondary }]}>Loading wallets…</Text>
-        </View>
+        <WalletsSkeleton colors={colors} />
       ) : wallets.length === 0 ? (
         <View style={st.center}>
           <View style={[st.emptyIconRing, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -221,7 +219,6 @@ const st = StyleSheet.create({
   },
   chipLabel: cmsType.listBadge,
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 60, paddingHorizontal: 24 },
-  centerText: { fontSize: 13, fontWeight: '500', marginTop: 6 },
   emptyIconRing: {
     width: 56,
     height: 56,

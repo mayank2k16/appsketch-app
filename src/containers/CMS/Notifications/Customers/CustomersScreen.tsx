@@ -9,6 +9,7 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { useCmsTheme } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { CustomerRow } from './components/CustomerRow';
+import { CustomersSkeleton } from './components/CustomersSkeleton';
 
 export function CustomersScreen() {
   const { colors } = useCmsTheme();
@@ -39,9 +40,7 @@ export function CustomersScreen() {
       </View>
 
       {customersQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading customers…</Text>
-        </View>
+        <CustomersSkeleton colors={colors} />
       ) : customers.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No customers found</Text>
