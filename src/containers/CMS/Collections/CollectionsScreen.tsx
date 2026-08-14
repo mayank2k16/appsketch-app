@@ -137,7 +137,7 @@ const st = StyleSheet.create({
     height: 42,
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 42, borderRadius: 10, maxWidth: 150, marginLeft: 'auto', marginRight: 14, marginBottom: 5 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, maxWidth: 150, marginLeft: 'auto', marginRight: 14, marginBottom: 7 },
   addBtnText: { fontSize: 13, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 6 },
   emptyIcon: { fontSize: 32 },

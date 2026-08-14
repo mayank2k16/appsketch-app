@@ -1,16 +1,15 @@
 import * as React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useCmsTheme } from '../theme';
-import { cmsType } from '../theme/cms-typography';
 import { CART_TABS } from './tabs';
 import type { CartTabKey } from './tabs';
 
 /** Nested shell for the Cart tab — same recipe as `Payments`/`Notifications`
  * one level deeper: a registry of sub-tabs (Abandoned Carts, Checkout
- * Orders) + conditional mounting, with a horizontal sub-tab strip instead of
- * opening the main drawer again. */
+ * Orders) + conditional mounting, with a fixed-width vertical rail on the
+ * left — same treatment as `Payments/PaymentsScreen.tsx`. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function CartScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
   const { colors } = useCmsTheme();
@@ -18,32 +17,23 @@ export function CartScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => v
 
   return (
     <View style={{ flex: 1, flexDirection: 'row' }}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={st.tabScroll}
-        contentContainerStyle={st.tabRow}
-      >
+      <View style={[st.sidebar, { backgroundColor: colors.sidebarBg, borderColor: colors.border }]}>
         {CART_TABS.map((tab) => {
           const active = tab.key === activeTab;
           return (
             <Pressable
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
-              style={[
-                st.tab,
-                { borderColor: colors.border },
-                active && { backgroundColor: colors.accent, borderColor: colors.accent },
-              ]}
+              style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}
             >
-              <Ionicons name={tab.icon} size={14} color={active ? colors.accentText : colors.textSecondary} />
-              <Text style={[st.tabLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
+              <Ionicons name={tab.icon} size={20} color={active ? colors.accent : colors.sidebarText} />
+              <Text style={[st.tabLabel, { color: active ? colors.accent : colors.sidebarText }]} numberOfLines={2}>
                 {tab.label}
               </Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
 
       <View style={{ flex: 1 }}>
         {CART_TABS.map(
@@ -55,24 +45,19 @@ export function CartScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => v
 }
 
 const st = StyleSheet.create({
-  tabScroll: { flexGrow: 0, maxWidth: 150 },
-  tabRow: {
-    flexDirection: 'column',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+  sidebar: {
+    width: 70,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    gap: 4,
   },
   tab: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
+    gap: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 0,
   },
-  tabLabel: {
-    ...cmsType.listBadge
-  },
+  tabLabel: { fontSize: 9, fontWeight: '700', textAlign: 'center' },
 });
