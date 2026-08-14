@@ -91,7 +91,7 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
         <ProductsSkeleton colors={colors} />
       ) : products.length === 0 ? (
         <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>No products yet — add your first one</Text>
+          <Text style={{ color: colors.textSecondary, width: '100%', textAlign: 'center' }}>No products yet — add your first one.</Text>
         </View>
       ) : (
         <FlatList

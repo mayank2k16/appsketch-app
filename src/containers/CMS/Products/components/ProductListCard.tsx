@@ -48,6 +48,16 @@ export const ProductListCard = React.memo(function ProductListCard({
         <Text style={[st.desc, { color: colors.textSecondary }]} numberOfLines={2}>
           {product.description || 'No description available'}
         </Text>
+        {product.sold_by_name ? (
+          <Text style={[st.attribution, { color: colors.textSecondary }]} numberOfLines={1}>
+            Sold By {product.sold_by_name.slice(0, 25)}
+          </Text>
+        ) : null}
+        {product.tenant_name ? (
+          <Text style={[st.attribution, { color: colors.textSecondary }]} numberOfLines={1}>
+            Tenant: {product.tenant_name.slice(0, 25)}
+          </Text>
+        ) : null}
         <View style={st.metaRow}>
           {price != null ? <Text style={[st.price, { color: colors.accent }]}>{inr(price)}</Text> : null}
           {qty != null ? (
@@ -90,6 +100,7 @@ const st = StyleSheet.create({
   thumbImg: { width: '100%', height: '100%' },
   name: cmsType.listTitle,
   desc: { ...cmsType.listMeta, marginTop: 2 },
+  attribution: { fontSize: 11, fontWeight: '600', marginTop: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 6 },
   price: { fontSize: 13.5, fontWeight: '800' },
   qty: { fontSize: 12, flex: 1 },

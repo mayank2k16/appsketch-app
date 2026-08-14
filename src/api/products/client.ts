@@ -4,15 +4,35 @@ import { authenticatedClient } from '@/api/common/client';
 
 import type {
   CreateManufacturerPayload,
+  MarketplaceProductGroup,
   ProductCategory,
   ProductInventoryOption,
   ProductListItem,
   ProductManufacturer,
+  ProductReviewHistoryEntry,
   SaveProductInput,
 } from './types';
 
 export async function fetchProducts(): Promise<ProductListItem[]> {
   const { data } = await authenticatedClient.get<ProductListItem[]>('api/shop/products/all/');
+  return data ?? [];
+}
+
+/** Marketplace-only variant of `fetchProducts` — one row per owning tenant,
+ * each carrying its own product list (rather than one flat list), with
+ * `sold_by_name`/`tenant_name` embedded per-product. Flattened here so
+ * callers see the same `ProductListItem[]` shape as the plain fetch. */
+export async function fetchMarketplaceProducts(): Promise<ProductListItem[]> {
+  const { data } = await authenticatedClient.get<MarketplaceProductGroup[]>(
+    'api/shop/marketplace/products/all/'
+  );
+  return (data ?? []).flatMap((group) => group.products ?? []);
+}
+
+export async function fetchProductReviewHistory(productId: number): Promise<ProductReviewHistoryEntry[]> {
+  const { data } = await authenticatedClient.get<ProductReviewHistoryEntry[]>(
+    `api/shop/tenant/products/${productId}/review-history/`
+  );
   return data ?? [];
 }
 

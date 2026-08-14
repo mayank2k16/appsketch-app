@@ -16,6 +16,7 @@ import { FeedbackListEditor } from './FeedbackListEditor';
 import { IngredientsField } from './IngredientsField';
 import { ManufacturerField } from './ManufacturerField';
 import { MediaGalleryField } from './MediaGalleryField';
+import { ReviewHistory } from './ReviewHistory';
 import { TagListInput } from './TagListInput';
 import { VariantsEditor } from './VariantsEditor';
 
@@ -191,6 +192,12 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
               onChange={(v) => set('categories', v)}
             />
           </CmsCard>
+
+          {isEdit && product ? (
+            <CmsCard colors={colors} title="Review History">
+              <ReviewHistory colors={colors} productId={product.id} />
+            </CmsCard>
+          ) : null}
 
           <CmsCard colors={colors} title="Additional Details">
             <ManufacturerField

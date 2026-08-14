@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FlatList, Text, TextInput, View } from 'react-native';
+import { FlatList, Text, TextInput, View, Pressable } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -11,6 +11,7 @@ import { CmsButton } from '../components';
 import { useCmsTheme } from '../theme';
 import { CreateNoteModal } from './components/CreateNoteModal';
 import { NoteListCard } from './components/NoteListCard';
+import { NotesSkeleton } from './components/NotesSkeleton';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function CreditDebitNotesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
@@ -47,17 +48,16 @@ export function CreditDebitNotesScreen({ onMenuPress: _onMenuPress }: { onMenuPr
         />
       </View>
 
-      <View style={st.createBtnWrap}>
-        <CmsButton colors={colors} label="Generate Credit/Debit Note" onPress={createModal.present} />
-      </View>
+      <Pressable onPress={createModal.present} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <Ionicons name="add" size={16} color={colors.accentText} />
+        <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Credit/Debit Note</Text>
+      </Pressable>
 
       {notesQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading notes…</Text>
-        </View>
+        <NotesSkeleton colors={colors} />
       ) : filteredNotes.length === 0 ? (
         <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>No credit/debit notes found</Text>
+          <Text style={{ color: colors.textSecondary, width: '100%', textAlign: 'center' }}>No credit/debit notes found</Text>
         </View>
       ) : (
         <FlatList
@@ -82,10 +82,12 @@ const st = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     height: 42,
-    marginHorizontal: 16,
+    marginHorizontal: 14,
     marginTop: 14,
-    marginBottom: 12,
+    marginBottom: 10,
   },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, marginTop: 5, maxWidth: 250, marginLeft: 'auto', marginBottom: 6, marginRight: 14 },
+  addBtnText: { fontSize: 13, fontWeight: '700' },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
   createBtnWrap: { paddingHorizontal: 16, marginBottom: 12 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },

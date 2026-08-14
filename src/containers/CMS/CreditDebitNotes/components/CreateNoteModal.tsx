@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,9 +9,8 @@ import { useCompanyDetails } from '@/api/invoices';
 import { searchEntities, searchInvoices } from '@/api/payments';
 import type { EntityOption } from '@/api/payments';
 import { useProductInventories, useProducts } from '@/api/products';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 
-import { CmsButton, CmsCard, CmsField, CmsInput, CmsModal, CmsSelect, CmsSwitch } from '../../components';
+import { CmsButton, CmsCard, CmsField, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 
@@ -233,19 +231,19 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     const note_items: CreateNoteInvoiceItem[] | CreateNoteProductItem[] =
       applyOn === 'INVOICES'
         ? invoiceRows
-            .filter((r) => r.invoiceId !== '')
-            .map((r) => ({ invoice_id: r.invoiceId, rate: r.amount }))
+          .filter((r) => r.invoiceId !== '')
+          .map((r) => ({ invoice_id: r.invoiceId, rate: r.amount }))
         : productRows
-            .filter((r) => r.productId !== '')
-            .map((r) => ({
-              product_id: r.productId as number,
-              batch_number: r.batchNo,
-              serial_number: r.serialNo,
-              quantity: r.quantity,
-              rate: r.rate,
-              mrp: r.mrp,
-              hsn_code: r.hsnCode,
-            }));
+          .filter((r) => r.productId !== '')
+          .map((r) => ({
+            product_id: r.productId as number,
+            batch_number: r.batchNo,
+            serial_number: r.serialNo,
+            quantity: r.quantity,
+            rate: r.rate,
+            mrp: r.mrp,
+            hsn_code: r.hsnCode,
+          }));
 
     createNote.mutate(
       {
@@ -269,10 +267,23 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
   }
 
   return (
-    <CmsModal ref={ref} colors={colors} snapPoints={['92%']} title="Create Debit/Credit Note">
-      <BottomSheetScrollView
+    <CmsModal
+      ref={ref}
+      colors={colors}
+      snapPoints={['75%']}
+      title="Create Debit/Credit Note"
+      footer={
+        <CmsButton
+          colors={colors}
+          label={createNote.isPending ? 'Saving…' : `Save ${noteType === 'CREDIT' ? 'Credit' : 'Debit'} Note`}
+          onPress={handleSubmit}
+          loading={createNote.isPending}
+        />
+      }
+    >
+      <CmsSheetScrollView
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         <CmsCard colors={colors}>
@@ -290,6 +301,7 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             value={refNo}
             onChangeText={setRefNo}
             error={errors.refNo}
+            required
           />
           <CmsSelect
             colors={colors}
@@ -299,6 +311,7 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             options={inventoryOptions}
             onSelect={(v) => setInventoryId(v as number)}
             error={errors.inventory}
+            required
           />
         </CmsCard>
 
@@ -310,14 +323,17 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
         ) : null}
 
         <CmsCard colors={colors} title="Entity Details">
-          <SearchableSelect
+          <CmsSearchableSelect
+            colors={colors}
             label="Entity"
             placeholder="Search entity…"
+            searchPlaceholder="Search entity…"
             value={entity?.id}
             displayValue={entity?.title}
             onSearch={searchEntityOptions}
             onSelect={(option) => setEntity(option as unknown as EntityOption)}
             error={errors.entity}
+            required
           />
           {entity ? (
             <View style={st.entityDetail}>
@@ -344,8 +360,11 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
             {invoiceRows.map((row, index) => (
               <View key={index} style={st.row}>
                 <View style={{ flex: 1 }}>
-                  <SearchableSelect
+                  <CmsSearchableSelect
+                    colors={colors}
+                    label="Invoice"
                     placeholder="Select invoice"
+                    searchPlaceholder="Search invoice…"
                     value={row.invoiceId || undefined}
                     displayValue={row.invoiceLabel || undefined}
                     onSearch={searchInvoiceOptions}
@@ -385,9 +404,9 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
               const rateOptions =
                 row.selectedSellableIndex !== null
                   ? (row.availableSellables[row.selectedSellableIndex]?.rates ?? []).map((r, i) => ({
-                      value: i,
-                      label: `₹${r.price ?? '-'} (MRP ₹${r.market_price ?? '-'})${r.contract_title ? ` — ${r.contract_title}` : ''}`,
-                    }))
+                    value: i,
+                    label: `₹${r.price ?? '-'} (MRP ₹${r.market_price ?? '-'})${r.contract_title ? ` — ${r.contract_title}` : ''}`,
+                  }))
                   : [];
 
               return (
@@ -401,8 +420,11 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
                     ) : null}
                   </View>
 
-                  <SearchableSelect
+                  <CmsSearchableSelect
+                    colors={colors}
+                    label="Product"
                     placeholder="Select product"
+                    searchPlaceholder="Search product…"
                     value={row.productId || undefined}
                     displayValue={row.productName || undefined}
                     onSearch={searchProductOptions}
@@ -496,21 +518,14 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
         <CmsCard colors={colors}>
           <CmsSwitch colors={colors} label="Update Sellable" value={updateSellable} onChange={setUpdateSellable} />
         </CmsCard>
-
-        <CmsButton
-          colors={colors}
-          label={createNote.isPending ? 'Saving…' : `Save ${noteType === 'CREDIT' ? 'Credit' : 'Debit'} Note`}
-          onPress={handleSubmit}
-          loading={createNote.isPending}
-        />
-      </BottomSheetScrollView>
+      </CmsSheetScrollView>
     </CmsModal>
   );
 });
 
 const st = StyleSheet.create({
   entityDetail: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  row: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   removeBtn: { padding: 8 },
   addBtn: {
     flexDirection: 'row',
