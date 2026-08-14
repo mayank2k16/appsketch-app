@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -11,7 +10,7 @@ import type { PickedShortVideoAsset, ShortVideoItem } from '@/api/short-videos';
 import { useCreateShortVideo, useUpdateShortVideo } from '@/api/short-videos';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSwitch } from '../../components';
+import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSheetScrollView, CmsSwitch, parseValue } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 
 type FormState = {
@@ -40,6 +39,7 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
     const [form, setForm] = React.useState<FormState>(getDefaultForm());
     const [image, setImage] = React.useState<PickedShortVideoAsset | null>(null);
     const [videoAsset, setVideoAsset] = React.useState<PickedShortVideoAsset | null>(null);
+    const [errors, setErrors] = React.useState<Record<string, string>>({});
 
     const createShortVideo = useCreateShortVideo();
     const updateShortVideo = useUpdateShortVideo();
@@ -60,10 +60,12 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
       } else {
         setForm(getDefaultForm());
       }
+      setErrors({});
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openKey, isEdit, video]);
 
     function set<K extends keyof FormState>(key: K, value: FormState[K]) {
+      setErrors((prev) => ({ ...prev, [key]: '' }));
       setForm((prev) => ({ ...prev, [key]: value }));
     }
 
@@ -88,23 +90,24 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'videos', quality: 0.8 });
       if (result.canceled || result.assets.length === 0) return;
       const asset = result.assets[0];
+      setErrors((prev) => ({ ...prev, video: '' }));
       setVideoAsset({ uri: asset.uri, name: asset.fileName ?? `short-video-${Date.now()}.mp4`, type: asset.mimeType ?? 'video/mp4' });
     }
 
-    function handleSubmit() {
-      if (!form.title.trim()) {
-        toast.error('Title is required');
-        return;
-      }
+    function validate() {
+      const next: Record<string, string> = {};
+      if (!form.title.trim()) next.title = 'Title is required';
       if (form.start_at && form.end_at && new Date(form.start_at) > new Date(form.end_at)) {
-        toast.error('End date must be on or after the start date.');
-        return;
+        next.end_at = 'End date must be on or after the start date.';
       }
       // A reel with no video can never play, so require one on create.
-      if (!isEdit && !videoAsset) {
-        toast.error('Please upload a video.');
-        return;
-      }
+      if (!isEdit && !videoAsset) next.video = 'Please upload a video.';
+      setErrors(next);
+      return Object.keys(next).length === 0;
+    }
+
+    function handleSubmit() {
+      if (!validate()) return;
       const payload = {
         ...form,
         ...(image ? { image } : {}),
@@ -121,20 +124,30 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
     const videoPreviewUri = videoAsset?.uri ?? (isEdit ? video?.videoUrl : null) ?? undefined;
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['90%']} title={isEdit ? 'Edit short video' : 'Add Short Video'}>
-        <BottomSheetScrollView
+      <CmsModal
+        ref={ref}
+        colors={colors}
+        snapPoints={['75%']}
+        title={isEdit ? 'Edit short video' : 'Add Short Video'}
+        footer={
+          <CmsButton colors={colors} label={isSubmitting ? 'Saving…' : 'Save'} onPress={handleSubmit} loading={isSubmitting} />
+        }
+      >
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 16 }}
           keyboardShouldPersistTaps="handled"
         >
           <CmsCard colors={colors}>
-            <Text style={[st.fieldLabel, { color: colors.textSecondary }]}>Video *</Text>
+            <Text style={[st.fieldLabel, { color: colors.textSecondary }]}>
+              Video<Text style={{ color: colors.danger }}> *</Text>
+            </Text>
             {videoPreviewUri ? (
               <VideoPreview uri={videoPreviewUri} />
             ) : (
               <View style={[st.videoEmpty, { borderColor: colors.border }]}>
                 <Text style={{ fontSize: 28 }}>🎬</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12.5 }}>No video chosen yet</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12.5, width: '100%', textAlign: 'center' }}>No video chosen yet</Text>
               </View>
             )}
             <CmsButton
@@ -143,8 +156,9 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
               label={videoPreviewUri ? 'Replace video' : 'Choose video'}
               onPress={pickVideo}
             />
+            {errors.video ? <Text style={[st.errorText, { color: colors.danger }]}>{errors.video}</Text> : null}
             <Text style={{ color: colors.textSecondary, fontSize: 11.5 }}>
-              Best results with a vertical 9:16 clip, 15–60 seconds.
+              Best results with a vertical 9:16 clip, 15-60 seconds.
             </Text>
 
             <Pressable onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
@@ -153,12 +167,20 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
               ) : (
                 <>
                   <Ionicons name="image-outline" size={20} color={colors.textSecondary} />
-                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Thumbnail image (optional)</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, width: '100%', textAlign: 'center' }}>Thumbnail image (optional)</Text>
                 </>
               )}
             </Pressable>
 
-            <CmsInput colors={colors} label="Title" placeholder="e.g. Fresh Arrivals" value={form.title} onChangeText={(v) => set('title', v)} />
+            <CmsInput
+              colors={colors}
+              label="Title"
+              placeholder="e.g. Fresh Arrivals"
+              value={form.title}
+              onChangeText={(v) => set('title', v)}
+              error={errors.title}
+              required
+            />
             <CmsInput
               colors={colors}
               label="Description"
@@ -168,21 +190,19 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
               multiline
               numberOfLines={3}
             />
-            <CmsInput
+            <CmsDateTimeInput
               colors={colors}
-              label="Visible from (YYYY-MM-DDTHH:mm, optional)"
-              placeholder="Leave empty for unbounded"
+              label="Visible from (optional)"
               value={form.start_at}
-              onChangeText={(v) => set('start_at', v)}
-              autoCapitalize="none"
+              onChange={(v) => set('start_at', v)}
             />
-            <CmsInput
+            <CmsDateTimeInput
               colors={colors}
-              label="Visible until (YYYY-MM-DDTHH:mm, optional)"
-              placeholder="Leave empty for unbounded"
+              label="Visible until (optional)"
               value={form.end_at}
-              onChangeText={(v) => set('end_at', v)}
-              autoCapitalize="none"
+              onChange={(v) => set('end_at', v)}
+              error={errors.end_at}
+              minimumDate={parseValue(form.start_at) ?? undefined}
             />
             <Text style={{ color: colors.textSecondary, fontSize: 11.5 }}>
               Leave both dates empty to keep this video visible forever.
@@ -197,9 +217,7 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
             />
             <CmsSwitch colors={colors} label="Active" value={form.is_active} onChange={(v) => set('is_active', v)} />
           </CmsCard>
-
-          <CmsButton colors={colors} label={isSubmitting ? 'Saving…' : 'Save'} onPress={handleSubmit} loading={isSubmitting} />
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
       </CmsModal>
     );
   }
@@ -214,8 +232,9 @@ function VideoPreview({ uri }: { uri: string }) {
 
 const st = StyleSheet.create({
   fieldLabel: { fontSize: 12.5, fontWeight: '600', marginBottom: -2 },
+  errorText: { fontSize: 11.5, marginTop: -4 },
   videoEmpty: {
-    height: 140,
+    height: 150,
     borderRadius: 8,
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -225,7 +244,7 @@ const st = StyleSheet.create({
   },
   videoPreview: { width: '100%', height: 200, borderRadius: 8, backgroundColor: '#000' },
   imageTile: {
-    height: 90,
+    height: 120,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',

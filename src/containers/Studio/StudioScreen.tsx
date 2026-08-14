@@ -46,7 +46,7 @@ export function StudioScreen() {
         eyebrow="MANAGE EVERY STORE"
         lines={['Studio']}
         t={t}
-        style={[st.header, { paddingTop: insets.top + 14 }]}
+        style={[st.header, { paddingTop: insets.top + 20 }, { marginBottom: 0 }]}
       />
 
       {!isLoggedIn ? (
