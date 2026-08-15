@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { getFile, saveFile } from '@/api/coder';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
 import { vsDarkSyntaxStyle, vsLightSyntaxStyle } from './codeEditorSyntaxTheme';
@@ -68,7 +68,7 @@ function languageForPath(path: string): string {
 
 export function CodeEditorPane({ path }: { path: string }) {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { params, openFiles, setOpenFileContent } = useCodeEditor();
 
   const [content, setContent] = React.useState<string | null>(

@@ -5,6 +5,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Image,
   StyleSheet,
   Switch,
   Text,
@@ -13,22 +14,46 @@ import {
   View,
 } from 'react-native';
 
-import type { Collection, CollectionApi, CollectionRecord } from '@/api/coder';
+import type {
+  Collection,
+  CollectionApi,
+  CollectionField,
+  CollectionRecord,
+} from '@/api/coder';
 import { getCollections, setApiActive } from '@/api/coder';
-import { useAppTheme } from '@/lib/theme';
+import { type useAppTheme, useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
 import { RecordDrawer } from './RecordDrawer';
 
 function CellPreview({
   value,
+  field,
+  refLabel,
   colors,
 }: {
   value: unknown;
+  field?: CollectionField;
+  refLabel?: string;
   colors: ReturnType<typeof useAppTheme>;
 }) {
   if (value === null || value === undefined || value === '')
     return <Text style={{ color: colors.codeEditorTextMuted }}>—</Text>;
+  // A foreign key resolved server-side (`_refs`). Showing the raw id here is
+  // the difference between a table and a database dump.
+  if (field?.type === 'reference')
+    return (
+      <Text style={{ color: colors.text, fontSize: 12.5 }} numberOfLines={1}>
+        {refLabel || `#${value}`}
+      </Text>
+    );
+  if (field?.type === 'image' && typeof value === 'string')
+    return (
+      <Image
+        source={{ uri: value }}
+        style={[st.thumb, { borderColor: colors.codeEditorBorder }]}
+      />
+    );
   if (typeof value === 'boolean')
     return (
       <Text
@@ -117,7 +142,7 @@ function ApiCard({
 
 export function CollectionsScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { params } = useCodeEditor();
   const tenantId = params.tenantId;
 
@@ -262,8 +287,7 @@ export function CollectionsScreen() {
           }}
         >
           As the agent creates collections and APIs — bookings, orders,
-          submissions — they&rsquo;ll show up here as a live, editable
-          database.
+          submissions — they&rsquo;ll show up here as a live, editable database.
         </Text>
         <TouchableOpacity
           onPress={load}
@@ -289,7 +313,7 @@ export function CollectionsScreen() {
         >
           <Text
             style={{
-              color: tab === 'db' ? '#FFFFFF' : t.text,
+              color: t.text,
               fontSize: 12.5,
               fontWeight: '700',
             }}
@@ -306,7 +330,7 @@ export function CollectionsScreen() {
         >
           <Text
             style={{
-              color: tab === 'apis' ? '#FFFFFF' : t.text,
+              color: t.text,
               fontSize: 12.5,
               fontWeight: '700',
             }}
@@ -369,7 +393,7 @@ export function CollectionsScreen() {
                   >
                     <Text
                       style={{
-                        color: isActive ? '#FFFFFF' : t.text,
+                        color: t.text,
                         fontSize: 12.5,
                         fontWeight: '700',
                       }}
@@ -378,9 +402,9 @@ export function CollectionsScreen() {
                     </Text>
                     <Text
                       style={{
-                        color: isActive
-                          ? 'rgba(255,255,255,0.7)'
-                          : t.codeEditorTextMuted,
+                        // The active chip is a RAISED neutral now, not a filled
+                        // indigo one, so white-on-it was invisible in light mode.
+                        color: isActive ? t.textSub : t.codeEditorTextMuted,
                         fontSize: 10.5,
                       }}
                     >
@@ -450,7 +474,12 @@ export function CollectionsScreen() {
                           >
                             {f.name}
                           </Text>
-                          <CellPreview value={item.data?.[f.name]} colors={t} />
+                          <CellPreview
+                            value={item.data?.[f.name]}
+                            field={f}
+                            refLabel={item._refs?.[f.name]}
+                            colors={t}
+                          />
                         </View>
                       ))}
                       <Ionicons
@@ -552,6 +581,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  thumb: { width: 34, height: 34, borderRadius: 6, borderWidth: 1 },
   recordRow: {
     flexDirection: 'row',
     alignItems: 'center',

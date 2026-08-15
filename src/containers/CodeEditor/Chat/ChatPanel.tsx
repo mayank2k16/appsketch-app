@@ -29,7 +29,7 @@ import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
-import { useAppTheme } from '@/lib/theme';
+import { useAppTheme, useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useCodeEditor } from '../CodeEditorProvider';
@@ -689,7 +689,7 @@ function EmptyState({ colors }: { colors: ReturnType<typeof useAppTheme> }) {
 
 export function ChatPanel() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {

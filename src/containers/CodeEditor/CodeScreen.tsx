@@ -3,7 +3,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from './CodeEditorProvider';
 import { CodeEditorPane } from './Editor/CodeEditorPane';
@@ -15,7 +15,7 @@ import { FileTree } from './FileTree/FileTree';
  * rather than a cramped side-by-side layout. */
 export function CodeScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { fileTree, createFile, createFolder, renamePath, deletePath } =
     useCodeEditor();
 

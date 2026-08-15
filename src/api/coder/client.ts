@@ -4,8 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 
 import type {
   AppTypeKey,
-  CollectionsResponse,
   CoderQuota,
+  CollectionOption,
+  CollectionsResponse,
   CreateCoderTenantResponse,
   FileTreeNode,
   OAuthConfig,
@@ -275,6 +276,27 @@ export async function deleteRecord(
     `api/builder/coder/${tenantId}/collections/${collectionSlug}/records/${recordId}/`
   );
   return data;
+}
+
+/**
+ * Rows for a `reference` (foreign-key) picker.
+ *
+ * The search runs SERVER-side: a target collection holds up to MAX_RECORDS rows
+ * and a phone must not pull all of them down to fill a dropdown. `ids`
+ * re-hydrates the label for a value already on the record, which a search term
+ * would otherwise filter out — that is what keeps a closed picker reading
+ * "Anna Roy" instead of "#41".
+ */
+export async function getCollectionOptions(
+  tenantId: number | string,
+  targetSlug: string,
+  params?: { q?: string; display?: string; ids?: string; limit?: number }
+): Promise<{ ok: boolean; options: CollectionOption[]; total?: number }> {
+  const { data } = await authenticatedClient.get(
+    `api/builder/coder/${tenantId}/collections/${targetSlug}/options/`,
+    { params }
+  );
+  return { ok: !!data?.ok, options: data?.options ?? [], total: data?.total };
 }
 
 /** Shared by the CMS image field and the Inspector's image/video replace —

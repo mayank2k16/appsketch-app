@@ -150,7 +150,7 @@ export type CoderLiveRun = {
   question?: string;
   model?: string;
   effort?: string;
-  activity?: Array<Record<string, unknown>>;
+  activity?: Record<string, unknown>[];
   answer?: string;
   error?: string;
   built?: boolean;
@@ -346,11 +346,39 @@ export type CreateCoderTenantResponse = {
 
 // ── Collections / CMS (phase 2) ─────────────────────────────────────────────
 
+/** The full set the engine validates against — `FIELD_TYPES` in
+ * `builder/agent/dynamic/engine.py`. This used to list only the seven the app
+ * happened to render, so `email`, `select` and `reference` fields silently fell
+ * through to a plain text box: a foreign key was a number you had to know by
+ * heart. */
+export type CollectionFieldType =
+  | 'text'
+  | 'richtext'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'url'
+  | 'image'
+  | 'email'
+  | 'select'
+  | 'reference';
+
 export type CollectionField = {
   name: string;
-  type: 'text' | 'richtext' | 'number' | 'boolean' | 'date' | 'url' | 'image';
+  type: CollectionFieldType;
   required?: boolean;
+  /** Human label, when the schema carries one. Falls back to `name`. */
+  label?: string;
+  /** `select` only — the allowed values. */
+  options?: string[];
+  /** `reference` only — target collection slug. */
+  collection?: string;
+  /** `reference` only — which field of the target to show as the label. */
+  display?: string;
 };
+
+/** One row of a `reference` picker: the target record's id and its label. */
+export type CollectionOption = { id: number | string; label: string };
 
 export type CollectionApi = {
   id: number | string;
@@ -367,6 +395,10 @@ export type CollectionRecord = {
   id: number | string;
   data: Record<string, unknown>;
   created_at?: string;
+  /** `{field: label}` for this row's `reference` fields, resolved server-side
+   * in one batched query (`_resolve_references` in coder/api.py). A table cell
+   * showing "17" instead of "Anna Roy" is not a CMS. */
+  _refs?: Record<string, string>;
 };
 
 export type Collection = {

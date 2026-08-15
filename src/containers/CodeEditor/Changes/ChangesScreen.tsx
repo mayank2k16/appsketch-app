@@ -21,7 +21,7 @@ import {
   getRepoStatus,
   openPr,
 } from '@/api/coder';
-import { useAppTheme } from '@/lib/theme';
+import { useAppTheme, useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useCodeEditor } from '../CodeEditorProvider';
@@ -74,7 +74,7 @@ function DiffLine({
  * session-polling flow. */
 function ConnectRepoForm({ onConnected }: { onConnected: () => void }) {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { params } = useCodeEditor();
 
   const [repoUrl, setRepoUrl] = React.useState('');
@@ -201,7 +201,7 @@ function ConnectRepoForm({ onConnected }: { onConnected: () => void }) {
 
 export function ChangesScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { params } = useCodeEditor();
   const tenantId = params.tenantId;
 

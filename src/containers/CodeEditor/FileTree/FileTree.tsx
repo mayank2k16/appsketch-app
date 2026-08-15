@@ -145,7 +145,10 @@ function Row({
               : 'code-slash-outline'
           }
           size={14}
-          color={isDir ? colors.accent : colors.codeEditorText}
+          // A directory is quieter than a file, not louder: the web's
+          // `.cw-tree-dir` is `$muted`. Painting every folder icon accent-blue
+          // put a colour on most rows of a panel that has no colour in it.
+          color={isDir ? colors.codeEditorTextMuted : colors.codeEditorText}
         />
         <Text
           style={[

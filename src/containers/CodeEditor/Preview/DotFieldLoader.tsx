@@ -123,7 +123,15 @@ export function DotFieldLoader({
               >
                 {colIndices.map((c) => (
                   <View key={c} style={st.cell}>
-                    <View style={[st.dot, { backgroundColor: colors.accent }]} />
+                    {/* A whole FIELD of these — an accent at this coverage is
+                        not an accent, it is a coloured background. The web's
+                        waiting states are grey. */}
+                    <View
+                      style={[
+                        st.dot,
+                        { backgroundColor: colors.codeEditorTextMuted },
+                      ]}
+                    />
                   </View>
                 ))}
               </Animated.View>

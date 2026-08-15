@@ -11,9 +11,10 @@ import {
   View,
 } from 'react-native';
 
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
+import type { TerminalPhase } from '../hooks/useTerminalSocket';
 import { useTerminalSocket } from '../hooks/useTerminalSocket';
 
 /** Classifies a terminal line for colour-coding — ported verbatim from
@@ -31,11 +32,38 @@ function lineKind(line: string): 'cmd' | 'err' | 'ok' | 'warn' | 'info' | null {
   return null;
 }
 
+/** Socket phase → what the header says and what the composer offers. Ported
+ * from Vite's `SHELL_STATUS`: "connecting" is a claim the pane has to EARN.
+ * It used to be the label for every non-open state, so a shell that never came
+ * up — expired token, project not generated yet, host down — said "Connecting…"
+ * forever with no way to tell those apart or do anything about it. */
+const SHELL_STATUS: Record<
+  TerminalPhase,
+  { label: string; placeholder: string }
+> = {
+  connecting: { label: 'Connecting…', placeholder: 'connecting…' },
+  open: {
+    label: 'Shell connected',
+    placeholder: 'run a command… (npm run dev, ls, node -v)',
+  },
+  retrying: {
+    label: 'Reconnecting…',
+    placeholder: 'reconnecting to the shell…',
+  },
+  offline: {
+    label: 'Shell offline',
+    placeholder: 'shell unavailable — tap reconnect',
+  },
+};
+
 export function TerminalPane() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { params } = useCodeEditor();
-  const { output, connected, send } = useTerminalSocket(params.tenantId);
+  const { output, phase, connected, send, reconnect } = useTerminalSocket(
+    params.tenantId
+  );
+  const status = SHELL_STATUS[phase];
 
   const [input, setInput] = React.useState('');
   const scrollRef = React.useRef<ScrollView>(null);
@@ -86,8 +114,21 @@ export function TerminalPane() {
           ]}
         />
         <Text style={{ color: t.textSub, fontSize: 11.5, fontWeight: '600' }}>
-          {connected ? 'Shell connected' : 'Connecting…'}
+          {status.label}
         </Text>
+        {phase === 'offline' ? (
+          <TouchableOpacity onPress={reconnect} style={st.retryBtn}>
+            <Text
+              style={{
+                color: t.codeEditorAccentText,
+                fontSize: 11.5,
+                fontWeight: '700',
+              }}
+            >
+              Reconnect
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <KeyboardAvoidingView
@@ -124,12 +165,9 @@ export function TerminalPane() {
             value={input}
             onChangeText={setInput}
             onSubmitEditing={handleSend}
-            placeholder={
-              connected
-                ? 'run a command… (npm run dev, ls, node -v)'
-                : 'connecting…'
-            }
+            placeholder={status.placeholder}
             placeholderTextColor={t.codeEditorTextMuted}
+            editable={connected}
             autoCapitalize="none"
             autoCorrect={false}
             style={[st.input, { color: t.terminalText }]}
@@ -166,6 +204,7 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   dot: { width: 6, height: 6, borderRadius: 3 },
+  retryBtn: { marginLeft: 'auto', paddingHorizontal: 8, paddingVertical: 2 },
   body: { padding: 12 },
   line: {
     fontFamily: Platform.select({
