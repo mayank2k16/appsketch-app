@@ -106,7 +106,9 @@ export const INSPECTOR_SCRIPT = `
     e.preventDefault(); e.stopPropagation();
     clearSelectionOutline();
     selectedEl = t;
-    t.style.outline = '2px solid #6C5CE7';
+    // The web inspector's selection ring (--ui-accent). Hardcoded because this
+    // script runs inside the previewed page, out of reach of the theme.
+    t.style.outline = '2px solid #4F7DFF';
     t.style.outlineOffset = '1px';
 
     var tag = t.tagName.toLowerCase();

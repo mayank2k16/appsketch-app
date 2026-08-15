@@ -409,14 +409,21 @@ function ChecklistOptions({
             style={[
               st.chip,
               {
-                backgroundColor: on ? colors.accent : colors.codeEditorTabBg,
+                // A selected chip is a WASH and a coloured label, not a solid
+                // blue pill — see `.cw-chip.on` in CoderWorkspace.scss. Solid
+                // fills here are what made a black-and-grey surface read as a
+                // coloured one.
+                backgroundColor: on ? colors.accentSoft : colors.codeEditorTabBg,
                 borderColor: on ? colors.accent : colors.codeEditorBorder,
               },
               locked && !on ? st.dimmed : null,
             ]}
           >
             <Text
-              style={[st.chipLabel, { color: on ? '#FFFFFF' : colors.text }]}
+              style={[
+                st.chipLabel,
+                { color: on ? colors.codeEditorAccentText : colors.text },
+              ]}
             >
               {opt}
             </Text>
@@ -458,7 +465,7 @@ function ChoiceOptions({
               st.chip,
               {
                 backgroundColor: selected
-                  ? colors.accent
+                  ? colors.accentSoft
                   : colors.codeEditorTabBg,
                 borderColor: selected ? colors.accent : colors.codeEditorBorder,
               },
@@ -468,7 +475,7 @@ function ChoiceOptions({
             <Text
               style={[
                 st.chipLabel,
-                { color: selected ? '#FFFFFF' : colors.text },
+                { color: selected ? colors.codeEditorAccentText : colors.text },
               ]}
             >
               {opt}
@@ -500,7 +507,9 @@ function LockedCustomAnswer({
         { backgroundColor: colors.accentSoft, borderColor: colors.accent },
       ]}
     >
-      <Text style={[st.chipLabel, { color: colors.accent }]}>{answer}</Text>
+      <Text style={[st.chipLabel, { color: colors.codeEditorAccentText }]}>
+        {answer}
+      </Text>
     </View>
   );
 }

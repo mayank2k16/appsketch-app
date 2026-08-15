@@ -20,7 +20,7 @@ import {
   visualEditStyle,
   visualEditText,
 } from '@/api/coder';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useCodeEditor } from '../CodeEditorProvider';
@@ -71,7 +71,7 @@ export function InspectorOverlay({
   bridgeMessage: BridgeMessage;
 }) {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { send } = useCodeEditor();
 
   const [mode, setMode] = React.useState<InspectorMode>(null);

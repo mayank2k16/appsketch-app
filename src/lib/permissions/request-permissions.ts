@@ -44,7 +44,7 @@ async function requestLocation(): Promise<PermissionStatus> {
  */
 async function requestCamera(): Promise<PermissionStatus> {
   try {
-    const { status } = await Camera.requestCameraPermissionsAsync();
+    const { status } = await Camera.Camera.requestCameraPermissionsAsync();
     return mapExpoStatus(status);
   } catch {
     return 'denied';

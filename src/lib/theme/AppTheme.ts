@@ -192,57 +192,81 @@ export const appTheme = {
     studioRailActiveBg: 'rgba(108,92,231,0.18)',
 
     // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
-    codeEditorTabBarBg: '#0A0A0C',
-    codeEditorTabBg: 'rgba(255,255,255,0.05)',
-    codeEditorTabBorder: 'rgba(255,255,255,0.10)',
-    codeEditorTabText: 'rgba(255,255,255,0.55)',
-    codeEditorTabActiveText: '#FFFFFF',
-    codeEditorTabIndicator: '#6C5CE7',
-    codeEditorSurface: '#141414',
-    codeEditorBg: '#0A0A0C',
-    codeEditorBorder: 'rgba(255,255,255,0.09)',
-    codeEditorGutterBg: '#0D0D0F',
+    // ACHROMATIC, and deliberately the same three depths as the web workspace
+    // (CoderWorkspace.scss: --ui-bg / --ui-surface / --ui-ctl). The indigo this
+    // section carried — violet bubbles, a violet glass tint, violet chips —
+    // read as a different product next to the web build, and a coloured chat
+    // is a coloured chat however tasteful the hue. Colour appears only where it
+    // MEANS something now: success green, error red, the token counts.
+    codeEditorTabBarBg: '#020202', // --ui-bg: a column's canvas
+    codeEditorTabBg: '#1E1E1E', // --ui-ctl: a control or nested surface
+    codeEditorTabBorder: '#252525', // --ui-line: the only hairline
+    codeEditorTabText: '#8F8F8F', // --ui-dim
+    codeEditorTabActiveText: '#EAEAEA', // --ui-txt
+    codeEditorTabIndicator: '#EAEAEA',
+    codeEditorSurface: '#0D0D0D', // --ui-surface: a message, card, composer
+    codeEditorBg: '#020202',
+    codeEditorBorder: '#252525',
+    codeEditorGutterBg: '#0D0D0D',
     codeEditorLineNumber: 'rgba(255,255,255,0.28)',
-    codeEditorText: '#F6F7FA',
-    codeEditorTextMuted: 'rgba(255,255,255,0.45)',
-    codeEditorChatUserBg: '#6C5CE7',
-    codeEditorChatUserText: '#FFFFFF',
-    codeEditorChatAssistantBg: '#1C1C1C',
-    codeEditorChatAssistantText: '#F6F7FA',
+    codeEditorText: '#EAEAEA',
+    codeEditorTextMuted: '#8F8F8F',
+    // Both bubbles are the SAME surface on the web — a user message is not a
+    // different kind of object, it is the same card on the other side.
+    codeEditorChatUserBg: '#0D0D0D',
+    codeEditorChatUserText: '#EAEAEA',
+    codeEditorChatAssistantBg: '#0D0D0D',
+    codeEditorChatAssistantText: '#EAEAEA',
     codeEditorActivityBg: 'rgba(255,255,255,0.04)',
-    codeEditorActivityBorder: 'rgba(255,255,255,0.08)',
-    codeEditorActivityText: 'rgba(255,255,255,0.60)',
+    codeEditorActivityBorder: '#252525',
+    codeEditorActivityText: '#8F8F8F',
     codeEditorConnectedDot: '#3DDC84',
     codeEditorDisconnectedDot: 'rgba(255,255,255,0.30)',
     codeEditorDanger: '#FF5C5C',
+    /** Focus rings, and the ONE solid fill the coder surface allows: a primary
+     * action (send / submit / approve). The web's `--ui-accent`. */
+    codeEditorFocus: '#4F7DFF',
+    /** A SELECTED thing — chip, pill, badge. The web never fills a selection
+     * solid; it washes it (`rgba(79,125,255,.16)`) and colours the label
+     * `--ui-accent-soft`. A solid blue chip is what "the app is blue" means. */
+    codeEditorAccentWash: 'rgba(79,125,255,0.16)',
+    codeEditorAccentText: '#7EA2FF',
 
-    // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
-    // same recipe as the drawer panel and marketplace TemplateCard.
-    codeEditorGlassOverlay: 'rgba(32,26,46,0.55)',
-    codeEditorGlassBorder: 'rgba(255,255,255,0.14)',
-    codeEditorGlassBorderTop: 'rgba(255,255,255,0.26)',
-    codeEditorUserBubbleFrom: '#7C6EF2',
-    codeEditorUserBubbleTo: '#5B4BD1',
+    // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay. The
+    // tint is a neutral of --ui-surface now, not the violet-cast
+    // 'rgba(32,26,46,…)' that gave every bubble a purple wash.
+    codeEditorGlassOverlay: 'rgba(13,13,13,0.72)',
+    codeEditorGlassBorder: '#252525',
+    codeEditorGlassBorderTop: 'rgba(255,255,255,0.14)',
+    // Kept as a PAIR because several screens render a two-stop gradient, but
+    // both stops are the surface — the gradient renders as a flat card.
+    codeEditorUserBubbleFrom: '#0D0D0D',
+    codeEditorUserBubbleTo: '#0D0D0D',
 
     // Activity step timeline
-    codeEditorTimelineLine: 'rgba(255,255,255,0.09)',
+    codeEditorTimelineLine: '#252525',
     codeEditorTimelineDone: '#3DDC84',
-    codeEditorTimelineActive: '#6C5CE7',
-    codeEditorToolChipBg: 'rgba(255,255,255,0.05)',
-    codeEditorToolChipBorder: 'rgba(255,255,255,0.10)',
-    codeEditorToolChipText: 'rgba(255,255,255,0.55)',
-    codeEditorToolChipActiveBg: 'rgba(108,92,231,0.16)',
-    codeEditorToolChipActiveBorder: 'rgba(108,92,231,0.40)',
-    codeEditorToolChipActiveText: '#C9C0FF',
-    codeEditorShimmerHighlight: '#9C8CFF',
+    codeEditorTimelineActive: '#EAEAEA',
+    codeEditorToolChipBg: '#1E1E1E',
+    codeEditorToolChipBorder: '#252525',
+    codeEditorToolChipText: '#8F8F8F',
+    codeEditorToolChipActiveBg: '#262626', // --ui-ctl-h: raised, not tinted
+    codeEditorToolChipActiveBorder: '#333333',
+    codeEditorToolChipActiveText: '#EAEAEA',
+    // The band that sweeps across the live activity row. PURE WHITE, not the
+    // brand violet it used to be: a coloured sweep over grey text reads as a
+    // colour change, and on a row that already carries a violet accent bar and
+    // a violet tool chip it read as more of the same. White reads as *light*
+    // moving across the text — which is what a shine is.
+    codeEditorShimmerHighlight: '#FFFFFF',
 
     // Token meter + plan/todos/review activity rows
     codeEditorTokenIn: '#8FB2E8',
     codeEditorTokenOut: '#7DD3A8',
     codeEditorTokenCachedBg: 'rgba(217,184,92,0.10)',
     codeEditorTokenCachedText: '#D9B85C',
-    codeEditorTodosBadgeBg: 'rgba(255,255,255,0.06)',
-    codeEditorTodosBadgeText: 'rgba(255,255,255,0.65)',
+    codeEditorTodosBadgeBg: '#1E1E1E',
+    codeEditorTodosBadgeText: '#EAEAEA',
     codeEditorReviewOkBg: 'rgba(61,220,132,0.16)',
     codeEditorReviewOkText: '#8CF0B4',
     codeEditorReviewWarnBg: 'rgba(252,211,77,0.16)',
@@ -250,21 +274,22 @@ export const appTheme = {
     codeEditorAmber: '#FCD34D',
 
     // Terminal — line-type colouring mirrors Vite's `lineClass` classifier
-    terminalBg: '#0A0A0C',
+    terminalBg: '#020202',
     terminalText: 'rgba(255,255,255,0.82)',
     terminalCmd: '#8AB4FF',
     terminalOk: '#3DDC84',
     terminalErr: '#FF6B6B',
     terminalWarn: '#FFC24B',
     terminalInfo: 'rgba(255,255,255,0.50)',
-    terminalInputBg: 'rgba(255,255,255,0.06)',
-    terminalInputBorder: 'rgba(255,255,255,0.12)',
+    terminalInputBg: '#1E1E1E',
+    terminalInputBorder: '#252525',
 
-    // Collections / CMS
-    collectionsChipBg: 'rgba(255,255,255,0.05)',
-    collectionsChipActiveBg: '#6C5CE7',
-    collectionsBadgeBg: 'rgba(108,92,231,0.20)',
-    collectionsBadgeText: '#B4A9F5',
+    // Collections / CMS — a selected chip RAISES (--ui-ctl-h) rather than
+    // taking the brand fill, same as the web's Code/Collections/History pill.
+    collectionsChipBg: '#1E1E1E',
+    collectionsChipActiveBg: '#262626',
+    collectionsBadgeBg: '#1E1E1E',
+    collectionsBadgeText: '#EAEAEA',
     collectionsMethodGet: '#3DDC84',
     collectionsMethodPost: '#4C8BFF',
     collectionsMethodOther: '#FFC24B',
@@ -450,7 +475,7 @@ export const appTheme = {
     codeEditorTabBorder: 'rgba(17,17,17,0.09)',
     codeEditorTabText: 'rgba(17,17,17,0.55)',
     codeEditorTabActiveText: '#111111',
-    codeEditorTabIndicator: '#6C5CE7',
+    codeEditorTabIndicator: '#111111',
     codeEditorSurface: '#FFFFFF',
     codeEditorBg: '#FBFBFC',
     codeEditorBorder: 'rgba(17,17,17,0.09)',
@@ -458,8 +483,10 @@ export const appTheme = {
     codeEditorLineNumber: 'rgba(17,17,17,0.32)',
     codeEditorText: '#111111',
     codeEditorTextMuted: 'rgba(17,17,17,0.45)',
-    codeEditorChatUserBg: '#6C5CE7',
-    codeEditorChatUserText: '#FFFFFF',
+    // Same-surface bubbles, as in dark — the hairline, not a fill, is what
+    // separates a message from the column it sits on.
+    codeEditorChatUserBg: '#FFFFFF',
+    codeEditorChatUserText: '#111111',
     codeEditorChatAssistantBg: '#FFFFFF',
     codeEditorChatAssistantText: '#111111',
     codeEditorActivityBg: 'rgba(17,17,17,0.03)',
@@ -468,26 +495,37 @@ export const appTheme = {
     codeEditorConnectedDot: '#1FA971',
     codeEditorDisconnectedDot: 'rgba(17,17,17,0.25)',
     codeEditorDanger: '#E0392B',
+    /** Focus rings, and the ONE solid fill the coder surface allows. */
+    codeEditorFocus: '#4F7DFF',
+    /** A selected chip/pill — a wash and a coloured label, never a solid fill.
+     * Darker text here than in dark mode so it carries on white. */
+    codeEditorAccentWash: 'rgba(79,125,255,0.12)',
+    codeEditorAccentText: '#2F52E6',
 
     // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
     // same recipe as the drawer panel and marketplace TemplateCard.
     codeEditorGlassOverlay: 'rgba(255,255,255,0.55)',
     codeEditorGlassBorder: 'rgba(17,17,17,0.10)',
     codeEditorGlassBorderTop: 'rgba(255,255,255,0.65)',
-    codeEditorUserBubbleFrom: '#7C6EF2',
-    codeEditorUserBubbleTo: '#5B4BD1',
+    // A pair, but both stops are the surface — see the dark block.
+    codeEditorUserBubbleFrom: '#FFFFFF',
+    codeEditorUserBubbleTo: '#FFFFFF',
 
     // Activity step timeline
     codeEditorTimelineLine: 'rgba(17,17,17,0.09)',
     codeEditorTimelineDone: '#1FA971',
-    codeEditorTimelineActive: '#6C5CE7',
+    codeEditorTimelineActive: '#111111',
     codeEditorToolChipBg: 'rgba(17,17,17,0.04)',
     codeEditorToolChipBorder: 'rgba(17,17,17,0.09)',
     codeEditorToolChipText: 'rgba(17,17,17,0.55)',
-    codeEditorToolChipActiveBg: 'rgba(108,92,231,0.10)',
-    codeEditorToolChipActiveBorder: 'rgba(108,92,231,0.35)',
-    codeEditorToolChipActiveText: '#4B3FC4',
-    codeEditorShimmerHighlight: '#4B3FC4',
+    codeEditorToolChipActiveBg: 'rgba(17,17,17,0.08)',
+    codeEditorToolChipActiveBorder: 'rgba(17,17,17,0.16)',
+    codeEditorToolChipActiveText: '#111111',
+    // Light theme cannot use white here — the base text is dark, so a white
+    // band would blank the words out for the length of the sweep. A bright
+    // neutral gives the same "light passing over it" motion while staying
+    // legible. (Dark theme is the pure-white one; see above.)
+    codeEditorShimmerHighlight: '#9AA3B2',
 
     // Token meter + plan/todos/review activity rows
     codeEditorTokenIn: '#3B6FB8',
@@ -515,11 +553,11 @@ export const appTheme = {
     terminalInputBg: 'rgba(255,255,255,0.08)',
     terminalInputBorder: 'rgba(255,255,255,0.14)',
 
-    // Collections / CMS
+    // Collections / CMS — a selected chip raises, it does not take a brand fill
     collectionsChipBg: 'rgba(17,17,17,0.04)',
-    collectionsChipActiveBg: '#6C5CE7',
-    collectionsBadgeBg: 'rgba(108,92,231,0.12)',
-    collectionsBadgeText: '#6C5CE7',
+    collectionsChipActiveBg: 'rgba(17,17,17,0.12)',
+    collectionsBadgeBg: 'rgba(17,17,17,0.06)',
+    collectionsBadgeText: '#111111',
     collectionsMethodGet: '#1FA971',
     collectionsMethodPost: '#3B82F6',
     collectionsMethodOther: '#C9860A',
@@ -534,7 +572,24 @@ export const appTheme = {
 } as const;
 
 export type AppScheme = keyof typeof appTheme;
-export type AppColors = typeof appTheme.dark | typeof appTheme.light;
+
+/** Colour values are values, not discriminants. Inferred literally, `accent`
+ * has the type `'#6C5CE7'` rather than `string`, so nothing may ever hand a
+ * component a palette with a different accent — which is exactly what the
+ * coder screens need to do (see CoderTheme.ts). Widen the leaves, keep the
+ * shape. */
+/** `statusBar` is the one entry that is NOT a colour — it is a StatusBarStyle
+ * enum and its literal type is what makes `barStyle={t.statusBar}` typecheck. */
+type ColorValues<T> = {
+  [K in keyof T]: K extends 'statusBar'
+    ? T[K]
+    : T[K] extends string
+      ? string
+      : T[K];
+};
+export type AppColors =
+  | ColorValues<typeof appTheme.dark>
+  | ColorValues<typeof appTheme.light>;
 
 /** One-liner hook helper — import & call at the top of any component. */
 export function useAppTheme(colorScheme: string | null | undefined): AppColors {

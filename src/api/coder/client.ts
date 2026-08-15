@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 
 import type {
   AppTypeKey,
+  CoderQuota,
+  CollectionOption,
   CollectionsResponse,
   CreateCoderTenantResponse,
   FileTreeNode,
@@ -17,6 +19,16 @@ import type {
   WebBuildStatus,
   WorkspaceFile,
 } from './types';
+
+/** Best-effort — `authenticatedClient` only attaches a token when one exists,
+ * so this is safe to call for anonymous/guest users too (resolves to the free
+ * tier server-side, same as an anonymous hero-flow build). */
+export async function getCoderQuota(): Promise<CoderQuota> {
+  const { data } = await authenticatedClient.get<CoderQuota>(
+    'api/builder/coder/quota/'
+  );
+  return data;
+}
 
 /** Mirrors Vite's `HeroBanner.jsx` tenant-create call (`Api/tenantAPI.js` →
  * `createTenant`), but with `render_engine: 'code'` so the backend spins up
@@ -61,6 +73,28 @@ export async function getLatestThread(
 ): Promise<{ thread_id: string | null }> {
   const { data } = await authenticatedClient.get(
     `api/builder/coder/${tenantId}/latest-thread/`
+  );
+  return data;
+}
+
+/** Rename this conversation. Also stops the agent's auto-namer from ever
+ * overwriting the user's choice — see the backend's `coder_thread`. */
+export async function renameThread(
+  threadId: string,
+  title: string
+): Promise<{ ok: boolean; title: string }> {
+  const { data } = await authenticatedClient.patch(
+    `api/builder/coder/thread/${threadId}/`,
+    { title }
+  );
+  return data;
+}
+
+/** Delete this conversation and its runs. The workspace, the collections and
+ * anything deployed are deliberately untouched — this throws away a chat. */
+export async function deleteThread(threadId: string): Promise<{ ok: boolean }> {
+  const { data } = await authenticatedClient.delete(
+    `api/builder/coder/thread/${threadId}/`
   );
   return data;
 }
@@ -242,6 +276,27 @@ export async function deleteRecord(
     `api/builder/coder/${tenantId}/collections/${collectionSlug}/records/${recordId}/`
   );
   return data;
+}
+
+/**
+ * Rows for a `reference` (foreign-key) picker.
+ *
+ * The search runs SERVER-side: a target collection holds up to MAX_RECORDS rows
+ * and a phone must not pull all of them down to fill a dropdown. `ids`
+ * re-hydrates the label for a value already on the record, which a search term
+ * would otherwise filter out — that is what keeps a closed picker reading
+ * "Anna Roy" instead of "#41".
+ */
+export async function getCollectionOptions(
+  tenantId: number | string,
+  targetSlug: string,
+  params?: { q?: string; display?: string; ids?: string; limit?: number }
+): Promise<{ ok: boolean; options: CollectionOption[]; total?: number }> {
+  const { data } = await authenticatedClient.get(
+    `api/builder/coder/${tenantId}/collections/${targetSlug}/options/`,
+    { params }
+  );
+  return { ok: !!data?.ok, options: data?.options ?? [], total: data?.total };
 }
 
 /** Shared by the CMS image field and the Inspector's image/video replace —

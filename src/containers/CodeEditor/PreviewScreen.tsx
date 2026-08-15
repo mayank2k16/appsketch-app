@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { previewUrlForTenant } from '@/api/coder';
-import { useAppTheme } from '@/lib/theme';
+import { useAppTheme, useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from './CodeEditorProvider';
 import { LivePreviewWebView } from './Preview/LivePreviewWebView';
@@ -80,7 +80,7 @@ function DeployButton({
 
 export function PreviewScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { params, threadId, buildLog } = useCodeEditor();
   const { status, deploying, startBuild } = buildLog;
 

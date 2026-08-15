@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
 import {
   ActivityIndicator,
   Image,
+  type KeyboardTypeOptions,
   StyleSheet,
   Switch,
   Text,
@@ -13,7 +13,11 @@ import {
   View,
 } from 'react-native';
 
-import type { Collection, CollectionRecord } from '@/api/coder';
+import type {
+  Collection,
+  CollectionFieldType,
+  CollectionRecord,
+} from '@/api/coder';
 import {
   createRecord,
   deleteRecord,
@@ -21,13 +25,32 @@ import {
   uploadAsset,
 } from '@/api/coder';
 import type { AppColors } from '@/lib/theme';
-import { toast } from '@/lib/toast';
+
+import { AssetSourceSheet } from './AssetSourceSheet';
+import type { AssetSource } from './pickAsset';
+import { pickAsset } from './pickAsset';
+import { RefPicker } from './RefPicker';
 
 type Values = Record<string, unknown>;
 
+/** Keyboard for a plain-text field — the mobile equivalent of the web's
+ * `inputTypeFor`. An `email` field that opens the alphabetic keyboard with
+ * autocapitalisation on is a typo waiting to happen. */
+const KEYBOARD: Partial<Record<CollectionFieldType, KeyboardTypeOptions>> = {
+  number: 'numeric',
+  email: 'email-address',
+  url: 'url',
+};
+
 /** Create/edit panel for a single CMS record — a form generated from the
  * collection's field schema, ported from Vite's `RecordDrawer.jsx`. Image
- * fields upload via the same `upload-asset` endpoint the Inspector uses. */
+ * fields upload via the same `upload-asset` endpoint the Inspector uses.
+ *
+ * Every type the engine validates (`FIELD_TYPES` in dynamic/engine.py) gets a
+ * real control here. It used to render four — boolean, richtext, image and
+ * "everything else is a text box" — which meant a `select` accepted anything
+ * the schema forbade and a `reference` asked you to type a foreign key from
+ * memory. */
 export const RecordDrawer = React.forwardRef<
   BottomSheetModal,
   {
@@ -46,6 +69,8 @@ export const RecordDrawer = React.forwardRef<
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState<string | null>(null);
   const [err, setErr] = React.useState('');
+  // which field is waiting on a camera/library/files choice
+  const [sourceFor, setSourceFor] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const init: Values = {};
@@ -63,26 +88,22 @@ export const RecordDrawer = React.forwardRef<
     setValues((prev) => ({ ...prev, [name]: v }));
   }
 
-  async function uploadImage(name: string) {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted') {
-      toast.error('Media library permission is required to upload an image.');
+  async function uploadFrom(name: string, source: AssetSource) {
+    setSourceFor(null);
+    setErr('');
+    let asset;
+    try {
+      asset = await pickAsset(source);
+    } catch (e) {
+      // a refused permission is a sentence the user can act on, not a silent
+      // no-op — pickAsset throws it rather than returning null
+      setErr(e instanceof Error ? e.message : 'Could not open that picker.');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
+    if (!asset) return; // cancelled
     setUploading(name);
-    setErr('');
     try {
-      const res = await uploadAsset(tenantId, {
-        uri: asset.uri,
-        name: asset.fileName || `upload-${Date.now()}.jpg`,
-        type: asset.mimeType || 'image/jpeg',
-      });
+      const res = await uploadAsset(tenantId, asset);
       if (res.ok && res.url) set(name, res.url);
       else setErr('Upload failed.');
     } catch {
@@ -160,8 +181,11 @@ export const RecordDrawer = React.forwardRef<
         {fields.map((f) => (
           <View key={f.name} style={st.fieldRow}>
             <Text style={[st.label, { color: colors.textSub }]}>
-              {f.name}
-              {f.required ? ' *' : ''} · {f.type}
+              {f.label || f.name}
+              {f.required ? ' *' : ''} ·{' '}
+              {f.type === 'reference' && f.collection
+                ? `→ ${f.collection}`
+                : f.type}
             </Text>
 
             {f.type === 'boolean' ? (
@@ -205,7 +229,7 @@ export const RecordDrawer = React.forwardRef<
                 )}
                 <View style={{ flex: 1, gap: 6 }}>
                   <TouchableOpacity
-                    onPress={() => uploadImage(f.name)}
+                    onPress={() => setSourceFor(f.name)}
                     disabled={uploading === f.name}
                     style={[
                       st.uploadBtn,
@@ -218,15 +242,22 @@ export const RecordDrawer = React.forwardRef<
                     {uploading === f.name ? (
                       <ActivityIndicator size="small" color={colors.accent} />
                     ) : (
-                      <Text
-                        style={{
-                          color: colors.text,
-                          fontSize: 12.5,
-                          fontWeight: '600',
-                        }}
-                      >
-                        Upload image
-                      </Text>
+                      <View style={st.uploadBtnInner}>
+                        <Ionicons
+                          name="cloud-upload-outline"
+                          size={14}
+                          color={colors.text}
+                        />
+                        <Text
+                          style={{
+                            color: colors.text,
+                            fontSize: 12.5,
+                            fontWeight: '600',
+                          }}
+                        >
+                          {values[f.name] ? 'Replace image' : 'Upload image'}
+                        </Text>
+                      </View>
                     )}
                   </TouchableOpacity>
                   <TextInput
@@ -244,12 +275,31 @@ export const RecordDrawer = React.forwardRef<
                   />
                 </View>
               </View>
+            ) : f.type === 'select' ? (
+              <SelectField
+                value={String(values[f.name] ?? '')}
+                options={f.options ?? []}
+                colors={colors}
+                onChange={(v) => set(f.name, v)}
+              />
+            ) : f.type === 'reference' ? (
+              <RefPicker
+                tenantId={tenantId}
+                target={f.collection}
+                display={f.display}
+                value={(values[f.name] as string | number) ?? ''}
+                colors={colors}
+                onChange={(v) => set(f.name, v)}
+              />
             ) : (
               <TextInput
                 value={String(values[f.name] ?? '')}
                 onChangeText={(v) => set(f.name, v)}
-                keyboardType={f.type === 'number' ? 'numeric' : 'default'}
+                keyboardType={KEYBOARD[f.type] ?? 'default'}
+                placeholder={f.type === 'date' ? 'YYYY-MM-DD' : undefined}
+                placeholderTextColor={colors.codeEditorTextMuted}
                 autoCapitalize="none"
+                autoCorrect={false}
                 style={[
                   st.input,
                   { color: colors.text, borderColor: colors.codeEditorBorder },
@@ -265,6 +315,13 @@ export const RecordDrawer = React.forwardRef<
           </Text>
         ) : null}
       </BottomSheetScrollView>
+
+      <AssetSourceSheet
+        visible={sourceFor !== null}
+        colors={colors}
+        onClose={() => setSourceFor(null)}
+        onPick={(source) => sourceFor && uploadFrom(sourceFor, source)}
+      />
 
       <View style={[st.foot, { borderColor: colors.codeEditorBorder }]}>
         {!isNew && (
@@ -308,6 +365,67 @@ export const RecordDrawer = React.forwardRef<
 });
 RecordDrawer.displayName = 'RecordDrawer';
 
+/** A `select`'s declared options as tappable chips. There is no native picker
+ * worth the dependency here and these lists are short by construction — the
+ * schema author enumerated them.
+ *
+ * A value the schema no longer offers stays visible and selected rather than
+ * being silently rewritten to blank by the first save (same rule as the web's
+ * "(not in options)" entry). */
+function SelectField({
+  value,
+  options,
+  colors,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  colors: AppColors;
+  onChange: (v: string) => void;
+}) {
+  const orphan = !!value && !options.includes(value);
+  const all = orphan ? [...options, value] : options;
+
+  return (
+    <View style={st.chipWrap}>
+      {all.map((o) => {
+        const on = o === value;
+        return (
+          <TouchableOpacity
+            key={o}
+            onPress={() => onChange(on ? '' : o)}
+            style={[
+              st.chip,
+              {
+                backgroundColor: on
+                  ? colors.accentSoft
+                  : colors.codeEditorTabBg,
+                borderColor: on ? colors.accent : colors.codeEditorBorder,
+              },
+            ]}
+          >
+            <Text
+              style={{
+                fontSize: 12.5,
+                fontWeight: '600',
+                color: on ? colors.codeEditorAccentText : colors.text,
+              }}
+            >
+              {o}
+              {orphan && o === value ? ' (not in options)' : ''}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+      {all.length === 0 ? (
+        <Text style={{ color: colors.textSub, fontSize: 12.5 }}>
+          This field declares no options.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 const st = StyleSheet.create({
   head: {
     paddingHorizontal: 18,
@@ -347,6 +465,14 @@ const st = StyleSheet.create({
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  uploadBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
   foot: {
     flexDirection: 'row',

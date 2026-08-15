@@ -79,6 +79,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           'We need camera access to scan barcodes and upload product photos.',
         NSUserNotificationsUsageDescription:
           'We send notifications about orders, offers, and updates.',
+        // Without these keys iOS refuses the PHPhotoLibrary authorization that
+        // `expo-image-picker` requests before presenting its sheet, and the
+        // picker comes up in an unauthorized limbo where Cancel and Add do
+        // nothing — the "gallery opens but the cross and the tick are dead"
+        // bug. A missing usage string is not a warning on iOS; it is a hard
+        // failure at the moment of the request.
+        NSPhotoLibraryUsageDescription:
+          'We need access to your photos so you can attach screenshots and reference images for the agent.',
+        NSPhotoLibraryAddUsageDescription:
+          'We need access to your photos to save images you export from the app.',
       },
     },
     experiments: {
@@ -97,6 +107,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'CAMERA',
         'RECEIVE_BOOT_COMPLETED',
         'VIBRATE',
+        // Android 13+ split the old READ_EXTERNAL_STORAGE grant per media type;
+        // without this the gallery returns an empty list instead of an error.
+        'READ_MEDIA_IMAGES',
       ],
     },
     web: {
@@ -134,6 +147,26 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           backgroundColor: '#000000',
           image: './assets/logo.png',
           imageWidth: 150,
+        },
+      ],
+      // Declared explicitly (rather than relying on autolinking alone) so the
+      // photo-library usage strings and the Android media permission are owned
+      // by the plugin on every prebuild, not just by the infoPlist block above.
+      [
+        'expo-image-picker',
+        {
+          photosPermission:
+            'We need access to your photos so you can attach screenshots and reference images for the agent.',
+        },
+      ],
+      [
+        'expo-media-library',
+        {
+          photosPermission:
+            'We need access to your photos so you can attach screenshots and reference images for the agent.',
+          savePhotosPermission:
+            'We need access to your photos to save images you export from the app.',
+          isAccessMediaLocationEnabled: false,
         },
       ],
       '@react-native-voice/voice',

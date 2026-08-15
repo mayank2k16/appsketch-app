@@ -13,7 +13,6 @@ const TYPE_PILLS: {
 }[] = [
   { key: 'web', label: 'Web', icon: 'globe-outline' },
   { key: 'mobile', label: 'App', icon: 'phone-portrait-outline' },
-  { key: 'game', label: 'Game', icon: 'game-controller-outline' },
 ];
 
 type Props = {
@@ -22,7 +21,7 @@ type Props = {
   onChange: (value: AppTypeKey) => void;
 };
 
-// Shared Web/App/Game selector — sits above a `PromptComposer` wherever a
+// Shared Web/App selector — sits above a `PromptComposer` wherever a
 // build's target platform needs picking (the standalone Agent screen, and
 // now Home's ClosingCTA composer too).
 export function AppTypePills({ t, value, onChange }: Props) {
@@ -43,8 +42,17 @@ export function AppTypePills({ t, value, onChange }: Props) {
               },
             ]}
           >
-            <Ionicons name={p.icon} size={14} color={active ? t.agentTabActiveText : t.agentTabIcon} />
-            <Text style={[s.label, { color: active ? t.agentTabActiveText : t.agentTabText }]}>
+            <Ionicons
+              name={p.icon}
+              size={14}
+              color={active ? t.agentTabActiveText : t.agentTabIcon}
+            />
+            <Text
+              style={[
+                s.label,
+                { color: active ? t.agentTabActiveText : t.agentTabText },
+              ]}
+            >
               {p.label}
             </Text>
           </TouchableOpacity>

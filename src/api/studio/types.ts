@@ -14,6 +14,9 @@ export type TenantSummary = {
   id: number | string;
   uuid?: string;
   title: string;
+  /** Already serialized by `TenantSerializer` (`account/serializers.py`) —
+   * just wasn't typed here yet. Feeds the Studio search alongside `title`. */
+  description?: string;
   website_url?: string;
   logo?: string;
   template_configs?: TenantTemplateConfig[];

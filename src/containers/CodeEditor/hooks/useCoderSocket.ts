@@ -11,10 +11,12 @@ import type {
 } from '@/api/coder';
 import {
   buildCoderWsUrl,
+  deleteThread as deleteThreadApi,
   fsOp as fsOpApi,
   getLatestThread,
   getTree,
   onboardCoder,
+  renameThread as renameThreadApi,
 } from '@/api/coder';
 import { getItem, setItem } from '@/lib/storage';
 
@@ -160,11 +162,36 @@ export function useCoderSocket(params: CoderSocketParams) {
   const [fileTree, setFileTree] = React.useState<FileTreeNode[]>([]);
   const [openFiles, setOpenFiles] = React.useState<Record<string, string>>({});
   const [lastBuildId, setLastBuildId] = React.useState<number | null>(null);
+  // The agent's name for this project, shown as the chat's heading. Arrives on
+  // `ready` (so a reconnect keeps it) and again as its own `title` frame the
+  // moment the namer finishes on the first turn.
+  const [title, setTitle] = React.useState('');
+  // The turn's forecast, as {seconds, at}: the backend re-forecasts mid-run
+  // from measured pace, so `at` is when THIS number arrived and the countdown
+  // is derived from it. Null between turns.
+  const [eta, setEta] = React.useState<{ seconds: number; at: number } | null>(
+    null
+  );
+  // True while the live turn was launched detached — it keeps running if the
+  // user leaves, and pushes a notification when it lands.
+  const [backgroundRun, setBackgroundRun] = React.useState(false);
+  // Bumped once per turn that finished with a PASSING build — the trigger the
+  // screen watches to jump to the Preview tab. A counter rather than a
+  // boolean so two builds in a row (each landing on an already-clean state)
+  // both re-trigger the navigation instead of the second being a no-op.
+  const [previewReady, setPreviewReady] = React.useState(0);
 
   const wsRef = React.useRef<WebSocket | null>(null);
   const hasSentInitialPromptRef = React.useRef(false);
   const activityIdRef = React.useRef(0);
   const nextActivityId = () => `a-${(activityIdRef.current += 1)}`;
+  // The agent's own last "verify"/"build" node result for the turn in
+  // progress — true once it reports 'done', false on 'error', null while
+  // unknown/running. This is what gates the jump to Preview below: the
+  // agent's own verification result, not a client-side guess (a fixed delay,
+  // or "a file changed so it must be fine") — so a broken build is never
+  // shown as if it were the finished site.
+  const verifyOkRef = React.useRef<boolean | null>(null);
   // Mirrors `activity` state so the `final` handler (in a `useCallback` that
   // can't list `activity` as a dep without tearing down and reconnecting the
   // socket on every step) can read the turn's steps synchronously to attach
@@ -199,9 +226,81 @@ export function useCoderSocket(params: CoderSocketParams) {
               history.map((m) => ({ role: m.role, content: m.content }))
             );
           }
+          // "New site" is the server-side placeholder for a project the agent
+          // has not named yet — showing it as a heading would be worse than
+          // showing nothing, so treat it as absent.
+          if (msg.title && msg.title !== 'New site') setTitle(msg.title);
+
+          // Re-attach to a turn that was ALREADY in flight when this socket
+          // opened — the mobile twin of the web workspace's REPLAY_RUNS. The
+          // server replayed the durable run row (see `runs.py`), so closing
+          // the app mid-build and reopening it rebuilds the live turn here
+          // instead of showing an idle composer while the agent keeps working
+          // on the server.
+          const live = msg.live_runs ?? [];
+          const fg = live.find((r) => r.mode === 'foreground');
+          const anyBackground = live.some((r) => r.mode === 'background');
+          if (fg) {
+            setBusy(true);
+            setBackgroundRun(anyBackground);
+            const acts = (fg.activity ?? []).slice(-80);
+            const etaItem = acts.find((a) => a.kind === 'eta') as
+              | { seconds?: number }
+              | undefined;
+            const began = fg.created_at ? Date.parse(fg.created_at) : NaN;
+            setEta(
+              etaItem?.seconds
+                ? {
+                    seconds: etaItem.seconds,
+                    at: Number.isNaN(began) ? Date.now() : began,
+                  }
+                : null
+            );
+            setActivity(
+              acts
+                .filter((a) => a.kind !== 'eta')
+                .map((a) => ({ ...a, id: nextActivityId() }) as ActivityStep)
+            );
+            // A partial answer was already streaming when we dropped — show
+            // what the agent had produced so far instead of an empty bubble.
+            if ((fg.answer || '').trim()) {
+              setMessages((prev) => [
+                ...prev,
+                { role: 'assistant', content: fg.answer || '', streaming: true },
+              ]);
+            }
+          } else if (anyBackground) {
+            setBackgroundRun(true);
+          }
+
           void refreshTree();
           break;
         }
+
+        case 'title':
+          if (msg.title) setTitle(msg.title);
+          break;
+
+        case 'eta': {
+          const secs = msg.seconds || 0;
+          if (secs > 0) setEta({ seconds: secs, at: Date.now() });
+          break;
+        }
+
+        case 'background_limit':
+          // The turn was NOT started, so nothing is running detached.
+          setBackgroundRun(false);
+          setBusy(false);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                msg.detail ||
+                "You've hit your plan's limit for background tasks.",
+            },
+          ]);
+          break;
 
         case 'token':
           setBusy(true);
@@ -209,6 +308,15 @@ export function useCoderSocket(params: CoderSocketParams) {
           break;
 
         case 'node':
+          // `msg.id` is the raw node name (see `stream.node_step`) —
+          // "verify"/"build" are the ones that actually attest the site
+          // works. A "running" status leaves the last known result alone
+          // (still repairing, verdict not in yet); any OTHER node ("plan",
+          // "review", …) is not a verification signal and must not touch it.
+          if (msg.id === 'verify' || msg.id === 'build') {
+            if (msg.status === 'done') verifyOkRef.current = true;
+            else if (msg.status === 'error') verifyOkRef.current = false;
+          }
           setActivity((prev) => [
             ...prev,
             { id: nextActivityId(), kind: 'node', text: msg.label },
@@ -324,22 +432,48 @@ export function useCoderSocket(params: CoderSocketParams) {
 
         case 'build_done':
           setLastBuildId(msg.build_id);
+          // `preview_url` can still be set on a FAILED build (the site's last
+          // good deploy) — only a PASSING one earns the jump to Preview, or a
+          // broken build would get shown as if it were the finished site.
+          if (msg.ok !== false) setPreviewReady((n) => n + 1);
           void refreshTree();
           break;
 
         case 'final': {
           setBusy(false);
           setClarifyBlock(null);
+          setEta(null);
+          setBackgroundRun(false);
           const acts = activityRef.current;
           setMessages((prev) => finalizeMessages(prev, msg.content, acts));
           setActivity([]);
           if (msg.tree) setFileTree(msg.tree);
           else void refreshTree();
+
+          // Never hand the user a broken preview. A stopped/compact/pure-chat
+          // turn has nothing new to show; `verifyOkRef` is the agent's own
+          // last "verify"/"build" node result for this turn (see the 'node'
+          // case above) — the same signal it used to decide whether to keep
+          // repairing. `null` means no verify signal fired this turn (an
+          // older server, or a flow that skips it) — fall back to the
+          // built-only check rather than never switching.
+          const worthPreviewing =
+            msg.status !== 'cancelled' &&
+            !msg.compacted &&
+            msg.intent !== 'chat' &&
+            msg.built !== false;
+          if (worthPreviewing && verifyOkRef.current !== false) {
+            setPreviewReady((n) => n + 1);
+          }
+          verifyOkRef.current = null;
           break;
         }
 
         case 'error':
           setBusy(false);
+          setEta(null);
+          setBackgroundRun(false);
+          verifyOkRef.current = null;
           setMessages((prev) => [
             ...prev,
             {
@@ -401,17 +535,25 @@ export function useCoderSocket(params: CoderSocketParams) {
   // exceeded"). Every function returned from this hook is memoized for the
   // same reason.
   const send = React.useCallback(
-    (content: string, opts?: { model?: string; images?: string[] }) => {
+    (
+      content: string,
+      opts?: { model?: string; images?: string[]; background?: boolean }
+    ) => {
       if (!wsRef.current || !content.trim()) return;
       setMessages((prev) => [...prev, { role: 'user', content }]);
       setBusy(true);
       setTokens({ in: 0, out: 0 });
+      // A stale forecast from the previous turn must not tick down under the
+      // new one — the backend sends a fresh `eta` within the first few steps.
+      setEta(null);
+      setBackgroundRun(!!opts?.background);
       wsRef.current.send(
         JSON.stringify({
           type: 'message',
           content,
           model: opts?.model,
           images: opts?.images,
+          background: opts?.background || undefined,
         })
       );
     },
@@ -507,10 +649,42 @@ export function useCoderSocket(params: CoderSocketParams) {
     [tenantId]
   );
 
+  /** Rename this conversation. Optimistic: the heading is the whole point of
+   * the interaction, so it updates immediately and reverts if the PATCH
+   * fails. The server also broadcasts `title`, which keeps other devices and
+   * the web workspace in step. */
+  const rename = React.useCallback(
+    async (next: string) => {
+      const name = next.trim();
+      if (!threadId || !name) return;
+      const previous = title;
+      setTitle(name);
+      try {
+        await renameThreadApi(threadId, name);
+      } catch {
+        setTitle(previous);
+        throw new Error('rename failed');
+      }
+    },
+    [threadId, title]
+  );
+
+  const remove = React.useCallback(async () => {
+    if (!threadId) return;
+    await deleteThreadApi(threadId);
+    // The pointer must go too, or the next visit resumes a thread the server
+    // no longer has and the workspace opens on an empty socket.
+    void setItem(threadStorageKey(tenantId), '');
+  }, [threadId, tenantId]);
+
   return {
     connected,
     busy,
     threadId,
+    title,
+    eta,
+    backgroundRun,
+    previewReady,
     messages,
     activity,
     tokens,
@@ -521,6 +695,8 @@ export function useCoderSocket(params: CoderSocketParams) {
     openFiles,
     lastBuildId,
     send,
+    rename,
+    remove,
     answerClarify,
     setOpenFileContent,
     createFile,

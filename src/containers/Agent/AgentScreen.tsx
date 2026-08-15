@@ -14,11 +14,23 @@ import {
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createCoderTenant, type AppTypeKey } from '@/api/coder';
-import { APP_TABS, DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
+import { type AppTypeKey, createCoderTenant } from '@/api/coder';
+import { AuthGateModal } from '@/components/AuthForm/AuthGateModal';
 import { AppTypePills } from '@/components/ui/AppTypePills';
-import { PromptComposer } from '@/components/ui/PromptComposer';
+import {
+  PromptComposer,
+  type PromptModel,
+} from '@/components/ui/PromptComposer';
+import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
+import {
+  APP_TABS,
+  DEFAULT_MODEL,
+  fmtContext,
+  MODELS,
+} from '@/containers/Home/AgentV2';
+import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -34,21 +46,30 @@ export function AgentScreen() {
   const [model, setModel] = React.useState(DEFAULT_MODEL);
   const [images, setImages] = React.useState<string[]>([]);
   const [sending, setSending] = React.useState(false);
+  const [upgradeModel, setUpgradeModel] = React.useState<PromptModel | null>(
+    null
+  );
+  const [gateOpen, setGateOpen] = React.useState(false);
+
+  const allowedModels = useCoderQuota();
 
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
 
-  async function handleSend() {
-    const text = prompt.trim();
+  async function handleSend(overrideText?: string) {
+    const text = (overrideText ?? prompt).trim();
     if (!text || sending) return;
 
-    if (appType === 'game') {
-      toast.error('Game builds are coming soon — try Web or Mobile for now.');
+    if (useAuth.getState().status !== 'signIn') {
+      setGateOpen(true);
       return;
     }
 
     setSending(true);
     try {
-      const tenant = await createCoderTenant({ title: text.slice(0, 60), appType });
+      const tenant = await createCoderTenant({
+        title: text.slice(0, 60),
+        appType,
+      });
       router.push({
         pathname: '/code-editor/chat',
         params: {
@@ -69,7 +90,11 @@ export function AgentScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: t.bg }]}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={t.statusBar}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -87,7 +112,15 @@ export function AgentScreen() {
             >
               <Ionicons name="sparkles" size={22} color="#FFFFFF" />
             </LinearGradient>
-            <View style={[s.statusDot, { backgroundColor: t.codeEditorConnectedDot, borderColor: t.bg }]} />
+            <View
+              style={[
+                s.statusDot,
+                {
+                  backgroundColor: t.codeEditorConnectedDot,
+                  borderColor: t.bg,
+                },
+              ]}
+            />
           </View>
           <Text style={[s.hello, { color: t.text }]}>Hello👋</Text>
           <Text style={[s.helloSub, { color: t.textSub }]}>
@@ -95,8 +128,15 @@ export function AgentScreen() {
           </Text>
         </View>
 
-        <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
-          <View style={[s.cardHeader, { backgroundColor: t.surface, borderBottomColor: t.border }]}>
+        <View
+          style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}
+        >
+          <View
+            style={[
+              s.cardHeader,
+              { backgroundColor: t.surface, borderBottomColor: t.border },
+            ]}
+          >
             <LinearGradient
               colors={[t.codeEditorUserBubbleFrom, t.codeEditorUserBubbleTo]}
               start={{ x: 0, y: 0 }}
@@ -116,13 +156,27 @@ export function AgentScreen() {
                 },
               ]}
             >
-              <Ionicons name="flash" size={9} color={t.codeEditorToolChipActiveText} />
-              <Text style={[s.aiBadgeText, { color: t.codeEditorToolChipActiveText }]}>AI Agent</Text>
+              <Ionicons
+                name="flash"
+                size={9}
+                color={t.codeEditorToolChipActiveText}
+              />
+              <Text
+                style={[
+                  s.aiBadgeText,
+                  { color: t.codeEditorToolChipActiveText },
+                ]}
+              >
+                AI Agent
+              </Text>
             </View>
           </View>
           <View style={s.cardBody}>
-            <Text style={[s.cardBodyText, { color: t.codeEditorChatAssistantText }]}>
-              Hi there 👋 I'm here to help with your project. What would you like to build today?
+            <Text
+              style={[s.cardBodyText, { color: t.codeEditorChatAssistantText }]}
+            >
+              Hi there 👋 I'm here to help with your project. What would you
+              like to build today?
             </Text>
           </View>
         </View>
@@ -133,10 +187,24 @@ export function AgentScreen() {
               key={suggestion}
               onPress={() => setPrompt(suggestion)}
               activeOpacity={0.7}
-              style={[s.suggestionChip, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}
+              style={[
+                s.suggestionChip,
+                {
+                  backgroundColor: t.agentTabBg,
+                  borderColor: t.agentTabBorder,
+                },
+              ]}
             >
-              <Ionicons name="sparkles-outline" size={15} color={t.agentTabIcon} style={s.suggestionIcon} />
-              <Text style={[s.suggestionText, { color: t.agentTabText }]} numberOfLines={3}>
+              <Ionicons
+                name="sparkles-outline"
+                size={15}
+                color={t.agentTabIcon}
+                style={s.suggestionIcon}
+              />
+              <Text
+                style={[s.suggestionText, { color: t.agentTabText }]}
+                numberOfLines={3}
+              >
                 {suggestion}
               </Text>
             </TouchableOpacity>
@@ -166,9 +234,27 @@ export function AgentScreen() {
             formatContext={fmtContext}
             onSend={handleSend}
             sending={sending}
+            allowedModels={allowedModels}
+            onLockedModelPress={setUpgradeModel}
           />
         </View>
       </KeyboardAvoidingView>
+
+      <UpgradeSheet
+        visible={!!upgradeModel}
+        onClose={() => setUpgradeModel(null)}
+        t={t}
+        modelLabel={upgradeModel?.label}
+      />
+
+      <AuthGateModal
+        visible={gateOpen}
+        onClose={() => setGateOpen(false)}
+        onSuccess={() => {
+          setGateOpen(false);
+          handleSend();
+        }}
+      />
     </View>
   );
 }
@@ -267,7 +353,7 @@ const s = StyleSheet.create({
     flexDirection: 'column',
     gap: 8,
     flexWrap: 'wrap',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   suggestionChip: {
     flex: 1,
@@ -278,7 +364,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    width: "100%"
+    width: '100%',
   },
   suggestionIcon: {
     marginBottom: 2,
