@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 import { SectionHeading } from '../Home/components/SectionHeading';
 
 import { AppsScreen } from './Apps/AppsScreen';
@@ -33,7 +33,7 @@ export function StudioScreen() {
   const status = useAuth.use.status();
   const isLoggedIn = status === 'signIn';
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
 
   const [section, setSection] = React.useState<StudioSection>('apps');
 
@@ -55,7 +55,7 @@ export function StudioScreen() {
           <Text style={[st.gateTitle, { color: t.text }]}>Sign in to view your stores</Text>
           <Pressable onPress={() => router.push('/login' as never)}>
             <View style={[st.gateBtn, { backgroundColor: t.accent }]}>
-              <Text style={st.gateBtnText}>Sign In</Text>
+              <Text style={[st.gateBtnText, { color: t.accentOn }]}>Sign In</Text>
             </View>
           </Pressable>
         </View>
@@ -129,5 +129,5 @@ const st = StyleSheet.create({
   gate: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 32 },
   gateTitle: { fontSize: 15, fontWeight: '700', textAlign: 'center' },
   gateBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, marginTop: 4 },
-  gateBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  gateBtnText: { fontWeight: '700', fontSize: 14 },
 });

@@ -18,6 +18,9 @@ export type ChatMessage = {
    * finishes, so a past turn keeps its own collapsed "Agent worked · N
    * steps" history instead of the feed evaporating between turns. */
   activity?: ActivityStep[];
+  /** Images the user attached to THIS prompt (data URLs). Shown as
+   * thumbnails above the bubble, tap to enlarge — same as the web. */
+  images?: string[];
 };
 
 export type ActivityStepKind =
@@ -136,7 +139,16 @@ export type WebBuildStatus = {
 
 // ── Incoming WS events (ws/coder/<thread_id>/) ──────────────────────────────
 
-export type CoderReadyHistoryMessage = { role: ChatRole; content: string };
+export type CoderReadyHistoryMessage = {
+  role: ChatRole;
+  content: string;
+  /** Images the USER attached to this prompt. */
+  images?: string[];
+  /** The assistant turn's persisted step list — the same shape the live
+   * stream builds, minus the client-assigned `id`. Replayed so a reload
+   * restores each turn's activity (and the screenshots in it). */
+  activity?: Omit<ActivityStep, 'id'>[];
+};
 /** One row of `builder/agent/coder/runs.py`'s `serialize()` — a turn that was
  * already in flight when this socket connected (see `runs.live_runs`). This
  * is what a reconnect (tab refresh, or the app reopening after being closed

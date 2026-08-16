@@ -15,7 +15,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { useCoderTheme, type AppColors } from '@/lib/theme';
 
 import { VideoListItem } from './components/VideoListItem';
 
@@ -54,7 +54,7 @@ const TUTORIALS: Tutorial[] = [
 
 export function DiscoverScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const [selected, setSelected] = React.useState(0);
   const video = TUTORIALS[selected];
 

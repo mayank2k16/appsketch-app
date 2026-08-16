@@ -15,7 +15,7 @@ import {
 import { useAttachTenant, useUserTenants } from '@/api/';
 import type { TenantSummary } from '@/api/studio';
 import { useStudio } from '@/lib/store/studio-store';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 
 import { StoreCard } from './components/StoreCard';
 
@@ -25,7 +25,7 @@ export function AppsScreen() {
   const attachTenant = useAttachTenant();
   const setAttachedTenant = useStudio.use.setAttachedTenant();
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
 
   const [attachingId, setAttachingId] = React.useState<
     TenantSummary['id'] | null

@@ -14,12 +14,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useUserDomains } from '@/api/domains';
 import { toast } from '@/lib/toast';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { useCoderTheme, type AppColors } from '@/lib/theme';
 
 export function DomainsScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { data: domains, isLoading } = useUserDomains();
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
 
@@ -41,7 +41,7 @@ export function DomainsScreen() {
         </View>
         <Pressable onPress={goAddDomain} style={[st.addBtn, { backgroundColor: t.accent }]}>
           <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={st.addBtnText}>Add domain</Text>
+          <Text style={[st.addBtnText, { color: t.accentOn }]}>Add domain</Text>
         </Pressable>
       </View>
 
@@ -127,7 +127,7 @@ const st = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 10,
   },
-  addBtnText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
+  addBtnText: { fontSize: 12.5, fontWeight: '700' },
 
   empty: { alignItems: 'center', gap: 10, paddingTop: 50 },
   emptyText: { fontSize: 13, fontWeight: '600', textAlign: 'center' },

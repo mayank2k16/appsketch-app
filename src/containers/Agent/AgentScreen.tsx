@@ -31,13 +31,13 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 export function AgentScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
 
   const router = useRouter();
 

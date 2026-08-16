@@ -141,9 +141,7 @@ export function useCoderSocket(params: CoderSocketParams) {
   // the user's own prompt shows as sent the instant this screen mounts,
   // instead of sitting blank through the ~2s onboard round-trip.
   const [messages, setMessages] = React.useState<ChatMessage[]>(() =>
-    params.userPrompt
-      ? [{ role: 'user', content: params.userPrompt }]
-      : []
+    params.userPrompt ? [{ role: 'user', content: params.userPrompt }] : []
   );
   const [activity, setActivity] = React.useState<ActivityStep[]>([]);
   const [tokens, setTokens] = React.useState<TokenUsage>({ in: 0, out: 0 });
@@ -223,7 +221,20 @@ export function useCoderSocket(params: CoderSocketParams) {
           const history = msg.history ?? [];
           if (history.length > 0) {
             setMessages(
-              history.map((m) => ({ role: m.role, content: m.content }))
+              history.map((m) => ({
+                role: m.role,
+                content: m.content,
+                images: m.images,
+                // The server persists each assistant turn's activity in
+                // `meta` and replays it here. Dropping it meant a reload
+                // silently emptied every past turn's step list — and with it
+                // the screenshots the agent took.
+                activity: m.activity?.length
+                  ? m.activity.map(
+                      (a) => ({ ...a, id: nextActivityId() }) as ActivityStep
+                    )
+                  : undefined,
+              }))
             );
           }
           // "New site" is the server-side placeholder for a project the agent
@@ -266,7 +277,11 @@ export function useCoderSocket(params: CoderSocketParams) {
             if ((fg.answer || '').trim()) {
               setMessages((prev) => [
                 ...prev,
-                { role: 'assistant', content: fg.answer || '', streaming: true },
+                {
+                  role: 'assistant',
+                  content: fg.answer || '',
+                  streaming: true,
+                },
               ]);
             }
           } else if (anyBackground) {
@@ -540,7 +555,10 @@ export function useCoderSocket(params: CoderSocketParams) {
       opts?: { model?: string; images?: string[]; background?: boolean }
     ) => {
       if (!wsRef.current || !content.trim()) return;
-      setMessages((prev) => [...prev, { role: 'user', content }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'user', content, images: opts?.images },
+      ]);
       setBusy(true);
       setTokens({ in: 0, out: 0 });
       // A stale forecast from the previous turn must not tick down under the

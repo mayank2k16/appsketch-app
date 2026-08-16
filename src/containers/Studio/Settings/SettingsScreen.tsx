@@ -6,7 +6,7 @@ import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 
 import { DomainsScreen } from './Domains/DomainsScreen';
 import { PaymentsScreen } from './Payments/PaymentsScreen';
@@ -20,7 +20,7 @@ const SUB_TABS: { key: SettingsSubTab; label: string; icon: React.ComponentProps
 
 export function SettingsScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const [tab, setTab] = React.useState<SettingsSubTab>('domains');
 
   return (

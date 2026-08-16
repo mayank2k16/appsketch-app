@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { usePaymentMerchants, type PaymentMerchant } from '@/api/payment-merchants';
 import { useUserTenants, type TenantSummary } from '@/api/studio';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { useCoderTheme, type AppColors } from '@/lib/theme';
 import { F } from '@/lib/fonts';
 
 import { PaymentForm, emptyPaymentFormData, type PaymentFormData } from './PaymentForm';
@@ -35,7 +35,7 @@ function statusColor(status?: string): string {
 
 export function PaymentsScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const { data: tenants } = useUserTenants();
   const { data: merchants, isLoading } = usePaymentMerchants();
 
@@ -131,7 +131,7 @@ export function PaymentsScreen() {
 
         <TouchableOpacity onPress={openAddForm} style={[st.addBtn, { backgroundColor: t.accent }]}>
           <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={st.addBtnText}>Add</Text>
+          <Text style={[st.addBtnText, { color: t.accentOn }]}>Add</Text>
         </TouchableOpacity>
       </View>
 
@@ -192,7 +192,7 @@ const st = StyleSheet.create({
   tenantChip: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8, maxWidth: 150 },
   tenantChipText: { fontFamily: F.sans600, fontSize: 12.5 },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10 },
-  addBtnText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
+  addBtnText: { fontSize: 12.5, fontWeight: '700' },
 
   empty: { alignItems: 'center', gap: 10, paddingTop: 50, paddingHorizontal: 20 },
   emptyText: { fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 19 },

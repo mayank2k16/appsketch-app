@@ -5,7 +5,7 @@ import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { TenantSummary } from '@/api/studio';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 
 export function StoreCard({
   tenant,
@@ -23,7 +23,7 @@ export function StoreCard({
   onViewCustomStore: () => void;
 }) {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
 
   return (
     <View style={[st.card, { borderColor: t.studioCardBorder }]}>
@@ -78,11 +78,11 @@ export function StoreCard({
         <Pressable style={st.actionSlot} onPress={onViewCms} disabled={loading}>
           <View style={[st.actionBtn, { backgroundColor: t.accent }]}>
             {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={t.accentOn} />
             ) : (
               <>
-                <Text style={st.cmsBtnText}>View CMS</Text>
-                <Ionicons name="arrow-forward" size={14} color="#fff" />
+                <Text style={[st.cmsBtnText, { color: t.accentOn }]}>View CMS</Text>
+                <Ionicons name="arrow-forward" size={14} color={t.accentOn} />
               </>
             )}
           </View>
@@ -91,11 +91,11 @@ export function StoreCard({
         <Pressable style={st.actionSlot} onPress={onViewCrm} disabled={loading}>
           <View style={[st.actionBtn, { backgroundColor: t.accent }]}>
             {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={t.accentOn} />
             ) : (
               <>
-                <Text style={st.cmsBtnText}>View CRM</Text>
-                <Ionicons name="arrow-forward" size={14} color="#fff" />
+                <Text style={[st.cmsBtnText, { color: t.accentOn }]}>View CRM</Text>
+                <Ionicons name="arrow-forward" size={14} color={t.accentOn} />
               </>
             )}
           </View>
@@ -173,5 +173,5 @@ const st = StyleSheet.create({
     borderRadius: 19,
   },
   storeBtnText: { fontSize: 12.5, fontWeight: '700' },
-  cmsBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
+  cmsBtnText: { fontSize: 12.5, fontWeight: '700' },
 });

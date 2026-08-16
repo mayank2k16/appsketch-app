@@ -23,6 +23,12 @@ export const appTheme = {
     textMuted: 'rgba(255,255,255,0.30)',
     accent: '#6C5CE7', // electric indigo
     accentSoft: 'rgba(108,92,231,0.15)',
+    /** What sits ON an `accent` fill — button labels, icons, spinners.
+     * These call sites used to hardcode '#FFFFFF', which silently assumed the
+     * accent would always be dark enough to carry white. It isn't: the
+     * achromatic scope (see CoderTheme) sets a near-WHITE accent, and white on
+     * near-white is an invisible button. Read this instead of typing a literal. */
+    accentOn: '#FFFFFF',
     border: 'rgba(255,255,255,0.09)',
     statusBar: 'light-content' as const,
 
@@ -224,13 +230,14 @@ export const appTheme = {
     codeEditorDisconnectedDot: 'rgba(255,255,255,0.30)',
     codeEditorDanger: '#FF5C5C',
     /** Focus rings, and the ONE solid fill the coder surface allows: a primary
-     * action (send / submit / approve). The web's `--ui-accent`. */
-    codeEditorFocus: '#4F7DFF',
+     * action (send / submit / approve). The web's `--ui-accent`, which is
+     * `#d4d4d4` — it was `$blue` there once and this port kept the blue for a
+     * while after the web dropped it. Grey is now the correct answer. */
+    codeEditorFocus: '#D4D4D4',
     /** A SELECTED thing — chip, pill, badge. The web never fills a selection
-     * solid; it washes it (`rgba(79,125,255,.16)`) and colours the label
-     * `--ui-accent-soft`. A solid blue chip is what "the app is blue" means. */
-    codeEditorAccentWash: 'rgba(79,125,255,0.16)',
-    codeEditorAccentText: '#7EA2FF',
+     * solid; it washes it and colours the label `--ui-accent-soft` (#eaeaea). */
+    codeEditorAccentWash: 'rgba(234,234,234,0.14)',
+    codeEditorAccentText: '#EAEAEA',
 
     // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay. The
     // tint is a neutral of --ui-surface now, not the violet-cast
@@ -313,6 +320,7 @@ export const appTheme = {
     textMuted: 'rgba(17,17,17,0.35)',
     accent: '#6C5CE7',
     accentSoft: 'rgba(108,92,231,0.10)',
+    accentOn: '#FFFFFF',
     border: 'rgba(17,17,17,0.09)',
     statusBar: 'dark-content' as const,
 
@@ -496,11 +504,11 @@ export const appTheme = {
     codeEditorDisconnectedDot: 'rgba(17,17,17,0.25)',
     codeEditorDanger: '#E0392B',
     /** Focus rings, and the ONE solid fill the coder surface allows. */
-    codeEditorFocus: '#4F7DFF',
+    codeEditorFocus: '#4A4A4A',
     /** A selected chip/pill — a wash and a coloured label, never a solid fill.
      * Darker text here than in dark mode so it carries on white. */
-    codeEditorAccentWash: 'rgba(79,125,255,0.12)',
-    codeEditorAccentText: '#2F52E6',
+    codeEditorAccentWash: 'rgba(17,17,17,0.10)',
+    codeEditorAccentText: '#1A1A1A',
 
     // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
     // same recipe as the drawer panel and marketplace TemplateCard.
@@ -580,12 +588,16 @@ export type AppScheme = keyof typeof appTheme;
  * shape. */
 /** `statusBar` is the one entry that is NOT a colour — it is a StatusBarStyle
  * enum and its literal type is what makes `barStyle={t.statusBar}` typecheck. */
+/** Widen one leaf: a colour string becomes `string`, and a gradient tuple
+ * becomes a tuple of the same LENGTH holding `string`s — length matters,
+ * because `LinearGradient`'s `colors` prop demands at least two entries. */
+type Widen<V> = V extends readonly string[]
+  ? { [I in keyof V]: string }
+  : V extends string
+    ? string
+    : V;
 type ColorValues<T> = {
-  [K in keyof T]: K extends 'statusBar'
-    ? T[K]
-    : T[K] extends string
-      ? string
-      : T[K];
+  [K in keyof T]: K extends 'statusBar' ? T[K] : Widen<T[K]>;
 };
 export type AppColors =
   | ColorValues<typeof appTheme.dark>
