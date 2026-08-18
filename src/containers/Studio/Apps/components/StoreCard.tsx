@@ -1,50 +1,91 @@
-import * as React from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
+import * as React from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import type { TenantSummary } from '@/api/studio';
 import { useCoderTheme } from '@/lib/theme';
+
+const ACTIONS: {
+  key: 'store' | 'cms' | 'remix';
+  label: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  iconAfter?: boolean;
+}[] = [
+  { key: 'store', label: 'View Store', icon: 'open-outline', iconAfter: true },
+  { key: 'cms', label: 'View CMS', icon: 'arrow-forward', iconAfter: true },
+  { key: 'remix', label: 'Remix', icon: 'code-slash-outline' },
+];
+
+/** `en-GB`-style day/month/year — locale-neutral and unambiguous, unlike
+ *  `MM/DD` which reads differently depending on the reader's region. */
+function formatCreated(value?: string): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
 export function StoreCard({
   tenant,
   loading,
   onViewCms,
   onViewStore,
-  onViewCrm,
   onViewCustomStore,
 }: {
   tenant: TenantSummary;
   loading: boolean;
   onViewCms: () => void;
   onViewStore: () => void;
-  onViewCrm: () => void;
   onViewCustomStore: () => void;
 }) {
   const { colorScheme } = useColorScheme();
   const t = useCoderTheme(colorScheme);
 
-  return (
-    <View style={[st.card, { borderColor: t.studioCardBorder }]}>
-      {/* Top-lit gradient body — lighter along the top edge, sinking to
-          near-black at the bottom, so the card reads as a lit surface rather
-          than the flat `card` fill it used before. */}
-      <LinearGradient
-        colors={t.studioCardGradient as unknown as [string, string, ...string[]]}
-        locations={[0, 0.55, 1]}
-        start={{ x: 0.15, y: 0 }}
-        end={{ x: 0.85, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Hairline highlight sitting on the very top edge — the detail that
-          sells the "lit from above" read on a dark card. */}
-      <View pointerEvents="none" style={[st.topEdge, { backgroundColor: t.studioCardTopEdge }]} />
+  const handlers = {
+    store: onViewStore,
+    cms: onViewCms,
+    remix: onViewCustomStore,
+  } as const;
+  // Only CMS depends on the attach-tenant call the parent tracks with
+  // `loading` — Store and Remix just navigate.
+  const busyKeys = new Set<(typeof ACTIONS)[number]['key']>(['cms']);
+  const created = formatCreated(tenant.created_at ?? tenant.created_on);
 
+  return (
+    <View
+      style={[
+        st.card,
+        { backgroundColor: t.card, borderColor: t.studioCardBorder },
+      ]}
+    >
       <View style={st.topRow}>
-        <View style={[st.logoWrap, { backgroundColor: t.studioCardLogoBg, borderColor: t.studioCardBorder }]}>
+        <View
+          style={[
+            st.logoWrap,
+            {
+              backgroundColor: t.studioCardLogoBg,
+              borderColor: t.studioCardBorder,
+            },
+          ]}
+        >
           {tenant.logo ? (
-            <Image source={{ uri: tenant.logo }} style={st.logo} resizeMode="cover" />
+            <Image
+              source={{ uri: tenant.logo }}
+              style={st.logo}
+              resizeMode="cover"
+            />
           ) : (
             <Ionicons name="storefront-outline" size={22} color={t.textMuted} />
           )}
@@ -55,63 +96,54 @@ export function StoreCard({
             {(tenant.title || 'Untitled store').slice(0, 40)}
           </Text>
           {!!tenant.website_url && (
-            <Text style={[st.subtitle, { color: t.textMuted }]} numberOfLines={1}>
+            <Text
+              style={[st.subtitle, { color: t.textMuted }]}
+              numberOfLines={1}
+            >
               {tenant.website_url}
             </Text>
           )}
+          <Text style={[st.meta, { color: t.textMuted }]} numberOfLines={1}>
+            ID {tenant.id}
+            {created ? `  ·  Created ${created}` : ''}
+          </Text>
         </View>
       </View>
 
+      {/* Same shape, fill and border on all four — the old pair of solid
+          `accent`-filled pills next to a pair of outlined ones made CMS/CRM
+          read as the "real" actions and Store/Remix as secondary, which
+          isn't true; all four are equally valid next steps. */}
       <View style={st.actionsRow}>
-        <Pressable style={st.actionSlot} onPress={onViewStore}>
-          <View
-            style={[
-              st.actionBtn,
-              { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder },
-            ]}
-          >
-            <Text style={[st.storeBtnText, { color: t.text }]}>View Store</Text>
-            <Ionicons name="open-outline" size={14} color={t.text} />
-          </View>
-        </Pressable>
-
-        <Pressable style={st.actionSlot} onPress={onViewCms} disabled={loading}>
-          <View style={[st.actionBtn, { backgroundColor: t.accent }]}>
-            {loading ? (
-              <ActivityIndicator size="small" color={t.accentOn} />
-            ) : (
-              <>
-                <Text style={[st.cmsBtnText, { color: t.accentOn }]}>View CMS</Text>
-                <Ionicons name="arrow-forward" size={14} color={t.accentOn} />
-              </>
-            )}
-          </View>
-        </Pressable>
-
-        <Pressable style={st.actionSlot} onPress={onViewCrm} disabled={loading}>
-          <View style={[st.actionBtn, { backgroundColor: t.accent }]}>
-            {loading ? (
-              <ActivityIndicator size="small" color={t.accentOn} />
-            ) : (
-              <>
-                <Text style={[st.cmsBtnText, { color: t.accentOn }]}>View CRM</Text>
-                <Ionicons name="arrow-forward" size={14} color={t.accentOn} />
-              </>
-            )}
-          </View>
-        </Pressable>
-
-        <Pressable style={st.actionSlot} onPress={onViewCustomStore}>
-          <View
-            style={[
-              st.actionBtn,
-              { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder },
-            ]}
-          >
-            <Ionicons name="code-slash-outline" size={14} color={t.text} />
-            <Text style={[st.storeBtnText, { color: t.text }]}>Remix</Text>
-          </View>
-        </Pressable>
+        {ACTIONS.map((action) => {
+          const busy = loading && busyKeys.has(action.key);
+          return (
+            <Pressable
+              key={action.key}
+              style={st.actionSlot}
+              onPress={handlers[action.key]}
+              disabled={busyKeys.has(action.key) && loading}
+            >
+              <View style={[st.actionBtn, { borderColor: t.studioCardBorder }]}>
+                {busy ? (
+                  <ActivityIndicator size="small" color={t.text} />
+                ) : (
+                  <>
+                    {!action.iconAfter && (
+                      <Ionicons name={action.icon} size={14} color={t.text} />
+                    )}
+                    <Text style={[st.actionText, { color: t.text }]}>
+                      {action.label}
+                    </Text>
+                    {action.iconAfter && (
+                      <Ionicons name={action.icon} size={14} color={t.text} />
+                    )}
+                  </>
+                )}
+              </View>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -119,20 +151,13 @@ export function StoreCard({
 
 const st = StyleSheet.create({
   card: {
-    borderRadius: 18,
+    borderRadius: 5,
     padding: 14,
     marginHorizontal: 0,
     marginBottom: 10,
     borderWidth: 1,
     gap: 18,
     overflow: 'hidden',
-  },
-  topEdge: {
-    position: 'absolute',
-    top: 0,
-    left: 14,
-    right: 14,
-    height: StyleSheet.hairlineWidth,
   },
   topRow: {
     flexDirection: 'row',
@@ -142,7 +167,7 @@ const st = StyleSheet.create({
   logoWrap: {
     width: 44,
     height: 44,
-    borderRadius: 13,
+    borderRadius: 5,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -152,6 +177,7 @@ const st = StyleSheet.create({
   titleWrap: { flex: 1 },
   title: { fontSize: 14.5, fontWeight: '700' },
   subtitle: { fontSize: 12, marginTop: 2 },
+  meta: { fontSize: 11, marginTop: 3 },
   actionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -170,8 +196,8 @@ const st = StyleSheet.create({
     justifyContent: 'center',
     gap: 5,
     height: 38,
-    borderRadius: 19,
+    borderRadius: 5,
+    borderWidth: 1,
   },
-  storeBtnText: { fontSize: 12.5, fontWeight: '700' },
-  cmsBtnText: { fontSize: 12.5, fontWeight: '700' },
+  actionText: { fontSize: 12.5, fontWeight: '700' },
 });

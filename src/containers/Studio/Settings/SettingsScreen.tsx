@@ -13,7 +13,11 @@ import { PaymentsScreen } from './Payments/PaymentsScreen';
 
 type SettingsSubTab = 'domains' | 'payments';
 
-const SUB_TABS: { key: SettingsSubTab; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+const SUB_TABS: {
+  key: SettingsSubTab;
+  label: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+}[] = [
   { key: 'domains', label: 'Domains', icon: 'globe-outline' },
   { key: 'payments', label: 'Payments', icon: 'card-outline' },
 ];
@@ -32,10 +36,26 @@ export function SettingsScreen() {
             <Pressable
               key={s.key}
               onPress={() => setTab(s.key)}
-              style={[st.tab, { backgroundColor: t.surface }, active && { backgroundColor: t.accentSoft }]}
+              style={[
+                st.tab,
+                { backgroundColor: t.surface },
+                active && { backgroundColor: t.accentSoft },
+              ]}
             >
-              <Ionicons name={s.icon} size={14} color={active ? t.accent : t.textMuted} />
-              <Text style={[st.tabText, { color: t.textMuted }, active && { color: t.accent }]}>{s.label}</Text>
+              <Ionicons
+                name={s.icon}
+                size={14}
+                color={active ? t.accent : t.textMuted}
+              />
+              <Text
+                style={[
+                  st.tabText,
+                  { color: t.textMuted },
+                  active && { color: t.accent },
+                ]}
+              >
+                {s.label}
+              </Text>
             </Pressable>
           );
         })}
@@ -50,7 +70,13 @@ export function SettingsScreen() {
 }
 
 const st = StyleSheet.create({
-  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
+  tabRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',

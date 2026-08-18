@@ -4,4 +4,4 @@ export { appTheme, useAppTheme } from './AppTheme';
 // this instead: the same palette with every brand-indigo token retuned to the
 // web's greyscale ladder. Home stays branded. See CoderTheme.ts.
 export type { AppColors, AppScheme } from './AppTheme';
-export { useCoderTheme } from './CoderTheme';
+export { SURFACE_CANVAS, SURFACE_RAISED, useCoderTheme } from './CoderTheme';

@@ -735,6 +735,8 @@ export function ChatPanel() {
     backgroundRun,
     rename,
     remove,
+    quotaExceeded,
+    clearQuotaExceeded,
   } = useCodeEditor();
 
   const [input, setInput] = React.useState('');
@@ -925,6 +927,12 @@ export function ChatPanel() {
         onClose={() => setUpgradeModel(null)}
         t={t}
         modelLabel={upgradeModel?.label}
+      />
+      <UpgradeSheet
+        visible={!!quotaExceeded}
+        onClose={clearQuotaExceeded}
+        t={t}
+        body={quotaExceeded ?? undefined}
       />
     </View>
   );

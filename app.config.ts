@@ -39,7 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           ),
           {
             $: {
-              'android:name':  'com.google.android.geo.API_KEY',
+              'android:name': 'com.google.android.geo.API_KEY',
               'android:value': Env.GOOGLE_MAPS_API_KEY,
             },
           },
@@ -59,7 +59,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     version: Env.VERSION.toString(),
     orientation: 'portrait',
     icon: './assets/logo.png',
-    userInterfaceStyle: 'automatic',
+    // Dark only — the app ships no light theme, and 'automatic' let the
+    // native shell (splash, system chrome) flash white before JS booted.
+    userInterfaceStyle: 'dark',
     newArchEnabled: true,
     updates: {
       fallbackToCacheTimeout: 0,
@@ -138,9 +140,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           sounds: ['./assets/sounds/notification.wav'],
         },
       ],
-      [
-        'expo-video',
-      ],
+      ['expo-video'],
       [
         'expo-splash-screen',
         {

@@ -6,15 +6,29 @@
  */
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { usePaymentMerchants, type PaymentMerchant } from '@/api/payment-merchants';
+import {
+  usePaymentMerchants,
+  type PaymentMerchant,
+} from '@/api/payment-merchants';
 import { useUserTenants, type TenantSummary } from '@/api/studio';
 import { useCoderTheme, type AppColors } from '@/lib/theme';
 import { F } from '@/lib/fonts';
 
-import { PaymentForm, emptyPaymentFormData, type PaymentFormData } from './PaymentForm';
+import {
+  PaymentForm,
+  emptyPaymentFormData,
+  type PaymentFormData,
+} from './PaymentForm';
 
 function providerColor(provider?: string): string {
   switch (provider) {
@@ -41,7 +55,9 @@ export function PaymentsScreen() {
 
   const [showForm, setShowForm] = React.useState(false);
   const [editing, setEditing] = React.useState<PaymentMerchant | null>(null);
-  const [filterTenant, setFilterTenant] = React.useState<TenantSummary | null>(null);
+  const [filterTenant, setFilterTenant] = React.useState<TenantSummary | null>(
+    null
+  );
 
   function openAddForm() {
     setEditing(null);
@@ -58,7 +74,9 @@ export function PaymentsScreen() {
     setEditing(null);
   }
 
-  const filtered = (merchants ?? []).filter((m) => !filterTenant || m.tenant === filterTenant.id);
+  const filtered = (merchants ?? []).filter(
+    (m) => !filterTenant || m.tenant === filterTenant.id
+  );
 
   function tenantTitle(tenantId?: number) {
     return (tenants ?? []).find((tn) => tn.id === tenantId)?.title;
@@ -73,10 +91,13 @@ export function PaymentsScreen() {
           secretKey: editing._api_secret ?? '',
           provider: editing.provider ?? 'razorpay',
           contactName: '',
-          legalBusinessName: editing.legal_business_name ?? editing.legalBusinessName ?? '',
+          legalBusinessName:
+            editing.legal_business_name ?? editing.legalBusinessName ?? '',
         }
       : emptyPaymentFormData;
-    const initialTenant = editing ? (tenants ?? []).find((tn) => tn.id === editing.tenant) ?? null : filterTenant;
+    const initialTenant = editing
+      ? ((tenants ?? []).find((tn) => tn.id === editing.tenant) ?? null)
+      : filterTenant;
 
     return (
       <View style={{ flex: 1 }}>
@@ -93,21 +114,41 @@ export function PaymentsScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={st.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={st.content}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={[st.heading, { color: t.text }]}>Payments</Text>
-      <Text style={[st.subheading, { color: t.textSub }]}>View and manage all your payments in one place.</Text>
+      <Text style={[st.subheading, { color: t.textSub }]}>
+        View and manage all your payments in one place.
+      </Text>
 
       <View style={st.toolbar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flex: 1 }}
+        >
           <TouchableOpacity
             onPress={() => setFilterTenant(null)}
             style={[
               st.tenantChip,
               { borderColor: t.border, backgroundColor: t.agentTabBg },
-              !filterTenant && { borderColor: t.accent, backgroundColor: t.accentSoft },
+              !filterTenant && {
+                borderColor: t.accent,
+                backgroundColor: t.accentSoft,
+              },
             ]}
           >
-            <Text style={[st.tenantChipText, { color: !filterTenant ? t.accent : t.text }]}>All apps</Text>
+            <Text
+              style={[
+                st.tenantChipText,
+                { color: !filterTenant ? t.accent : t.text },
+              ]}
+            >
+              All apps
+            </Text>
           </TouchableOpacity>
           {(tenants ?? []).map((tenant) => {
             const active = filterTenant?.id === tenant.id;
@@ -118,10 +159,19 @@ export function PaymentsScreen() {
                 style={[
                   st.tenantChip,
                   { borderColor: t.border, backgroundColor: t.agentTabBg },
-                  active && { borderColor: t.accent, backgroundColor: t.accentSoft },
+                  active && {
+                    borderColor: t.accent,
+                    backgroundColor: t.accentSoft,
+                  },
                 ]}
               >
-                <Text style={[st.tenantChipText, { color: active ? t.accent : t.text }]} numberOfLines={1}>
+                <Text
+                  style={[
+                    st.tenantChipText,
+                    { color: active ? t.accent : t.text },
+                  ]}
+                  numberOfLines={1}
+                >
                   {tenant.title}
                 </Text>
               </TouchableOpacity>
@@ -129,7 +179,10 @@ export function PaymentsScreen() {
           })}
         </ScrollView>
 
-        <TouchableOpacity onPress={openAddForm} style={[st.addBtn, { backgroundColor: t.accent }]}>
+        <TouchableOpacity
+          onPress={openAddForm}
+          style={[st.addBtn, { backgroundColor: t.accent }]}
+        >
           <Ionicons name="add" size={16} color="#FFFFFF" />
           <Text style={[st.addBtnText, { color: t.accentOn }]}>Add</Text>
         </TouchableOpacity>
@@ -141,13 +194,24 @@ export function PaymentsScreen() {
         <View style={st.empty}>
           <Ionicons name="card-outline" size={32} color={t.textMuted} />
           <Text style={[st.emptyText, { color: t.textMuted }]}>
-            You haven't connected a payment provider yet. Add one to start accepting payments.
+            You haven't connected a payment provider yet. Add one to start
+            accepting payments.
           </Text>
         </View>
       ) : (
         filtered.map((merchant, i) => (
-          <View key={merchant.id ?? i} style={[st.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <TouchableOpacity onPress={() => openEditForm(merchant)} style={st.editBtn} hitSlop={8}>
+          <View
+            key={merchant.id ?? i}
+            style={[
+              st.card,
+              { backgroundColor: t.card, borderColor: t.border },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={() => openEditForm(merchant)}
+              style={st.editBtn}
+              hitSlop={8}
+            >
               <Ionicons name="create-outline" size={16} color={t.textMuted} />
             </TouchableOpacity>
 
@@ -164,7 +228,11 @@ export function PaymentsScreen() {
               value={merchant.status ?? '—'}
               valueColor={statusColor(merchant.status)}
             />
-            <MerchantRow t={t} label="App" value={tenantTitle(merchant.tenant) ?? '—'} />
+            <MerchantRow
+              t={t}
+              label="App"
+              value={tenantTitle(merchant.tenant) ?? '—'}
+            />
           </View>
         ))
       )}
@@ -172,11 +240,24 @@ export function PaymentsScreen() {
   );
 }
 
-function MerchantRow({ t, label, value, valueColor }: { t: AppColors; label: string; value: string; valueColor?: string }) {
+function MerchantRow({
+  t,
+  label,
+  value,
+  valueColor,
+}: {
+  t: AppColors;
+  label: string;
+  value: string;
+  valueColor?: string;
+}) {
   return (
     <View style={st.merchantRow}>
       <Text style={[st.merchantLabel, { color: t.textMuted }]}>{label}</Text>
-      <Text style={[st.merchantValue, { color: valueColor ?? t.text }]} numberOfLines={1}>
+      <Text
+        style={[st.merchantValue, { color: valueColor ?? t.text }]}
+        numberOfLines={1}
+      >
         {value}
       </Text>
     </View>
@@ -184,22 +265,68 @@ function MerchantRow({ t, label, value, valueColor }: { t: AppColors; label: str
 }
 
 const st = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 4, paddingTop: 20, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
   subheading: { fontSize: 13, marginTop: 4, marginBottom: 16, lineHeight: 18 },
 
-  toolbar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  tenantChip: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8, maxWidth: 150 },
+  toolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  tenantChip: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    maxWidth: 150,
+  },
   tenantChipText: { fontFamily: F.sans600, fontSize: 12.5 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10 },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+  },
   addBtnText: { fontSize: 12.5, fontWeight: '700' },
 
-  empty: { alignItems: 'center', gap: 10, paddingTop: 50, paddingHorizontal: 20 },
-  emptyText: { fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 19 },
+  empty: {
+    alignItems: 'center',
+    gap: 10,
+    paddingTop: 50,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 19,
+  },
 
-  card: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 10, position: 'relative', gap: 8 },
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 10,
+    position: 'relative',
+    gap: 8,
+  },
   editBtn: { position: 'absolute', top: 12, right: 12 },
-  merchantRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 24 },
+  merchantRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 24,
+  },
   merchantLabel: { fontSize: 11.5, fontWeight: '600' },
-  merchantValue: { fontSize: 12.5, fontWeight: '600', textTransform: 'capitalize', maxWidth: '60%' },
+  merchantValue: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+    maxWidth: '60%',
+  },
 });

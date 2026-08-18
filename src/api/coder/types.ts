@@ -266,6 +266,18 @@ export type CoderFinalEvent = {
   compacted?: boolean;
 };
 export type CoderErrorEvent = { event: 'error'; detail?: string };
+/** Plan's token quota for this billing period is used up — mirrors
+ * `builder/agent/coder/quota.py`'s `check()` (see `CoderQuota`). Sent instead
+ * of a normal turn when `check().allowed` is false. */
+export type CoderQuotaExceededEvent = {
+  event: 'quota_exceeded';
+  used?: number;
+  limit?: number;
+  tier?: string;
+  free?: boolean;
+  upgrade?: boolean;
+  detail?: string;
+};
 /** How long the backend expects this turn to take. Re-emitted mid-run as the
  * forecast is corrected against measured pace, so treat each one as the new
  * truth rather than accumulating them. */
@@ -303,6 +315,7 @@ export type CoderWsEvent =
   | CoderEtaEvent
   | CoderTitleEvent
   | CoderBackgroundLimitEvent
+  | CoderQuotaExceededEvent
   | CoderErrorEvent;
 
 // ── Outgoing WS messages ─────────────────────────────────────────────────────

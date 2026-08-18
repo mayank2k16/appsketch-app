@@ -1,7 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import * as React from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { F } from '@/lib/fonts';
 import type { HomeColors } from '../theme/HomeTheme';
@@ -18,7 +24,8 @@ const CARD_BORDER = 1 * 2;
 const RAIL_W = 38 + 1;
 const CONTENT_PAD_H = 10 * 2;
 const GRID_GAP = 6;
-const CARD_CONTENT_W = SCREEN_W - SECTION_PAD_H - CARD_BORDER - RAIL_W - CONTENT_PAD_H;
+const CARD_CONTENT_W =
+  SCREEN_W - SECTION_PAD_H - CARD_BORDER - RAIL_W - CONTENT_PAD_H;
 const TILE_SIZE = (CARD_CONTENT_W - GRID_GAP) / 2;
 
 const CDN = 'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/';
@@ -53,7 +60,7 @@ export function MockupCard({ t }: { t: HomeColors }) {
         <View style={[s.urlPill, { backgroundColor: t.bg }]}>
           <Ionicons name="lock-closed" size={9} color={t.textMuted} />
           <Text style={[s.urlText, { color: t.textMuted }]} numberOfLines={1}>
-            generativeai.com
+            appsketch.ai
           </Text>
         </View>
       </View>
@@ -83,12 +90,20 @@ export function MockupCard({ t }: { t: HomeColors }) {
 
         <View style={s.content}>
           {/* Prompt row */}
-          <View style={[s.promptRow, { backgroundColor: t.bg, borderColor: t.border }]}>
-            <Text style={[s.promptText, { color: t.textMuted }]} numberOfLines={1}>
-              Glitch art marble bust of caligula, studio lighting, orotation
+          <View
+            style={[
+              s.promptRow,
+              { backgroundColor: t.bg, borderColor: t.border },
+            ]}
+          >
+            <Text
+              style={[s.promptText, { color: t.textMuted }]}
+              numberOfLines={1}
+            >
+              A skincare store with product pages, cart and checkout
             </Text>
             <TouchableOpacity style={s.generateBtn} activeOpacity={0.85}>
-              <Text style={s.generateBtnTxt}>Generate</Text>
+              <Text style={s.generateBtnTxt}>Build</Text>
               <Ionicons name="arrow-forward" size={11} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
@@ -96,7 +111,10 @@ export function MockupCard({ t }: { t: HomeColors }) {
           {/* Image grid */}
           <View style={s.grid}>
             {GRID_IMAGES.map((uri, i) => (
-              <View key={uri} style={[s.tile, { width: TILE_SIZE, height: TILE_SIZE }]}>
+              <View
+                key={uri}
+                style={[s.tile, { width: TILE_SIZE, height: TILE_SIZE }]}
+              >
                 <ExpoImage
                   source={uri}
                   style={StyleSheet.absoluteFill}
@@ -105,13 +123,27 @@ export function MockupCard({ t }: { t: HomeColors }) {
                   transition={0}
                 />
                 {i === 1 ? (
-                  <View style={[s.tileBadge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
+                  <View
+                    style={[
+                      s.tileBadge,
+                      { backgroundColor: 'rgba(0,0,0,0.55)' },
+                    ]}
+                  >
                     <Ionicons name="expand-outline" size={11} color="#FFFFFF" />
                   </View>
                 ) : null}
                 {i === 3 ? (
-                  <View style={[s.tileBadge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
-                    <Ionicons name="sparkles-outline" size={11} color="#FFFFFF" />
+                  <View
+                    style={[
+                      s.tileBadge,
+                      { backgroundColor: 'rgba(0,0,0,0.55)' },
+                    ]}
+                  >
+                    <Ionicons
+                      name="sparkles-outline"
+                      size={11}
+                      color="#FFFFFF"
+                    />
                   </View>
                 ) : null}
               </View>
@@ -121,12 +153,23 @@ export function MockupCard({ t }: { t: HomeColors }) {
           {/* Author row — initials badge instead of a photo: no network
               dependency at all, so it's guaranteed to render every time. */}
           <View style={[s.authorRow, { borderTopColor: t.border }]}>
-            <View style={[s.avatar, { backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' }]}>
+            <View
+              style={[
+                s.avatar,
+                {
+                  backgroundColor: t.accentSoft,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+              ]}
+            >
               <Text style={[s.avatarInitials, { color: t.accent }]}>JC</Text>
             </View>
             <View>
               <Text style={[s.authorName, { color: t.text }]}>John Carter</Text>
-              <Text style={[s.authorRole, { color: t.textMuted }]}>AI Product Designer</Text>
+              <Text style={[s.authorRole, { color: t.textMuted }]}>
+                AI Product Designer
+              </Text>
             </View>
           </View>
         </View>

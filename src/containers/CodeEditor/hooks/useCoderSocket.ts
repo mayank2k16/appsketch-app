@@ -158,6 +158,12 @@ export function useCoderSocket(params: CoderSocketParams) {
   const [approvalRequest, setApprovalRequest] =
     React.useState<PendingApproval | null>(null);
   const [fileTree, setFileTree] = React.useState<FileTreeNode[]>([]);
+  // Set whenever the backend reports the plan's token quota is used up —
+  // there's no in-app purchase flow, so the UI just points the user to the
+  // web to upgrade (see UpgradeSheet).
+  const [quotaExceeded, setQuotaExceeded] = React.useState<string | null>(
+    null
+  );
   const [openFiles, setOpenFiles] = React.useState<Record<string, string>>({});
   const [lastBuildId, setLastBuildId] = React.useState<number | null>(null);
   // The agent's name for this project, shown as the chat's heading. Arrives on
@@ -315,6 +321,20 @@ export function useCoderSocket(params: CoderSocketParams) {
                 "You've hit your plan's limit for background tasks.",
             },
           ]);
+          if (msg.upgrade) {
+            setQuotaExceeded(
+              msg.detail || "You've hit your plan's limit for background tasks."
+            );
+          }
+          break;
+
+        case 'quota_exceeded':
+          setBusy(false);
+          setEta(null);
+          setBackgroundRun(false);
+          setQuotaExceeded(
+            msg.detail || "You're out of tokens for this period."
+          );
           break;
 
         case 'token':
@@ -712,6 +732,8 @@ export function useCoderSocket(params: CoderSocketParams) {
     fileTree,
     openFiles,
     lastBuildId,
+    quotaExceeded,
+    clearQuotaExceeded: () => setQuotaExceeded(null),
     send,
     rename,
     remove,

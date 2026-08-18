@@ -34,6 +34,17 @@
 import type { AppColors } from './AppTheme';
 import { appTheme, useAppTheme } from './AppTheme';
 
+/**
+ * The two-value surface ladder these screens share with Home.
+ *
+ * CANVAS is the page, RAISED is anything sitting on it — cards, sheets, the
+ * header, the tab bar. Exported because HomeTheme builds on the same pair:
+ * Home and the achromatic screens are meant to look like one product, and two
+ * private copies of the values is exactly how that drifts apart.
+ */
+export const SURFACE_CANVAS = '#030303';
+export const SURFACE_RAISED = '#0A0E0E';
+
 function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
   const dark = base.statusBar === 'light-content';
   // The web's `--ui-accent-soft` #eaeaea: the selected-chip fill and the
@@ -43,6 +54,25 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
   return {
     ...base,
     accent,
+
+    // ── the surface ladder ──────────────────────────────────────────────────
+    // Dark only: these are a DARK ladder, and light mode's generic surfaces
+    // have no equivalent complaint. Before this, retuning stopped at the
+    // chromatic tokens and the surfaces underneath stayed on the app's generic
+    // dark ramp (`bg` #0A0A0C, `card` #1C1C1C) — noticeably greyer and bluer
+    // than Home, so Agent/Studio/Marketplace read as a different product from
+    // the screen one tab away.
+    ...(dark
+      ? {
+          bg: SURFACE_CANVAS,
+          headerBg: SURFACE_CANVAS,
+          tabBarBg: SURFACE_CANVAS,
+          surface: SURFACE_RAISED,
+          card: SURFACE_RAISED,
+          sheetBg: SURFACE_RAISED,
+          toastBg: SURFACE_RAISED,
+        }
+      : null),
     // Web: `.on { color: #010203; background: var(--ui-accent-soft) }` — the
     // fill is near-white, so what sits on it must be near-BLACK. This is the
     // whole reason `accentOn` exists; see AppTheme.
@@ -74,7 +104,15 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
     // (`--ui-ctl`) rather than a tint.
     templatesTagBg: dark ? 'rgba(255,255,255,0.07)' : 'rgba(17,17,17,0.06)',
     templatesTagText: dark ? '#C9C9C9' : '#3A3A3A',
-    studioRailActiveBg: dark ? 'rgba(255,255,255,0.10)' : 'rgba(17,17,17,0.08)',
+
+    // Store cards and the section rail — plain surfaces on the same ladder as
+    // every other achromatic screen, not a card-specific grey ramp. The
+    // gradient/top-edge "lit" treatment `studioCardGradient` used to draw is
+    // dropped by StoreCard itself now; these three just carry a flat fill and
+    // a uniform hairline.
+    studioCardBorder: dark ? 'rgba(255,255,255,0.16)' : 'rgba(17,17,17,0.12)',
+    studioRailBg: dark ? SURFACE_RAISED : 'rgba(17,17,17,0.04)',
+    studioRailActiveBg: dark ? 'rgba(255,255,255,0.12)' : 'rgba(17,17,17,0.08)',
   } as AppColors;
 }
 
