@@ -11,8 +11,3 @@ const STATUS_META: Record<ProductRequestStatus, CmsStatusMeta> = {
 export function getProductRequestStatusMeta(status: ProductRequestStatus | string): CmsStatusMeta {
   return STATUS_META[status as ProductRequestStatus] ?? { label: status || 'N/A', color: '#94A3B8', kind: 'info' };
 }
-
-export function money(v: number | string | undefined | null): string {
-  const n = Number(v ?? 0);
-  return Number.isFinite(n) ? n.toFixed(2) : '0.00';
-}

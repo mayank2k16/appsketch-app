@@ -111,6 +111,9 @@ export type ProductListItem = {
   sold_by_name?: string;
   tenant_id?: number;
   tenant_name?: string;
+  /** Reviewer's rejection reason, set when a product review action is
+   * REJECTED — same field the web CMS's `Products/ProductCard` reads. */
+  review_notes?: string;
 };
 
 /** One row of the marketplace products endpoint (`/shop/marketplace/products/all/`)
