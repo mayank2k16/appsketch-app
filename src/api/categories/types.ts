@@ -13,6 +13,7 @@ export type CategoryNode = {
   image?: string | null;
   banner_image?: string | null;
   icon?: string | null;
+  background_image?: string | null;
   parent: number | null;
   // Sort rank driving both root and subcategory order; NULL sorts last. Set
   // by POST api/shop/categories/reorder/, never edited directly by the UI.
@@ -33,6 +34,10 @@ export type CategoryFormFields = {
   home_page: boolean;
   href_path: string;
   colour: string;
+  // Lower number = shown first; "" clears the ranking back to NULL
+  // (unranked, sorts last). Sent as a string — mirrors the web CMS's
+  // `priority` field on `shop.Category`, usually set by dragging cards.
+  priority: string;
 };
 
 export type CreateCategoryPayload = CategoryFormFields & {
@@ -40,6 +45,7 @@ export type CreateCategoryPayload = CategoryFormFields & {
   image?: PickedCategoryAsset;
   banner_image?: PickedCategoryAsset;
   icon?: PickedCategoryAsset;
+  background_image?: PickedCategoryAsset;
 };
 
 export type UpdateCategoryPayload = CategoryFormFields & {
@@ -47,6 +53,7 @@ export type UpdateCategoryPayload = CategoryFormFields & {
   image?: PickedCategoryAsset;
   banner_image?: PickedCategoryAsset;
   icon?: PickedCategoryAsset;
+  background_image?: PickedCategoryAsset;
 };
 
 export type AddSubCategoryPayload = CategoryFormFields & {
@@ -54,6 +61,7 @@ export type AddSubCategoryPayload = CategoryFormFields & {
   image?: PickedCategoryAsset;
   banner_image?: PickedCategoryAsset;
   icon?: PickedCategoryAsset;
+  background_image?: PickedCategoryAsset;
 };
 
 export type DeleteCategoryAtAnyLevelPayload = {

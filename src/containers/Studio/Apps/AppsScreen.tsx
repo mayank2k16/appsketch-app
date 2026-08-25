@@ -124,7 +124,7 @@ export function AppsScreen() {
             <TextInput
               value={search}
               onChangeText={setSearch}
-              placeholder="Search your stores by name or description…"
+              placeholder="Search your stores by name or desc.."
               placeholderTextColor={t.textMuted}
               style={[st.searchInput, { color: t.text }]}
               returnKeyType="search"
@@ -175,5 +175,9 @@ const st = StyleSheet.create({
     marginHorizontal: 1,
     marginBottom: 12,
   },
-  searchInput: { flex: 1, fontSize: 13.5, height: '100%' },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    height: '100%',
+  },
 });

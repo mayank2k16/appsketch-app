@@ -114,6 +114,11 @@ export type ProductListItem = {
   /** Reviewer's rejection reason, set when a product review action is
    * REJECTED — same field the web CMS's `Products/ProductCard` reads. */
   review_notes?: string;
+  /** Review-queue state for this product — vendor tenants read this
+   * straight off their own product list (unlike `ProductRequestItem`,
+   * there's no separate review-queue endpoint on the vendor side) to show
+   * a status badge and, once REJECTED, a "Resubmit for Approval" action. */
+  status?: ProductReviewAction | string;
 };
 
 /** One row of the marketplace products endpoint (`/shop/marketplace/products/all/`)

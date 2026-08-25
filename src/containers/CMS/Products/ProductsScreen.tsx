@@ -6,6 +6,7 @@ import type { ProductListItem } from '@/api/products';
 import { useDeleteProduct, useProducts } from '@/api/products';
 import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { useStudio } from '@/lib/store/studio-store';
 import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 
 import { CmsConfirmModal } from '../components';
@@ -18,6 +19,8 @@ import { ProductsSkeleton } from './components/ProductsSkeleton';
 // the shell's persistent header already owns the hamburger button.
 export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
   const { colors } = useCmsTheme();
+
+  const isVendorTenant = useStudio.use.attachedTenant()?.tenant_type === 'vendor';
 
   const productsQuery = useProducts();
   const products = productsQuery.data ?? [];
@@ -70,9 +73,15 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
 
   const renderItem = React.useCallback(
     ({ item }: { item: ProductListItem }) => (
-      <ProductListCard product={item} colors={colors} onEdit={() => openEdit(item)} onDelete={() => openDelete(item)} />
+      <ProductListCard
+        product={item}
+        colors={colors}
+        isVendorTenant={isVendorTenant}
+        onEdit={() => openEdit(item)}
+        onDelete={() => openDelete(item)}
+      />
     ),
-    [colors]
+    [colors, isVendorTenant]
   );
 
   return (
