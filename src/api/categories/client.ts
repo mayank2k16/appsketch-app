@@ -24,6 +24,14 @@ export async function fetchCategoryTree(): Promise<CategoryNode[]> {
   return data ?? [];
 }
 
+/** Marketplace-only variant of `fetchCategoryTree` — response is already
+ * flat, each category tagged with its owning vendor's `tenant` id (no
+ * grouping/flattening needed, unlike `fetchMarketplaceProducts`). */
+export async function fetchMarketplaceCategories(): Promise<CategoryNode[]> {
+  const { data } = await authenticatedClient.get<CategoryNode[]>('api/shop/marketplace/categories/all/');
+  return data ?? [];
+}
+
 async function appendFile(formData: FormData, field: string, asset: PickedCategoryAsset) {
   if (Platform.OS === 'web') {
     const blob = await (await fetch(asset.uri)).blob();

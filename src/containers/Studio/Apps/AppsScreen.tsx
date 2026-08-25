@@ -54,7 +54,7 @@ export function AppsScreen() {
     } as never);
   }
 
-  function handleViewCrm(tenant: TenantSummary) {}
+  function handleViewCrm(tenant: TenantSummary) { }
 
   // Same `/code-editor/chat` route the hero-prompt flow (AgentScreen) pushes
   // to when starting a NEW build — the only difference is no `userPrompt` is
@@ -92,10 +92,10 @@ export function AppsScreen() {
   const query = search.trim().toLowerCase();
   const filtered = query
     ? tenants.filter((tenant) => {
-        const haystack =
-          `${tenant.title || ''} ${tenant.description || ''}`.toLowerCase();
-        return haystack.includes(query);
-      })
+      const haystack =
+        `${tenant.title || ''} ${tenant.description || ''}`.toLowerCase();
+      return haystack.includes(query);
+    })
     : tenants;
 
   return (
@@ -172,7 +172,7 @@ const st = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 13,
     height: 42,
-    marginHorizontal: 16,
+    marginHorizontal: 1,
     marginBottom: 12,
   },
   searchInput: { flex: 1, fontSize: 13.5, height: '100%' },

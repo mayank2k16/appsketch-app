@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { CategoryNode } from '@/api/categories';
 import { useCategoryTree, useDeleteCategoryAtAnyLevel, useReorderCategories } from '@/api/categories';
 import { useModal } from '@/components/ui';
+import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 
 import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
@@ -41,7 +42,11 @@ export function CategoriesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: (
   const categoriesQuery = useCategoryTree();
   const deleteCategory = useDeleteCategoryAtAnyLevel();
   const reorderCategories = useReorderCategories();
-  const categories = categoriesQuery.data ?? [];
+  const selectedVendor = useVendorFilter.use.selectedVendor();
+  const categories = React.useMemo(() => {
+    const all = categoriesQuery.data ?? [];
+    return selectedVendor ? all.filter((c) => c.tenant === selectedVendor.id) : all;
+  }, [categoriesQuery.data, selectedVendor]);
   const filteredCategories = React.useMemo(() => filterTopLevelCategories(categories, query), [categories, query]);
 
   // Reordering is disabled while a search filter narrows the list: the

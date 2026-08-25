@@ -11,6 +11,7 @@ import { CmsDrawer } from './CmsDrawer';
 import { getVisibleCmsTabs } from './tabs';
 import type { CmsTabKey } from './tabs';
 import { ThemeSwitcherButton, useCmsTheme } from './theme';
+import { VendorFilterButton } from './VendorFilter/VendorFilterButton';
 
 /**
  * Single-screen CMS entry point — replaces the old per-tab route group
@@ -86,6 +87,7 @@ export function CmsShell() {
         </Text>
 
         <View style={st.sideGroup}>
+          {tenantType === 'marketplace' && <VendorFilterButton />}
           <ThemeSwitcherButton />
           <Pressable
             onPress={() => setDrawerOpen(true)}
@@ -123,7 +125,7 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 12,
   },
   sideGroup: {

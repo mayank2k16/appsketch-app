@@ -1,22 +1,18 @@
 import { authenticatedClient } from '@/api/common/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useStudio } from '@/lib/store/studio-store';
 
 import type { Commission, CommissionPayload, VendorActionType, VendorListItem } from './types';
 
 /**
- * Best-effort tenant ID for the two endpoints below that need one as a URL
- * path segment (`/dashboard/{tenantId}/vendors/`) — Vite sources this from a
- * `?tenant=` query param on the CMS URL, which has no equivalent in
- * appsketch-app (every other endpoint in this port relies on the auth token
- * alone for tenant scoping). `AuthUser` is an opaque `Record<string,
- * unknown>` (`src/api/auth/types.ts`), so `tenant_id` here is an unverified
- * guess at the field name — confirm/fix once there's a real marketplace
- * tenant session to test against.
+ * Tenant ID for the two endpoints below that need one as a URL path segment
+ * (`/dashboard/{tenantId}/vendors/`) — Vite sources this from a `?tenant=`
+ * query param on the CMS URL; here it comes from the attached-tenant store
+ * (`uuid` preferred, `id` as fallback), the same tenant the CMS shell itself
+ * is scoped to.
  */
 function getTenantId(): string {
-  const user = useAuth.getState().user as Record<string, unknown> | null;
-  const tenantId = user?.tenant_id ?? user?.tenant_uuid ?? user?.tenant;
-  return tenantId ? String(tenantId) : '';
+  const tenant = useStudio.getState().attachedTenant;
+  return String(tenant?.uuid || tenant?.id || '');
 }
 
 export async function fetchVendorsList(): Promise<VendorListItem[]> {

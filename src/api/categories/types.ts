@@ -1,7 +1,6 @@
 /**
  * CMS categories domain types — ported from Vite's `Containers/Cms/Categories`
- * + `Api/cmsAPI.js`. Marketplace category fetch is dropped (no marketplace
- * support anywhere in this port, same precedent as every prior tab).
+ * + `Api/cmsAPI.js`.
  */
 
 export type CategoryNode = {
@@ -20,6 +19,10 @@ export type CategoryNode = {
   priority?: number | null;
   products: number[];
   sub_categories: CategoryNode[];
+  /** Owning vendor's tenant id — only present on rows returned by
+   * `fetchMarketplaceCategories`, absent for a plain single-tenant fetch.
+   * Same convention as `ProductListItem.sold_by_id`/`.tenant_id`. */
+  tenant?: number;
 };
 
 export type PickedCategoryAsset = { uri: string; name: string; type: string };
