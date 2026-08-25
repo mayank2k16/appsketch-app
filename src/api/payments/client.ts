@@ -140,9 +140,19 @@ export async function searchEntities(query: string): Promise<EntityOption[]> {
 
 // ── Vendor settlements ───────────────────────────────────────────────────
 
+// The backend paginates this endpoint (`{results, count, next, previous}`),
+// same as `fetchBulkPayments` above — confirmed against Vite's own saga
+// (`catalogSaga.js`'s `fetchVendorsSettlements`, which reads
+// `get(response, "data.results", [])`, never the raw response). Treating the
+// response as a bare array here made `data` the whole pagination wrapper
+// object instead of a list, which silently broke every screen consuming
+// this: `settlements.filter(...)` in `VendorSettlementsScreen` was throwing
+// on a non-array, so rows never rendered despite the request succeeding.
 export async function fetchVendorSettlements(): Promise<VendorSettlementListItem[]> {
-  const { data } = await authenticatedClient.get<VendorSettlementListItem[]>('api/shop/vendor-settlements/');
-  return data ?? [];
+  const { data } = await authenticatedClient.get<
+    { results?: VendorSettlementListItem[] } | VendorSettlementListItem[]
+  >('api/shop/vendor-settlements/');
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 export async function deleteVendorSettlement(id: number): Promise<void> {

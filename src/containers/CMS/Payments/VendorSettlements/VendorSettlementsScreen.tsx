@@ -118,7 +118,7 @@ const st = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     height: 42,
-    marginHorizontal: 16,
+    marginHorizontal: 10,
     marginTop: 14,
     marginBottom: 12,
   },
