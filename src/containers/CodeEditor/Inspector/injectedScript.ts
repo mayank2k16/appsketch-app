@@ -64,8 +64,18 @@ export const INSPECTOR_SCRIPT = `
     return parts.length ? 'body > ' + parts.join(' > ') : 'body';
   }
 
+  // The ring borrows the element's own box-shadow, so put back whatever was
+  // there inline (usually nothing) rather than blanking a real one.
+  var prevShadow = '';
+
   function clearSelectionOutline() {
-    if (selectedEl) { selectedEl.style.outline = ''; selectedEl.style.outlineOffset = ''; selectedEl = null; }
+    if (selectedEl) {
+      selectedEl.style.outline = '';
+      selectedEl.style.outlineOffset = '';
+      selectedEl.style.boxShadow = prevShadow;
+      prevShadow = '';
+      selectedEl = null;
+    }
   }
 
   function startTextEdit(el) {
@@ -106,10 +116,14 @@ export const INSPECTOR_SCRIPT = `
     e.preventDefault(); e.stopPropagation();
     clearSelectionOutline();
     selectedEl = t;
-    // The web inspector's selection ring (--ui-accent). Hardcoded because this
-    // script runs inside the previewed page, out of reach of the theme.
-    t.style.outline = '2px solid #4F7DFF';
+    // The web inspector's selection ring (--ui-accent, #d4d4d4). Hardcoded
+    // because this script runs inside the previewed PAGE, out of reach of the
+    // theme — and the page can be any colour, which is why the light ring is
+    // paired with a dark halo: one of the two always has contrast.
+    t.style.outline = '2px solid #D4D4D4';
     t.style.outlineOffset = '1px';
+    prevShadow = t.style.boxShadow;
+    t.style.boxShadow = '0 0 0 4px rgba(1,2,3,0.55)';
 
     var tag = t.tagName.toLowerCase();
     var src = (tag === 'img' || tag === 'video' || tag === 'source') ? realSrc(t) : '';

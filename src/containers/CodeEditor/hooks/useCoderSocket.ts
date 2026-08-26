@@ -141,9 +141,7 @@ export function useCoderSocket(params: CoderSocketParams) {
   // the user's own prompt shows as sent the instant this screen mounts,
   // instead of sitting blank through the ~2s onboard round-trip.
   const [messages, setMessages] = React.useState<ChatMessage[]>(() =>
-    params.userPrompt
-      ? [{ role: 'user', content: params.userPrompt }]
-      : []
+    params.userPrompt ? [{ role: 'user', content: params.userPrompt }] : []
   );
   const [activity, setActivity] = React.useState<ActivityStep[]>([]);
   const [tokens, setTokens] = React.useState<TokenUsage>({ in: 0, out: 0 });
@@ -160,6 +158,12 @@ export function useCoderSocket(params: CoderSocketParams) {
   const [approvalRequest, setApprovalRequest] =
     React.useState<PendingApproval | null>(null);
   const [fileTree, setFileTree] = React.useState<FileTreeNode[]>([]);
+  // Set whenever the backend reports the plan's token quota is used up —
+  // there's no in-app purchase flow, so the UI just points the user to the
+  // web to upgrade (see UpgradeSheet).
+  const [quotaExceeded, setQuotaExceeded] = React.useState<string | null>(
+    null
+  );
   const [openFiles, setOpenFiles] = React.useState<Record<string, string>>({});
   const [lastBuildId, setLastBuildId] = React.useState<number | null>(null);
   // The agent's name for this project, shown as the chat's heading. Arrives on
@@ -223,7 +227,20 @@ export function useCoderSocket(params: CoderSocketParams) {
           const history = msg.history ?? [];
           if (history.length > 0) {
             setMessages(
-              history.map((m) => ({ role: m.role, content: m.content }))
+              history.map((m) => ({
+                role: m.role,
+                content: m.content,
+                images: m.images,
+                // The server persists each assistant turn's activity in
+                // `meta` and replays it here. Dropping it meant a reload
+                // silently emptied every past turn's step list — and with it
+                // the screenshots the agent took.
+                activity: m.activity?.length
+                  ? m.activity.map(
+                      (a) => ({ ...a, id: nextActivityId() }) as ActivityStep
+                    )
+                  : undefined,
+              }))
             );
           }
           // "New site" is the server-side placeholder for a project the agent
@@ -266,7 +283,11 @@ export function useCoderSocket(params: CoderSocketParams) {
             if ((fg.answer || '').trim()) {
               setMessages((prev) => [
                 ...prev,
-                { role: 'assistant', content: fg.answer || '', streaming: true },
+                {
+                  role: 'assistant',
+                  content: fg.answer || '',
+                  streaming: true,
+                },
               ]);
             }
           } else if (anyBackground) {
@@ -300,6 +321,20 @@ export function useCoderSocket(params: CoderSocketParams) {
                 "You've hit your plan's limit for background tasks.",
             },
           ]);
+          if (msg.upgrade) {
+            setQuotaExceeded(
+              msg.detail || "You've hit your plan's limit for background tasks."
+            );
+          }
+          break;
+
+        case 'quota_exceeded':
+          setBusy(false);
+          setEta(null);
+          setBackgroundRun(false);
+          setQuotaExceeded(
+            msg.detail || "You're out of tokens for this period."
+          );
           break;
 
         case 'token':
@@ -540,7 +575,10 @@ export function useCoderSocket(params: CoderSocketParams) {
       opts?: { model?: string; images?: string[]; background?: boolean }
     ) => {
       if (!wsRef.current || !content.trim()) return;
-      setMessages((prev) => [...prev, { role: 'user', content }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'user', content, images: opts?.images },
+      ]);
       setBusy(true);
       setTokens({ in: 0, out: 0 });
       // A stale forecast from the previous turn must not tick down under the
@@ -694,6 +732,8 @@ export function useCoderSocket(params: CoderSocketParams) {
     fileTree,
     openFiles,
     lastBuildId,
+    quotaExceeded,
+    clearQuotaExceeded: () => setQuotaExceeded(null),
     send,
     rename,
     remove,

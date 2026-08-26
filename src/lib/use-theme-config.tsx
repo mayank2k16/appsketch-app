@@ -1,9 +1,5 @@
 import type { Theme } from '@react-navigation/native';
-import {
-  DarkTheme as _DarkTheme,
-  DefaultTheme,
-} from '@react-navigation/native';
-import { useColorScheme } from 'nativewind';
+import { DarkTheme as _DarkTheme } from '@react-navigation/native';
 
 import colors from '@/components/ui/colors';
 
@@ -19,19 +15,12 @@ const DarkTheme: Theme = {
   },
 };
 
-const LightTheme: Theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: colors.primary[400],
-    background: colors.white,
-  },
-};
-
+/**
+ * The app is dark only (see use-selected-theme), so there is one theme and no
+ * branch. This function used to read `useColorScheme()` and then return
+ * `LightTheme` from BOTH sides of its `if` — navigation chrome was light even
+ * in dark mode, which is a large part of why the light path looked broken.
+ */
 export function useThemeConfig() {
-  const { colorScheme } = useColorScheme();
-
-  if (colorScheme === 'dark') return LightTheme;
-
-  return LightTheme;
+  return DarkTheme;
 }

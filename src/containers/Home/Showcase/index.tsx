@@ -4,6 +4,8 @@ import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { F } from '@/lib/fonts';
+
+import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme } from '../theme/HomeTheme';
 import { MockupCard } from './MockupCard';
 
@@ -12,17 +14,17 @@ const FEATURES: {
   title: string;
   desc: string;
 }[] = [
-    {
-      icon: 'globe-outline',
-      title: 'Generate high-quality images',
-      desc: 'Lorem ipsum dolor sit amet consectetur in quisque varius eget turpis sollicitudin purus arcu in tellus dolor eget.',
-    },
-    {
-      icon: 'create-outline',
-      title: 'Edit and upscale images',
-      desc: 'Amet lorem ipsum egestas habitasse mauris lacus ante augue sit id sodales lectus neque gravida ac nulla.',
-    },
-  ];
+  {
+    icon: 'globe-outline',
+    title: 'Describe it, watch it build',
+    desc: 'Say what you want in plain English. The agent writes the pages, wires up the content and ships a working site — no templates to fight with, no code to touch.',
+  },
+  {
+    icon: 'create-outline',
+    title: 'Edit anything, any time',
+    desc: 'Change the copy, swap an image, restyle a section — just ask. Every edit previews before it goes live, so nothing ships until you say so.',
+  },
+];
 
 export function Showcase() {
   const { colorScheme } = useColorScheme();
@@ -32,9 +34,11 @@ export function Showcase() {
     // No section backgroundColor — lets Home's shared TwinkleDots backdrop
     // show through here too, instead of only behind Hero/AgentV2.
     <View style={s.section}>
-      <Text style={[s.heading, { color: t.text }]}>
-        {'A single place to\ncreate and edit images'}
-      </Text>
+      <SectionHeading
+        eyebrow="THE BUILDER"
+        lines={['A single place to', 'build and edit your app']}
+        t={t}
+      />
       <View style={s.features}>
         {FEATURES.map((f) => (
           <View key={f.title} style={s.featureRow}>
@@ -43,7 +47,9 @@ export function Showcase() {
             </View>
             <View style={s.featureText}>
               <Text style={[s.featureTitle, { color: t.text }]}>{f.title}</Text>
-              <Text style={[s.featureDesc, { color: t.textSub }]}>{f.desc}</Text>
+              <Text style={[s.featureDesc, { color: t.textSub }]}>
+                {f.desc}
+              </Text>
             </View>
           </View>
         ))}
@@ -59,14 +65,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
     paddingTop: 44,
     paddingBottom: 56,
-  },
-
-  heading: {
-    fontFamily: F.display900,
-    fontSize: 27,
-    letterSpacing: -0.8,
-    lineHeight: 32,
-    marginBottom: 26,
   },
 
   features: {

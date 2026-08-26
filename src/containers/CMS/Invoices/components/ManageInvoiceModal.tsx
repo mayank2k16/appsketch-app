@@ -227,7 +227,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
         inventory_id: form.inventoryId as string | number,
         invoice: {
           type: form.invoiceType,
-          // customer_name: form.customerName,
+          customer_name: form.customerName,
           invoice_date: form.invoiceDate,
           invoice_id: form.invoiceNo,
           challan_id: form.challan,

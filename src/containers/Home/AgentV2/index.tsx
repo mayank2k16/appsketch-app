@@ -8,8 +8,6 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
   Platform,
   Pressable,
   StyleSheet,
@@ -38,11 +36,13 @@ import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
-import { useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
+import { homeTheme } from '../theme/HomeTheme';
+
 const RADIUS = 15;
-const BORDER_W = 2.75;
+/** Thickness of the prompt card's lit gradient edge — see `ringMask`. */
+const RING_W = 1.6;
 const MAX_IMAGES = 3;
 // Characters are revealed in chunks rather than one per tick. Per-character
 // at 28ms meant ~36 setState calls a second, permanently, on the JS thread —
@@ -84,55 +84,6 @@ export const APP_TABS: {
     ],
   },
 ];
-
-// ─── Concave "flare" for the base of the active tab ────────────────────────────
-// Browser tabs don't just have rounded TOP corners — the active tab also flares
-// OUTWARD at the bottom with a reverse (concave) curve that blends it into the
-// card below. RN can't draw a concave border directly, so this is the standard
-// inverted-corner trick: an `r×r` window filled with the card colour, with a
-// `bg`-coloured circle (white-bordered) carving the concave arc out of its top
-// corner. Placed just outside a bottom corner of the active tab.
-function TabFlare({
-  side,
-  r,
-  card,
-  bg,
-}: {
-  side: 'left' | 'right';
-  r: number;
-  card: string;
-  bg: string;
-}) {
-  const isLeft = side === 'left';
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        [isLeft ? 'left' : 'right']: -r,
-        width: r,
-        height: r,
-        overflow: 'hidden',
-        backgroundColor: card,
-      }}
-    >
-      <View
-        style={{
-          position: 'absolute',
-          top: -r,
-          left: isLeft ? -r : 0,
-          width: r * 2,
-          height: r * 2,
-          borderRadius: r,
-          backgroundColor: bg,
-          borderColor: '#8B5CF6',
-          borderWidth: 1,
-        }}
-      />
-    </View>
-  );
-}
 
 /** Cycles through `phrases`, typing then deleting each in turn, forever —
  * restarts from scratch whenever `phrases` or `enabled` changes (tab switch,
@@ -253,7 +204,7 @@ export function AgentV2({
   onSendPress?: () => void;
 }) {
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
 
   const router = useRouter();
 
@@ -277,41 +228,12 @@ export function AgentV2({
 
   const voiceSupported = Platform.OS !== 'web';
 
+  // Drives the send button's inverted state — filled the moment there is
+  // something to send, including while that send is in flight.
+  const canSend = prompt.trim().length > 0;
+
   const showTypewriter = !inputFocused && prompt.length === 0;
   const typedPlaceholder = useTypewriter(activeTab.suggestions, showTypewriter);
-
-  // Ring border: rotates an oversized copy of the gradient behind a
-  // BORDER_W-wide window (see `ringSpinner` below) via a `transform` style,
-  // not by animating the LinearGradient's own `start`/`end` props.
-  //
-  // The rotating conic-ring sheen was removed: its `useAnimatedStyle` result
-  // was never attached to any view, so the 14s infinite rotation loop had been
-  // running permanently while driving nothing at all. The static
-  // `ringSpinner` gradient below is what actually renders the ring.
-  // Send button — a slow light sheen sweeps across the glass button every
-  // few seconds instead of sitting fully static between presses.
-  const sheenX = React.useRef(new Animated.Value(-1)).current;
-  React.useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(1200),
-        Animated.timing(sheenX, {
-          toValue: 1,
-          duration: 850,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(sheenX, {
-          toValue: -1,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-        Animated.delay(2600),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
 
   async function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
@@ -374,58 +296,21 @@ export function AgentV2({
     <View style={s.wrap}>
       <View style={s.stage}>
         <View style={s.promptStack}>
-          <View style={s.tabRow}>
-            {APP_TABS.map((tab, i) => {
-              const active = tab.key === appType;
-              const isFirst = i === 0;
-              const isLast = i === APP_TABS.length - 1;
-              return (
-                <TouchableOpacity
-                  key={tab.key}
-                  onPress={() => setAppType(tab.key)}
-                  activeOpacity={0.8}
-                  style={[
-                    s.tabPill,
-                    active ? s.tabPillActive : s.tabPillInactive,
-                    {
-                      backgroundColor: active ? t.card : t.agentTabBg,
-                      borderColor: active ? '#8B5CF6' : t.agentTabBorder,
-                      borderTopLeftRadius: isFirst ? RADIUS : 12,
-                      borderTopRightRadius: isLast ? RADIUS : 12,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={tab.icon}
-                    size={13}
-                    color={active ? t.agentTabActiveText : t.agentTabIcon}
-                  />
-                  <Text
-                    style={[
-                      s.tabPillLabel,
-                      { color: active ? t.agentTabActiveText : t.agentTabText },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {tab.label}
-                  </Text>
-                  {active && !isFirst && (
-                    <TabFlare side="left" r={7} card={t.card} bg={t.bg} />
-                  )}
-                  {active && !isLast && (
-                    <TabFlare side="right" r={7} card={t.card} bg={t.bg} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
           <View style={s.ringMask}>
+            {/* The lit edge. Runs top-left → bottom-right rather than a flat
+                  vertical, so the bright run carries along the top and around
+                  the top-right shoulder before falling away — light arriving
+                  from above, not a band across the middle. `locations` holds
+                  it bright across the first third and pushes the falloff into
+                  the lower half, where it fades to near-nothing. */}
             <LinearGradient
               pointerEvents="none"
-              colors={['#22D3EE', '#8B5CF6', '#3B82F6']}
-              start={{ x: 0, y: 1 }}
-              end={{ x: 1, y: 0 }}
+              colors={
+                [...t.agentBorderGradient] as [string, string, ...string[]]
+              }
+              locations={[0, 0.45, 1]}
+              start={{ x: 0.1, y: 0 }}
+              end={{ x: 0.85, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
             <View style={s.cardInner}>
@@ -440,10 +325,71 @@ export function AgentV2({
               />
 
               <View style={s.cardContent}>
+                {/* App-type switch, inside the card and above the field.
+                      No border, no fill, no indicator bar — selection is
+                      carried entirely by the label and icon going full white
+                      against the muted unselected pair. */}
+                <View style={s.tabRow}>
+                  {APP_TABS.map((tab, i) => {
+                    const active = tab.key === appType;
+                    return (
+                      <React.Fragment key={tab.key}>
+                        {/* Hairline rule separating the two halves. Sits
+                              between them rather than around them, so the row
+                              still reads as one control. */}
+                        {i > 0 && (
+                          <View
+                            style={[
+                              s.tabDivider,
+                              { backgroundColor: t.agentTabBorder },
+                            ]}
+                          />
+                        )}
+                        <TouchableOpacity
+                          onPress={() => setAppType(tab.key)}
+                          activeOpacity={0.7}
+                          style={s.tabPill}
+                        >
+                          <Ionicons
+                            name={tab.icon}
+                            size={13}
+                            color={
+                              active ? t.agentTabActiveText : t.agentTabIcon
+                            }
+                          />
+                          <Text
+                            style={[
+                              s.tabPillLabel,
+                              active && s.tabPillLabelActive,
+                              {
+                                color: active
+                                  ? t.agentTabActiveText
+                                  : t.agentTabText,
+                              },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {tab.label}
+                          </Text>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    );
+                  })}
+                </View>
+
                 <View style={s.inputWrap}>
                   <TextInput
                     placeholder={activeTab.suggestions[0]}
-                    placeholderTextColor="transparent"
+                    // The animated overlay below draws the placeholder while
+                    // the field is idle, so the native one is hidden to stop
+                    // the two rendering on top of each other. But the overlay
+                    // only exists while UNFOCUSED — leaving it transparent
+                    // unconditionally meant tapping in emptied the box
+                    // entirely, with no prompt left to work from. Focused,
+                    // the native placeholder takes over as a static hint.
+                    placeholderTextColor={
+                      showTypewriter ? 'transparent' : t.agentInputPlaceholder
+                    }
                     editable
                     multiline
                     value={prompt}
@@ -572,49 +518,41 @@ export function AgentV2({
 
                   <View style={{ flex: 1 }} />
 
+                  {/* Idle, this is the same shape, fill and border as the +
+                        and mic buttons to its left. The moment there is
+                        something to send it inverts to a solid fill with a
+                        dark glyph — the one high-contrast element in the row,
+                        so the action to take next is obvious. Both values come
+                        from the tab tokens, which already flip with the
+                        scheme, rather than hardcoded black/white that would
+                        vanish in light mode. */}
                   <TouchableOpacity
                     onPress={() => handleSend()}
-                    activeOpacity={0.8}
+                    activeOpacity={0.7}
                     disabled={sending || !prompt.trim()}
-                  >
-                    <LinearGradient
-                      colors={
-                        [...t.agentSendGradient] as [
-                          string,
-                          string,
-                          ...string[],
-                        ]
-                      }
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[
-                        s.sendBtn,
-                        (sending || !prompt.trim()) && { opacity: 0.5 },
-                      ]}
-                    >
-                      <Animated.View
-                        pointerEvents="none"
-                        style={[
-                          s.sendSheen,
-                          {
-                            transform: [
-                              {
-                                translateX: sheenX.interpolate({
-                                  inputRange: [-1, 1],
-                                  outputRange: [-38, 38],
-                                }),
-                              },
-                              { rotate: '20deg' },
-                            ],
+                    style={[
+                      s.circleBtn,
+                      canSend
+                        ? {
+                            backgroundColor: t.agentTabActiveText,
+                            borderColor: t.agentTabActiveText,
+                          }
+                        : {
+                            backgroundColor: t.agentBtnBg,
+                            borderColor: t.agentBtnBorder,
+                            opacity: 0.5,
                           },
-                        ]}
+                    ]}
+                  >
+                    {sending ? (
+                      <ActivityIndicator size="small" color={t.card} />
+                    ) : (
+                      <Ionicons
+                        name="arrow-forward"
+                        size={19}
+                        color={canSend ? t.card : t.agentBtnIcon}
                       />
-                      {sending ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
-                      )}
-                    </LinearGradient>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -727,46 +665,51 @@ const s = StyleSheet.create({
     borderRadius: 44,
     opacity: 0.22,
   },
-  // Tabs float above the card as separate pills (a visible gap, no shared
-  // border/background with the card below — deliberately not "attached").
+  // Tabs float above the card as a separate control — no shared border or
+  // background with it, deliberately not "attached". The gap between the two
+  // comes from `tabRow`'s own marginBottom, and the gap below the card from
+  // `suggestionCol`, so this stack adds none of its own.
   promptStack: {
     alignSelf: 'stretch',
-    // No gap: the browser-style tabs sit flush on the card's top edge (they
-    // overlap it by 1px via marginBottom). Spacing below the card is added
-    // back explicitly on `suggestionCol`.
     gap: 0,
     justifyContent: 'center',
   },
+  // Lives INSIDE the card now, above the field — so the card keeps one clean
+  // unbroken outline and nothing sits on top of it. Full width, split evenly
+  // between the two tabs (see `tabPill`).
   tabRow: {
-    alignSelf: 'stretch',
     flexDirection: 'row',
-    gap: 5,
-    zIndex: 2,
+    gap: 10,
+    marginBottom: 2,
   },
-  // Browser-style tab: equal width (flex 1), rounded top corners only, open
-  // (border-less) bottom that overlaps onto the card so the active tab reads
-  // as attached to it.
+  // Bare text + icon. No border, no fill, no radius — the tap target is padded
+  // out but draws nothing of its own, so the only thing distinguishing the
+  // selected tab is that its label and icon go full white.
   tabPill: {
+    // Each tab takes exactly half the row, so Web App and Mobile App sit as
+    // two equal halves with a gap between rather than bunching left at
+    // whatever width their labels happen to need.
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 9,
-    paddingHorizontal: 6,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    marginBottom: -1,
-  },
-  tabPillActive: {
-    zIndex: 2,
-  },
-  tabPillInactive: {
-    zIndex: 1,
+    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 7,
   },
   tabPillLabel: {
     fontFamily: F.sans600,
     fontSize: 12,
+  },
+  // 1px vertical rule between the two tabs. Inset top and bottom so it reads
+  // as a separator between labels, not a full-height column splitting the card.
+  tabDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    marginVertical: 3,
+  },
+  tabPillLabelActive: {
+    fontFamily: F.sans700,
   },
   // Suggested-prompt cards below the card — one full prompt per row (not a
   // wrapping row of short labels), same glass tokens as the tabs above.
@@ -792,61 +735,26 @@ const s = StyleSheet.create({
     fontSize: 12.5,
     lineHeight: 17,
   },
-  shadowWrap: {
-    alignSelf: 'stretch',
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.28,
-        shadowRadius: 22,
-      },
-      android: { elevation: 10 },
-    }),
-  },
-  // Android can't render a colored native shadow (elevation is always
-  // grey/black), so this is a flat halo standing in for the iOS glow —
-  // slightly larger than the card, low opacity, same border palette.
-  glowHalo: {
-    position: 'absolute',
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
-    borderRadius: RADIUS + 10,
-  },
   // Gradient-ring border: `ringMask` clips to the rounded rect and reserves
-  // exactly BORDER_W of padding; `ringSpinner` is an oversized LinearGradient
-  // rotated continuously behind that padding (see the comment above
-  // `ringSpin` for why it's rotated via transform, not via animated
-  // start/end props), and `cardInner` — sized to fill everything inside the
-  // padding — covers the spinner everywhere except that ring, so only the
-  // border ever shows the animated colour.
+  // RING_W of padding, a LinearGradient fills it, and `cardInner` — sized to
+  // fill everything inside that padding — covers the gradient everywhere
+  // except the edge, so only the border shows it.
   ringMask: {
-    // Top corners are SQUARE so the first/last tab's straight outer edge flows
-    // seamlessly into the card's side with no distortion (the tabs provide the
-    // top rounding via their own outer radius); only the bottom corners round.
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    borderBottomLeftRadius: RADIUS,
-    borderBottomRightRadius: RADIUS,
-    // 1px gradient ring: this View reserves the border's thickness via
+    alignSelf: 'stretch',
+    // All four corners round: the tabs are a separate row above now, so
+    // nothing lands on the card's top edge and the outline stays one closed,
+    // unbroken shape.
+    borderRadius: RADIUS,
+    // The gradient ring: this View reserves the stroke's thickness via
     // padding, a LinearGradient fills it (rendered as the first child, see
-    // JSX), and `cardInner` covers everything except that 1px edge.
-    padding: 1,
+    // JSX), and `cardInner` covers everything except that edge. At 1px the
+    // ramp had too little area to show its falloff and flattened to grey —
+    // RING_W gives the sweep somewhere to actually happen.
+    padding: RING_W,
     overflow: 'hidden',
   },
-  ringSpinner: {
-    position: 'absolute',
-    top: '-75%',
-    left: '-75%',
-    width: '250%',
-    height: '250%',
-  },
   cardInner: {
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    borderBottomLeftRadius: RADIUS - 1,
-    borderBottomRightRadius: RADIUS - 1,
+    borderRadius: RADIUS - RING_W,
     overflow: 'hidden',
   },
   cardContent: {
@@ -866,7 +774,9 @@ const s = StyleSheet.create({
     fontFamily: F.sans400,
     fontSize: 15,
     lineHeight: 20,
-    minHeight: 110,
+    // Trimmed by roughly the height the tab row now occupies inside the card,
+    // so pulling the tabs in didn't make the whole composer taller.
+    minHeight: 88,
     maxHeight: 120,
     paddingHorizontal: 4,
   },
@@ -936,21 +846,6 @@ const s = StyleSheet.create({
     fontFamily: F.sans700,
     fontSize: 9,
     color: '#FFFFFF',
-  },
-  sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  sendSheen: {
-    position: 'absolute',
-    top: -10,
-    bottom: -10,
-    width: 10,
-    backgroundColor: 'rgba(255,255,255,0.55)',
   },
 });
 

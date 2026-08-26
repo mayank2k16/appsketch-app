@@ -29,11 +29,11 @@ import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
-import { useAppTheme, useCoderTheme } from '@/lib/theme';
+import { type useAppTheme, useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useCodeEditor } from '../CodeEditorProvider';
-import { ActivityStream, LiveActivity } from './ActivityStream';
+import { ActivityStream, Lightbox, LiveActivity } from './ActivityStream';
 import { ClarifyBlockView } from './ClarifyBlock';
 import { PulsingDot } from './PulsingDot';
 import { StatusBanner } from './StatusBanner';
@@ -321,21 +321,49 @@ function MessageBubble({
 }) {
   const isUser = message.role === 'user';
   const text = message.content || (message.streaming ? '…' : '');
+  // Attachments the user sent with this prompt. The web draws them above the
+  // bubble (`.cw-bubble-imgs`) and opens one in a lightbox on click; without
+  // them the prompt reads as if no image was ever attached.
+  const [zoom, setZoom] = React.useState<string | null>(null);
+  const shots = message.images ?? [];
 
   if (isUser) {
     return (
       <View style={[st.bubbleRow, st.bubbleRowUser]}>
-        <LinearGradient
-          colors={[
-            colors.codeEditorUserBubbleFrom,
-            colors.codeEditorUserBubbleTo,
-          ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[st.bubble, st.bubbleUser]}
-        >
-          <Text style={st.userText}>{text}</Text>
-        </LinearGradient>
+        <View style={st.userStack}>
+          {shots.length > 0 ? (
+            <View style={st.attachRow}>
+              {shots.map((uri, i) => (
+                <TouchableOpacity
+                  key={i}
+                  activeOpacity={0.85}
+                  onPress={() => setZoom(uri)}
+                  style={[st.attach, { borderColor: colors.codeEditorBorder }]}
+                >
+                  <Image
+                    source={{ uri }}
+                    style={st.attachImage}
+                    contentFit="cover"
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
+          {text ? (
+            <LinearGradient
+              colors={[
+                colors.codeEditorUserBubbleFrom,
+                colors.codeEditorUserBubbleTo,
+              ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[st.bubble, st.bubbleUser]}
+            >
+              <Text style={st.userText}>{text}</Text>
+            </LinearGradient>
+          ) : null}
+        </View>
+        <Lightbox uri={zoom} onClose={() => setZoom(null)} />
       </View>
     );
   }
@@ -707,6 +735,8 @@ export function ChatPanel() {
     backgroundRun,
     rename,
     remove,
+    quotaExceeded,
+    clearQuotaExceeded,
   } = useCodeEditor();
 
   const [input, setInput] = React.useState('');
@@ -898,6 +928,12 @@ export function ChatPanel() {
         t={t}
         modelLabel={upgradeModel?.label}
       />
+      <UpgradeSheet
+        visible={!!quotaExceeded}
+        onClose={clearQuotaExceeded}
+        t={t}
+        body={quotaExceeded ?? undefined}
+      />
     </View>
   );
 }
@@ -960,7 +996,33 @@ const st = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  bubbleUser: {},
+  bubbleUser: {
+    // The 85% cap now lives on `userStack`; nesting a second 85% inside it
+    // would compound into ~72%.
+    maxWidth: '100%',
+  },
+  userStack: {
+    maxWidth: '85%',
+    alignItems: 'flex-end',
+    gap: 7,
+  },
+  attachRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  attach: {
+    width: 92,
+    height: 92,
+    borderWidth: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  attachImage: {
+    width: '100%',
+    height: '100%',
+  },
   userText: {
     fontFamily: F.sans400,
     fontSize: 14.5,

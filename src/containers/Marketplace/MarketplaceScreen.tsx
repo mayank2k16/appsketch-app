@@ -20,7 +20,7 @@ import type { TemplateListItem } from '@/api/templates';
 import { useBrowseTemplates, useTemplateCategories } from '@/api/templates';
 import { F } from '@/lib/fonts';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme, type AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { TemplateCard } from './components/TemplateCard';
@@ -34,7 +34,7 @@ export function MarketplaceScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
   const isDark = colorScheme === 'dark';
 
   const [activeCategory, setActiveCategory] = React.useState<string | number>(ALL);
@@ -206,7 +206,7 @@ function CategoryChip({
 }: {
   label: string;
   active: boolean;
-  t: ReturnType<typeof useAppTheme>;
+  t: AppColors;
   onPress: () => void;
 }) {
   return (
@@ -219,7 +219,7 @@ function CategoryChip({
         active && { backgroundColor: t.accent, borderColor: t.accent },
       ]}
     >
-      <Text style={[s.chipLabel, { color: active ? '#FFFFFF' : t.templatesChipText }]}>{label}</Text>
+      <Text style={[s.chipLabel, { color: active ? t.accentOn : t.templatesChipText }]}>{label}</Text>
     </TouchableOpacity>
   );
 }

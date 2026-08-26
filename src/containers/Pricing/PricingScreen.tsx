@@ -4,6 +4,7 @@ import * as React from 'react';
 import {
   Animated,
   Easing,
+  Linking,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -46,17 +47,17 @@ export function PricingScreen() {
 
   const plans = React.useMemo(() => sortPlans((data ?? []).map(transformPlan)), [data]);
 
-  // Checkout itself (Razorpay + domain bundling) lives in CartScreen now —
-  // this just hands off the chosen plan, matching the web reference's
-  // Pricing → Cart handoff (`history.push('/cart', {selected_subscription_plan, ...})`).
-  function handlePlanPress(plan: TransformedPlan) {
+  // No in-app checkout — plans (and domains, bundled with a plan) are
+  // purchased on the web. Log back into the app with the same phone number
+  // and the new plan/tokens show up here automatically.
+  function handlePlanPress(_plan: TransformedPlan) {
     const authStatus = useAuth.getState().status;
     if (authStatus === 'guest' || authStatus === 'signOut') {
       toast.info('Please login to continue');
       router.push('/login');
       return;
     }
-    router.push({ pathname: '/cart', params: { tier: plan.tier, billingCycle } } as never);
+    Linking.openURL('https://appsketch.ai/pricing');
   }
 
   return (

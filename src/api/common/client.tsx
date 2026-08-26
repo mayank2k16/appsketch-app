@@ -13,7 +13,7 @@ import { toast } from '@/lib/toast';
 function handleAuthError(error: AxiosError) {
   console.log(error);
   const errorStatus = error.response?.status;
-  const errorMsg = error.response?.data?.error;
+  const errorMsg = (error.response?.data as { error?: string } | undefined)?.error;
   if (errorStatus == 400 && errorMsg == 'Invalid authentication token.' && useAuth.getState().status !== 'signOut') {
     signOut();
     toast.error('Your session has expired. Please log in again.');

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
@@ -12,14 +11,19 @@ type Props = {
   t: AppColors;
   /** Name of the locked model that triggered this, shown in the body copy. */
   modelLabel?: string;
+  /** Overrides the default model-lock copy for other triggers (domain, token limit). */
+  body?: string;
 };
 
-// Mobile's equivalent of the web's `UpgradeModal.jsx` — shown when a
-// free-tier user taps a locked (paid) model in the picker. Pushes to the
-// existing full-screen `/pricing` route rather than duplicating its plan
-// cards here.
-export function UpgradeSheet({ visible, onClose, t, modelLabel }: Props) {
-  const router = useRouter();
+const UPGRADE_URL = 'https://appsketch.ai/pricing';
+
+// There is no in-app purchase flow — plans and domains are bought on the
+// web (appsketch.ai/pricing) and the app picks up the new plan/tokens the
+// next time the same phone number signs in. This sheet just hands off to a
+// browser instead of a checkout screen.
+export function UpgradeSheet({ visible, onClose, t, modelLabel, body }: Props) {
+  const message =
+    body ?? (modelLabel ? `${modelLabel} is available on paid plans. Upgrade to unlock every AI model.` : 'Upgrade your plan to continue.');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -29,19 +33,19 @@ export function UpgradeSheet({ visible, onClose, t, modelLabel }: Props) {
             <Ionicons name="lock-closed" size={22} color={t.accent} />
           </View>
           <Text style={[s.title, { color: t.text }]}>Upgrade your plan</Text>
-          <Text style={[s.body, { color: t.textSub }]}>
-            {modelLabel ? `${modelLabel} is` : 'This model is'} available on paid plans. Upgrade to unlock
-            every AI model.
+          <Text style={[s.body, { color: t.textSub }]}>{message}</Text>
+          <Text style={[s.hint, { color: t.textSub }]}>
+            Upgrade from a browser, then sign in here with the same phone number — it unlocks instantly.
           </Text>
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => {
               onClose();
-              router.push('/pricing' as never);
+              Linking.openURL(UPGRADE_URL);
             }}
             style={[s.cta, { backgroundColor: t.accent }]}
           >
-            <Text style={s.ctaText}>View Plans</Text>
+            <Text style={s.ctaText}>Upgrade in Browser</Text>
           </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.7} onPress={onClose} style={s.dismiss}>
             <Text style={[s.dismissText, { color: t.textSub }]}>Not now</Text>
@@ -85,7 +89,15 @@ const s = StyleSheet.create({
     fontSize: 13.5,
     lineHeight: 19,
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  hint: {
+    fontFamily: F.sans400,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
     marginBottom: 20,
+    opacity: 0.85,
   },
   cta: {
     alignSelf: 'stretch',
