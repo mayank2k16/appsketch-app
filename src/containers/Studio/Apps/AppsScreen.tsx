@@ -90,10 +90,10 @@ export function AppsScreen({ search }: { search: string }) {
   const query = search.trim().toLowerCase();
   const filtered = query
     ? tenants.filter((tenant) => {
-        const haystack =
-          `${tenant.title || ''} ${tenant.description || ''}`.toLowerCase();
-        return haystack.includes(query);
-      })
+      const haystack =
+        `${tenant.title || ''} ${tenant.description || ''}`.toLowerCase();
+      return haystack.includes(query);
+    })
     : tenants;
 
   return (

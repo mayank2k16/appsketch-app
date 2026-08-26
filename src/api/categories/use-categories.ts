@@ -2,6 +2,7 @@ import type { AxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { moveWithinParent, updateCategoryById } from '@/containers/CMS/Categories/utils';
+import { useStudio } from '@/lib/store/studio-store';
 import { toast } from '@/lib/toast';
 
 import {
@@ -10,6 +11,7 @@ import {
   deleteCategoryAtAnyLevel,
   deleteProductFromCategory,
   fetchCategoryTree,
+  fetchMarketplaceCategories,
   linkProductToCategory,
   reorderCategories,
   reorderCategoryProducts,
@@ -33,9 +35,11 @@ export const categoryKeys = {
 };
 
 export function useCategoryTree() {
+  const tenantType = useStudio.use.attachedTenant()?.tenant_type;
+  const isMarketplace = tenantType === 'marketplace';
   return useQuery<Awaited<ReturnType<typeof fetchCategoryTree>>, AxiosError>({
     queryKey: categoryKeys.list(),
-    queryFn: fetchCategoryTree,
+    queryFn: isMarketplace ? fetchMarketplaceCategories : fetchCategoryTree,
   });
 }
 

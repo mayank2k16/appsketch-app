@@ -5,9 +5,12 @@ import type {
   IngredientsBlock,
   KeyBenefitItem,
   ProductListItem,
+  ProductReviewAction,
   SaveProductInput,
   SpecificationItem,
 } from '@/api/products';
+
+import type { CmsStatusMeta } from '../components';
 
 export function inr(v: number | string | undefined | null): string {
   const n = Number(v ?? 0);
@@ -17,6 +20,26 @@ export function inr(v: number | string | undefined | null): string {
 
 export function primaryImageOf(product: ProductListItem): string | undefined {
   return product.photo || product.images?.[0];
+}
+
+const PRODUCT_STATUS_META: Record<ProductReviewAction, CmsStatusMeta> = {
+  SUBMITTED: { label: 'Submitted', color: '#94A3B8', kind: 'info' },
+  APPROVED: { label: 'Approved', color: '#16A34A', kind: 'success' },
+  REJECTED: { label: 'Rejected', color: '#DC2626', kind: 'danger' },
+  RESUBMITTED: { label: 'Resubmitted', color: '#D97706', kind: 'warning' },
+};
+
+/** A vendor's own product carries its review-queue `status` straight on the
+ * row (see `ProductListItem.status`) — this is that field's badge styling,
+ * mirrors `ProductRequests/utils.ts`'s `getProductRequestStatusMeta`. */
+export function getProductStatusMeta(status: ProductReviewAction | string): CmsStatusMeta {
+  return (
+    PRODUCT_STATUS_META[status as ProductReviewAction] ?? {
+      label: status || 'N/A',
+      color: '#94A3B8',
+      kind: 'info',
+    }
+  );
 }
 
 export const VARIANT_TYPE_OPTIONS = [

@@ -40,6 +40,11 @@ export async function deleteProduct(id: number): Promise<void> {
   await authenticatedClient.delete('api/shop/tenant/products/', { data: { id } });
 }
 
+/** Vendor self-service: send a REJECTED product back into the review queue. */
+export async function resubmitProduct(id: number): Promise<void> {
+  await authenticatedClient.post('api/shop/tenant/products/resubmit/', { id });
+}
+
 export async function fetchLeafCategories(): Promise<ProductCategory[]> {
   const { data } = await authenticatedClient.get<{ data: ProductCategory[] }>(
     'api/shop/categories/leaf/'

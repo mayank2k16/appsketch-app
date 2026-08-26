@@ -13,6 +13,7 @@ import {
   fetchProductInventories,
   fetchProductReviewHistory,
   fetchProducts,
+  resubmitProduct,
   saveProduct,
 } from './client';
 import type { ProductListItem, SaveProductInput } from './types';
@@ -103,5 +104,17 @@ export function useDeleteProduct() {
       queryClient.invalidateQueries({ queryKey: productKeys.all });
     },
     onError: () => toast.error('Error deleting product.'),
+  });
+}
+
+export function useResubmitProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => resubmitProduct(id),
+    onSuccess: () => {
+      toast.success('Product resubmitted for approval');
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
+    },
+    onError: () => toast.error('Error resubmitting product.'),
   });
 }

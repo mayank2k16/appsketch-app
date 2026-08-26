@@ -35,6 +35,17 @@ export type FlatCategoryRow = {
   groupSize: number;
   hasChildren: boolean;
   expanded: boolean;
+  /** One entry per ancestor level above this row (index 0 = root's level),
+   * true when that ancestor still has a later sibling — i.e. the tree
+   * connector at that indent column must keep running past this row rather
+   * than stop. The last entry (this row's immediate parent) is NOT used for
+   * this row's own connector — that one instead reads `isLastInGroup` below,
+   * since the immediate level draws an elbow (├─/└─), not a plain
+   * passthrough bar. Classic `tree`-command prefix-stack algorithm. */
+  ancestorLines: boolean[];
+  /** Whether this row is the last child within its own sibling group — drives
+   * whether its connector elbow continues downward to a next sibling. */
+  isLastInGroup: boolean;
 };
 
 /** Depth-first flatten of the visible rows only — recurses into
@@ -48,11 +59,17 @@ export function flattenVisible(
 ): FlatCategoryRow[] {
   const rows: FlatCategoryRow[] = [];
 
-  function walk(nodes: CategoryNode[], depth: number, parentId: number | null) {
+  function walk(
+    nodes: CategoryNode[],
+    depth: number,
+    parentId: number | null,
+    ancestorLines: boolean[]
+  ) {
     const groupKey = parentId === null ? 'root' : `sub-${parentId}`;
     nodes.forEach((category, indexInGroup) => {
       const hasChildren = (category.sub_categories?.length ?? 0) > 0;
       const expanded = !!expandedMap[category.id];
+      const isLastInGroup = indexInGroup === nodes.length - 1;
       rows.push({
         category,
         depth,
@@ -62,14 +79,19 @@ export function flattenVisible(
         groupSize: nodes.length,
         hasChildren,
         expanded,
+        ancestorLines,
+        isLastInGroup,
       });
       if (hasChildren && expanded) {
-        walk(category.sub_categories, depth + 1, category.id);
+        walk(category.sub_categories, depth + 1, category.id, [
+          ...ancestorLines,
+          !isLastInGroup,
+        ]);
       }
     });
   }
 
-  walk(categories, 0, null);
+  walk(categories, 0, null, []);
   return rows;
 }
 

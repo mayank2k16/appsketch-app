@@ -1,6 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import type { ProductListItem } from '@/api/products';
 import { useLeafCategories, useManufacturers, useProductInventories, useSaveProduct } from '@/api/products';
@@ -24,10 +24,19 @@ type Props = {
   colors: CmsThemeColors;
   product: ProductListItem | null;
   onSuccess: () => void;
+  /** Renders every field non-interactive and swaps the footer for a plain
+   * "Close" button — used by Product Requests' "view full product" action,
+   * where editing must go back through the vendor. Implemented as a single
+   * `pointerEvents="none"` wrapper around the whole form instead of
+   * threading a `disabled` prop through every field subcomponent — vertical
+   * scrolling still works since `pointerEvents="none"` only removes the
+   * wrapped subtree as a touch *target*, not the ancestor ScrollView's own
+   * scroll responder. */
+  readOnly?: boolean;
 };
 
 export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
-  ({ colors, product, onSuccess }, ref) => {
+  ({ colors, product, onSuccess, readOnly = false }, ref) => {
     const isEdit = Boolean(product);
     const [form, setForm] = React.useState<ProductFormState>(EMPTY_PRODUCT_FORM);
     const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -57,6 +66,7 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
     }
 
     function handleSubmit() {
+      if (readOnly) return;
       if (!validate()) return;
       saveProduct.mutate(formToSaveInput(form), { onSuccess: () => onSuccess() });
     }
@@ -66,14 +76,18 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
         ref={ref}
         colors={colors}
         snapPoints={['75%']}
-        title={isEdit ? 'Edit Product' : 'Add Product'}
+        title={readOnly ? 'View Product' : isEdit ? 'Edit Product' : 'Add Product'}
         footer={
-          <CmsButton
-            colors={colors}
-            label={isEdit ? 'Save Changes' : 'Add Product'}
-            onPress={handleSubmit}
-            loading={saveProduct.isPending}
-          />
+          readOnly ? (
+            <CmsButton colors={colors} label="Close" variant="ghost" onPress={onSuccess} />
+          ) : (
+            <CmsButton
+              colors={colors}
+              label={isEdit ? 'Save Changes' : 'Add Product'}
+              onPress={handleSubmit}
+              loading={saveProduct.isPending}
+            />
+          )
         }
       >
         <CmsSheetScrollView
@@ -81,6 +95,7 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
           contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
         >
+        <View pointerEvents={readOnly ? 'none' : 'auto'} style={st.formWrap}>
           <CmsCard colors={colors} title="Media">
             <MediaGalleryField
               colors={colors}
@@ -348,7 +363,7 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
           <CmsCard colors={colors} title="Custom HTML/CSS Content">
             <CustomHtmlField colors={colors} value={form.custom_html} onChange={(v) => set('custom_html', v)} />
           </CmsCard>
-
+        </View>
         </CmsSheetScrollView>
       </CmsModal>
     );
@@ -357,4 +372,5 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
 
 const st = StyleSheet.create({
   scroll: { padding: 16, gap: 12, paddingBottom: 16 },
+  formWrap: { gap: 12 },
 });

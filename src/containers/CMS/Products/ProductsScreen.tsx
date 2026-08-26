@@ -6,6 +6,8 @@ import type { ProductListItem } from '@/api/products';
 import { useDeleteProduct, useProducts } from '@/api/products';
 import { useModal } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { useStudio } from '@/lib/store/studio-store';
+import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 
 import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
@@ -18,17 +20,26 @@ import { ProductsSkeleton } from './components/ProductsSkeleton';
 export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
   const { colors } = useCmsTheme();
 
+  const isVendorTenant = useStudio.use.attachedTenant()?.tenant_type === 'vendor';
+
   const productsQuery = useProducts();
   const products = productsQuery.data ?? [];
 
   const [query, setQuery] = React.useState('');
   const debouncedQuery = useDebouncedValue(query, 400);
+  const selectedVendor = useVendorFilter.use.selectedVendor();
 
   const filteredProducts = React.useMemo(() => {
-    if (debouncedQuery.trim().length < 3) return products;
-    const q = debouncedQuery.toLowerCase();
-    return products.filter((p) => p.product_name?.toLowerCase().includes(q));
-  }, [products, debouncedQuery]);
+    let list = products;
+    if (selectedVendor) {
+      list = list.filter((p) => (p.sold_by_id ?? p.tenant_id) === selectedVendor.id);
+    }
+    if (debouncedQuery.trim().length >= 3) {
+      const q = debouncedQuery.toLowerCase();
+      list = list.filter((p) => p.product_name?.toLowerCase().includes(q));
+    }
+    return list;
+  }, [products, selectedVendor, debouncedQuery]);
 
   const manageModal = useModal();
   const [editingProduct, setEditingProduct] = React.useState<ProductListItem | null>(null);
@@ -62,9 +73,15 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
 
   const renderItem = React.useCallback(
     ({ item }: { item: ProductListItem }) => (
-      <ProductListCard product={item} colors={colors} onEdit={() => openEdit(item)} onDelete={() => openDelete(item)} />
+      <ProductListCard
+        product={item}
+        colors={colors}
+        isVendorTenant={isVendorTenant}
+        onEdit={() => openEdit(item)}
+        onDelete={() => openDelete(item)}
+      />
     ),
-    [colors]
+    [colors, isVendorTenant]
   );
 
   return (

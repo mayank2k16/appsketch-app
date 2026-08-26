@@ -24,10 +24,9 @@ const HEADER_LOGO = require('../../assets/logo.png');
 import { Text } from '@/components/ui';
 import { signOut, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import {
-  drawerTheme,
-  type DrawerColors,
-} from '@/containers/Home/theme/HomeTheme';
+import { drawerTheme, type DrawerColors } from '@/containers/Home/theme/HomeTheme';
+import { useSelectedTheme } from '@/lib/hooks/use-selected-theme';
+import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DRAWER_W = Math.min(SCREEN_W * 0.72, 290);
@@ -286,6 +285,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   function handleLogout() {
     onClose();
     setTimeout(() => {
+      useVendorFilter.getState().clearSelectedVendor();
       signOut();
       router.replace('/login');
     }, 80);
@@ -301,7 +301,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       message:
         'Check out Appsketch — write anything and it compiles your dream interface in real-time. https://appsketch.ai',
       url: 'https://appsketch.ai',
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   return (

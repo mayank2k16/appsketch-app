@@ -60,7 +60,7 @@ const s = StyleSheet.create({
   },
 
   headingWrap: {
-    marginBottom: 26,
+    marginBottom: 24,
   },
   heading: {
     fontFamily: F.display900,

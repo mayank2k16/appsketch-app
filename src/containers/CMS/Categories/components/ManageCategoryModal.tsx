@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
@@ -20,6 +19,7 @@ import {
   CmsCard,
   CmsInput,
   CmsModal,
+  CmsSheetScrollView,
   CmsSwitch,
 } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -31,6 +31,7 @@ type FormState = {
   home_page: boolean;
   href_path: string;
   colour: string;
+  priority: string;
 };
 
 function getDefaultForm(): FormState {
@@ -40,6 +41,7 @@ function getDefaultForm(): FormState {
     home_page: false,
     href_path: '',
     colour: '',
+    priority: '',
   };
 }
 
@@ -61,6 +63,8 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
     const [bannerImage, setBannerImage] =
       React.useState<PickedCategoryAsset | null>(null);
     const [icon, setIcon] = React.useState<PickedCategoryAsset | null>(null);
+    const [backgroundImage, setBackgroundImage] =
+      React.useState<PickedCategoryAsset | null>(null);
 
     const createCategory = useCreateCategory();
     const updateCategory = useUpdateCategory();
@@ -74,6 +78,7 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
       setImage(null);
       setBannerImage(null);
       setIcon(null);
+      setBackgroundImage(null);
       if (mode === 'edit' && category) {
         setForm({
           name: category.name || '',
@@ -81,6 +86,7 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
           home_page: category.home_page || false,
           href_path: category.href_path ?? '',
           colour: category.colour ?? '',
+          priority: category.priority != null ? String(category.priority) : '',
         });
       } else {
         setForm(getDefaultForm());
@@ -125,9 +131,11 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
         home_page: form.home_page,
         href_path: form.href_path,
         colour: form.colour,
+        priority: form.priority.trim(),
         ...(image ? { image } : {}),
         ...(bannerImage ? { banner_image: bannerImage } : {}),
         ...(icon ? { icon } : {}),
+        ...(backgroundImage ? { background_image: backgroundImage } : {}),
       };
 
       if (mode === 'edit' && category) {
@@ -154,10 +162,23 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
     const nameLabel = mode === 'addSub' ? 'Subcategory Name' : 'Category Name';
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['75%']} title={title}>
-        <BottomSheetScrollView
+      <CmsModal
+        ref={ref}
+        colors={colors}
+        snapPoints={['75%']}
+        title={title}
+        footer={
+          <CmsButton
+            colors={colors}
+            label={isSubmitting ? 'Saving…' : 'Save'}
+            onPress={handleSubmit}
+            loading={isSubmitting}
+          />
+        }
+      >
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 16 }}
           keyboardShouldPersistTaps="handled"
         >
           <CmsCard colors={colors} title="Images">
@@ -182,6 +203,13 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
                 localAsset={icon}
                 existingUrl={mode === 'edit' ? category?.icon : null}
                 onPick={() => pickImage(setIcon)}
+              />
+              <ImagePickerTile
+                colors={colors}
+                label="Background"
+                localAsset={backgroundImage}
+                existingUrl={mode === 'edit' ? category?.background_image : null}
+                onPick={() => pickImage(setBackgroundImage)}
               />
             </View>
           </CmsCard>
@@ -209,6 +237,14 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
               placeholder="e.g. /categories/grocery"
               value={form.href_path}
               onChangeText={(v) => set('href_path', v)}
+            />
+            <CmsInput
+              colors={colors}
+              label="Priority"
+              placeholder="e.g. 1 — lower shows first, blank = last"
+              value={form.priority}
+              onChangeText={(v) => set('priority', v)}
+              keyboardType="number-pad"
             />
 
             <View style={st.colourGroup}>
@@ -245,14 +281,7 @@ export const ManageCategoryModal = React.forwardRef<BottomSheetModal, Props>(
               onChange={(v) => set('home_page', v)}
             />
           </CmsCard>
-
-          <CmsButton
-            colors={colors}
-            label={isSubmitting ? 'Saving…' : 'Save'}
-            onPress={handleSubmit}
-            loading={isSubmitting}
-          />
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
       </CmsModal>
     );
   }

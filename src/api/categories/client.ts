@@ -24,6 +24,14 @@ export async function fetchCategoryTree(): Promise<CategoryNode[]> {
   return data ?? [];
 }
 
+/** Marketplace-only variant of `fetchCategoryTree` — response is already
+ * flat, each category tagged with its owning vendor's `tenant` id (no
+ * grouping/flattening needed, unlike `fetchMarketplaceProducts`). */
+export async function fetchMarketplaceCategories(): Promise<CategoryNode[]> {
+  const { data } = await authenticatedClient.get<CategoryNode[]>('api/shop/marketplace/categories/all/');
+  return data ?? [];
+}
+
 async function appendFile(formData: FormData, field: string, asset: PickedCategoryAsset) {
   if (Platform.OS === 'web') {
     const blob = await (await fetch(asset.uri)).blob();
@@ -40,11 +48,13 @@ async function buildCategoryFormData(payload: {
   home_page: boolean;
   href_path: string;
   colour: string;
+  priority: string;
   category_id?: number;
   id?: number;
   image?: PickedCategoryAsset;
   banner_image?: PickedCategoryAsset;
   icon?: PickedCategoryAsset;
+  background_image?: PickedCategoryAsset;
 }): Promise<FormData> {
   const formData = new FormData();
   formData.append('name', payload.name);
@@ -52,11 +62,13 @@ async function buildCategoryFormData(payload: {
   formData.append('home_page', String(payload.home_page));
   formData.append('href_path', payload.href_path);
   formData.append('colour', payload.colour.toLowerCase());
+  formData.append('priority', payload.priority.trim());
   if (payload.category_id !== undefined) formData.append('category_id', String(payload.category_id));
   if (payload.id !== undefined) formData.append('id', String(payload.id));
   if (payload.image) await appendFile(formData, 'image', payload.image);
   if (payload.banner_image) await appendFile(formData, 'banner_image', payload.banner_image);
   if (payload.icon) await appendFile(formData, 'icon', payload.icon);
+  if (payload.background_image) await appendFile(formData, 'background_image', payload.background_image);
   return formData;
 }
 

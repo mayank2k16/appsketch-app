@@ -1,14 +1,20 @@
 import * as React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import type { ProductRequestActionType, ProductRequestItem } from '@/api/product-requests';
+import type { ProductRequestItem } from '@/api/product-requests';
 import { useProductRequests, useUpdateProductRequestStatus } from '@/api/product-requests';
+import type { VendorListItem } from '@/api/vendors';
+import { useVendors } from '@/api/vendors';
 import { useModal } from '@/components/ui';
+import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 
-import { CmsButton, CmsConfirmModal, CmsSelect } from '../components';
+import { CmsButton, CmsSelect } from '../components';
+import { ManageProductModal } from '../Products/components/ManageProductModal';
 import { useCmsTheme } from '../theme';
+import { ApproveRequestModal } from './components/ApproveRequestModal';
 import { ProductRequestCard } from './components/ProductRequestCard';
 import { ProductRequestsSkeleton } from './components/ProductRequestsSkeleton';
+import { RejectRequestModal } from './components/RejectRequestModal';
 
 type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -19,41 +25,87 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: 'REJECTED', label: 'Rejected' },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ProductRequestsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
   const { colors } = useCmsTheme();
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('ALL');
   const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
-  const [actionType, setActionType] = React.useState<ProductRequestActionType | null>(null);
+  // Bumped every time an approve/reject sheet opens, so it can be used as a
+  // `key` to force a fresh mount (and therefore reset internal state — the
+  // picked inventory / typed rejection notes) each time, same idea as
+  // `CategoriesScreen`'s `manageTarget.key`.
+  const [actionKey, setActionKey] = React.useState(0);
+  const [actionType, setActionType] = React.useState<'APPROVED' | 'REJECTED' | null>(null);
+  const [viewProduct, setViewProduct] = React.useState<ProductRequestItem | null>(null);
 
   const productRequestsQuery = useProductRequests();
   const updateStatus = useUpdateProductRequestStatus();
-  const confirmModal = useModal();
+  const vendorsQuery = useVendors();
+  const approveModal = useModal();
+  const rejectModal = useModal();
+  const viewModal = useModal();
+
+  const vendorsById = React.useMemo(() => {
+    const map = new Map<number, VendorListItem>();
+    for (const v of vendorsQuery.data ?? []) map.set(v.id, v);
+    return map;
+  }, [vendorsQuery.data]);
 
   const products = productRequestsQuery.data ?? [];
+
+  const selectedVendor = useVendorFilter.use.selectedVendor();
+  const vendorFilteredProducts = React.useMemo(() => {
+    if (!selectedVendor) return products;
+    return products.filter((p) => (p.sold_by_id ?? p.tenant_id) === selectedVendor.id);
+  }, [products, selectedVendor]);
+
   const filteredProducts = React.useMemo(() => {
-    if (statusFilter === 'ALL') return products;
-    return products.filter((item) => item.status === statusFilter);
-  }, [products, statusFilter]);
+    if (statusFilter === 'ALL') return vendorFilteredProducts;
+    return vendorFilteredProducts.filter((item) => item.status === statusFilter);
+  }, [vendorFilteredProducts, statusFilter]);
 
   function toggleSelection(id: number) {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]));
   }
 
-  function openConfirm(action: ProductRequestActionType) {
+  function openApprove() {
     if (selectedIds.length === 0) return;
-    setActionType(action);
-    confirmModal.present();
+    setActionType('APPROVED');
+    setActionKey((k) => k + 1);
+    approveModal.present();
   }
 
-  function confirmAction() {
-    if (!actionType) return;
+  function openReject() {
+    if (selectedIds.length === 0) return;
+    setActionType('REJECTED');
+    setActionKey((k) => k + 1);
+    rejectModal.present();
+  }
+
+  function openView(product: ProductRequestItem) {
+    setViewProduct(product);
+    viewModal.present();
+  }
+
+  function confirmApprove(inventoryId: number) {
     updateStatus.mutate(
-      { product_ids: selectedIds, action: actionType },
+      { product_ids: selectedIds, action: 'APPROVED', inventory_id: inventoryId },
       {
         onSuccess: () => {
           setSelectedIds([]);
-          confirmModal.dismiss();
+          approveModal.dismiss();
+          setActionType(null);
+        },
+      }
+    );
+  }
+
+  function confirmReject(notes: string) {
+    updateStatus.mutate(
+      { product_ids: selectedIds, action: 'REJECTED', notes },
+      {
+        onSuccess: () => {
+          setSelectedIds([]);
+          rejectModal.dismiss();
           setActionType(null);
         },
       }
@@ -64,12 +116,14 @@ export function ProductRequestsScreen({ onMenuPress: _onMenuPress }: { onMenuPre
     ({ item }: { item: ProductRequestItem }) => (
       <ProductRequestCard
         product={item}
+        vendor={vendorsById.get(item.sold_by_id ?? item.tenant_id ?? -1)}
         colors={colors}
         isSelected={selectedIds.includes(item.id)}
         onToggle={() => toggleSelection(item.id)}
+        onView={() => openView(item)}
       />
     ),
-    [colors, selectedIds]
+    [colors, selectedIds, vendorsById]
   );
 
   return (
@@ -95,7 +149,7 @@ export function ProductRequestsScreen({ onMenuPress: _onMenuPress }: { onMenuPre
           data={filteredProducts}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
-          contentContainerStyle={{ paddingTop: 4, paddingBottom: 24 }}
+          contentContainerStyle={{ paddingTop: 10, paddingBottom: 24 }}
         />
       )}
 
@@ -103,7 +157,7 @@ export function ProductRequestsScreen({ onMenuPress: _onMenuPress }: { onMenuPre
         <CmsButton
           colors={colors}
           label="Approve Selected"
-          onPress={() => openConfirm('APPROVED')}
+          onPress={openApprove}
           disabled={selectedIds.length === 0}
           style={{ flex: 1 }}
         />
@@ -111,32 +165,45 @@ export function ProductRequestsScreen({ onMenuPress: _onMenuPress }: { onMenuPre
           colors={colors}
           label="Reject Selected"
           variant="danger"
-          onPress={() => openConfirm('REJECTED')}
+          onPress={openReject}
           disabled={selectedIds.length === 0}
           style={{ flex: 1 }}
         />
       </View>
 
-      <CmsConfirmModal
-        ref={confirmModal.ref}
+      <ApproveRequestModal
+        ref={approveModal.ref}
+        resetKey={actionKey}
         colors={colors}
-        title={actionType === 'APPROVED' ? 'Approve Products' : 'Reject Products'}
-        description={
-          actionType === 'APPROVED'
-            ? 'Are you sure you want to approve the selected products?'
-            : 'Are you sure you want to reject the selected products?'
-        }
-        confirmLabel={actionType === 'APPROVED' ? 'Approve' : 'Reject'}
-        destructive={actionType === 'REJECTED'}
-        loading={updateStatus.isPending}
-        onConfirm={confirmAction}
+        productCount={selectedIds.length}
+        loading={updateStatus.isPending && actionType === 'APPROVED'}
+        onConfirm={confirmApprove}
+      />
+      <RejectRequestModal
+        ref={rejectModal.ref}
+        resetKey={actionKey}
+        colors={colors}
+        productCount={selectedIds.length}
+        loading={updateStatus.isPending && actionType === 'REJECTED'}
+        onConfirm={confirmReject}
+      />
+
+      <ManageProductModal
+        ref={viewModal.ref}
+        colors={colors}
+        product={viewProduct}
+        readOnly
+        onSuccess={() => {
+          viewModal.dismiss();
+          setViewProduct(null);
+        }}
       />
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  filterWrap: { paddingHorizontal: 16, paddingTop: 14 },
+  filterWrap: { paddingHorizontal: 14, paddingTop: 14 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   footer: {
     flexDirection: 'row',
@@ -144,5 +211,6 @@ const st = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
+    paddingBottom: 30,
   },
 });

@@ -67,6 +67,8 @@ export function DraggableCategoryRow({
         depth={row.depth}
         hasChildren={row.hasChildren}
         expanded={row.expanded}
+        ancestorLines={row.ancestorLines}
+        isLastInGroup={row.isLastInGroup}
         onToggle={onToggle}
         onSelect={onSelect}
       />

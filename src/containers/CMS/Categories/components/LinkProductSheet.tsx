@@ -87,6 +87,16 @@ export const LinkProductSheet = React.forwardRef<BottomSheetModal, Props>(({ col
                       {item.description}
                     </Text>
                   ) : null}
+                  {item.sold_by_name ? (
+                    <Text style={[st.attribution, { color: colors.textSecondary }]} numberOfLines={1}>
+                      Sold By {item.sold_by_name.slice(0, 25)}
+                    </Text>
+                  ) : null}
+                  {item.tenant_name ? (
+                    <Text style={[st.attribution, { color: colors.textSecondary }]} numberOfLines={1}>
+                      Tenant: {item.tenant_name.slice(0, 25)}
+                    </Text>
+                  ) : null}
                 </View>
                 <Ionicons
                   name={checked ? 'checkbox' : 'square-outline'}
@@ -126,6 +136,7 @@ const st = StyleSheet.create({
   },
   name: cmsType.listSubtitle,
   desc: { ...cmsType.listMeta, marginTop: 2 },
+  attribution: { fontSize: 11, fontWeight: '600', marginTop: 2 },
   footer: {
     position: 'absolute',
     bottom: 0,
