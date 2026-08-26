@@ -12,6 +12,7 @@ import { cmsType } from '../../theme/cms-typography';
 import { CustomVariableRow } from './components/CustomVariableRow';
 import { ManageVariableModal } from './components/ManageVariableModal';
 import { SystemVariableChip } from './components/SystemVariableChip';
+import { CustomVariablesSkeleton, SystemVariablesSkeleton } from './components/VariablesSkeleton';
 
 export function VariablesScreen() {
   const { colors } = useCmsTheme();
@@ -62,7 +63,7 @@ export function VariablesScreen() {
           <>
             <CmsCard colors={colors} title="System Variables" style={st.systemCard}>
               {systemQuery.isLoading ? (
-                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Loading…</Text>
+                <SystemVariablesSkeleton colors={colors} />
               ) : (
                 <View style={st.chipWrap}>
                   {systemVariables.map((v) => (
@@ -82,7 +83,9 @@ export function VariablesScreen() {
           </>
         }
         ListEmptyComponent={
-          customQuery.isLoading ? null : (
+          customQuery.isLoading ? (
+            <CustomVariablesSkeleton colors={colors} />
+          ) : (
             <View style={st.center}>
               <Text style={{ color: colors.textSecondary }}>No custom variables yet</Text>
             </View>
@@ -111,13 +114,13 @@ export function VariablesScreen() {
 }
 
 const st = StyleSheet.create({
-  systemCard: { marginHorizontal: 16, marginTop: 12, marginBottom: 16 },
+  systemCard: { marginHorizontal: 12, marginTop: 12, marginBottom: 16 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   customHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     marginBottom: 10,
   },
   customTitle: cmsType.sectionTitle,

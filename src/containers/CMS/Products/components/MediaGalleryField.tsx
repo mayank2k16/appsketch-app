@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 
 import { uploadProductMedia } from '@/api/products';
+import { resolveMediaUrl } from '@/lib/media-url';
 import { toast } from '@/lib/toast';
 
 import type { CmsThemeColors } from '../../theme';
@@ -72,7 +73,7 @@ export function MediaGalleryField({ colors, label, kind, multiple, value, onChan
         {value.map((uri, i) => (
           <View key={`${uri}-${i}`} style={[st.tile, { backgroundColor: colors.background, borderColor: colors.border }]}>
             {kind === 'image' ? (
-              <Image source={{ uri }} style={st.tileImg} contentFit="cover" />
+              <Image source={{ uri: resolveMediaUrl(uri) }} style={st.tileImg} contentFit="cover" />
             ) : (
               <View style={st.videoTile}>
                 <Ionicons name="videocam" size={20} color={colors.textSecondary} />

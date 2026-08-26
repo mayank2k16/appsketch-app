@@ -11,6 +11,7 @@ import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { FilterModal } from './components/FilterModal';
 import { InvoiceListCard } from './components/InvoiceListCard';
+import { InvoicesSkeleton } from './components/InvoicesSkeleton';
 import { ManageInvoiceModal } from './components/ManageInvoiceModal';
 
 const EMPTY_FILTERS: InvoiceFilters = { entity: [], type: [], startDate: '', endDate: '' };
@@ -142,12 +143,10 @@ export function InvoicesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
       </View>
 
       {loading && invoices.length === 0 ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading invoices…</Text>
-        </View>
+        <InvoicesSkeleton colors={colors} />
       ) : invoices.length === 0 ? (
         <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>No Invoices Found.</Text>
+          <Text style={[st.emptyText, { color: colors.textSecondary }]}>No Invoices Found.</Text>
         </View>
       ) : (
         <FlatList
@@ -194,7 +193,7 @@ export function InvoicesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
 }
 
 const st = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 14 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 14 },
   searchWrap: {
     flex: 1,
     flexDirection: 'row',
@@ -207,8 +206,9 @@ const st = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
   iconBtn: { width: 42, height: 42, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingTop: 10, marginBottom: 10 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 14, paddingTop: 10, marginBottom: 10 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginTop: 5 },
   addBtnText: { fontSize: 13, fontWeight: '700' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  center: { flex: 1, alignItems: 'center', paddingHorizontal: 32, paddingVertical: 50 },
+  emptyText: { textAlign: 'center', width: '100%', marginTop: 100 },
 });

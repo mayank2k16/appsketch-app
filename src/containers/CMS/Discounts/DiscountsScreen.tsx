@@ -9,6 +9,7 @@ import { useModal } from '@/components/ui';
 import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
 import { DiscountListCard } from './components/DiscountListCard';
+import { DiscountsSkeleton } from './components/DiscountsSkeleton';
 import { ManageDiscountModal } from './components/ManageDiscountModal';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -24,8 +25,8 @@ export function DiscountsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
     const q = query.toLowerCase();
     const filtered = q
       ? discounts.filter(
-          (d) => d.code?.toLowerCase().includes(q) || d.code_description?.toLowerCase().includes(q)
-        )
+        (d) => d.code?.toLowerCase().includes(q) || d.code_description?.toLowerCase().includes(q)
+      )
       : discounts;
     return [...filtered].reverse();
   }, [discounts, query]);
@@ -81,19 +82,17 @@ export function DiscountsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
             returnKeyType="search"
           />
         </View>
-        <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
-          <Ionicons name="add" size={16} color={colors.accentText} />
-          <Text style={[st.addBtnText, { color: colors.accentText }]}>Create</Text>
-        </Pressable>
       </View>
+      <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <Ionicons name="add" size={16} color={colors.accentText} />
+        <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Discount Code</Text>
+      </Pressable>
 
       {discountsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading discount codes…</Text>
-        </View>
+        <DiscountsSkeleton colors={colors} />
       ) : filteredDiscounts.length === 0 ? (
         <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>No discount codes found.</Text>
+          <Text style={{ color: colors.textSecondary, width: '100%', textAlign: 'center' }}>No discount codes found.</Text>
         </View>
       ) : (
         <FlatList
@@ -126,7 +125,7 @@ export function DiscountsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
 }
 
 const st = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12 },
   searchWrap: {
     flex: 1,
     flexDirection: 'row',
@@ -138,7 +137,7 @@ const st = StyleSheet.create({
     height: 42,
   },
   searchInput: { flex: 1, fontSize: 14, height: '100%' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 42, borderRadius: 10 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 15, height: 38, borderRadius: 6, maxWidth: 200, marginLeft: 'auto', marginRight: 14, marginBottom: 6 },
   addBtnText: { fontSize: 13, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
 });

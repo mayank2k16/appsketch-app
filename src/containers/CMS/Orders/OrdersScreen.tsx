@@ -15,6 +15,7 @@ import { CreateOrderModal } from './components/CreateOrderModal';
 import { OrderDetailModal } from './components/OrderDetailModal';
 import { OrderListItem } from './components/OrderListItem';
 import { OrderSearchBar } from './components/OrderSearchBar';
+import { OrdersSkeleton } from './components/OrdersSkeleton';
 
 // `onMenuPress` isn't used here — the shell's persistent header already owns
 // the one hamburger button — but the prop is part of the tab registry's
@@ -174,9 +175,7 @@ export function OrdersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =>
       </View>
 
       {ordersQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading orders…</Text>
-        </View>
+        <OrdersSkeleton colors={colors} />
       ) : orders.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>Your orders will be shown here</Text>

@@ -53,6 +53,7 @@ export type SearchableSelectProps = {
   searchPlaceholder?: string;
   error?: string;
   disabled?: boolean;
+  required?: boolean;
   onSearch: (query: string) => Promise<SearchOption[]>;
   onSelect: (option: SearchOption) => void;
   testID?: string;
@@ -66,6 +67,7 @@ export function SearchableSelect(props: SearchableSelectProps) {
     placeholder = 'Select...',
     error,
     disabled = false,
+    required,
     testID,
   } = props;
   const modal = useModal();
@@ -83,6 +85,7 @@ export function SearchableSelect(props: SearchableSelectProps) {
         {label && (
           <Text testID={testID ? `${testID}-label` : undefined} className={styles.label()}>
             {label}
+            {required ? <Text className="text-danger-600"> *</Text> : null}
           </Text>
         )}
         <Pressable

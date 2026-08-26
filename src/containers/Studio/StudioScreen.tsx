@@ -27,7 +27,7 @@ const SECTIONS: {
 
 /** Narrow enough that the store cards keep almost the full width — the rail is
  *  a navigation strip, not a panel. */
-const RAIL_W = 74;
+const RAIL_W = 65;
 const SCREEN_INSET = 8;
 
 export function StudioScreen() {
@@ -204,7 +204,7 @@ const st = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 5,
   },
-  railText: { fontFamily: F.sans600, fontSize: 11 },
+  railText: { fontFamily: F.sans600, fontSize: 10.5 },
 
   // 8px on both sides: from the separator line on the left, and from the
   // screen's own edge on the right — each tab's own inner content (see

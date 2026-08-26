@@ -28,12 +28,12 @@ export const ShortVideoCard = React.memo(function ShortVideoCard({ video, colors
           <VideoPreview uri={video.videoUrl} />
         ) : (
           <View style={[st.preview, st.previewEmpty]}>
-            <Text style={{ fontSize: 32, opacity: 0.35 }}>🎬</Text>
+            <Text style={{ fontSize: 26, opacity: 0.35 }}>🎬</Text>
           </View>
         )}
         {video.videoUrl ? (
           <View style={st.playBadge}>
-            <Ionicons name="play" size={11} color="#FFFFFF" />
+            <Ionicons name="play" size={10} color="#FFFFFF" />
           </View>
         ) : null}
       </View>
@@ -50,7 +50,7 @@ export const ShortVideoCard = React.memo(function ShortVideoCard({ video, colors
           {video.is_active && !video.is_live ? (
             <CmsStatusBadge meta={{ label: 'Out of date window', color: '#8a6d00', kind: 'warning' }} />
           ) : null}
-          {video.is_live ? <CmsStatusBadge meta={{ label: '● Live now', color: colors.danger, kind: 'danger' }} /> : null}
+          {video.is_live ? <CmsStatusBadge meta={{ label: 'Live now', color: colors.danger, kind: 'danger' }} /> : null}
           <CmsStatusBadge meta={{ label: `#${video.priority ?? 0}`, color: colors.textSecondary, kind: 'info' }} />
         </View>
 
@@ -62,20 +62,22 @@ export const ShortVideoCard = React.memo(function ShortVideoCard({ video, colors
             {video.description}
           </Text>
         ) : null}
-        <Text style={[st.lifetime, { color: colors.textSecondary }]} numberOfLines={1}>
+        <Text style={[st.lifetime, { color: colors.textSecondary }]} numberOfLines={2}>
           🗓 {lifetimeLabel(video)}
         </Text>
         {!video.videoUrl ? (
-          <Text style={[st.warnText, { color: colors.danger }]}>⚠ No video file — won't show in the app.</Text>
+          <Text style={[st.warnText, { color: colors.danger }]} numberOfLines={2}>
+            ⚠ No video file — won't show in the app.
+          </Text>
         ) : null}
 
         <View style={st.actions}>
           <Pressable onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
-            <Ionicons name="create-outline" size={15} color={colors.textPrimary} />
+            <Ionicons name="create-outline" size={14} color={colors.textPrimary} />
             <Text style={[st.actionLabel, { color: colors.textPrimary }]}>Edit</Text>
           </Pressable>
           <Pressable onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
-            <Ionicons name="trash-outline" size={15} color={colors.danger} />
+            <Ionicons name="trash-outline" size={14} color={colors.danger} />
             <Text style={[st.actionLabel, { color: colors.danger }]}>Delete</Text>
           </Pressable>
         </View>
@@ -94,34 +96,44 @@ function VideoPreview({ uri }: { uri: string }) {
   return <VideoView player={player} style={st.preview} nativeControls={false} contentFit="cover" />;
 }
 
+const PREVIEW_WIDTH = 90;
+
 const st = StyleSheet.create({
   card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     borderRadius: 14,
     borderWidth: 1,
-    marginHorizontal: 16,
+    padding: 10,
+    marginHorizontal: 14,
     marginBottom: 12,
+  },
+  previewWrap: {
+    width: PREVIEW_WIDTH,
+    aspectRatio: 9 / 12,
+    borderRadius: 10,
     overflow: 'hidden',
   },
-  previewWrap: { width: '100%', aspectRatio: 9 / 16, maxHeight: 260 },
   preview: { width: '100%', height: '100%' },
   previewEmpty: { alignItems: 'center', justifyContent: 'center' },
   playBadge: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: 'rgba(20, 26, 18, 0.72)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  body: { padding: 12, gap: 4 },
-  badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  body: { flex: 1, gap: 4, justifyContent: 'center' },
+  badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 5 },
   title: { ...cmsType.listTitle },
-  lifetime: { fontSize: 11.5 },
+  lifetime: { fontSize: 11, marginBottom: 8, lineHeight: 16 },
   warnText: { fontSize: 12 },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: "auto" },
   actionBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -130,7 +142,7 @@ const st = StyleSheet.create({
     gap: 4,
     borderWidth: 1,
     borderRadius: 8,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   actionLabel: cmsType.buttonLabel,
 });

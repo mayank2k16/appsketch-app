@@ -7,6 +7,7 @@ import { useNotificationLogs } from '@/api/notifications';
 import { useCmsTheme } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { LogRow } from './components/LogRow';
+import { LogsSkeleton } from './components/LogsSkeleton';
 import { LOG_STATUS_OPTIONS } from './utils';
 
 export function LogsScreen() {
@@ -50,9 +51,7 @@ export function LogsScreen() {
       />
 
       {logsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading logs…</Text>
-        </View>
+        <LogsSkeleton colors={colors} />
       ) : logs.length === 0 ? (
         <View style={st.center}>
           <Text style={{ color: colors.textSecondary }}>No notification logs found</Text>

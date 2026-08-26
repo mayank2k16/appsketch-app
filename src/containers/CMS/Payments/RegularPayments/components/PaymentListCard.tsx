@@ -77,7 +77,7 @@ const st = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
-    marginHorizontal: 16,
+    marginHorizontal: 10,
     marginBottom: 12,
     gap: 10,
   },
@@ -92,7 +92,6 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 10,
   },
   editBtn: {

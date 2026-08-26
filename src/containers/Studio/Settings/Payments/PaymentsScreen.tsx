@@ -179,14 +179,11 @@ export function PaymentsScreen() {
           })}
         </ScrollView>
 
-        <TouchableOpacity
-          onPress={openAddForm}
-          style={[st.addBtn, { backgroundColor: t.accent }]}
-        >
-          <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={[st.addBtnText, { color: t.accentOn }]}>Add</Text>
-        </TouchableOpacity>
       </View>
+      <TouchableOpacity onPress={openAddForm} style={[st.addBtn, { backgroundColor: t.accent }]}>
+        <Ionicons name="add" size={16} color="#FFFFFF" />
+        <Text style={[st.addBtnText, { color: t.accentOn }]}>Add Payment</Text>
+      </TouchableOpacity>
 
       {isLoading ? (
         <ActivityIndicator color={t.accent} style={{ marginTop: 40 }} />
@@ -290,7 +287,9 @@ const st = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 10,
+    borderRadius: 8,
+    marginLeft: 'auto',
+    maxWidth: 150,
   },
   addBtnText: { fontSize: 12.5, fontWeight: '700' },
 

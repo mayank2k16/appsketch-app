@@ -11,6 +11,7 @@ import { useCmsTheme } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { formatReward, inr, isRuleWithinWindow, MILESTONE_TRIGGERS, TRIGGER_LABEL } from '../utils';
 import { ManageRuleModal } from './components/ManageRuleModal';
+import { RulesSkeleton } from './components/RulesSkeleton';
 
 export function RulesScreen() {
   const { colors } = useCmsTheme();
@@ -76,16 +77,14 @@ export function RulesScreen() {
             )}
           </Text>
         </View>
-        <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
-          <Ionicons name="add" size={16} color={colors.accentText} />
-          <Text style={[st.addBtnText, { color: colors.accentText }]}>New</Text>
-        </Pressable>
       </View>
+      <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <Ionicons name="add" size={16} color={colors.accentText} />
+        <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Rule</Text>
+      </Pressable>
 
       {rulesQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading rules…</Text>
-        </View>
+        <RulesSkeleton colors={colors} />
       ) : sortedRules.length === 0 ? (
         <View style={st.center}>
           <Text style={[st.emptyTitle, { color: colors.textPrimary }]}>No referral rules yet</Text>
@@ -149,8 +148,8 @@ export function RulesScreen() {
                   {(rule.trigger === 'REFERRER_SIGNUPS_MILESTONE' ||
                     rule.trigger === 'REFERRER_PAID_MILESTONE' ||
                     rule.trigger === 'REFERRER_DELIVERED_MILESTONE') && (
-                    <Meta colors={colors} label="Step (every N)" value={String(rule.referrer_milestone_count ?? 0)} />
-                  )}
+                      <Meta colors={colors} label="Step (every N)" value={String(rule.referrer_milestone_count ?? 0)} />
+                    )}
                   {rule.trigger === 'REFERRER_SPEND_MILESTONE' && (
                     <Meta colors={colors} label="Step (every ₹)" value={inr(rule.referrer_milestone_spend)} />
                   )}
@@ -215,10 +214,10 @@ function Meta({ colors, label, value }: { colors: ReturnType<typeof useCmsTheme>
 }
 
 const st = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 12, paddingTop: 14, paddingBottom: 6 },
   heading: { fontSize: 17, fontWeight: '800' },
   subheading: { fontSize: 12.5, marginTop: 4, lineHeight: 18 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, maxWidth: 150, marginLeft: 'auto', marginRight: 12, marginBottom: 10 },
   addBtnText: { fontSize: 13, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 6 },
   emptyTitle: { fontSize: 15, fontWeight: '700' },

@@ -88,7 +88,6 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 10,
   },
   actions: { flexDirection: 'row', gap: 8 },

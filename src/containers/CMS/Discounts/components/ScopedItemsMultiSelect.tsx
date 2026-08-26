@@ -87,7 +87,11 @@ export function ScopedItemsMultiSelect<T>({
                 </Pressable>
               );
             }}
-            ListEmptyComponent={<Text style={{ color: colors.textSecondary, padding: 16 }}>No items available.</Text>}
+            ListEmptyComponent={
+              <Text style={{ color: colors.textSecondary, padding: 16, flex: 1, textAlign: 'center', width: '100%' }}>
+                No items available.
+              </Text>
+            }
           />
         )}
       </CmsModal>

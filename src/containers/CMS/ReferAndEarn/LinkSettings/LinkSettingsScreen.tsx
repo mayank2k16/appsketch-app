@@ -125,7 +125,7 @@ export function LinkSettingsScreen() {
 }
 
 const st = StyleSheet.create({
-  scroll: { padding: 16, gap: 12, paddingBottom: 40 },
+  scroll: { padding: 12, gap: 12, paddingBottom: 40 },
   intro: { fontSize: 12.5, lineHeight: 18 },
   hint: { fontSize: 11.5, lineHeight: 16 },
   colourRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

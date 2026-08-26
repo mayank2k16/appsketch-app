@@ -19,7 +19,13 @@ export type PaymentTab = {
   Component: React.ComponentType;
 };
 
-export const PAYMENT_TABS: PaymentTab[] = [
+export const DEFAULT_PAYMENT_TABS: PaymentTab[] = [
+  { key: 'regularPayments', label: 'Regular Payments', icon: 'card-outline', Component: RegularPaymentsScreen },
+  { key: 'bulkPayments', label: 'Bulk Payments', icon: 'layers-outline', Component: BulkPaymentsScreen },
+
+];
+
+export const MARKETPLACE_PAYMENT_TABS: PaymentTab[] = [
   { key: 'regularPayments', label: 'Regular Payments', icon: 'card-outline', Component: RegularPaymentsScreen },
   { key: 'bulkPayments', label: 'Bulk Payments', icon: 'layers-outline', Component: BulkPaymentsScreen },
   { key: 'vendorSettlements', label: 'Vendor Settlements', icon: 'business-outline', Component: VendorSettlementsScreen },

@@ -51,14 +51,11 @@ export function DomainsScreen() {
             View and manage all your domains in one place.
           </Text>
         </View>
-        <Pressable
-          onPress={goAddDomain}
-          style={[st.addBtn, { backgroundColor: t.accent }]}
-        >
-          <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={[st.addBtnText, { color: t.accentOn }]}>Add domain</Text>
-        </Pressable>
       </View>
+      <Pressable onPress={goAddDomain} style={[st.addBtn, { backgroundColor: t.accent }]}>
+        <Ionicons name="add" size={16} color="#FFFFFF" />
+        <Text style={[st.addBtnText, { color: t.accentOn }]}>Add domain</Text>
+      </Pressable>
 
       {isLoading ? (
         <ActivityIndicator color={t.accent} style={{ marginTop: 40 }} />
@@ -206,7 +203,7 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   heading: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
   subheading: { fontSize: 13, marginTop: 4, lineHeight: 18 },
@@ -216,7 +213,10 @@ const st = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 10,
+    borderRadius: 8,
+    marginLeft: 'auto',
+    maxWidth: 150,
+    marginBottom: 10
   },
   addBtnText: { fontSize: 12.5, fontWeight: '700' },
 

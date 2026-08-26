@@ -4,15 +4,35 @@ import { authenticatedClient } from '@/api/common/client';
 
 import type {
   CreateManufacturerPayload,
+  MarketplaceProductGroup,
   ProductCategory,
   ProductInventoryOption,
   ProductListItem,
   ProductManufacturer,
+  ProductReviewHistoryEntry,
   SaveProductInput,
 } from './types';
 
 export async function fetchProducts(): Promise<ProductListItem[]> {
   const { data } = await authenticatedClient.get<ProductListItem[]>('api/shop/products/all/');
+  return data ?? [];
+}
+
+/** Marketplace-only variant of `fetchProducts` — one row per owning tenant,
+ * each carrying its own product list (rather than one flat list), with
+ * `sold_by_name`/`tenant_name` embedded per-product. Flattened here so
+ * callers see the same `ProductListItem[]` shape as the plain fetch. */
+export async function fetchMarketplaceProducts(): Promise<ProductListItem[]> {
+  const { data } = await authenticatedClient.get<MarketplaceProductGroup[]>(
+    'api/shop/marketplace/products/all/'
+  );
+  return (data ?? []).flatMap((group) => group.products ?? []);
+}
+
+export async function fetchProductReviewHistory(productId: number): Promise<ProductReviewHistoryEntry[]> {
+  const { data } = await authenticatedClient.get<ProductReviewHistoryEntry[]>(
+    `api/shop/tenant/products/${productId}/review-history/`
+  );
   return data ?? [];
 }
 
@@ -77,11 +97,19 @@ export async function saveProduct(input: SaveProductInput): Promise<ProductListI
   formData.append('description', input.description);
   formData.append('catalogue_number', input.catalogue_number);
   formData.append('previous_catalogue_number', input.previous_catalogue_number ?? '');
-  formData.append('alternate_names', JSON.stringify(input.alternate_names));
+  // The backend parses these three with a naive `value.split(',')` — it was
+  // written against the web CMS, which hands a raw JS array straight to
+  // `FormData.append`, and the browser's FormData coerces that via
+  // `Array.prototype.toString()` (comma-joined). `JSON.stringify` here would
+  // send `["url1","url2"]` instead, which `.split(',')` shreds into garbage
+  // fragments still carrying stray `["`/`"]`/`"` characters — corrupted at
+  // the database level, not just a display bug, and unrelated to URL
+  // scheme/relative-path handling.
+  formData.append('alternate_names', input.alternate_names.join(','));
   formData.append('manufacturer', String(input.manufacturer ?? ''));
-  formData.append('images', JSON.stringify(input.images));
+  formData.append('images', input.images.join(','));
   formData.append('photo', input.photo ?? '');
-  formData.append('videos', JSON.stringify(input.videos));
+  formData.append('videos', input.videos.join(','));
   formData.append('media_display_priority', input.media_display_priority);
   formData.append('price', input.price ?? '');
   formData.append('market_price', input.market_price ?? '');

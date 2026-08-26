@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as React from 'react';
@@ -11,7 +10,7 @@ import { useCreateCollection, useUpdateCollection } from '@/api/collections';
 import { useModal } from '@/components/ui';
 import { toast } from '@/lib/toast';
 
-import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSwitch } from '../../components';
+import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSheetScrollView, CmsSwitch } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { ProductPickerSheet } from './ProductPickerSheet';
 
@@ -106,25 +105,40 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
     const imageUri = image?.uri ?? (isEdit ? collection?.image : null) ?? undefined;
 
     return (
-      <CmsModal ref={ref} colors={colors} snapPoints={['90%']} title={isEdit ? 'Edit Collection' : 'Add Collection'}>
-        <BottomSheetScrollView
+      <CmsModal
+        ref={ref}
+        colors={colors}
+        snapPoints={['75%']}
+        title={isEdit ? 'Edit Collection' : 'Add Collection'}
+        footer={
+          <CmsButton colors={colors} label={isSubmitting ? 'Saving…' : 'Save'} onPress={handleSubmit} loading={isSubmitting} />
+        }
+      >
+        <CmsSheetScrollView
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          contentContainerStyle={st.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <CmsCard colors={colors}>
+          <CmsCard colors={colors} style={{ ...st.cmsCard }}>
             <Pressable onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={st.imagePreview} contentFit="cover" />
               ) : (
                 <>
                   <Ionicons name="image-outline" size={20} color={colors.textSecondary} />
-                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Collection Image</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, width: '100%', textAlign: 'center' }}>Collection Image</Text>
                 </>
               )}
             </Pressable>
 
-            <CmsInput colors={colors} label="Title" placeholder="e.g. Top Seller, Today's Special…" value={form.title} onChangeText={(v) => set('title', v)} />
+            <CmsInput
+              colors={colors}
+              label="Title"
+              placeholder="e.g. Top Seller, Today's Special…"
+              value={form.title}
+              onChangeText={(v) => set('title', v)}
+              required
+            />
             <CmsInput
               colors={colors}
               label="Description"
@@ -158,9 +172,7 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
               </View>
             ))}
           </CmsCard>
-
-          <CmsButton colors={colors} label={isSubmitting ? 'Saving…' : 'Save'} onPress={handleSubmit} loading={isSubmitting} />
-        </BottomSheetScrollView>
+        </CmsSheetScrollView>
 
         <ProductPickerSheet
           ref={pickerModal.ref}
@@ -183,8 +195,16 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
 );
 
 const st = StyleSheet.create({
+  scroll: {
+    padding: 16,
+    gap: 15,
+    paddingBottom: 16,
+  },
+  cmsCard: {
+    gap: 14,
+  },
   imageTile: {
-    height: 90,
+    height: 150,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',

@@ -1,48 +1,40 @@
 import * as React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useCmsTheme } from '../theme';
-import { cmsType } from '../theme/cms-typography';
 import { REFER_AND_EARN_TABS } from './tabs';
 import type { ReferAndEarnTabKey } from './tabs';
 
 /** Nested shell for the Refer & Earn tab — same recipe as `CmsShell` /
  * `Payments/PaymentsScreen.tsx` one level deeper: a registry of sub-tabs
- * (Rules, Referrals, Link Settings) + conditional mounting. */
+ * (Rules, Referrals, Link Settings) + conditional mounting, with a
+ * fixed-width vertical rail on the left — same treatment as
+ * `Payments/PaymentsScreen.tsx`. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ReferAndEarnScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => void }) {
   const { colors } = useCmsTheme();
   const [activeTab, setActiveTab] = React.useState<ReferAndEarnTabKey>('rules');
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={st.tabScroll}
-        contentContainerStyle={st.tabRow}
-      >
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      <View style={[st.sidebar, { backgroundColor: colors.sidebarBg, borderColor: colors.border }]}>
         {REFER_AND_EARN_TABS.map((tab) => {
           const active = tab.key === activeTab;
           return (
             <Pressable
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
-              style={[
-                st.tab,
-                { borderColor: colors.border },
-                active && { backgroundColor: colors.accent, borderColor: colors.accent },
-              ]}
+              style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}
             >
-              <Ionicons name={tab.icon} size={14} color={active ? colors.accentText : colors.textSecondary} />
-              <Text style={[st.tabLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
+              <Ionicons name={tab.icon} size={20} color={active ? colors.accent : colors.sidebarText} />
+              <Text style={[st.tabLabel, { color: active ? colors.accent : colors.sidebarText }]} numberOfLines={2}>
                 {tab.label}
               </Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
 
       <View style={{ flex: 1 }}>
         {REFER_AND_EARN_TABS.map(
@@ -54,22 +46,19 @@ export function ReferAndEarnScreen({ onMenuPress: _onMenuPress }: { onMenuPress:
 }
 
 const st = StyleSheet.create({
-  tabScroll: { flexGrow: 0 },
-  tabRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+  sidebar: {
+    width: 70,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    gap: 4,
   },
   tab: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
+    gap: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 0,
   },
-  tabLabel: cmsType.listBadge,
+  tabLabel: { fontSize: 9, fontWeight: '700', textAlign: 'center' },
 });

@@ -10,6 +10,7 @@ import { useCmsTheme } from '../../theme';
 import { AddBulkPaymentModal } from './components/AddBulkPaymentModal';
 import { BulkPaymentDetailModal } from './components/BulkPaymentDetailModal';
 import { BulkPaymentListCard } from './components/BulkPaymentListCard';
+import { BulkPaymentsSkeleton } from './components/BulkPaymentsSkeleton';
 
 export function BulkPaymentsScreen() {
   const { colors } = useCmsTheme();
@@ -46,12 +47,10 @@ export function BulkPaymentsScreen() {
       </View>
 
       {bulkPaymentsQuery.isLoading ? (
-        <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading bulk payments…</Text>
-        </View>
+        <BulkPaymentsSkeleton colors={colors} />
       ) : payments.length === 0 ? (
         <View style={st.center}>
-          <Text style={{ color: colors.textSecondary }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
             There are no bulk payment records available at the moment.
           </Text>
         </View>

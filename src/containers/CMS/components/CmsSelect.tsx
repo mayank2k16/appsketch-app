@@ -19,20 +19,24 @@ type Props = {
   onSelect: (value: string | number) => void;
   placeholder?: string;
   error?: string;
+  required?: boolean;
 };
 
 /** Plain dropdown picker for CMS forms — opens a `CmsModal` list of options.
  * For search-as-you-type pickers (customer/product lookups), CMS keeps using
  * `@/components/ui`'s `SearchableSelect` instead of rebuilding that behavior
  * here. */
-export function CmsSelect({ colors, label, value, options, onSelect, placeholder = 'Select…', error }: Props) {
+export function CmsSelect({ colors, label, value, options, onSelect, placeholder = 'Select…', error, required }: Props) {
   const modal = useModal();
   const selectedLabel = options.find((o) => o.value === value)?.label;
   const height = Math.min(options.length * 52 + 90, 420);
 
   return (
     <View style={st.group}>
-      <Text style={[st.label, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[st.label, { color: colors.textSecondary }]}>
+        {label}
+        {required ? <Text style={{ color: colors.danger }}> *</Text> : null}
+      </Text>
       <Pressable
         onPress={modal.present}
         style={[st.field, { backgroundColor: colors.background, borderColor: error ? colors.danger : colors.border }]}

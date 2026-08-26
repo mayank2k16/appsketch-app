@@ -1,8 +1,10 @@
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
+import { CmsBottomSheetInputContext } from './CmsModal';
 
 export type CmsVariableOption = { name: string; label: string };
 
@@ -48,6 +50,8 @@ export function CmsVariableInput({
   error,
   editable = true,
 }: Props) {
+  const isInsideBottomSheet = React.useContext(CmsBottomSheetInputContext);
+  const Field = isInsideBottomSheet ? BottomSheetTextInput : TextInput;
   const [selection, setSelection] = React.useState<Selection>({ start: 0, end: 0 });
 
   const trigger = React.useMemo(() => detectTrigger(value, selection.start), [value, selection.start]);
@@ -74,7 +78,7 @@ export function CmsVariableInput({
   return (
     <View style={st.group}>
       {label ? <Text style={[st.label, { color: colors.textSecondary }]}>{label}</Text> : null}
-      <TextInput
+      <Field
         value={value}
         onChangeText={onChangeText}
         onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}

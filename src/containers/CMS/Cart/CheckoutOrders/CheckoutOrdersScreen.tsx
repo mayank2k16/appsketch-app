@@ -6,6 +6,7 @@ import { useCheckoutOrders } from '@/api/cart';
 
 import { useCmsTheme } from '../../theme';
 import { CheckoutOrderCard } from './components/CheckoutOrderCard';
+import { CheckoutOrdersSkeleton } from './components/CheckoutOrdersSkeleton';
 
 /** Read-only list of checkouts still in progress (payment_status=CHECKOUT) —
  * not real placed orders yet, so no edit/accept/reject/assign actions here.
@@ -22,17 +23,13 @@ export function CheckoutOrdersScreen() {
   );
 
   if (ordersQuery.isLoading) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.textSecondary }}>Loading checkout orders…</Text>
-      </View>
-    );
+    return <CheckoutOrdersSkeleton colors={colors} />;
   }
 
   if (orders.length === 0) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-        <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>No checkouts in progress.</Text>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', width: '100%' }}>No checkouts in progress.</Text>
       </View>
     );
   }
