@@ -7,8 +7,6 @@ import {
   FlatList,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -56,11 +54,6 @@ export function AppsScreen({ search }: { search: string }) {
     } as never);
   }
 
-<<<<<<< HEAD
-  function handleViewCrm(tenant: TenantSummary) { }
-
-=======
->>>>>>> 5998a02f554ccf41a96f4ed63778765e85fa7efb
   // Same `/code-editor/chat` route the hero-prompt flow (AgentScreen) pushes
   // to when starting a NEW build — the only difference is no `userPrompt` is
   // passed. `useCoderSocket`'s bootstrap effect resumes the tenant's latest
@@ -116,34 +109,11 @@ export function AppsScreen({ search }: { search: string }) {
           onViewCustomStore={() => handleViewCustomStore(item)}
         />
       )}
-      ListHeaderComponent={
-        tenants.length > 0 ? (
-          <View
-            style={[
-              st.searchWrap,
-              { backgroundColor: t.card, borderColor: t.border },
-            ]}
-          >
-            <Ionicons name="search" size={16} color={t.textMuted} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search your stores by name or desc.."
-              placeholderTextColor={t.textMuted}
-              style={[st.searchInput, { color: t.text }]}
-              returnKeyType="search"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {search.length > 0 ? (
-              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-                <Ionicons name="close-circle" size={16} color={t.textMuted} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        ) : null
-      }
-      contentContainerStyle={{ paddingTop: 4, paddingBottom: 24 }}
+      contentContainerStyle={{
+        paddingTop: 4,
+        paddingBottom: 24,
+        paddingHorizontal: 4,
+      }}
       ListEmptyComponent={
         <View style={st.center}>
           <Ionicons name="storefront-outline" size={36} color={t.textMuted} />
@@ -168,23 +138,4 @@ const st = StyleSheet.create({
     gap: 10,
   },
   emptyText: { fontSize: 13, fontWeight: '600' },
-<<<<<<< HEAD
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 13,
-    height: 42,
-    marginHorizontal: 1,
-    marginBottom: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    height: '100%',
-  },
-=======
->>>>>>> 5998a02f554ccf41a96f4ed63778765e85fa7efb
 });
