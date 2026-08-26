@@ -176,7 +176,7 @@ export function PaymentForm({
         disabled={addMerchant.isPending}
         style={[st.submitBtn, { backgroundColor: t.accent }, addMerchant.isPending && { opacity: 0.6 }]}
       >
-        <Text style={st.submitBtnText}>{addMerchant.isPending ? 'Connecting…' : 'Connect'}</Text>
+        <Text style={[st.submitBtnText, { color: t.accentOn }]}>{addMerchant.isPending ? 'Connecting…' : 'Connect'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -250,5 +250,5 @@ const st = StyleSheet.create({
   eyeBtn: { position: 'absolute', right: 0, top: 6 },
 
   submitBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 28, marginBottom: 12 },
-  submitBtnText: { fontFamily: F.sans700, fontSize: 14, color: '#FFFFFF' },
+  submitBtnText: { fontFamily: F.sans700, fontSize: 14 },
 });

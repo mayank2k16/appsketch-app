@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { useCoderTheme, type AppColors } from '@/lib/theme';
 
 import { TAB_CONFIG } from './tab-config';
 import { TabIcon } from './TabIcon';
@@ -94,7 +94,7 @@ function TabCard({
 export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
 
   return (
     <View

@@ -1,7 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Animated,
@@ -32,10 +31,17 @@ import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 const { width: SCREEN_W } = Dimensions.get('window');
 const DRAWER_W = Math.min(SCREEN_W * 0.72, 290);
 
-// ─── Brand constants (non-themed) ─────────────────────────────────────────────
-// Matches the app's primary accent (see appTheme.accent) so the drawer reads
-// as part of the same brand as the home screen, not a separate red theme.
-const ACCENT = '#6C5CE7';
+// ─── Accent (non-themed) ──────────────────────────────────────────────────────
+// This was the brand indigo #6C5CE7, which is what put a violet ring on the
+// logo, a violet dark-mode switch and violet icons all through a panel that is
+// otherwise black and grey. Neutral now, matching the rest of the app's
+// achromatic surfaces.
+//
+// A MID grey specifically, not near-white: this constant is baked into
+// StyleSheet rules that light mode uses too, so it has to stay legible against
+// a white panel as well as a black one. Anything scheme-dependent reads a
+// `dt.*` token instead.
+const ACCENT = '#9A9A9A';
 
 type DrawerMenuProps = {
   visible: boolean;
@@ -48,12 +54,22 @@ type DrawerMenuProps = {
 // back to /home. No real routes to add here until those are fixed or new
 // screens are built. `/about` is a real, standalone route (src/app/about.tsx)
 // so it's safe to link for both signed-in and guest users.
-type MenuItem = { id: string; label: string; route: string; icon: React.ComponentProps<typeof Ionicons>['name'] };
+type MenuItem = {
+  id: string;
+  label: string;
+  route: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+};
 
-// Account/cart shortcuts get their own section, above the general links.
+// Account shortcuts get their own section, above the general links. Plans
+// and domains are bought on the web now (see UpgradeSheet) — no in-app cart.
 const QUICK_ACCESS_ITEMS: MenuItem[] = [
-  { id: 'profile', label: 'My Account', route: '/profile', icon: 'person-outline' },
-  { id: 'cart', label: 'Cart', route: '/cart', icon: 'cart-outline' },
+  {
+    id: 'profile',
+    label: 'My Account',
+    route: '/profile',
+    icon: 'person-outline',
+  },
 ];
 
 // Signed-in only (matches Profile's own "Help & Support" entry) — a guest
@@ -70,11 +86,36 @@ const SUPPORT_ITEM: MenuItem = {
 const QUICK_SLOT_COUNT = QUICK_ACCESS_ITEMS.length + 1;
 
 const AUTH_MENU_ITEMS: MenuItem[] = [
-  { id: 'pricing', label: 'Pricing & Plans', route: '/pricing', icon: 'pricetag-outline' },
-  { id: 'about', label: 'About Us', route: '/about', icon: 'information-circle-outline' },
-  { id: 'contact', label: 'Contact Us', route: '/contact', icon: 'call-outline' },
-  { id: 'privacy', label: 'Privacy Policy', route: '/privacy-policy', icon: 'shield-checkmark-outline' },
-  { id: 'tnc', label: 'Terms & Conditions', route: '/tnc', icon: 'document-text-outline' },
+  {
+    id: 'pricing',
+    label: 'Pricing & Plans',
+    route: '/pricing',
+    icon: 'pricetag-outline',
+  },
+  {
+    id: 'about',
+    label: 'About Us',
+    route: '/about',
+    icon: 'information-circle-outline',
+  },
+  {
+    id: 'contact',
+    label: 'Contact Us',
+    route: '/contact',
+    icon: 'call-outline',
+  },
+  {
+    id: 'privacy',
+    label: 'Privacy Policy',
+    route: '/privacy-policy',
+    icon: 'shield-checkmark-outline',
+  },
+  {
+    id: 'tnc',
+    label: 'Terms & Conditions',
+    route: '/tnc',
+    icon: 'document-text-outline',
+  },
 ];
 
 const GUEST_MENU_ITEMS: MenuItem[] = AUTH_MENU_ITEMS;
@@ -85,59 +126,37 @@ function LiveDot() {
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.7, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, {
+          toValue: 1.7,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
       ])
     ).start();
   }, []);
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', width: 12, height: 12 }}>
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 12,
+        height: 12,
+      }}
+    >
       <Animated.View style={[st.dotRing, { transform: [{ scale: pulse }] }]} />
-      <View style={[st.dotCore, StyleSheet.absoluteFillObject, { margin: 'auto' }]} />
+      <View
+        style={[st.dotCore, StyleSheet.absoluteFillObject, { margin: 'auto' }]}
+      />
     </View>
   );
 }
-
-// ─── Theme toggle pill ─────────────────────────────────────────────────────────
-function ThemeTogglePill({ isDark }: { isDark: boolean }) {
-  const anim = React.useRef(new Animated.Value(isDark ? 1 : 0)).current;
-
-  React.useEffect(() => {
-    Animated.timing(anim, {
-      toValue: isDark ? 1 : 0,
-      duration: 220,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
-    }).start();
-  }, [isDark]);
-
-  const trackBg = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['rgba(17,17,17,0.15)', ACCENT],
-  });
-  const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 18] });
-
-  return (
-    <Animated.View style={[pill.track, { backgroundColor: trackBg }]}>
-      <Animated.View style={[pill.thumb, { transform: [{ translateX: thumbX }] }]} />
-    </Animated.View>
-  );
-}
-
-const pill = StyleSheet.create({
-  track: {
-    width: 38, height: 22, borderRadius: 11,
-    justifyContent: 'center',
-  },
-  thumb: {
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: '#FFFFFF',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
-      android: { elevation: 2 },
-    }),
-  },
-});
 
 // ─── Elegant card row ──────────────────────────────────────────────────────────
 // Every menu row shares this: a bordered card with a tinted circular icon
@@ -168,7 +187,9 @@ function DrawerRow({
       <View style={[st.iconWrap, { backgroundColor: dt.iconWrapBg }]}>
         <Ionicons name={icon} size={16} color={iconColor ?? ACCENT} />
       </View>
-      <Text style={[st.rowLabel, { color: labelColor ?? dt.labelColor }]}>{label}</Text>
+      <Text style={[st.rowLabel, { color: labelColor ?? dt.labelColor }]}>
+        {label}
+      </Text>
       {right}
     </TouchableOpacity>
   );
@@ -181,11 +202,11 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const isGuest = status === 'guest';
   const isSignedIn = status === 'signIn';
   const MENU_ITEMS = isGuest ? GUEST_MENU_ITEMS : AUTH_MENU_ITEMS;
-  const quickAccessItems = isSignedIn ? [...QUICK_ACCESS_ITEMS, SUPPORT_ITEM] : QUICK_ACCESS_ITEMS;
-  const { colorScheme } = useColorScheme();
-  const dt = drawerTheme[colorScheme === 'dark' ? 'dark' : 'light'];
-  const { selectedTheme, setSelectedTheme } = useSelectedTheme();
-  const isDark = colorScheme === 'dark';
+  const quickAccessItems = isSignedIn
+    ? [...QUICK_ACCESS_ITEMS, SUPPORT_ITEM]
+    : QUICK_ACCESS_ITEMS;
+  // Dark only — see use-selected-theme. No scheme lookup and no toggle.
+  const dt = drawerTheme.dark;
 
   // ── Animation values ────────────────────────────────────────────────────────
   const translateX = React.useRef(new Animated.Value(DRAWER_W)).current;
@@ -196,7 +217,10 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   // QUICK_SLOT_COUNT slots (its signed-in size) so indices don't shift
   // between guest/signed-in renders.
   const itemAnims = React.useRef(
-    Array.from({ length: QUICK_SLOT_COUNT + AUTH_MENU_ITEMS.length + 1 }, () => new Animated.Value(0))
+    Array.from(
+      { length: QUICK_SLOT_COUNT + AUTH_MENU_ITEMS.length + 1 },
+      () => new Animated.Value(0)
+    )
   ).current;
 
   const [modalVisible, setModalVisible] = React.useState(false);
@@ -206,21 +230,48 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       setModalVisible(true);
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
-      itemAnims.forEach(a => a.setValue(0));
+      itemAnims.forEach((a) => a.setValue(0));
 
       Animated.parallel([
-        Animated.timing(translateX, { toValue: 0, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(overlayOpacity, { toValue: 1, duration: 260, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
       ]).start();
 
       Animated.stagger(
         40,
-        itemAnims.map(a => Animated.timing(a, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }))
+        itemAnims.map((a) =>
+          Animated.timing(a, {
+            toValue: 1,
+            duration: 260,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          })
+        )
       ).start();
     } else {
       Animated.parallel([
-        Animated.timing(translateX, { toValue: DRAWER_W, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(overlayOpacity, { toValue: 0, duration: 200, easing: Easing.in(Easing.ease), useNativeDriver: true }),
+        Animated.timing(translateX, {
+          toValue: DRAWER_W,
+          duration: 240,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
       ]).start(() => setModalVisible(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -245,22 +296,13 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
     setTimeout(() => router.replace('/login'), 80);
   }
 
-  function handleThemeToggle() {
-    setSelectedTheme(isDark ? 'light' : 'dark');
-  }
-
   function handleShare() {
     Share.share({
-      message: 'Check out Appsketch — write anything and it compiles your dream interface in real-time. https://appsketch.ai',
+      message:
+        'Check out Appsketch — write anything and it compiles your dream interface in real-time. https://appsketch.ai',
       url: 'https://appsketch.ai',
     }).catch(() => { });
   }
-
-  const themeLabel = selectedTheme === 'dark'
-    ? 'Dark Mode'
-    : selectedTheme === 'light'
-      ? 'Light Mode'
-      : isDark ? 'Dark (System)' : 'Light (System)';
 
   return (
     <Modal
@@ -285,25 +327,46 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           recipe as AgentV2's prompt card / Marketplace's TemplateCard, just
           tuned to a heavier tint (esp. in light mode) since this is a much
           bigger, taller glass surface than a small card. ── */}
-      <Animated.View style={[st.drawer, { shadowColor: dt.shadow, transform: [{ translateX }] }]}>
+      <Animated.View
+        style={[
+          st.drawer,
+          { shadowColor: dt.shadow, transform: [{ translateX }] },
+        ]}
+      >
         <BlurView
           intensity={Platform.OS === 'android' ? 70 : 35}
-          tint={isDark ? 'dark' : 'light'}
+          tint="dark"
           style={StyleSheet.absoluteFill}
         />
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dt.panelBg, opacity: isDark ? 0.94 : 0.9 }]} />
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: dt.panelBg, opacity: 0.94 },
+          ]}
+        />
 
         <View style={[st.brandHeader, { borderBottomColor: dt.bottomBorder }]}>
           <View style={st.brandInner}>
             <View style={st.markClip}>
-              <ExpoImage source={HEADER_LOGO} style={st.markImg} contentFit="contain" />
+              <ExpoImage
+                source={HEADER_LOGO}
+                style={st.markImg}
+                contentFit="contain"
+              />
             </View>
 
-            <Text style={[st.wordmarkFlat, { color: dt.wordmarkColor }]}>AppSketch</Text>
+            <Text style={[st.wordmarkFlat, { color: dt.wordmarkColor }]}>
+              AppSketch
+            </Text>
 
             <Pressable
               onPress={onClose}
-              style={({ pressed }) => [st.closeBtn, { backgroundColor: dt.closeIconBg }, pressed && { opacity: 0.6 }]}
+              style={({ pressed }) => [
+                st.closeBtn,
+                { backgroundColor: dt.closeIconBg },
+                pressed && { opacity: 0.6 },
+              ]}
             >
               <Ionicons name="close" size={15} color={dt.closeIconText} />
             </Pressable>
@@ -318,7 +381,9 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
         >
           {/* ── Quick access: account/profile + cart (+ Help & Support when
               signed in), kept separate from the general menu links ── */}
-          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Quick Access</Text>
+          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>
+            Quick Access
+          </Text>
           {quickAccessItems.map((item, idx) => {
             const anim = itemAnims[idx];
             return (
@@ -326,21 +391,31 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                 key={item.id}
                 style={{
                   opacity: anim,
-                  transform: [{
-                    translateX: anim.interpolate({
-                      inputRange: [0, 1], outputRange: [28, 0],
-                    }),
-                  }],
+                  transform: [
+                    {
+                      translateX: anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [28, 0],
+                      }),
+                    },
+                  ],
                 }}
               >
-                <DrawerRow dt={dt} icon={item.icon} label={item.label} onPress={() => handlePress(item.route)} />
+                <DrawerRow
+                  dt={dt}
+                  icon={item.icon}
+                  label={item.label}
+                  onPress={() => handlePress(item.route)}
+                />
               </Animated.View>
             );
           })}
 
           {MENU_ITEMS.length > 0 && (
             <>
-              <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Menu</Text>
+              <Text style={[st.sectionLabel, { color: dt.dimColor }]}>
+                Menu
+              </Text>
               {MENU_ITEMS.map((item, idx) => {
                 const anim = itemAnims[QUICK_SLOT_COUNT + idx];
                 return (
@@ -348,36 +423,47 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                     key={item.id}
                     style={{
                       opacity: anim,
-                      transform: [{
-                        translateX: anim.interpolate({
-                          inputRange: [0, 1], outputRange: [28, 0],
-                        }),
-                      }],
+                      transform: [
+                        {
+                          translateX: anim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [28, 0],
+                          }),
+                        },
+                      ],
                     }}
                   >
-                    <DrawerRow dt={dt} icon={item.icon} label={item.label} onPress={() => handlePress(item.route)} />
+                    <DrawerRow
+                      dt={dt}
+                      icon={item.icon}
+                      label={item.label}
+                      onPress={() => handlePress(item.route)}
+                    />
                   </Animated.View>
                 );
               })}
             </>
           )}
 
-          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Preferences</Text>
-
-          {/* ── Theme toggle ── */}
-          <DrawerRow
-            dt={dt}
-            icon={isDark ? 'moon' : 'sunny'}
-            label={themeLabel}
-            onPress={handleThemeToggle}
-            right={<ThemeTogglePill isDark={isDark} />}
-          />
+          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>
+            Preferences
+          </Text>
 
           {/* ── Share ── */}
-          <DrawerRow dt={dt} icon="share-outline" label="Share Appsketch" onPress={handleShare} />
+          <DrawerRow
+            dt={dt}
+            icon="share-outline"
+            label="Share Appsketch"
+            onPress={handleShare}
+          />
 
           {/* Divider */}
-          <View style={[st.divider, { backgroundColor: dt.accentLine, opacity: 0.25 }]} />
+          <View
+            style={[
+              st.divider,
+              { backgroundColor: dt.accentLine, opacity: 0.25 },
+            ]}
+          />
 
           <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Session</Text>
 
@@ -385,11 +471,14 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           <Animated.View
             style={{
               opacity: itemAnims[itemAnims.length - 1],
-              transform: [{
-                translateX: itemAnims[itemAnims.length - 1].interpolate({
-                  inputRange: [0, 1], outputRange: [28, 0],
-                }),
-              }],
+              transform: [
+                {
+                  translateX: itemAnims[itemAnims.length - 1].interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [28, 0],
+                  }),
+                },
+              ],
             }}
           >
             {isSignedIn ? (
@@ -406,8 +495,8 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                 dt={dt}
                 icon="log-in-outline"
                 label="Sign In / Register"
-                iconColor={ACCENT}
-                labelColor={ACCENT}
+                iconColor={dt.labelColor}
+                labelColor={dt.labelColor}
                 onPress={handleSignIn}
               />
             )}
@@ -416,11 +505,18 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
         {/* ── Bottom bar ── */}
         <Pressable
-          style={({ pressed }) => [st.bottomBar, { borderColor: dt.bottomBorder }, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [
+            st.bottomBar,
+            { borderColor: dt.bottomBorder },
+            pressed && { opacity: 0.6 },
+          ]}
           onPress={() => Linking.openURL('https://appsketch.ai')}
         >
           <TextInput
-            editable={false} caretHidden selectTextOnFocus={false} contextMenuHidden
+            editable={false}
+            caretHidden
+            selectTextOnFocus={false}
+            contextMenuHidden
             value="Powered by Appsketch"
             style={[st.versionText, { color: dt.bottomText }]}
           />

@@ -28,4 +28,13 @@ export type TenantSummary = {
    * the default e-commerce case, don't assume it's one of the known ones.
    */
   tenant_type?: string;
+  /**
+   * Not yet in `TenantSerializer.Meta.fields` (`account/serializers.py`) —
+   * the model has it via `TimeStamped.created_on`, the serializer just
+   * doesn't expose it under either name yet. Typed as optional so the
+   * Studio card's "Created" row activates automatically once the backend
+   * adds it, without another frontend deploy.
+   */
+  created_at?: string;
+  created_on?: string;
 };

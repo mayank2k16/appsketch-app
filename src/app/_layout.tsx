@@ -98,7 +98,6 @@ function RootLayoutContent() {
       <Stack.Screen name="profile" options={{ headerShown: false }} />
       <Stack.Screen name="support" options={{ headerShown: false }} />
       <Stack.Screen name="support-chat" options={{ headerShown: false }} />
-      <Stack.Screen name="cart" options={{ headerShown: false }} />
     </Stack>
   );
 }

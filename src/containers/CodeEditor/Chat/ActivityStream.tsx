@@ -1,10 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
 import {
   Animated,
   Easing,
+  Modal,
   Platform,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   type TextStyle,
@@ -153,8 +157,113 @@ function ToolChip({
   );
 }
 
+/** A screenshot at full size, over a blackout. The web opens `it.image` in a
+ * lightbox on click; this is the same affordance, and the only reason it lives
+ * in this file is that the thumbnail does — nothing has to be plumbed up
+ * through ChatPanel for a screenshot to be openable. */
+export function Lightbox({
+  uri,
+  onClose,
+}: {
+  uri: string | null;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      visible={!!uri}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      // Android: without this the status bar stays lit over a black overlay.
+      statusBarTranslucent
+    >
+      <Pressable style={st.lbBackdrop} onPress={onClose}>
+        {uri ? (
+          <Image source={{ uri }} style={st.lbImage} contentFit="contain" />
+        ) : null}
+        <View style={st.lbClose}>
+          <Ionicons name="close" size={22} color="#EAEAEA" />
+        </View>
+      </Pressable>
+    </Modal>
+  );
+}
+
+/** A screenshot the agent captured, inline. Cropped to a readable strip —
+ * a phone screenshot is far too tall to show whole in a step row — with the
+ * full frame one tap away. */
+function StepShot({ uri, colors }: { uri: string; colors: AppColors }) {
+  const [zoomed, setZoomed] = React.useState(false);
+  return (
+    <>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => setZoomed(true)}
+        style={[st.shot, { borderColor: colors.codeEditorBorder }]}
+      >
+        <Image
+          source={{ uri }}
+          style={st.shotImage}
+          contentFit="cover"
+          contentPosition="top center"
+          transition={160}
+        />
+      </TouchableOpacity>
+      <Lightbox uri={zoomed ? uri : null} onClose={() => setZoomed(false)} />
+    </>
+  );
+}
+
+/** Whatever text the tool printed — the web's `.cw-tool-out`. Scrolls
+ * horizontally rather than wrapping, because tool output is usually wide (a
+ * stack trace, a table) and wrapping it makes it unreadable. */
+function ToolOutput({
+  text,
+  failed,
+  colors,
+}: {
+  text: string;
+  failed: boolean;
+  colors: AppColors;
+}) {
+  return (
+    <ScrollView
+      style={[
+        st.toolOut,
+        {
+          backgroundColor: colors.codeEditorTabBg,
+          borderColor: colors.codeEditorBorder,
+        },
+      ]}
+      horizontal
+    >
+      <Text
+        selectable
+        style={[
+          st.toolOutText,
+          {
+            color: failed
+              ? colors.codeEditorDanger
+              : colors.codeEditorTextMuted,
+          },
+        ]}
+      >
+        {text}
+      </Text>
+    </ScrollView>
+  );
+}
+
 /** `node` / `step` / `thinking` — the label and an optional tool chip. No
- * dot of its own: the timeline rail this sits inside already draws one. */
+ * dot of its own: the timeline rail this sits inside already draws one.
+ *
+ * A tool that captured output carries it on the step: `result` (the text the
+ * tool printed, with `resultOk` saying whether it succeeded) and, for a
+ * screenshot, `image` (a `data:image/jpeg;base64,…` URL). Both arrive on a
+ * `tool_result` event and are attached to the step by `useCoderSocket`; until
+ * now this row dropped them on the floor, which is why a screenshot read as
+ * the word "screenshotting" and nothing else. Mirrors the web's
+ * `.cw-act-shot` thumbnail + `.cw-tool-out` accordion. */
 function StepRow({
   step,
   active,
@@ -164,21 +273,50 @@ function StepRow({
   active: boolean;
   colors: AppColors;
 }) {
+  const [open, setOpen] = React.useState(false);
+
+  const result = typeof step.result === 'string' ? step.result.trim() : '';
+  const failed = step.resultOk === false;
+  const hasResult = result.length > 0;
+
+  const label = (
+    <ActiveLabel
+      text={step.text}
+      active={active}
+      colors={colors}
+      style={{
+        fontFamily: active ? F.sans600 : F.sans500,
+        fontSize: 12.5,
+        lineHeight: 17,
+        color: failed ? colors.codeEditorDanger : colors.codeEditorActivityText,
+      }}
+    />
+  );
+
   return (
     <View style={st.rowInlineBody}>
-      <ActiveLabel
-        text={step.text}
-        active={active}
-        colors={colors}
-        style={{
-          fontFamily: active ? F.sans600 : F.sans500,
-          fontSize: 12.5,
-          lineHeight: 17,
-          color: colors.codeEditorActivityText,
-        }}
-      />
+      {hasResult ? (
+        <TouchableOpacity
+          style={st.resultHead}
+          activeOpacity={0.7}
+          onPress={() => setOpen((o) => !o)}
+        >
+          <View style={st.actTextWrap}>{label}</View>
+          <Ionicons
+            name={open ? 'chevron-down' : 'chevron-forward'}
+            size={12}
+            color={colors.textMuted}
+          />
+        </TouchableOpacity>
+      ) : (
+        label
+      )}
       {step.tool ? (
         <ToolChip tool={step.tool} active={active} colors={colors} />
+      ) : null}
+      {step.image ? <StepShot uri={step.image} colors={colors} /> : null}
+      {hasResult && open ? (
+        <ToolOutput text={result} failed={failed} colors={colors} />
       ) : null}
     </View>
   );
@@ -545,10 +683,7 @@ function ActivityHeader({
     >
       <AgentAvatar colors={colors} />
       <Text
-        style={[
-          st.headerText,
-          { color: colors.text, fontFamily: F.sans600 },
-        ]}
+        style={[st.headerText, { color: colors.text, fontFamily: F.sans600 }]}
       >
         {expanded
           ? 'Agent activity'
@@ -576,11 +711,23 @@ export function ActivityStream({
   const [expanded, setExpanded] = React.useState(false);
   if (steps.length === 0) return null;
 
-  const visible = expanded ? steps : steps.slice(-1);
+  // Collapsed, this shows the turn's last step — plus any step that captured a
+  // screenshot. A screenshot is the one activity output worth seeing without
+  // being asked for: it is what the agent actually saw, and burying it behind
+  // a chevron is why the chat only ever showed the word "screenshotting".
+  const visible = expanded
+    ? steps
+    : steps.filter((s, i) => !!s.image || i === steps.length - 1);
 
   return (
     <View
-      style={[st.wrap, { borderColor: colors.codeEditorBorder, backgroundColor: colors.codeEditorActivityBg }]}
+      style={[
+        st.wrap,
+        {
+          borderColor: colors.codeEditorBorder,
+          backgroundColor: colors.codeEditorActivityBg,
+        },
+      ]}
     >
       <ActivityHeader
         expanded={expanded}
@@ -623,27 +770,19 @@ export function LiveActivity({
   const lastIndex = steps.length - 1;
 
   return (
-    <View
-      style={[st.wrap, { borderColor: colors.codeEditorBorder }]}
-    >
+    <View style={[st.wrap, { borderColor: colors.codeEditorBorder }]}>
       <View
         style={[st.header, { backgroundColor: colors.codeEditorActivityBg }]}
       >
         <AgentAvatar colors={colors} />
         <Text
-          style={[
-            st.headerText,
-            { color: colors.text, fontFamily: F.sans600 },
-          ]}
+          style={[st.headerText, { color: colors.text, fontFamily: F.sans600 }]}
         >
           Agent
         </Text>
         <PulsingDot active color={colors.codeEditorTimelineActive} size={7} />
         <Text
-          style={[
-            st.workingText,
-            { color: colors.codeEditorTimelineActive },
-          ]}
+          style={[st.workingText, { color: colors.codeEditorTimelineActive }]}
         >
           Working…
         </Text>
@@ -742,6 +881,57 @@ const st = StyleSheet.create({
   rowInlineBody: {
     flex: 1,
     minWidth: 0,
+  },
+  resultHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  shot: {
+    marginTop: 7,
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+    // A phone screenshot is very tall; crop it to a readable strip in the
+    // stream and let the lightbox show the whole thing.
+    aspectRatio: 4 / 3,
+  },
+  shotImage: {
+    width: '100%',
+    height: '100%',
+  },
+  toolOut: {
+    marginTop: 7,
+    borderWidth: 1,
+    borderRadius: 8,
+    maxHeight: 180,
+  },
+  toolOutText: {
+    fontFamily: MONO_FONT,
+    fontSize: 10.5,
+    lineHeight: 15,
+    padding: 9,
+  },
+  lbBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(1,2,3,0.94)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lbImage: {
+    width: '100%',
+    height: '90%',
+  },
+  lbClose: {
+    position: 'absolute',
+    top: 44,
+    right: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   chip: {
     alignSelf: 'flex-start',

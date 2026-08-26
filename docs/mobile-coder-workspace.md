@@ -1,4 +1,4 @@
-# The mobile coder workspace — theme, terminal, CMS
+# The mobile coder workspace — theme, chat, terminal, CMS
 
 The Code Editor screens (`src/containers/CodeEditor/`) are a **port of the web
 AppSketch workspace**, not a native-looking cousin of it. Someone who builds a
@@ -24,9 +24,14 @@ ladder, declared once as CSS variables and used everywhere:
 | `--ui-line`     | `#252525` | the **only** hairline               |
 | `--ui-txt`      | `#EAEAEA` | text                                |
 | `--ui-dim`      | `#8F8F8F` | secondary text                      |
-| `--ui-accent`   | `#4F7DFF` | focus, and a **primary action**     |
-| accent-soft fill| `rgba(79,125,255,.16)` | a **selected** chip     |
-| accent-soft text| `#7EA2FF` | the label on that fill              |
+| `--ui-accent`   | `#d4d4d4` | focus, and a **primary action**     |
+| accent-soft fill| `#eaeaea` | a **selected** chip                 |
+| accent-soft text| `#010203` | the label on that fill              |
+
+> The accent was `$blue` on the web once, and this port shipped with `#4F7DFF`
+> to match. The web has since gone fully achromatic — the variable is annotated
+> "(was `$blue`)" — and the port now tracks it. If the ladder above and the web
+> stylesheet ever disagree again, the stylesheet is right.
 
 Colour appears only where it *means* something: state (green connected, red
 error), and one primary action per surface. Everything else is grey.
@@ -46,14 +51,47 @@ and none of tomorrow's, because the next `colors.accent` anyone typed in here
 would be indigo again. So the **scope** is the fix:
 
 ```ts
-// src/lib/theme/CoderTheme.ts
-accent:     base.codeEditorFocus,       // #4F7DFF
-accentSoft: base.codeEditorAccentWash,  // rgba(79,125,255,.16)
+// src/lib/theme/CoderTheme.ts — dark mode
+accent:      '#EAEAEA',                    // the web's --ui-accent-soft
+accentOn:    '#010203',                    // what sits ON that fill
+accentSoft:  'rgba(234,234,234,0.12)',     // a wash, never text
 ```
 
-Every screen under `containers/CodeEditor/` calls `useCoderTheme(colorScheme)`
-instead of `useAppTheme(colorScheme)`. The returned object is the same shape, so
-`colors` props typed `ReturnType<typeof useAppTheme>` needed no change.
+A screen opts in by calling `useCoderTheme(colorScheme)` instead of
+`useAppTheme(colorScheme)`. The returned object is the same shape, so `colors`
+props typed `ReturnType<typeof useAppTheme>` needed no change.
+
+### Which surfaces are scoped
+
+Originally just `containers/CodeEditor/`. The brand indigo was equally wrong on
+three of the four tabs — the Agent composer's Web/App pill and send button, the
+Marketplace's tag pills and category chips, the Studio rail — so the scope now
+covers them too, along with `GlowTabBar`:
+
+| surface | why |
+| ------- | --- |
+| `containers/CodeEditor/` | a port of the web workspace |
+| `containers/Agent/` | the same composer, one screen earlier |
+| `containers/Studio/` | management chrome, not marketing |
+| `containers/Marketplace/` | ditto |
+| `components/bottom-tabs/GlowTabBar` | one bar, shared by all four tabs |
+
+**Home is deliberately excluded** — it is the marketing face of the app, where
+the brand colour is the point. The tab bar is a single shared component, so
+making it achromatic changes the active-tab treatment on Home too; a bar that
+changed hue per tab would read as a bug, so the whole bar is grey.
+
+Widening the scope meant retuning more than `accent`: the branded *gradients*
+(`tabLabelGradient`, `agentSendGradient`, `agentBorderGradient`), the agent
+glows, the Web/App pill, the Marketplace tag pills and the Studio rail. They are
+listed explicitly in `CoderTheme.scope()` and asserted in
+`CoderTheme.test.ts` — a new branded token on a scoped screen fails that test.
+
+> **`accentOn` had to exist first.** Roughly sixteen call sites hardcoded
+> `'#FFFFFF'` for the label, icon or spinner sitting on an `accent` fill, which
+> silently assumed the accent would always be dark enough to carry white. Under
+> the achromatic scope it is near-*white*, so those became invisible buttons.
+> `accentOn` is the token to read instead of typing a literal.
 
 > **`AppColors` had to widen.** Colour values were inferred as string
 > *literals*, so `accent` had the type `'#6C5CE7'` and nothing was permitted to
@@ -72,9 +110,11 @@ The scope swap makes the hue right. Three places had the wrong *treatment*:
   A colour on most rows of a colourless panel is not an accent.
 - **DotFieldLoader** painted a whole *field* of dots accent. At that coverage it
   is a coloured background, not an accent. Now `codeEditorTextMuted`.
-- **`injectedScript.ts`** hardcoded `#6C5CE7` for the inspector's selection
-  outline — it runs inside the previewed page, out of reach of the theme, so it
-  is hardcoded to `#4F7DFF` instead.
+- **`injectedScript.ts`** hardcoded the inspector's selection outline — it runs
+  inside the previewed *page*, out of reach of the theme. It is now `#D4D4D4`
+  plus a dark `box-shadow` halo, because a near-white ring alone disappears on a
+  light page (the previous inline `box-shadow`, if any, is restored on
+  deselect).
 
 Two contrast bugs the re-tone *created*, both fixed: the Collections tab pills
 and collection chips drew `#FFFFFF` text on what used to be a filled indigo pill
@@ -82,7 +122,46 @@ and is now a raised neutral — invisible in light mode.
 
 ---
 
-## 2. The terminal stops saying "connecting" forever
+## 2. The chat shows what the agent saw
+
+The agent takes screenshots of the site it is building and feeds them back to
+itself (`preview_tools`, a `data:image/jpeg;base64,…` URL). The web chat renders
+that inline — `.cw-act-shot`, click to enlarge — next to a `.cw-tool-out`
+accordion holding whatever else the tool printed.
+
+On mobile the whole payload was arriving and being discarded. `ActivityStep`
+already declared `image` / `result` / `resultOk`; `useCoderSocket` already
+attached them on the `tool_result` event; `ActivityStream`'s `StepRow` rendered
+only `text` and the tool chip. So a screenshot read as the word
+"screenshotting" and nothing else.
+
+`StepRow` now renders all three:
+
+- **`image`** → an inline 4:3 thumbnail (a phone screenshot is far too tall to
+  show whole in a step row), tap for a full-screen `Lightbox`. The lightbox is
+  the app's first, and it lives in `ActivityStream.tsx` next to the thumbnail so
+  nothing has to be plumbed up through `ChatPanel`.
+- **`result`** → a monospace accordion behind a caret, horizontally scrollable
+  because tool output is usually wide (a stack trace, a table).
+- **`resultOk === false`** → the label and the output turn `codeEditorDanger`.
+
+Three things had to change around it:
+
+- A **finished** turn collapses to its last step. Steps carrying a screenshot
+  are now exempt — an image is worth seeing without being asked for, and hiding
+  it behind a chevron is the bug restated.
+- **History dropped activity entirely.** The server persists each assistant
+  turn's steps in `meta` and replays them on `ready` (`consumer._history`);
+  the mobile client mapped only `role` and `content`, so a reload silently
+  emptied every past turn. It now replays `activity` (assigning client-side
+  ids) and `images`.
+- **User attachments were never drawn.** The web shows them above the bubble
+  (`.cw-bubble-imgs`); `MessageBubble` now does the same, sharing the same
+  `Lightbox`.
+
+---
+
+## 3. The terminal stops saying "connecting" forever
 
 `useTerminalSocket` was a single `connected` boolean with no retry and no close
 handling, so **every** failure looked identical: "Connecting…", indefinitely.
@@ -118,7 +197,7 @@ socket is open, and shows **Reconnect** in the header when offline.
 
 ---
 
-## 3. A real CMS on the Collections tab
+## 4. A real CMS on the Collections tab
 
 ### Every field type the engine validates
 
@@ -190,8 +269,10 @@ sheet, which is iOS-only and system-coloured.
 
 | file                                       | role                                  |
 | ------------------------------------------ | ------------------------------------- |
-| `src/lib/theme/AppTheme.ts`                | the achromatic tokens                 |
-| `src/lib/theme/CoderTheme.ts`              | the coder-scoped palette              |
+| `src/lib/theme/AppTheme.ts`                | the achromatic tokens, and `accentOn` |
+| `src/lib/theme/CoderTheme.ts`              | the achromatic scope                  |
+| `src/lib/theme/CoderTheme.test.ts`         | the scope's guardrails                |
+| `src/containers/CodeEditor/Chat/ActivityStream.tsx` | screenshots + tool output    |
 | `src/containers/CodeEditor/hooks/useTerminalSocket.ts` | phase machine + backoff   |
 | `src/containers/CodeEditor/Terminal/TerminalPane.tsx`  | phase UI + Reconnect      |
 | `src/containers/CodeEditor/Collections/RecordDrawer.tsx`   | the form          |

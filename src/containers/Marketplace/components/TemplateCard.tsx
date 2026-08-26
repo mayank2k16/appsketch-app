@@ -103,7 +103,7 @@ export const TemplateCard = React.memo(function TemplateCard({ t, isDark, templa
             <Text style={[styles.btnLabel, { color: t.text }]}>Preview</Text>
           </TouchableOpacity> */}
           <TouchableOpacity onPress={onUse} activeOpacity={0.85} style={[styles.btn, { backgroundColor: t.accent }]}>
-            <Text style={[styles.btnLabel, { color: '#FFFFFF' }]}>Preview</Text>
+            <Text style={[styles.btnLabel, { color: t.accentOn }]}>Preview</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -15,22 +15,24 @@ import {
 import { useAttachTenant, useUserTenants } from '@/api/';
 import type { TenantSummary } from '@/api/studio';
 import { useStudio } from '@/lib/store/studio-store';
-import { useAppTheme } from '@/lib/theme';
+import { useCoderTheme } from '@/lib/theme';
 
 import { StoreCard } from './components/StoreCard';
 
-export function AppsScreen() {
+// Search now lives in StudioScreen's header, above the rail — it stays put
+// across a section switch instead of scrolling away with the Apps list, so
+// it's passed down as a controlled value rather than owned here.
+export function AppsScreen({ search }: { search: string }) {
   const router = useRouter();
   const tenantsQuery = useUserTenants();
   const attachTenant = useAttachTenant();
   const setAttachedTenant = useStudio.use.setAttachedTenant();
   const { colorScheme } = useColorScheme();
-  const t = useAppTheme(colorScheme);
+  const t = useCoderTheme(colorScheme);
 
   const [attachingId, setAttachingId] = React.useState<
     TenantSummary['id'] | null
   >(null);
-  const [search, setSearch] = React.useState('');
 
   function handleViewCms(tenant: TenantSummary) {
     setAttachingId(tenant.id);
@@ -54,8 +56,11 @@ export function AppsScreen() {
     } as never);
   }
 
+<<<<<<< HEAD
   function handleViewCrm(tenant: TenantSummary) { }
 
+=======
+>>>>>>> 5998a02f554ccf41a96f4ed63778765e85fa7efb
   // Same `/code-editor/chat` route the hero-prompt flow (AgentScreen) pushes
   // to when starting a NEW build — the only difference is no `userPrompt` is
   // passed. `useCoderSocket`'s bootstrap effect resumes the tenant's latest
@@ -108,7 +113,6 @@ export function AppsScreen() {
           loading={attachingId === item.id}
           onViewCms={() => handleViewCms(item)}
           onViewStore={() => handleViewStore(item)}
-          onViewCrm={() => handleViewCrm(item)}
           onViewCustomStore={() => handleViewCustomStore(item)}
         />
       )}
@@ -164,6 +168,7 @@ const st = StyleSheet.create({
     gap: 10,
   },
   emptyText: { fontSize: 13, fontWeight: '600' },
+<<<<<<< HEAD
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -180,4 +185,6 @@ const st = StyleSheet.create({
     fontSize: 13,
     height: '100%',
   },
+=======
+>>>>>>> 5998a02f554ccf41a96f4ed63778765e85fa7efb
 });
