@@ -36,6 +36,7 @@ import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
+import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
 import { toast } from '@/lib/toast';
 
 import { homeTheme } from '../theme/HomeTheme';
@@ -65,25 +66,25 @@ export const APP_TABS: {
   // rotating typewriter placeholder inside it — one list, two uses.
   suggestions: string[];
 }[] = [
-  {
-    key: 'web',
-    label: 'Web App',
-    icon: 'globe-outline',
-    suggestions: [
-      'Build a landing page for my product launch with an email signup and countdown timer',
-      'Build an online store for my clothing brand with product listings and a shopping cart',
-    ],
-  },
-  {
-    key: 'mobile',
-    label: 'Mobile App',
-    icon: 'phone-portrait-outline',
-    suggestions: [
-      'Build a habit tracker app with daily reminders and streak tracking',
-      'Build a food delivery app with restaurant listings and live order tracking',
-    ],
-  },
-];
+    {
+      key: 'web',
+      label: 'Web App',
+      icon: 'globe-outline',
+      suggestions: [
+        'Build a landing page for my product launch with an email signup and countdown timer',
+        'Build an online store for my clothing brand with product listings and a shopping cart',
+      ],
+    },
+    {
+      key: 'mobile',
+      label: 'Mobile App',
+      icon: 'phone-portrait-outline',
+      suggestions: [
+        'Build a habit tracker app with daily reminders and streak tracking',
+        'Build a food delivery app with restaurant listings and live order tracking',
+      ],
+    },
+  ];
 
 /** Cycles through `phrases`, typing then deleting each in turn, forever —
  * restarts from scratch whenever `phrases` or `enabled` changes (tab switch,
@@ -254,6 +255,14 @@ export function AgentV2({
     onAttachPress?.();
   }
 
+  async function handleCamera() {
+    if (images.length >= MAX_IMAGES) return;
+    const uri = await pickImageFromCamera();
+    if (!uri) return;
+    setImages((prev) => [...prev, uri].slice(0, MAX_IMAGES));
+    onAttachPress?.();
+  }
+
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
@@ -380,13 +389,6 @@ export function AgentV2({
                 <View style={s.inputWrap}>
                   <TextInput
                     placeholder={activeTab.suggestions[0]}
-                    // The animated overlay below draws the placeholder while
-                    // the field is idle, so the native one is hidden to stop
-                    // the two rendering on top of each other. But the overlay
-                    // only exists while UNFOCUSED — leaving it transparent
-                    // unconditionally meant tapping in emptied the box
-                    // entirely, with no prompt left to work from. Focused,
-                    // the native placeholder takes over as a static hint.
                     placeholderTextColor={
                       showTypewriter ? 'transparent' : t.agentInputPlaceholder
                     }
@@ -496,6 +498,25 @@ export function AgentV2({
                     )}
                   </TouchableOpacity>
 
+                  <TouchableOpacity
+                    onPress={handleCamera}
+                    activeOpacity={0.7}
+                    disabled={images.length >= MAX_IMAGES}
+                    style={[
+                      s.circleBtn,
+                      {
+                        backgroundColor: t.agentBtnBg,
+                        borderColor: t.agentBtnBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="camera-outline"
+                      size={19}
+                      color={t.agentBtnIcon}
+                    />
+                  </TouchableOpacity>
+
                   {voiceSupported && (
                     <TouchableOpacity
                       onPress={() => setVoiceOpen(true)}
@@ -534,14 +555,14 @@ export function AgentV2({
                       s.circleBtn,
                       canSend
                         ? {
-                            backgroundColor: t.agentTabActiveText,
-                            borderColor: t.agentTabActiveText,
-                          }
+                          backgroundColor: t.agentTabActiveText,
+                          borderColor: t.agentTabActiveText,
+                        }
                         : {
-                            backgroundColor: t.agentBtnBg,
-                            borderColor: t.agentBtnBorder,
-                            opacity: 0.5,
-                          },
+                          backgroundColor: t.agentBtnBg,
+                          borderColor: t.agentBtnBorder,
+                          opacity: 0.5,
+                        },
                     ]}
                   >
                     {sending ? (
@@ -759,7 +780,7 @@ const s = StyleSheet.create({
   },
   cardContent: {
     padding: 14,
-    gap: 10,
+    gap: 5,
   },
   inputWrap: {
     position: 'relative',
@@ -772,11 +793,10 @@ const s = StyleSheet.create({
   },
   input: {
     fontFamily: F.sans400,
-    fontSize: 15,
-    lineHeight: 20,
-    // Trimmed by roughly the height the tab row now occupies inside the card,
-    // so pulling the tabs in didn't make the whole composer taller.
-    minHeight: 88,
+    fontSize: 14,
+    lineHeight: 18,
+    paddingTop: 0,
+    minHeight: 90,
     maxHeight: 120,
     paddingHorizontal: 4,
   },

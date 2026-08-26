@@ -51,7 +51,7 @@ function DeployButton({
       ]}
     >
       {inProgress ? (
-        <ActivityIndicator size="small" color="#FFFFFF" />
+        <ActivityIndicator size="small" />
       ) : (
         <Ionicons
           name={
@@ -62,7 +62,6 @@ function DeployButton({
                 : 'rocket-outline'
           }
           size={14}
-          color="#FFFFFF"
         />
       )}
       <Text style={st.deployLabel}>
@@ -144,5 +143,5 @@ const st = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
   },
-  deployLabel: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  deployLabel: { fontSize: 12, fontWeight: '700' },
 });

@@ -17,6 +17,7 @@ import { GallerySheet } from '@/components/ui/GallerySheet';
 import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
 import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { F } from '@/lib/fonts';
+import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
 import type { AppColors } from '@/lib/theme';
 
 export type PromptModel = { value: string; label: string; context: number };
@@ -78,6 +79,13 @@ export function PromptComposer({
   function handleAttach() {
     if (images.length >= maxImages) return;
     setGalleryOpen(true);
+  }
+
+  async function handleCamera() {
+    if (images.length >= maxImages) return;
+    const uri = await pickImageFromCamera();
+    if (!uri) return;
+    onImagesChange([...images, uri].slice(0, maxImages));
   }
 
   function removeImage(index: number) {
@@ -155,6 +163,18 @@ export function PromptComposer({
               <Text style={s.countBadgeText}>{images.length}</Text>
             </View>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleCamera}
+          activeOpacity={0.7}
+          disabled={images.length >= maxImages}
+          style={[
+            s.circleBtn,
+            { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
+          ]}
+        >
+          <Ionicons name="camera-outline" size={18} color={t.agentBtnIcon} />
         </TouchableOpacity>
 
         {voiceSupported && (

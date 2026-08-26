@@ -157,7 +157,7 @@ function ConnectRepoForm({ onConnected }: { onConnected: () => void }) {
         style={[st.connectBtn, { backgroundColor: t.accent }]}
       >
         {connecting ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
+          <ActivityIndicator size="small" />
         ) : (
           <Text style={st.connectBtnText}>Connect repository</Text>
         )}
@@ -474,7 +474,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  connectWrap: { padding: 24, alignItems: 'center', gap: 10 },
+  connectWrap: { padding: 24, alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' },
   connectTitle: { fontSize: 16, fontWeight: '700', marginTop: 4 },
   connectSub: {
     fontSize: 12.5,
@@ -498,8 +498,8 @@ const st = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 4,
   },
-  connectBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13.5 },
-  orText: { fontSize: 11.5, marginTop: 10 },
+  connectBtnText: { fontWeight: '700', fontSize: 13.5 },
+  orText: { fontSize: 11.5, marginTop: 10, width: '100%', textAlign: 'center' },
   oauthRow: { flexDirection: 'row', gap: 8 },
   oauthBtn: {
     borderWidth: 1,

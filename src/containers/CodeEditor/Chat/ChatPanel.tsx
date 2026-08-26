@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Easing,
@@ -29,6 +30,7 @@ import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
+import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
 import { type useAppTheme, useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -258,9 +260,6 @@ function ChatHeader({
       <AgentAvatar size={30} iconSize={15} colors={colors} />
       <View style={{ flex: 1 }}>
         <View style={st.headerTitleRow}>
-          {/* The heading is the agent's name for the work, not the word
-           * "Agent" — until the naming call lands there is nothing better to
-           * show, so it falls back rather than flashing an empty row. */}
           <Text
             style={[st.headerTitle, { color: colors.text }]}
             numberOfLines={1}
@@ -449,8 +448,12 @@ function Composer({
   onChangeInput,
   onSend,
   disabled,
+  busy,
+  stopping,
+  onStop,
   images,
   onAttach,
+  onCamera,
   onRemoveImage,
   colors,
   bottomInset,
@@ -463,8 +466,15 @@ function Composer({
   onChangeInput: (v: string) => void;
   onSend: () => void;
   disabled: boolean;
+  /** While a turn is running the send button becomes a stop button — same
+   * control, same spot, since that's exactly where the user's thumb already
+   * is rather than buried in the activity feed. */
+  busy: boolean;
+  stopping: boolean;
+  onStop: () => void;
   images: string[];
   onAttach: () => void;
+  onCamera: () => void;
   onRemoveImage: (index: number) => void;
   colors: ReturnType<typeof useAppTheme>;
   /** Home-indicator clearance — the composer sat flush against it before. */
@@ -593,6 +603,21 @@ function Composer({
           ) : null}
         </TouchableOpacity>
 
+        <TouchableOpacity
+          onPress={onCamera}
+          activeOpacity={0.7}
+          disabled={images.length >= MAX_IMAGES}
+          style={[
+            st.attachBtn,
+            {
+              backgroundColor: colors.codeEditorTabBg,
+              borderColor: colors.codeEditorBorder,
+            },
+          ]}
+        >
+          <Ionicons name="camera-outline" size={17} color={colors.textSub} />
+        </TouchableOpacity>
+
         {voice.supported ? (
           <TouchableOpacity
             onPress={voice.toggle}
@@ -623,23 +648,46 @@ function Composer({
 
         <View style={{ flex: 1 }} />
 
-        <TouchableOpacity
-          onPress={onSend}
-          disabled={disabled}
-          style={disabled && st.sendBtnDisabled}
-        >
-          <LinearGradient
-            colors={[
-              colors.codeEditorUserBubbleFrom,
-              colors.codeEditorUserBubbleTo,
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={st.sendBtn}
+        {busy ? (
+          <TouchableOpacity
+            onPress={onStop}
+            disabled={stopping}
+            style={stopping && st.sendBtnDisabled}
+            accessibilityLabel={
+              stopping
+                ? 'Stopping — finishing the current step safely'
+                : 'Stop the agent'
+            }
           >
-            <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-          </LinearGradient>
-        </TouchableOpacity>
+            <View
+              style={[st.sendBtn, { backgroundColor: colors.codeEditorDanger }]}
+            >
+              {stopping ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <View style={st.stopSquare} />
+              )}
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={onSend}
+            disabled={disabled}
+            style={disabled && st.sendBtnDisabled}
+          >
+            <LinearGradient
+              colors={[
+                colors.codeEditorUserBubbleFrom,
+                colors.codeEditorUserBubbleTo,
+              ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={st.sendBtn}
+            >
+              <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ModelPickerModal
@@ -723,12 +771,14 @@ export function ChatPanel() {
   const {
     connected,
     busy,
+    stopping,
     messages,
     activity,
     tokens,
     clarifyBlock,
     clarifyAnswers,
     send,
+    stopAgent,
     answerClarify,
     title,
     eta,
@@ -767,6 +817,13 @@ export function ChatPanel() {
   function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
     setGalleryOpen(true);
+  }
+
+  async function handleCameraAttach() {
+    if (images.length >= MAX_IMAGES) return;
+    const uri = await pickImageFromCamera();
+    if (!uri) return;
+    setImages((prev) => [...prev, uri].slice(0, MAX_IMAGES));
   }
 
   function removeImage(index: number) {
@@ -887,8 +944,12 @@ export function ChatPanel() {
           onChangeInput={setInput}
           onSend={handleSend}
           disabled={!connected || busy || !input.trim()}
+          busy={busy}
+          stopping={stopping}
+          onStop={stopAgent}
           images={images}
           onAttach={handleAttach}
+          onCamera={handleCameraAttach}
           onRemoveImage={removeImage}
           colors={t}
           bottomInset={insets.bottom}
@@ -955,12 +1016,11 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
+    minHeight: 20,
   },
   headerTitle: {
     fontFamily: F.sans600,
-    fontSize: 15,
-    // A generated name can be up to 60 chars — it has to give way to the
-    // status dot and the two buttons rather than push them off-screen.
+    fontSize: 14,
     flexShrink: 1,
   },
   headerStatus: {
@@ -1171,13 +1231,15 @@ const st = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingTop: 0,
     paddingBottom: 8,
   },
   input: {
     fontSize: 14.5,
+    minHeight: 65,
     maxHeight: 110,
     paddingBottom: 8,
+    paddingTop: 0,
   },
   composerRow: {
     flexDirection: 'row',
@@ -1216,6 +1278,12 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
+  stopSquare: {
+    width: 12,
+    height: 12,
+    borderRadius: 2.5,
+    backgroundColor: '#FFFFFF',
+  },
 
   thumbRow: {
     flexDirection: 'row',

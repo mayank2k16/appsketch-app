@@ -293,7 +293,7 @@ export function CollectionsScreen() {
           onPress={load}
           style={[st.refreshBtn, { backgroundColor: t.accent }]}
         >
-          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12.5 }}>
+          <Text style={{ fontWeight: '700', fontSize: 12.5 }}>
             Refresh
           </Text>
         </TouchableOpacity>
