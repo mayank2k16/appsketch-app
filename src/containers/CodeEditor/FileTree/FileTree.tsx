@@ -77,7 +77,7 @@ function PromptModal({
                 { backgroundColor: colors.accent, borderRadius: 8 },
               ]}
             >
-              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Done</Text>
+              <Text style={{ fontWeight: '700' }}>Done</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -163,18 +163,18 @@ function Row({
 
       {isDir && isOpen
         ? (node.children ?? []).map((child) => (
-            <Row
-              key={child.path}
-              node={child}
-              depth={depth + 1}
-              colors={colors}
-              selectedPath={selectedPath}
-              expanded={expanded}
-              onToggle={onToggle}
-              onSelectFile={onSelectFile}
-              onLongPress={onLongPress}
-            />
-          ))
+          <Row
+            key={child.path}
+            node={child}
+            depth={depth + 1}
+            colors={colors}
+            selectedPath={selectedPath}
+            expanded={expanded}
+            onToggle={onToggle}
+            onSelectFile={onSelectFile}
+            onLongPress={onLongPress}
+          />
+        ))
         : null}
     </>
   );
@@ -416,7 +416,7 @@ const st = StyleSheet.create({
     paddingVertical: 8,
     paddingRight: 12,
   },
-  rowLabel: { fontSize: 13, flexShrink: 1 },
+  rowLabel: { fontSize: 13, flexShrink: 0, flex: 1 },
   sheetAction: {
     flexDirection: 'row',
     alignItems: 'center',

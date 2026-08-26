@@ -266,6 +266,12 @@ export type CoderFinalEvent = {
   compacted?: boolean;
 };
 export type CoderErrorEvent = { event: 'error'; detail?: string };
+/** The turn now running server-side — its id is what a `stop` message targets. */
+export type CoderRunStartedEvent = { event: 'run_started'; run_id: number };
+/** Stop was requested and accepted; the run unwinds at its next cancellation
+ * checkpoint (a token or a tool call away) and the real end still arrives as
+ * a normal `final`/`error` frame — this is only "the request landed". */
+export type CoderStoppingEvent = { event: 'stopping' };
 /** Plan's token quota for this billing period is used up — mirrors
  * `builder/agent/coder/quota.py`'s `check()` (see `CoderQuota`). Sent instead
  * of a normal turn when `check().allowed` is false. */
@@ -316,7 +322,9 @@ export type CoderWsEvent =
   | CoderTitleEvent
   | CoderBackgroundLimitEvent
   | CoderQuotaExceededEvent
-  | CoderErrorEvent;
+  | CoderErrorEvent
+  | CoderRunStartedEvent
+  | CoderStoppingEvent;
 
 // ── Outgoing WS messages ─────────────────────────────────────────────────────
 
@@ -337,11 +345,15 @@ export type CoderApprovalPayload = {
   type: 'approval';
   value: Record<string, unknown>;
 };
+/** Cancel the turn in flight. `run_id` targets a specific (e.g. background)
+ * run; omitted, it stops this thread's current foreground turn. */
+export type CoderStopPayload = { type: 'stop'; run_id?: number };
 
 export type CoderOutgoingMessage =
   | CoderSendMessagePayload
   | CoderInteractionPayload
-  | CoderApprovalPayload;
+  | CoderApprovalPayload
+  | CoderStopPayload;
 
 // ── Incoming WS events (ws/webbuild/<build_id>/) ────────────────────────────
 

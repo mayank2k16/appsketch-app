@@ -20,10 +20,10 @@ const SECTIONS: {
   label: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
 }[] = [
-  { key: 'apps', label: 'Apps', icon: 'grid-outline' },
-  { key: 'discover', label: 'Discover', icon: 'compass-outline' },
-  { key: 'settings', label: 'Settings', icon: 'settings-outline' },
-];
+    { key: 'apps', label: 'Apps', icon: 'grid-outline' },
+    { key: 'discover', label: 'Discover', icon: 'compass-outline' },
+    { key: 'settings', label: 'Settings', icon: 'settings-outline' },
+  ];
 
 /** Narrow enough that the store cards keep almost the full width — the rail is
  *  a navigation strip, not a panel. */
@@ -194,7 +194,7 @@ const st = StyleSheet.create({
     gap: 8,
     paddingTop: 4,
     paddingLeft: SCREEN_INSET,
-    paddingRight: 8,
+    paddingRight: 6,
     borderRightWidth: StyleSheet.hairlineWidth,
   },
   railItem: {

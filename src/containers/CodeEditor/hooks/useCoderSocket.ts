@@ -184,8 +184,17 @@ export function useCoderSocket(params: CoderSocketParams) {
   // boolean so two builds in a row (each landing on an already-clean state)
   // both re-trigger the navigation instead of the second being a no-op.
   const [previewReady, setPreviewReady] = React.useState(0);
+  // True once `stop` has been sent and accepted server-side, until the run
+  // actually unwinds (its own `final`/`error` frame). Optimistic only in the
+  // sense that it marks the intent — never faked into a "stopped" state that
+  // isn't real yet.
+  const [stopping, setStopping] = React.useState(false);
 
   const wsRef = React.useRef<WebSocket | null>(null);
+  // The foreground turn's id, for targeting `stop` — a ref, not state: it's
+  // only ever read inside `stopAgent`, so re-rendering on every change would
+  // be pure waste.
+  const runIdRef = React.useRef<number | null>(null);
   const hasSentInitialPromptRef = React.useRef(false);
   const activityIdRef = React.useRef(0);
   const nextActivityId = () => `a-${(activityIdRef.current += 1)}`;
@@ -337,6 +346,14 @@ export function useCoderSocket(params: CoderSocketParams) {
           );
           break;
 
+        case 'run_started':
+          runIdRef.current = msg.run_id;
+          break;
+
+        case 'stopping':
+          setStopping(true);
+          break;
+
         case 'token':
           setBusy(true);
           setMessages((prev) => appendStreamingToken(prev, msg.content));
@@ -479,6 +496,8 @@ export function useCoderSocket(params: CoderSocketParams) {
           setClarifyBlock(null);
           setEta(null);
           setBackgroundRun(false);
+          setStopping(false);
+          runIdRef.current = null;
           const acts = activityRef.current;
           setMessages((prev) => finalizeMessages(prev, msg.content, acts));
           setActivity([]);
@@ -508,6 +527,8 @@ export function useCoderSocket(params: CoderSocketParams) {
           setBusy(false);
           setEta(null);
           setBackgroundRun(false);
+          setStopping(false);
+          runIdRef.current = null;
           verifyOkRef.current = null;
           setMessages((prev) => [
             ...prev,
@@ -642,6 +663,21 @@ export function useCoderSocket(params: CoderSocketParams) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId, handleEvent]);
 
+  // Stop the turn in flight. Optimistic only in the sense that it marks the
+  // intent — the run unwinds at its next cancellation checkpoint and the
+  // server's own `final`/`error` frame is what actually clears `busy`, so
+  // this never fakes a "stopped" state that isn't real yet.
+  const stopAgent = React.useCallback(() => {
+    if (!wsRef.current) return;
+    wsRef.current.send(
+      JSON.stringify({
+        type: 'stop',
+        ...(runIdRef.current ? { run_id: runIdRef.current } : {}),
+      })
+    );
+    setStopping(true);
+  }, []);
+
   const answerClarify = React.useCallback((value: Record<string, string>) => {
     if (!wsRef.current) return;
     setClarifyAnswers(value);
@@ -718,6 +754,7 @@ export function useCoderSocket(params: CoderSocketParams) {
   return {
     connected,
     busy,
+    stopping,
     threadId,
     title,
     eta,
@@ -735,6 +772,7 @@ export function useCoderSocket(params: CoderSocketParams) {
     quotaExceeded,
     clearQuotaExceeded: () => setQuotaExceeded(null),
     send,
+    stopAgent,
     rename,
     remove,
     answerClarify,
