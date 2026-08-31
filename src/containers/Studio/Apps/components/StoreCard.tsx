@@ -19,10 +19,10 @@ const ACTIONS: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   iconAfter?: boolean;
 }[] = [
-  { key: 'store', label: 'View Store', icon: 'open-outline', iconAfter: true },
-  { key: 'cms', label: 'View CMS', icon: 'arrow-forward', iconAfter: true },
-  { key: 'remix', label: 'Remix', icon: 'code-slash-outline' },
-];
+    { key: 'store', label: 'View Store', icon: 'open-outline', iconAfter: true },
+    { key: 'cms', label: 'View CMS', icon: 'arrow-forward', iconAfter: true },
+    { key: 'remix', label: 'Remix', icon: 'code-slash-outline' },
+  ];
 
 /** `en-GB`-style day/month/year — locale-neutral and unambiguous, unlike
  *  `MM/DD` which reads differently depending on the reader's region. */
@@ -151,7 +151,7 @@ export function StoreCard({
 
 const st = StyleSheet.create({
   card: {
-    borderRadius: 5,
+    borderRadius: 10,
     padding: 14,
     marginHorizontal: 0,
     marginBottom: 10,

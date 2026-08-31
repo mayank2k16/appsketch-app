@@ -42,7 +42,9 @@ async function requestMicPermission(): Promise<boolean> {
   const granted = await PermissionsAndroid.request(
     PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
   );
-  return granted === PermissionsAndroid.RESULTS.GRANTED;
+  const ok = granted === PermissionsAndroid.RESULTS.GRANTED;
+  console.log('[VoiceInputModal] requestMicPermission ->', granted, ok);
+  return ok;
 }
 
 /**
@@ -225,9 +227,11 @@ export function VoiceInputModal({
       if (v > 1) bump((v - 1) / 8);
     };
     Voice.onSpeechEnd = () => {
+      console.log('[VoiceInputModal] onSpeechEnd');
       if (mountedRef.current) setListening(false);
     };
-    Voice.onSpeechError = () => {
+    Voice.onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
+      console.log('[VoiceInputModal] onSpeechError ->', JSON.stringify(e?.error));
       if (mountedRef.current) setListening(false);
     };
   }
@@ -238,11 +242,19 @@ export function VoiceInputModal({
       onClose();
       return;
     }
+    try {
+      const available = await Voice.isAvailable();
+      console.log('[VoiceInputModal] Voice.isAvailable ->', available);
+    } catch (e) {
+      console.log('[VoiceInputModal] Voice.isAvailable threw ->', e);
+    }
     claimListeners();
     try {
       await Voice.start('en-US');
+      console.log('[VoiceInputModal] Voice.start resolved');
       setListening(true);
-    } catch {
+    } catch (e) {
+      console.log('[VoiceInputModal] Voice.start threw ->', e);
       toast.error("Couldn't start voice input.");
       onClose();
     }

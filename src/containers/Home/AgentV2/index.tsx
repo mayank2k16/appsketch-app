@@ -229,7 +229,7 @@ function TypewriterPlaceholder({
 // tail stop is forced to fully transparent and pulled in early (`locations`
 // below) so most of the ring sits at flat zero alpha between sweeps, rather
 // than a slow dissolve that reads as a faint border everywhere.
-const BORDER_SPIN_MS = 4000;
+const BORDER_SPIN_MS = 6000;
 
 function RotatingBorderGradient({
   colors,
@@ -339,9 +339,14 @@ export function fmtContext(tokens: number): string {
 export function AgentV2({
   onAttachPress,
   onSendPress,
+  showSuggestions = true,
 }: {
   onAttachPress?: () => void;
   onSendPress?: () => void;
+  /** The suggestion pills below the card — on by default (the Hero-section
+   *  usage), off for other placements (e.g. ClosingCTA) that just want the
+   *  prompt card itself. */
+  showSuggestions?: boolean;
 }) {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
@@ -703,32 +708,34 @@ export function AgentV2({
             </View>
           </View>
 
-          <View style={s.suggestionCol}>
-            {activeTab.suggestions.map((suggestion) => (
-              <TouchableOpacity
-                key={suggestion}
-                onPress={() => setPrompt(suggestion)}
-                activeOpacity={0.7}
-                style={[
-                  s.suggestionPill,
-                  {
-                    backgroundColor: t.agentTabBg,
-                    borderColor: t.agentTabBorder,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="sparkles-outline"
-                  size={13}
-                  color={t.agentTabIcon}
-                  style={s.suggestionIcon}
-                />
-                <Text style={[s.suggestionText, { color: t.agentTabText }]}>
-                  {suggestion}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {showSuggestions && (
+            <View style={s.suggestionCol}>
+              {activeTab.suggestions.map((suggestion) => (
+                <TouchableOpacity
+                  key={suggestion}
+                  onPress={() => setPrompt(suggestion)}
+                  activeOpacity={0.7}
+                  style={[
+                    s.suggestionPill,
+                    {
+                      backgroundColor: t.agentTabBg,
+                      borderColor: t.agentTabBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={13}
+                    color={t.agentTabIcon}
+                    style={s.suggestionIcon}
+                  />
+                  <Text style={[s.suggestionText, { color: t.agentTabText }]}>
+                    {suggestion}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       </View>
 

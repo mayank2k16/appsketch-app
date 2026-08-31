@@ -320,9 +320,12 @@ export function ClosingCTASection() {
           composer down here. Needs an explicit full-width wrapper: `section`
           centers its children, and AgentV2's own root has no width of its
           own, so without this it would shrink to its content's natural width
-          instead of stretching edge to edge like it does at the top of Home. */}
+          instead of stretching edge to edge like it does at the top of Home.
+          Suggestion pills stay Hero-only — this card sits at the bottom of a
+          page that has already made its pitch, not the first thing a visitor
+          sees, so it doesn't need the same "not sure what to type?" nudge. */}
       <View style={s.agentWrap}>
-        <AgentV2 />
+        <AgentV2 showSuggestions={false} />
       </View>
     </View>
   );
