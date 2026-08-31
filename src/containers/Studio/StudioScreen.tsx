@@ -28,7 +28,7 @@ const SECTIONS: {
 /** Narrow enough that the store cards keep almost the full width — the rail is
  *  a navigation strip, not a panel. */
 const RAIL_W = 65;
-const SCREEN_INSET = 8;
+const SCREEN_INSET = 10;
 
 export function StudioScreen() {
   const insets = useSafeAreaInsets();
@@ -164,8 +164,8 @@ const st = StyleSheet.create({
     letterSpacing: 1.4,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    // alignItems: 'center',
     gap: 10,
   },
   searchWrap: {
@@ -176,9 +176,8 @@ const st = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     paddingHorizontal: 12,
-    height: 40,
   },
-  searchInput: { flex: 1, fontSize: 13, height: '100%' },
+  searchInput: { flex: 1, fontSize: 13, height: '100%', minHeight: 40 },
   title: {
     fontFamily: F.display900,
     fontSize: 24,

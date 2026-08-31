@@ -1,6 +1,5 @@
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -12,14 +11,10 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { type AppTypeKey, createCoderTenant } from '@/api/coder';
-import { AppTypePills } from '@/components/ui/AppTypePills';
 import { GradientText } from '@/components/ui/GradientText';
-import { PromptComposer } from '@/components/ui/PromptComposer';
 import { F } from '@/lib/fonts';
-import { toast } from '@/lib/toast';
 
-import { DEFAULT_MODEL, fmtContext, MODELS } from '../AgentV2';
+import { AgentV2 } from '../AgentV2';
 import { SectionHeading } from '../components/SectionHeading';
 import { type HomeColors, homeTheme } from '../theme/HomeTheme';
 
@@ -296,41 +291,6 @@ function DeviceMockup({ t }: { t: HomeColors }) {
 export function ClosingCTASection() {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
-  const router = useRouter();
-
-  const [appType, setAppType] = React.useState<AppTypeKey>('web');
-  const [prompt, setPrompt] = React.useState('');
-  const [model, setModel] = React.useState(DEFAULT_MODEL);
-  const [images, setImages] = React.useState<string[]>([]);
-  const [sending, setSending] = React.useState(false);
-
-  async function handleSend(overrideText?: string) {
-    const text = (overrideText ?? prompt).trim();
-    if (!text || sending) return;
-
-    setSending(true);
-    try {
-      const tenant = await createCoderTenant({
-        title: text.slice(0, 60),
-        appType,
-      });
-      router.push({
-        pathname: '/code-editor/chat',
-        params: {
-          tenantId: String(tenant.id),
-          tenantUid: tenant.uuid,
-          appType,
-          userPrompt: text,
-          model,
-          images: JSON.stringify(images),
-        },
-      });
-    } catch {
-      toast.error("Couldn't start your build. Please try again.");
-    } finally {
-      setSending(false);
-    }
-  }
 
   return (
     // No section backgroundColor — same as the other new sections, so the
@@ -354,25 +314,15 @@ export function ClosingCTASection() {
         AI drafts it. Our engineers perfect it. You ship.
       </Text>
 
-      <View style={s.typePillRow}>
-        <AppTypePills t={t} value={appType} onChange={setAppType} />
-      </View>
-
-      <View style={s.composerWrap}>
-        <PromptComposer
-          t={t}
-          value={prompt}
-          onChangeText={setPrompt}
-          placeholder="Describe the app you want to build…"
-          images={images}
-          onImagesChange={setImages}
-          models={MODELS}
-          model={model}
-          onModelChange={setModel}
-          formatContext={fmtContext}
-          onSend={handleSend}
-          sending={sending}
-        />
+      {/* Same self-contained prompt card as the top-of-page AgentV2 — tabs,
+          rotating border, typewriter placeholder, model picker, attach/camera/
+          voice, all included — rather than a second, differently-styled
+          composer down here. Needs an explicit full-width wrapper: `section`
+          centers its children, and AgentV2's own root has no width of its
+          own, so without this it would shrink to its content's natural width
+          instead of stretching edge to edge like it does at the top of Home. */}
+      <View style={s.agentWrap}>
+        <AgentV2 />
       </View>
     </View>
   );
@@ -382,7 +332,7 @@ const s = StyleSheet.create({
   section: {
     paddingHorizontal: 8,
     paddingTop: 8,
-    paddingBottom: 60,
+    paddingBottom: 10,
     alignItems: 'center',
   },
 
@@ -601,13 +551,7 @@ const s = StyleSheet.create({
     marginBottom: 30,
   },
 
-  typePillRow: {
-    width: '100%',
-    marginTop: 5,
-    marginBottom: 15,
-  },
-
-  composerWrap: {
-    width: '100%',
+  agentWrap: {
+    width: '105%',
   },
 });

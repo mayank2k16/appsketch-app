@@ -43,7 +43,7 @@ import { homeTheme } from '../theme/HomeTheme';
 
 const RADIUS = 15;
 /** Thickness of the prompt card's lit gradient edge — see `ringMask`. */
-const RING_W = 1.6;
+const RING_W = 1.5;
 const MAX_IMAGES = 3;
 // Characters are revealed in chunks rather than one per tick. Per-character
 // at 28ms meant ~36 setState calls a second, permanently, on the JS thread —
@@ -88,7 +88,17 @@ export const APP_TABS: {
 
 /** Cycles through `phrases`, typing then deleting each in turn, forever —
  * restarts from scratch whenever `phrases` or `enabled` changes (tab switch,
- * or the real input gaining text/focus interrupts it). */
+ * or the real input gaining text/focus interrupts it).
+ *
+ * Char count is derived from actual elapsed time (`Date.now()` deltas), not
+ * incremented by a fixed amount per tick. A naive "+TYPE_CHARS every tick"
+ * loop never recovers from a late tick — if the JS thread is busy for one
+ * beat, that tick still only adds its usual chunk, so the reveal falls
+ * behind and stays behind for the rest of the phrase. That's what read as
+ * "not smooth": not the chunk size, but the pace silently drifting under any
+ * JS-thread hiccup. Deriving from elapsed time means a late tick just
+ * catches up to where it should already be — same tick rate, same number of
+ * setState calls, no extra work added, just no accumulated drift. */
 function useTypewriter(phrases: string[], enabled: boolean): string {
   const [text, setText] = React.useState('');
 
@@ -100,33 +110,55 @@ function useTypewriter(phrases: string[], enabled: boolean): string {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     let phraseIndex = 0;
-    let charIndex = 0;
+    // null means "this phase hasn't rendered its first frame yet" — set to
+    // Date.now() lazily, on the phase's own first tick, not when it's
+    // scheduled. Stamping it at schedule time would count the setTimeout
+    // delay itself as elapsed phase time, so the very first tick after any
+    // wait would jump several chars in instead of starting from zero.
+    let phaseStart: number | null = null;
+
+    const schedule = (fn: () => void, ms: number) => {
+      timer = setTimeout(fn, ms);
+    };
 
     const typeStep = () => {
       if (cancelled) return;
       const phrase = phrases[phraseIndex % phrases.length];
-      setText(phrase.slice(0, charIndex));
-      if (charIndex < phrase.length) {
-        charIndex = Math.min(charIndex + TYPE_CHARS, phrase.length);
-        timer = setTimeout(typeStep, TYPE_MS);
+      phaseStart ??= Date.now();
+      const elapsed = Date.now() - phaseStart;
+      const chars = Math.min(
+        phrase.length,
+        Math.floor((elapsed / TYPE_MS) * TYPE_CHARS)
+      );
+      setText(phrase.slice(0, chars));
+      if (chars < phrase.length) {
+        schedule(typeStep, TYPE_MS);
       } else {
-        timer = setTimeout(deleteStep, TYPE_HOLD_MS);
+        phaseStart = null;
+        schedule(deleteStep, TYPE_HOLD_MS);
       }
     };
     const deleteStep = () => {
       if (cancelled) return;
       const phrase = phrases[phraseIndex % phrases.length];
-      if (charIndex > 0) {
-        charIndex = Math.max(charIndex - DELETE_CHARS, 0);
-        setText(phrase.slice(0, charIndex));
-        timer = setTimeout(deleteStep, DELETE_MS);
+      phaseStart ??= Date.now();
+      const elapsed = Date.now() - phaseStart;
+      const removed = Math.min(
+        phrase.length,
+        Math.floor((elapsed / DELETE_MS) * DELETE_CHARS)
+      );
+      const chars = Math.max(0, phrase.length - removed);
+      setText(phrase.slice(0, chars));
+      if (chars > 0) {
+        schedule(deleteStep, DELETE_MS);
       } else {
         phraseIndex += 1;
-        timer = setTimeout(typeStep, TYPE_GAP_MS);
+        phaseStart = null;
+        schedule(typeStep, TYPE_GAP_MS);
       }
     };
 
-    timer = setTimeout(typeStep, TYPE_GAP_MS);
+    schedule(typeStep, TYPE_GAP_MS);
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -150,6 +182,113 @@ function BlinkingCursor({ color }: { color: string }) {
   }, [v]);
   const style = useAnimatedStyle(() => ({ opacity: v.value }));
   return <Reanimated.Text style={[{ color }, style]}>|</Reanimated.Text>;
+}
+
+// Isolates the typewriter's per-chunk setState churn (every TYPE_MS/DELETE_MS)
+// to this small subtree. It used to live inline in AgentV2, which meant every
+// chunk re-rendered the whole card — including the BlurView (intensity 80 on
+// Android, genuinely expensive to redraw) and the animated border ring —
+// dozens of times a minute for no visual reason. That's what "typewriter
+// feels janky, not smooth" actually was: the text itself was fine, everything
+// around it was repainting along with it.
+function TypewriterPlaceholder({
+  phrases,
+  enabled,
+  color,
+  textStyle,
+}: {
+  phrases: string[];
+  enabled: boolean;
+  color: string;
+  textStyle: (typeof s)['input'];
+}) {
+  const text = useTypewriter(phrases, enabled);
+  if (!enabled) return null;
+  return (
+    <View
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={s.typewriterOverlay}
+    >
+      <Text style={[textStyle, { color }]}>
+        {text}
+        <BlinkingCursor color={color} />
+      </Text>
+    </View>
+  );
+}
+
+// Spins the border's lit gradient around the card, clockwise, forever. The
+// gradient view is sized to the card's own diagonal and centered before it
+// rotates — a square that size fully covers the card's bounding box at every
+// angle (its inscribed circle, the one guarantee independent of rotation,
+// has to reach the card's corners), so nothing outside the lit band is ever
+// exposed as the sweep turns. `ringMask`'s `overflow: hidden` + `cardInner`
+// on top still do the actual masking down to just the border stroke. The
+// tail stop is forced to fully transparent and pulled in early (`locations`
+// below) so most of the ring sits at flat zero alpha between sweeps, rather
+// than a slow dissolve that reads as a faint border everywhere.
+const BORDER_SPIN_MS = 4000;
+
+function RotatingBorderGradient({
+  colors,
+  locations,
+}: {
+  colors: [string, string, ...string[]];
+  locations: [number, number, ...number[]];
+}) {
+  const [box, setBox] = React.useState({ width: 0, height: 0 });
+  const rotation = useSharedValue(0);
+
+  React.useEffect(() => {
+    rotation.value = withRepeat(
+      withTiming(360, {
+        duration: BORDER_SPIN_MS,
+        easing: ReanimatedEasing.linear,
+      }),
+      -1,
+      false
+    );
+    return () => cancelAnimation(rotation);
+  }, [rotation]);
+
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  const diag = Math.ceil(Math.hypot(box.width, box.height)) + 2;
+
+  return (
+    <View
+      pointerEvents="none"
+      style={StyleSheet.absoluteFill}
+      onLayout={(e) => setBox(e.nativeEvent.layout)}
+    >
+      {box.width > 0 && (
+        <Reanimated.View
+          style={[
+            {
+              position: 'absolute',
+              width: diag,
+              height: diag,
+              left: (box.width - diag) / 2,
+              top: (box.height - diag) / 2,
+            },
+            spinStyle,
+          ]}
+        >
+          <LinearGradient
+            colors={colors}
+            locations={locations}
+            start={{ x: 0.1, y: 0 }}
+            end={{ x: 0.85, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Reanimated.View>
+      )}
+    </View>
+  );
 }
 
 // Mirrors the web builder's model list (`coderModels.js`) exactly, including
@@ -234,7 +373,6 @@ export function AgentV2({
   const canSend = prompt.trim().length > 0;
 
   const showTypewriter = !inputFocused && prompt.length === 0;
-  const typedPlaceholder = useTypewriter(activeTab.suggestions, showTypewriter);
 
   async function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
@@ -306,21 +444,15 @@ export function AgentV2({
       <View style={s.stage}>
         <View style={s.promptStack}>
           <View style={s.ringMask}>
-            {/* The lit edge. Runs top-left → bottom-right rather than a flat
-                  vertical, so the bright run carries along the top and around
-                  the top-right shoulder before falling away — light arriving
-                  from above, not a band across the middle. `locations` holds
-                  it bright across the first third and pushes the falloff into
-                  the lower half, where it fades to near-nothing. */}
-            <LinearGradient
-              pointerEvents="none"
-              colors={
-                [...t.agentBorderGradient] as [string, string, ...string[]]
-              }
-              locations={[0, 0.45, 1]}
-              start={{ x: 0.1, y: 0 }}
-              end={{ x: 0.85, y: 1 }}
-              style={StyleSheet.absoluteFill}
+            {/* The lit edge, spinning clockwise around the card forever —
+                  see `RotatingBorderGradient`. */}
+            <RotatingBorderGradient
+              colors={[
+                t.agentBorderGradient[0],
+                t.agentBorderGradient[1],
+                'rgba(255,255,255,0)',
+              ]}
+              locations={[0, 0.2, 0.45]}
             />
             <View style={s.cardInner}>
               <BlurView
@@ -400,21 +532,12 @@ export function AgentV2({
                     onBlur={() => setInputFocused(false)}
                     style={[s.input, { color: t.agentInputText }]}
                   />
-                  {showTypewriter && (
-                    <View
-                      pointerEvents="none"
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                      style={s.typewriterOverlay}
-                    >
-                      <Text
-                        style={[s.input, { color: t.agentInputPlaceholder }]}
-                      >
-                        {typedPlaceholder}
-                        <BlinkingCursor color={t.agentInputPlaceholder} />
-                      </Text>
-                    </View>
-                  )}
+                  <TypewriterPlaceholder
+                    phrases={activeTab.suggestions}
+                    enabled={showTypewriter}
+                    color={t.agentInputPlaceholder}
+                    textStyle={s.input}
+                  />
                 </View>
 
                 {images.length > 0 && (
@@ -757,20 +880,16 @@ const s = StyleSheet.create({
     lineHeight: 17,
   },
   // Gradient-ring border: `ringMask` clips to the rounded rect and reserves
-  // RING_W of padding, a LinearGradient fills it, and `cardInner` — sized to
-  // fill everything inside that padding — covers the gradient everywhere
-  // except the edge, so only the border shows it.
+  // RING_W of padding, `RotatingBorderGradient` fills it (rendered as the
+  // first child, see JSX), and `cardInner` — sized to fill everything inside
+  // that padding — covers the gradient everywhere except the edge, so only
+  // the border shows it.
   ringMask: {
     alignSelf: 'stretch',
     // All four corners round: the tabs are a separate row above now, so
     // nothing lands on the card's top edge and the outline stays one closed,
     // unbroken shape.
     borderRadius: RADIUS,
-    // The gradient ring: this View reserves the stroke's thickness via
-    // padding, a LinearGradient fills it (rendered as the first child, see
-    // JSX), and `cardInner` covers everything except that edge. At 1px the
-    // ramp had too little area to show its falloff and flattened to grey —
-    // RING_W gives the sweep somewhere to actually happen.
     padding: RING_W,
     overflow: 'hidden',
   },
@@ -780,7 +899,7 @@ const s = StyleSheet.create({
   },
   cardContent: {
     padding: 14,
-    gap: 5,
+    gap: 10,
   },
   inputWrap: {
     position: 'relative',
@@ -834,14 +953,14 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     height: 36,
-    maxWidth: 150,
+    maxWidth: 120,
     borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 12,
   },
   modelChipLabel: {
     fontFamily: F.sans600,
-    fontSize: 12,
+    fontSize: 11,
     flexShrink: 1,
   },
   circleBtn: {

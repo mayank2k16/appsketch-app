@@ -100,9 +100,9 @@ const s = StyleSheet.create({
     marginTop: 1
   },
   brandName: {
-    fontFamily: F.sans600,
+    fontFamily: F.sans800,
     fontSize: 19,
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
   },
   menuBtn: {
     width: 40,
