@@ -15,6 +15,13 @@ import { SettingsScreen } from './Settings/SettingsScreen';
 
 type StudioSection = 'apps' | 'discover' | 'settings';
 
+// Temporary: previewing the brand purple (matches AppTheme's `accent`,
+// #6C5CE7) back into this otherwise-achromatic screen — the active rail tab,
+// and (via StoreCard) the store icon/link. Exported so StoreCard uses the
+// same value rather than a second hardcoded copy.
+export const STUDIO_ACCENT = '#6C5CE7';
+const STUDIO_ACCENT_SOFT = 'rgba(108,92,231,0.18)';
+
 const SECTIONS: {
   key: StudioSection;
   label: string;
@@ -28,7 +35,7 @@ const SECTIONS: {
 /** Narrow enough that the store cards keep almost the full width — the rail is
  *  a navigation strip, not a panel. */
 const RAIL_W = 65;
-const SCREEN_INSET = 8;
+const SCREEN_INSET = 10;
 
 export function StudioScreen() {
   const insets = useSafeAreaInsets();
@@ -105,7 +112,7 @@ export function StudioScreen() {
                       st.railItem,
                       {
                         backgroundColor: active
-                          ? t.studioRailActiveBg
+                          ? STUDIO_ACCENT_SOFT
                           : t.studioRailBg,
                       },
                     ]}
@@ -164,21 +171,27 @@ const st = StyleSheet.create({
     letterSpacing: 1.4,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    // alignItems: 'center',
     gap: 10,
   },
   searchWrap: {
-    flex: 1,
+    width: '100%',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    borderRadius: 5,
+    borderRadius: 6,
     borderWidth: 1,
     paddingHorizontal: 12,
-    height: 40,
   },
-  searchInput: { flex: 1, fontSize: 13, height: '100%' },
+  searchInput: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 13,
+    height: '100%',
+    minHeight: 40,
+  },
   title: {
     fontFamily: F.display900,
     fontSize: 24,
@@ -191,18 +204,17 @@ const st = StyleSheet.create({
   },
   rail: {
     width: RAIL_W,
-    gap: 8,
-    paddingTop: 4,
-    paddingLeft: SCREEN_INSET,
-    paddingRight: 6,
+    gap: 0,
+    paddingTop: 0,
     borderRightWidth: StyleSheet.hairlineWidth,
   },
   railItem: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
     paddingVertical: 12,
-    borderRadius: 5,
+    borderRadius: 0,
   },
   railText: { fontFamily: F.sans600, fontSize: 10.5 },
 

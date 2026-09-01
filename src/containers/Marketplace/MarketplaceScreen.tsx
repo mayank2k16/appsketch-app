@@ -3,7 +3,7 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Animated,
-  FlatList,
+  type LayoutChangeEvent,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -55,6 +55,48 @@ export function MarketplaceScreen() {
   const activeCategoryName =
     activeCategory === ALL ? 'All templates' : categories.find((c) => c.id === activeCategory)?.name || 'Templates';
 
+  // Headings scroll away normally; the search/pills/result-row group is an
+  // absolutely-positioned overlay that rides up with the headings until they
+  // fully scroll past, then pins at HEADER_TOP. The FlatList reserves a
+  // matching spacer (see `listHeader`) so grid rows line up with the overlay
+  // at every scroll position.
+  //
+  // useNativeDriver is deliberately false here: on this app's New
+  // Architecture (Fabric) build, a native-driven scroll value's
+  // .interpolate() output never actually updated (confirmed by listening to
+  // both — the raw scroll value ticked fine, the interpolated one never
+  // fired), so the overlay stayed frozen at its mount-time position. JS-driven
+  // updates go through the normal render path instead and are reliable.
+  const HEADER_TOP = insets.top + 25;
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const [headingsHeight, setHeadingsHeight] = React.useState(90);
+  const [stickyGroupHeight, setStickyGroupHeight] = React.useState(150);
+
+  const onScroll = React.useMemo(
+    () => Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false }),
+    [scrollY]
+  );
+
+  const stickyTranslateY = scrollY.interpolate({
+    inputRange: [0, Math.max(headingsHeight, 1)],
+    outputRange: [headingsHeight, 0],
+    extrapolate: 'clamp',
+  });
+
+  const handleHeadingsLayout = React.useCallback((e: LayoutChangeEvent) => {
+    setHeadingsHeight(e.nativeEvent.layout.height);
+  }, []);
+
+  const handleStickyLayout = React.useCallback((e: LayoutChangeEvent) => {
+    setStickyGroupHeight(e.nativeEvent.layout.height);
+  }, []);
+
+  // A scroll during the brief skeleton phase shouldn't leave the real grid's
+  // sticky bar mis-positioned once it mounts at offset 0.
+  React.useEffect(() => {
+    if (!templatesQuery.isLoading) scrollY.setValue(0);
+  }, [templatesQuery.isLoading, scrollY]);
+
   // Crossfades the grid in once the very first load resolves — after that,
   // `keepPreviousData` (see useBrowseTemplates) keeps the same FlatList
   // mounted across category/search changes, so this only fires once.
@@ -94,6 +136,28 @@ export function MarketplaceScreen() {
     [t, isDark]
   );
 
+  const listHeader = (
+    <>
+      <View onLayout={handleHeadingsLayout}>
+        <View style={s.header}>
+          <Text style={[s.eyebrow, { color: '#6C5CE7' }]}>AI template library</Text>
+          <Text style={[s.heading, { color: t.text }]}>Make any template yours with ease</Text>
+          <Text style={[s.subtitle, { color: t.textSub }]}>Start from a template and let AI make it yours.</Text>
+        </View>
+      </View>
+      <View style={{ height: stickyGroupHeight + 5 }} />
+    </>
+  );
+
+  const commonListProps = {
+    ListHeaderComponent: listHeader,
+    numColumns: 2 as const,
+    showsVerticalScrollIndicator: false,
+    contentContainerStyle: [s.gridContent, { paddingTop: HEADER_TOP }],
+    onScroll,
+    scrollEventThrottle: 16,
+  };
+
   return (
     <View style={[s.root, { backgroundColor: t.bg }]}>
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
@@ -106,14 +170,68 @@ export function MarketplaceScreen() {
         <View style={[s.blob, { top: 220, right: -80, backgroundColor: t.agentSendGradient[1], opacity: isDark ? 0.14 : 0.09 }]} />
       </View>
 
-      {/* Sticky — only the grid below scrolls. */}
-      <View style={{ paddingTop: insets.top + 25 }}>
-        <View style={s.header}>
-          <Text style={[s.eyebrow, { color: t.accent }]}>AI template library</Text>
-          <Text style={[s.heading, { color: t.text }]}>Make any template yours with ease</Text>
-          <Text style={[s.subtitle, { color: t.textSub }]}>Start from a template and let AI make it yours.</Text>
-        </View>
+      {/* Headings scroll away; search/pills/result-row are the sticky overlay below. */}
+      {templatesQuery.isLoading ? (
+        <Animated.FlatList
+          {...commonListProps}
+          data={skeletonData}
+          keyExtractor={(item) => `skeleton-${item}`}
+          renderItem={() => (
+            <View style={{ flex: 1, marginHorizontal: 4, marginBottom: 10 }}>
+              <TemplateCardSkeleton t={t} isDark={isDark} />
+            </View>
+          )}
+          style={{ flex: 1 }}
+        />
+      ) : (
+        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
+          <Animated.FlatList
+            {...commonListProps}
+            data={templates}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={renderItem}
+            style={{ flex: 1 }}
+            ListEmptyComponent={
+              <View style={s.center}>
+                <Text style={[s.emptyTitle, { color: t.text }]}>No templates found</Text>
+                <Text style={{ color: t.textSub, fontSize: 12.5, marginTop: 4 }}>Try a different category or search term.</Text>
+              </View>
+            }
+            onEndReachedThreshold={0.4}
+            onEndReached={() => {
+              if (templatesQuery.hasNextPage && !templatesQuery.isFetchingNextPage) {
+                templatesQuery.fetchNextPage();
+              }
+            }}
+            ListFooterComponent={
+              templatesQuery.isFetchingNextPage ? (
+                <View style={{ paddingVertical: 16 }}>
+                  <ActivityIndicator size="small" color={t.accent} />
+                </View>
+              ) : null
+            }
+          />
+        </Animated.View>
+      )}
 
+      {/* Permanently masks the safe-area margin above the sticky bar — once
+          scrolled far enough, grid rows reach that strip and would otherwise
+          show through it, since the FlatList spans the full screen behind it. */}
+      <View pointerEvents="none" style={[s.topMask, { height: HEADER_TOP, backgroundColor: t.bg }]} />
+
+      <Animated.View
+        onLayout={handleStickyLayout}
+        style={[
+          s.stickyOverlay,
+          {
+            top: HEADER_TOP,
+            backgroundColor: t.bg,
+            borderBottomColor: t.border,
+            shadowOpacity: isDark ? 0.3 : 0.08,
+            transform: [{ translateY: stickyTranslateY }],
+          },
+        ]}
+      >
         <View style={[s.searchWrap, { backgroundColor: t.card, borderColor: t.border }]}>
           <Ionicons name="search" size={16} color={t.textMuted} />
           <TextInput
@@ -148,52 +266,7 @@ export function MarketplaceScreen() {
             </View>
           )}
         </View>
-      </View>
-
-      {templatesQuery.isLoading ? (
-        <FlatList
-          data={skeletonData}
-          keyExtractor={(item) => `skeleton-${item}`}
-          renderItem={() => (
-            <View style={{ flex: 1, marginHorizontal: 4, marginBottom: 10 }}>
-              <TemplateCardSkeleton t={t} isDark={isDark} />
-            </View>
-          )}
-          numColumns={2}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={s.gridContent}
-        />
-      ) : (
-        <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-          <FlatList
-            data={templates}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderItem}
-            numColumns={2}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={s.gridContent}
-            ListEmptyComponent={
-              <View style={s.center}>
-                <Text style={[s.emptyTitle, { color: t.text }]}>No templates found</Text>
-                <Text style={{ color: t.textSub, fontSize: 12.5, marginTop: 4 }}>Try a different category or search term.</Text>
-              </View>
-            }
-            onEndReachedThreshold={0.4}
-            onEndReached={() => {
-              if (templatesQuery.hasNextPage && !templatesQuery.isFetchingNextPage) {
-                templatesQuery.fetchNextPage();
-              }
-            }}
-            ListFooterComponent={
-              templatesQuery.isFetchingNextPage ? (
-                <View style={{ paddingVertical: 16 }}>
-                  <ActivityIndicator size="small" color={t.accent} />
-                </View>
-              ) : null
-            }
-          />
-        </Animated.View>
-      )}
+      </Animated.View>
     </View>
   );
 }
@@ -227,7 +300,7 @@ function CategoryChip({
 const s = StyleSheet.create({
   root: { flex: 1 },
   blob: { position: 'absolute', width: 220, height: 220, borderRadius: 110 },
-  header: { paddingHorizontal: 20, marginBottom: 16 },
+  header: { paddingHorizontal: 10, marginBottom: 16, width: '90%' },
   eyebrow: { fontFamily: F.sans700, fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 },
   heading: { fontFamily: F.display900, fontSize: 22, letterSpacing: -0.4, lineHeight: 27, marginBottom: 6 },
   subtitle: { fontFamily: F.sans400, fontSize: 13, lineHeight: 19 },
@@ -258,8 +331,23 @@ const s = StyleSheet.create({
   resultCountRow: { flexDirection: 'row', alignItems: 'center' },
   resultCount: { fontFamily: F.sans500, fontSize: 11.5 },
   // Shared by both the skeleton grid and the real grid so swapping between
-  // them never shifts card position/spacing.
-  gridContent: { paddingTop: 5, paddingHorizontal: 6, paddingBottom: 14 },
+  // them never shifts card position/spacing. The 5px top gap that used to
+  // live here is now baked into the ListHeaderComponent spacer instead.
+  gridContent: { paddingHorizontal: 6, paddingBottom: 14 },
   center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 32 },
   emptyTitle: { fontFamily: F.sans700, fontSize: 15 },
+  topMask: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9 },
+  stickyOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingTop: 2,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 6,
+  },
 });

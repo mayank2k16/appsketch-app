@@ -84,9 +84,13 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
     // Each of these is a violet/blue ramp. Kept as ramps (the components
     // animate and mask them, so a single colour would break the effect) but
     // retuned to a light-to-dim grey sheen off the same ladder.
-    tabLabelGradient: dark
-      ? ['#FFFFFF', '#EAEAEA', '#C9C9C9', '#A8A8A8']
-      : ['#111111', '#2A2A2A', '#444444', '#5C5C5C'],
+    //
+    // tabLabelGradient is the one deliberate exception: the bottom tab bar's
+    // active icon/label was explicitly asked to stay the brand indigo
+    // (#6C5CE7 / rgb(108,92,231)) rather than go achromatic like the rest of
+    // this scope, so it just reuses `base.tabLabelGradient` unchanged — see
+    // the carve-out note next to `tabLabelGradient` in CoderTheme.test.ts.
+    tabLabelGradient: base.tabLabelGradient,
     agentSendGradient: dark ? ['#3A3A3A', '#1E1E1E'] : ['#2A2A2A', '#111111'],
     agentBorderGradient: dark
       ? ['#3A3A3A', '#5A5A5A', '#2A2A2A']

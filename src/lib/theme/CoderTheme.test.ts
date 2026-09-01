@@ -44,12 +44,16 @@ const asText = (v: unknown) => (Array.isArray(v) ? v.join(' ') : String(v));
 const paletteFor = useCoderTheme;
 
 /** The tokens the scope exists to retune. If someone adds a new branded token
- * to a scoped screen, add it here — that is the point of the list. */
+ * to a scoped screen, add it here — that is the point of the list.
+ *
+ * `tabLabelGradient` is deliberately NOT here: the bottom tab bar's active
+ * icon/label was explicitly asked to keep the brand indigo (#6C5CE7 /
+ * rgb(108,92,231)) rather than go achromatic, so `useCoderTheme` passes it
+ * through unchanged from `AppTheme` — see the same note in CoderTheme.ts. */
 const SCOPED = [
   'accent',
   'accentSoft',
   'accentOn',
-  'tabLabelGradient',
   'agentSendGradient',
   'agentBorderGradient',
   'agentGlowBlue',

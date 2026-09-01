@@ -24,8 +24,11 @@ export function TemplateCardSkeleton({ t, isDark }: Props) {
       <View style={styles.content}>
         <Skeleton t={t} borderRadius={11} style={styles.imageWrap} />
 
-        <Skeleton t={t} height={12} width="70%" borderRadius={4} />
-        <Skeleton t={t} height={10} width="90%" borderRadius={4} />
+        <Skeleton t={t} height={13} width="70%" borderRadius={4} />
+        <View style={styles.descLines}>
+          <Skeleton t={t} height={10} width="90%" borderRadius={4} />
+          <Skeleton t={t} height={10} width="55%" borderRadius={4} />
+        </View>
 
         <View style={styles.tagRow}>
           <Skeleton t={t} height={16} width={40} borderRadius={7} />
@@ -34,7 +37,6 @@ export function TemplateCardSkeleton({ t, isDark }: Props) {
         </View>
 
         <View style={styles.btnRow}>
-          <Skeleton t={t} height={28} borderRadius={8} />
           <Skeleton t={t} height={28} borderRadius={8} />
         </View>
       </View>
@@ -48,15 +50,20 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS,
     borderWidth: 1,
     overflow: 'hidden',
+    minHeight: 290,
   },
   content: {
-    padding: 8,
+    padding: 5,
     gap: 6,
+    flex: 1,
+    paddingBottom: 7,
   },
   imageWrap: {
-    width: '100%',
+    borderRadius: 11,
+    overflow: 'hidden',
     aspectRatio: 1.4,
   },
-  tagRow: { flexDirection: 'row', gap: 4 },
-  btnRow: { gap: 5, marginTop: 2 },
+  descLines: { gap: 4 },
+  tagRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
+  btnRow: { gap: 5, marginTop: 'auto' },
 });

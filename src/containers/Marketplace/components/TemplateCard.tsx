@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS,
     borderWidth: 1,
     overflow: 'hidden',
+    minHeight: 290
   },
   highlight: {
     position: 'absolute',
@@ -128,6 +129,8 @@ const styles = StyleSheet.create({
   content: {
     padding: 5,
     gap: 6,
+    flex: 1,
+    paddingBottom: 7
   },
   imageWrap: {
     // height: 88,
@@ -151,11 +154,11 @@ const styles = StyleSheet.create({
   },
   statBadgeText: { fontFamily: F.sans600, fontSize: 9, color: '#FFFFFF' },
   name: { fontFamily: F.sans600, fontSize: 12.5 },
-  description: { fontFamily: F.sans400, fontSize: 10.5, lineHeight: 15 },
+  description: { fontFamily: F.sans400, fontSize: 10, lineHeight: 14 },
   tagRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
   tag: { borderRadius: 7, paddingHorizontal: 6, paddingVertical: 2 },
   tagText: { fontFamily: F.sans600, fontSize: 8.5 },
-  btnRow: { gap: 5, marginTop: 10 },
-  btn: { height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  btnRow: { gap: 5, marginTop: 'auto' },
+  btn: { height: 30, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   btnLabel: { fontFamily: F.sans600, fontSize: 11 },
 });

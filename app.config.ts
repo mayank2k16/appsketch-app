@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import type { ConfigContext, ExpoConfig } from '@expo/config';
-import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 import { withAndroidManifest } from '@expo/config-plugins';
+import type { AppIconBadgeConfig } from 'app-icon-badge/types';
 
 import { ClientEnv, Env } from './env';
 
@@ -22,11 +22,38 @@ const appIconBadgeConfig: AppIconBadgeConfig = {
 };
 
 export default ({ config }: ConfigContext): ExpoConfig => {
+  let cfg: ExpoConfig = { ...config } as ExpoConfig;
+
+  // ── Package-visibility query for the system speech recognizer ───────────────
+  // Android 11+ (API 30+) hides the speech-recognition service behind
+  // package-visibility filtering. Without declaring it here, SpeechRecognizer
+  // can't bind to it and @react-native-voice/voice's `Voice.start()` rejects
+  // immediately with no useful message — surfaced in the UI as "Couldn't
+  // start voice input." The voice package's own config plugin only adds the
+  // RECORD_AUDIO permission, not this.
+  cfg = withAndroidManifest(cfg, (c) => {
+    const manifest = c.modResults.manifest as any;
+    manifest.queries = manifest.queries ?? [{}];
+    const queries = manifest.queries[0];
+    queries.intent = [
+      ...(queries.intent ?? []),
+      {
+        action: [
+          { $: { 'android:name': 'android.speech.RecognitionService' } },
+        ],
+      },
+    ];
+    queries.package = [
+      ...(queries.package ?? []),
+      { $: { 'android:name': 'com.google.android.googlequicksearchbox' } },
+    ];
+    return c;
+  });
+
   // ── Inject Google Maps API key into AndroidManifest.xml ─────────────────────
   // The react-native-maps config plugin (v1.20.1) can't be used because its
   // app.plugin.js imports JSX files that Node.js can't parse. We replicate the
   // only thing we need from it: the <meta-data> entry for the Maps API key.
-  let cfg: ExpoConfig = { ...config } as ExpoConfig;
   if (Env.GOOGLE_MAPS_API_KEY) {
     cfg = withAndroidManifest(cfg, (c) => {
       const mainApp = c.modResults.manifest.application?.[0];

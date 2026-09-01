@@ -110,9 +110,9 @@ export function AppsScreen({ search }: { search: string }) {
         />
       )}
       contentContainerStyle={{
-        paddingTop: 4,
+        paddingTop: 0,
         paddingBottom: 24,
-        paddingHorizontal: 4,
+        paddingHorizontal: 1,
       }}
       ListEmptyComponent={
         <View style={st.center}>
