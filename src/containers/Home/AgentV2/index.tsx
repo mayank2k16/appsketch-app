@@ -58,6 +58,14 @@ const TYPE_GAP_MS = 300; // pause once a phrase is fully deleted, before the nex
 
 type AppTypeKey = 'web' | 'mobile';
 
+// TEMP: simple solid border/heading colour per tab, swapped in for the
+// rotating gradient ring below while we look at a plain-border treatment.
+// Purple for Web App, orange for Mobile App.
+const TAB_ACCENT: Record<AppTypeKey, string> = {
+  web: '#7C46BE',
+  mobile: '#DF5231',
+};
+
 export const APP_TABS: {
   key: AppTypeKey;
   label: string;
@@ -448,17 +456,15 @@ export function AgentV2({
     <View style={s.wrap}>
       <View style={s.stage}>
         <View style={s.promptStack}>
-          <View style={s.ringMask}>
-            {/* The lit edge, spinning clockwise around the card forever —
-                  see `RotatingBorderGradient`. */}
-            <RotatingBorderGradient
-              colors={[
-                t.agentBorderGradient[0],
-                t.agentBorderGradient[1],
-                'rgba(255,255,255,0)',
-              ]}
-              locations={[0, 0.2, 0.45]}
-            />
+          <View
+            style={[
+              s.ringMask,
+              // TEMP: plain solid border in the active tab's colour instead
+              // of the rotating gradient ring (see `RotatingBorderGradient`,
+              // currently unused).
+              { borderWidth: RING_W, borderColor: TAB_ACCENT[appType] },
+            ]}
+          >
             <View style={s.cardInner}>
               <BlurView
                 intensity={Platform.OS === 'android' ? 80 : 60}
@@ -487,7 +493,7 @@ export function AgentV2({
                           <View
                             style={[
                               s.tabDivider,
-                              { backgroundColor: t.agentTabBorder },
+                              // { backgroundColor: t.agentTabBorder },
                             ]}
                           />
                         )}
@@ -500,7 +506,7 @@ export function AgentV2({
                             name={tab.icon}
                             size={13}
                             color={
-                              active ? t.agentTabActiveText : t.agentTabIcon
+                              active ? TAB_ACCENT[tab.key] : t.agentTabIcon
                             }
                           />
                           <Text
@@ -509,7 +515,7 @@ export function AgentV2({
                               active && s.tabPillLabelActive,
                               {
                                 color: active
-                                  ? t.agentTabActiveText
+                                  ? TAB_ACCENT[tab.key]
                                   : t.agentTabText,
                               },
                             ]}
@@ -857,7 +863,8 @@ const s = StyleSheet.create({
   tabDivider: {
     width: 1,
     alignSelf: 'stretch',
-    marginVertical: 3,
+    marginVertical: 2,
+    backgroundColor: '#fff'
   },
   tabPillLabelActive: {
     fontFamily: F.sans700,

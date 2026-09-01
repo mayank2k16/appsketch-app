@@ -15,6 +15,13 @@ import { SettingsScreen } from './Settings/SettingsScreen';
 
 type StudioSection = 'apps' | 'discover' | 'settings';
 
+// Temporary: previewing the brand purple (matches AppTheme's `accent`,
+// #6C5CE7) back into this otherwise-achromatic screen — the active rail tab,
+// and (via StoreCard) the store icon/link. Exported so StoreCard uses the
+// same value rather than a second hardcoded copy.
+export const STUDIO_ACCENT = '#6C5CE7';
+const STUDIO_ACCENT_SOFT = 'rgba(108,92,231,0.18)';
+
 const SECTIONS: {
   key: StudioSection;
   label: string;
@@ -105,7 +112,7 @@ export function StudioScreen() {
                       st.railItem,
                       {
                         backgroundColor: active
-                          ? t.studioRailActiveBg
+                          ? STUDIO_ACCENT_SOFT
                           : t.studioRailBg,
                       },
                     ]}

@@ -13,6 +13,8 @@ import {
 import type { TenantSummary } from '@/api/studio';
 import { useCoderTheme } from '@/lib/theme';
 
+import { STUDIO_ACCENT } from '../../StudioScreen';
+
 const ACTIONS: {
   key: 'store' | 'cms' | 'remix';
   label: string;
@@ -87,7 +89,7 @@ export function StoreCard({
               resizeMode="cover"
             />
           ) : (
-            <Ionicons name="storefront-outline" size={22} color={t.textMuted} />
+            <Ionicons name="storefront-outline" size={22} color={STUDIO_ACCENT} />
           )}
         </View>
 
@@ -97,16 +99,16 @@ export function StoreCard({
           </Text>
           {!!tenant.website_url && (
             <Text
-              style={[st.subtitle, { color: t.textMuted }]}
+              style={[st.subtitle, { color: STUDIO_ACCENT }]}
               numberOfLines={1}
             >
               {tenant.website_url}
             </Text>
           )}
-          <Text style={[st.meta, { color: t.textMuted }]} numberOfLines={1}>
+          {/* <Text style={[st.meta, { color: t.textMuted }]} numberOfLines={1}>
             ID {tenant.id}
             {created ? `  ·  Created ${created}` : ''}
-          </Text>
+          </Text> */}
         </View>
       </View>
 
@@ -117,6 +119,7 @@ export function StoreCard({
       <View style={st.actionsRow}>
         {ACTIONS.map((action) => {
           const busy = loading && busyKeys.has(action.key);
+          const linkColor = t.text;
           return (
             <Pressable
               key={action.key}
@@ -126,17 +129,17 @@ export function StoreCard({
             >
               <View style={[st.actionBtn, { borderColor: t.studioCardBorder }]}>
                 {busy ? (
-                  <ActivityIndicator size="small" color={t.text} />
+                  <ActivityIndicator size="small" color={linkColor} />
                 ) : (
                   <>
                     {!action.iconAfter && (
-                      <Ionicons name={action.icon} size={14} color={t.text} />
+                      <Ionicons name={action.icon} size={14} color={linkColor} />
                     )}
-                    <Text style={[st.actionText, { color: t.text }]}>
+                    <Text style={[st.actionText, { color: linkColor }]}>
                       {action.label}
                     </Text>
                     {action.iconAfter && (
-                      <Ionicons name={action.icon} size={14} color={t.text} />
+                      <Ionicons name={action.icon} size={14} color={linkColor} />
                     )}
                   </>
                 )}
@@ -161,7 +164,7 @@ const st = StyleSheet.create({
   },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
   logoWrap: {
