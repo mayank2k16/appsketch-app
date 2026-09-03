@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { useCoderTheme } from '@/lib/theme';
+import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 
 import { AppsScreen } from './Apps/AppsScreen';
 import { DiscoverScreen } from './Discover/DiscoverScreen';
@@ -15,12 +15,12 @@ import { SettingsScreen } from './Settings/SettingsScreen';
 
 type StudioSection = 'apps' | 'discover' | 'settings';
 
-// Temporary: previewing the brand purple (matches AppTheme's `accent`,
-// #6C5CE7) back into this otherwise-achromatic screen — the active rail tab,
-// and (via StoreCard) the store icon/link. Exported so StoreCard uses the
-// same value rather than a second hardcoded copy.
-export const STUDIO_ACCENT = '#6C5CE7';
-const STUDIO_ACCENT_SOFT = 'rgba(108,92,231,0.18)';
+// The store icon and the store's link line (via StoreCard), and the active
+// rail tab. This was a hardcoded preview of the old brand purple, described
+// in its own comment as temporary; it is the ramp now, read from the palette
+// so there is no second copy to drift. `studioRailActiveBg` carries the
+// matching wash — see BrandScope.ts.
+export const STUDIO_ACCENT = BRAND_MID;
 
 const SECTIONS: {
   key: StudioSection;
@@ -43,7 +43,7 @@ export function StudioScreen() {
   const status = useAuth.use.status();
   const isLoggedIn = status === 'signIn';
   const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
+  const t = useBrandedCoderTheme(colorScheme);
 
   const [section, setSection] = React.useState<StudioSection>('apps');
   const [search, setSearch] = React.useState('');
@@ -112,7 +112,7 @@ export function StudioScreen() {
                       st.railItem,
                       {
                         backgroundColor: active
-                          ? STUDIO_ACCENT_SOFT
+                          ? t.studioRailActiveBg
                           : t.studioRailBg,
                       },
                     ]}

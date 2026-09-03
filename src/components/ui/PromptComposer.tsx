@@ -93,165 +93,191 @@ export function PromptComposer({
   }
 
   return (
-    <View
-      style={[
-        s.composer,
-        { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
-      ]}
-    >
-      <TextInput
-        placeholder={placeholder}
-        placeholderTextColor={t.agentInputPlaceholder}
-        multiline
-        value={value}
-        onChangeText={onChangeText}
-        style={[s.input, { color: t.agentInputText }]}
+    // Gradient edge. RN has no gradient `borderColor`, so the ring is a
+    // LinearGradient filling a wrapper whose only job is to be 1px bigger
+    // than the card on every side; the card sits on top with an OPAQUE fill,
+    // leaving just that 1px showing as the stroke. Same recipe as Home's
+    // prompt card.
+    //
+    // The fill is `card`, NOT the `agentTabBg` this used to carry: that token
+    // is a translucent white wash, which over a gradient stops being a border
+    // and becomes a gradient-filled box — which is exactly what the first cut
+    // of this rendered. `card` is the opaque value on the same ladder, and on
+    // a dark canvas it is what the wash was approximating anyway.
+    <View style={s.ringWrap}>
+      <LinearGradient
+        colors={[...t.agentBorderGradient] as [string, string, ...string[]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
       />
+      <View style={[s.composer, { backgroundColor: t.card }]}>
+        <TextInput
+          placeholder={placeholder}
+          placeholderTextColor={t.agentInputPlaceholder}
+          multiline
+          value={value}
+          onChangeText={onChangeText}
+          style={[s.input, { color: t.agentInputText }]}
+        />
 
-      {images.length > 0 && (
-        <View style={s.thumbRow}>
-          {images.map((uri, i) => (
-            <View
-              key={`${uri}-${i}`}
-              style={[s.thumb, { borderColor: t.agentInputBorder }]}
-            >
-              <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
-              <Pressable
-                onPress={() => removeImage(i)}
-                style={[s.thumbRemove, { backgroundColor: t.agentBtnBg }]}
-                hitSlop={6}
+        {images.length > 0 && (
+          <View style={s.thumbRow}>
+            {images.map((uri, i) => (
+              <View
+                key={`${uri}-${i}`}
+                style={[s.thumb, { borderColor: t.agentInputBorder }]}
               >
-                <Ionicons name="close" size={11} color={t.agentBtnIcon} />
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      )}
+                <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
+                <Pressable
+                  onPress={() => removeImage(i)}
+                  style={[s.thumbRemove, { backgroundColor: t.agentBtnBg }]}
+                  hitSlop={6}
+                >
+                  <Ionicons name="close" size={11} color={t.agentBtnIcon} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        )}
 
-      <View style={s.composerRow}>
-        <TouchableOpacity
-          onPress={() => setModelPickerOpen(true)}
-          activeOpacity={0.7}
-          style={[
-            s.modelChip,
-            { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
-          ]}
-        >
-          <Text
-            style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
-            numberOfLines={1}
-          >
-            {selectedModel?.label}
-          </Text>
-          <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleAttach}
-          activeOpacity={0.7}
-          disabled={images.length >= maxImages}
-          style={[
-            s.circleBtn,
-            { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
-          ]}
-        >
-          <Ionicons name="add" size={20} color={t.agentBtnIcon} />
-          {images.length > 0 && (
-            <View
-              style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}
-            >
-              <Text style={s.countBadgeText}>{images.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleCamera}
-          activeOpacity={0.7}
-          disabled={images.length >= maxImages}
-          style={[
-            s.circleBtn,
-            { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
-          ]}
-        >
-          <Ionicons name="camera-outline" size={18} color={t.agentBtnIcon} />
-        </TouchableOpacity>
-
-        {voiceSupported && (
+        <View style={s.composerRow}>
           <TouchableOpacity
-            onPress={() => setVoiceOpen(true)}
+            onPress={() => setModelPickerOpen(true)}
             activeOpacity={0.7}
+            style={[
+              s.modelChip,
+              { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
+            ]}
+          >
+            <Text
+              style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
+              numberOfLines={1}
+            >
+              {selectedModel?.label}
+            </Text>
+            <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleAttach}
+            activeOpacity={0.7}
+            disabled={images.length >= maxImages}
             style={[
               s.circleBtn,
               { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
             ]}
           >
-            <Ionicons name="mic-outline" size={18} color={t.agentBtnIcon} />
-          </TouchableOpacity>
-        )}
-
-        <View style={{ flex: 1 }} />
-
-        <TouchableOpacity
-          onPress={() => onSend()}
-          activeOpacity={0.8}
-          disabled={sending || !value.trim()}
-        >
-          <LinearGradient
-            colors={[...t.agentSendGradient] as [string, string, ...string[]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[s.sendBtn, (sending || !value.trim()) && { opacity: 0.5 }]}
-          >
-            {sending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Ionicons name="send" size={16} color="#FFFFFF" />
+            <Ionicons name="add" size={20} color={t.agentBtnIcon} />
+            {images.length > 0 && (
+              <View
+                style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}
+              >
+                <Text style={s.countBadgeText}>{images.length}</Text>
+              </View>
             )}
-          </LinearGradient>
-        </TouchableOpacity>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleCamera}
+            activeOpacity={0.7}
+            disabled={images.length >= maxImages}
+            style={[
+              s.circleBtn,
+              { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
+            ]}
+          >
+            <Ionicons name="camera-outline" size={18} color={t.agentBtnIcon} />
+          </TouchableOpacity>
+
+          {voiceSupported && (
+            <TouchableOpacity
+              onPress={() => setVoiceOpen(true)}
+              activeOpacity={0.7}
+              style={[
+                s.circleBtn,
+                {
+                  backgroundColor: t.agentBtnBg,
+                  borderColor: t.agentBtnBorder,
+                },
+              ]}
+            >
+              <Ionicons name="mic-outline" size={18} color={t.agentBtnIcon} />
+            </TouchableOpacity>
+          )}
+
+          <View style={{ flex: 1 }} />
+
+          <TouchableOpacity
+            onPress={() => onSend()}
+            activeOpacity={0.8}
+            disabled={sending || !value.trim()}
+          >
+            <LinearGradient
+              colors={[...t.agentSendGradient] as [string, string, ...string[]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                s.sendBtn,
+                (sending || !value.trim()) && { opacity: 0.5 },
+              ]}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="send" size={16} color="#FFFFFF" />
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <GallerySheet
+          visible={galleryOpen}
+          onClose={() => setGalleryOpen(false)}
+          onConfirm={(uris) =>
+            onImagesChange([...images, ...uris].slice(0, maxImages))
+          }
+          t={t}
+          max={maxImages - images.length}
+        />
+
+        <ModelPickerModal
+          visible={modelPickerOpen}
+          onClose={() => setModelPickerOpen(false)}
+          t={t}
+          models={models}
+          value={model}
+          onChange={onModelChange}
+          formatContext={formatContext}
+          allowedModels={allowedModels}
+          onLockedPress={onLockedModelPress}
+        />
+
+        <VoiceInputModal
+          visible={voiceOpen}
+          onClose={() => setVoiceOpen(false)}
+          onSubmit={(text) => {
+            onChangeText(text);
+            setVoiceOpen(false);
+            onSend(text);
+          }}
+          t={t}
+        />
       </View>
-
-      <GallerySheet
-        visible={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
-        onConfirm={(uris) =>
-          onImagesChange([...images, ...uris].slice(0, maxImages))
-        }
-        t={t}
-        max={maxImages - images.length}
-      />
-
-      <ModelPickerModal
-        visible={modelPickerOpen}
-        onClose={() => setModelPickerOpen(false)}
-        t={t}
-        models={models}
-        value={model}
-        onChange={onModelChange}
-        formatContext={formatContext}
-        allowedModels={allowedModels}
-        onLockedPress={onLockedModelPress}
-      />
-
-      <VoiceInputModal
-        visible={voiceOpen}
-        onClose={() => setVoiceOpen(false)}
-        onSubmit={(text) => {
-          onChangeText(text);
-          setVoiceOpen(false);
-          onSend(text);
-        }}
-        t={t}
-      />
     </View>
   );
 }
 
 const s = StyleSheet.create({
+  // The 1px bigger wrapper that shows through as the stroke. Its radius is
+  // the card's + its padding, so the two curves stay concentric.
+  ringWrap: {
+    borderRadius: 18,
+    padding: 1,
+    overflow: 'hidden',
+  },
   composer: {
     borderRadius: 17,
-    borderWidth: 1,
     paddingHorizontal: 12,
     paddingTop: 5,
     paddingBottom: 10,

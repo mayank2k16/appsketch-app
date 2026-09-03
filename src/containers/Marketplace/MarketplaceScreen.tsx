@@ -20,7 +20,7 @@ import type { TemplateListItem } from '@/api/templates';
 import { useBrowseTemplates, useTemplateCategories } from '@/api/templates';
 import { F } from '@/lib/fonts';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { useCoderTheme, type AppColors } from '@/lib/theme';
+import { useBrandedCoderTheme, type AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { TemplateCard } from './components/TemplateCard';
@@ -34,7 +34,7 @@ export function MarketplaceScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
+  const t = useBrandedCoderTheme(colorScheme);
   const isDark = colorScheme === 'dark';
 
   const [activeCategory, setActiveCategory] = React.useState<string | number>(ALL);
@@ -140,7 +140,10 @@ export function MarketplaceScreen() {
     <>
       <View onLayout={handleHeadingsLayout}>
         <View style={s.header}>
-          <Text style={[s.eyebrow, { color: '#6C5CE7' }]}>AI template library</Text>
+          {/* Was the old brand indigo typed straight into the style, where no
+              palette swap could reach it. On the token now, so it follows the
+              ramp with everything else. */}
+          <Text style={[s.eyebrow, { color: t.tagText }]}>AI template library</Text>
           <Text style={[s.heading, { color: t.text }]}>Make any template yours with ease</Text>
           <Text style={[s.subtitle, { color: t.textSub }]}>Start from a template and let AI make it yours.</Text>
         </View>

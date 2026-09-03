@@ -31,52 +31,16 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
-import { BRAND_RAMP, useCoderTheme, type AppColors } from '@/lib/theme';
+import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
-
-const [BRAND_ORANGE, BRAND_MAGENTA, BRAND_VIOLET] = BRAND_RAMP;
-
-/**
- * The handful of tokens on this screen that are allowed to carry colour.
- *
- * Agent runs on `useCoderTheme` — the achromatic palette shared with Studio,
- * Marketplace and the code editor, where grey is deliberate (see CoderTheme's
- * header). That left this screen with a white "Web" pill, a grey send button
- * and a grey "AI Agent" badge: correct for an editor chrome, wrong for the
- * screen a user lands on to start a build.
- *
- * So the greyscale base stays and only the *action* surfaces are retuned —
- * the ones a user is meant to reach for. Scoped here rather than in
- * CoderTheme because the editor screens genuinely want them grey; this is the
- * same one-function pattern `scopeHome` uses on the other side.
- */
-function scopeAgent(base: AppColors): AppColors {
-  return {
-    ...base,
-
-    // Send button, and the selected Web/Mobile pill beside it.
-    agentSendGradient: [BRAND_ORANGE, BRAND_VIOLET],
-    agentTabActiveBg: BRAND_MAGENTA,
-    agentTabActiveText: '#FFFFFF',
-
-    // The two sparkle avatars — the big one in the header and the small one
-    // on the message card. Both were flat #0D0D0D on #0D0D0D, i.e. a white
-    // glyph floating on nothing.
-    codeEditorUserBubbleFrom: BRAND_ORANGE,
-    codeEditorUserBubbleTo: BRAND_VIOLET,
-
-    // "⚡ AI Agent" badge.
-    codeEditorToolChipActiveBg: `${BRAND_MAGENTA}29`,
-    codeEditorToolChipActiveBorder: `${BRAND_MAGENTA}66`,
-    codeEditorToolChipActiveText: BRAND_MAGENTA,
-  };
-}
 
 export function AgentScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const coder = useCoderTheme(colorScheme);
-  const t = React.useMemo(() => scopeAgent(coder), [coder]);
+  // The grey ladder, with the ramp put back on the things a user taps — the
+  // send button, the Web/App pill, the sparkle avatars, the AI Agent badge.
+  // See BrandScope.ts for why the split exists.
+  const t = useBrandedCoderTheme(colorScheme);
 
   const router = useRouter();
 
@@ -241,7 +205,7 @@ export function AgentScreen() {
                 // achromatic surface, and a single tinted glyph is enough to
                 // mark them as the suggested way in without turning four cards
                 // into four coloured blocks.
-                color={BRAND_MAGENTA}
+                color={BRAND_MID}
                 style={s.suggestionIcon}
               />
               <Text

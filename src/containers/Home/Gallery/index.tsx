@@ -8,11 +8,16 @@ import {
   Easing,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { F } from '@/lib/fonts';
-import { homeTheme, type HomeColors } from '../theme/HomeTheme';
+import {
+  HOME_BRAND_RAMP,
+  homeTheme,
+  type HomeColors,
+} from '../theme/HomeTheme';
+
+const [ORANGE, MAGENTA] = HOME_BRAND_RAMP;
 
 const { width: W } = Dimensions.get('window');
 
@@ -151,8 +156,19 @@ function MarqueeColumn({
 function CenterContent({ t }: { t: HomeColors }) {
   return (
     <View style={s.hole}>
+      {/* Two words carry the ramp, the rest stays white. Nested <Text> rather
+          than the GradientText/MaskedView the hero uses: a mask can only wrap
+          a whole line, and this heading wraps mid-phrase, so a gradient would
+          have to either take every word or force a hard line break. Solid
+          stops keep the wireframe exactly as it was and still read as the
+          ramp — "unlimited" on the warm end, "beautiful" on the cool, so the
+          highlight travels the same direction as everywhere else. */}
       <Text style={[s.heading, { color: t.galleryOverlayText }]}>
-        {'Create unlimited beautiful\n apps and websites'}
+        {'Create '}
+        <Text style={{ color: ORANGE }}>unlimited</Text>
+        {'\n'}
+        <Text style={{ color: MAGENTA }}>beautiful</Text>
+        {'\napps and websites'}
       </Text>
       <Text style={[s.subtitle, { color: t.galleryOverlayTextSub }]}>
         Browse a living gallery of apps and websites — every idea rendered,
