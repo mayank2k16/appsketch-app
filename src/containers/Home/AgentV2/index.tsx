@@ -31,6 +31,7 @@ import {
   type ModelOption,
   ModelPickerModal,
 } from '@/components/ui/ModelPickerModal';
+import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
 import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
 import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -226,77 +227,10 @@ function TypewriterPlaceholder({
   );
 }
 
-// Spins the border's lit gradient around the card, clockwise, forever. The
-// gradient view is sized to the card's own diagonal and centered before it
-// rotates — a square that size fully covers the card's bounding box at every
-// angle (its inscribed circle, the one guarantee independent of rotation,
-// has to reach the card's corners), so nothing outside the lit band is ever
-// exposed as the sweep turns. `ringMask`'s `overflow: hidden` + `cardInner`
-// on top still do the actual masking down to just the border stroke. The
-// tail stop is forced to fully transparent and pulled in early (`locations`
-// below) so most of the ring sits at flat zero alpha between sweeps, rather
-// than a slow dissolve that reads as a faint border everywhere.
-const BORDER_SPIN_MS = 6000;
-
-function RotatingBorderGradient({
-  colors,
-  locations,
-}: {
-  colors: [string, string, ...string[]];
-  locations: [number, number, ...number[]];
-}) {
-  const [box, setBox] = React.useState({ width: 0, height: 0 });
-  const rotation = useSharedValue(0);
-
-  React.useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, {
-        duration: BORDER_SPIN_MS,
-        easing: ReanimatedEasing.linear,
-      }),
-      -1,
-      false
-    );
-    return () => cancelAnimation(rotation);
-  }, [rotation]);
-
-  const spinStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
-  const diag = Math.ceil(Math.hypot(box.width, box.height)) + 2;
-
-  return (
-    <View
-      pointerEvents="none"
-      style={StyleSheet.absoluteFill}
-      onLayout={(e) => setBox(e.nativeEvent.layout)}
-    >
-      {box.width > 0 && (
-        <Reanimated.View
-          style={[
-            {
-              position: 'absolute',
-              width: diag,
-              height: diag,
-              left: (box.width - diag) / 2,
-              top: (box.height - diag) / 2,
-            },
-            spinStyle,
-          ]}
-        >
-          <LinearGradient
-            colors={colors}
-            locations={locations}
-            start={{ x: 0.1, y: 0 }}
-            end={{ x: 0.85, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-        </Reanimated.View>
-      )}
-    </View>
-  );
-}
+// The prompt card's lit, spinning edge now lives in components/ui — the
+// bottom tab bar was asked for "the same as the prompt", and the only way to
+// make that literally true is for both to render this one component. See
+// RotatingBorderGradient.tsx for how the spin covers the box at every angle.
 
 // Mirrors the web builder's model list (`coderModels.js`) exactly, including
 // the paywall: DeepSeek runs on every tier (Flash is the default for every

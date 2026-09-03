@@ -31,6 +31,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
+import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -41,6 +42,9 @@ export function AgentScreen() {
   // send button, the Web/App pill, the sparkle avatars, the AI Agent badge.
   // See BrandScope.ts for why the split exists.
   const t = useBrandedCoderTheme(colorScheme);
+  // The tab bar floats over the scene, so the composer has to sit above it
+  // rather than behind it — see useTabBarHeight.
+  const tabBarH = useTabBarHeight();
 
   const router = useRouter();
 
@@ -219,15 +223,16 @@ export function AgentScreen() {
         </View>
       </ScrollView>
 
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={{ paddingBottom: insets.bottom || 12 }}
-      >
+      {/* The tab-bar gap goes on the CHILD, not on the KeyboardAvoidingView
+          itself: with `behavior="padding"` that component owns its own
+          padding and drives it from the keyboard height, so a paddingBottom
+          set on it is overwritten and the composer ends up behind the bar. */}
+      <KeyboardAvoidingView behavior="padding">
         <View style={s.typePillRow}>
           <AppTypePills t={t} value={appType} onChange={setAppType} />
         </View>
 
-        <View style={s.composerWrap}>
+        <View style={[s.composerWrap, { marginBottom: tabBarH }]}>
           <PromptComposer
             t={t}
             value={prompt}

@@ -20,6 +20,7 @@ import type { TemplateListItem } from '@/api/templates';
 import { useBrowseTemplates, useTemplateCategories } from '@/api/templates';
 import { F } from '@/lib/fonts';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { useBrandedCoderTheme, type AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -35,6 +36,9 @@ export function MarketplaceScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const t = useBrandedCoderTheme(colorScheme);
+  // The tab bar floats over the scene, so the grid has to end above it rather
+  // than behind it — see useTabBarHeight.
+  const tabBarH = useTabBarHeight();
   const isDark = colorScheme === 'dark';
 
   const [activeCategory, setActiveCategory] = React.useState<string | number>(ALL);
@@ -156,7 +160,10 @@ export function MarketplaceScreen() {
     ListHeaderComponent: listHeader,
     numColumns: 2 as const,
     showsVerticalScrollIndicator: false,
-    contentContainerStyle: [s.gridContent, { paddingTop: HEADER_TOP }],
+    contentContainerStyle: [
+      s.gridContent,
+      { paddingTop: HEADER_TOP, paddingBottom: tabBarH + 14 },
+    ],
     onScroll,
     scrollEventThrottle: 16,
   };

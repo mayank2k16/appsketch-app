@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Dimensions, StatusBar, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
+import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { DrawerMenu } from '@/components/drawer-menu';
 import { LazySection } from './components/LazySection';
 import { useAppStartup } from '@/lib';
@@ -41,6 +42,10 @@ export function HomeScreen() {
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
+  // The tab bar floats over the scene now, so the scroll has to end above it
+  // rather than behind it — see useTabBarHeight.
+  const tabBarH = useTabBarHeight();
+
   // The four CTA handlers that lived here went with the "Get started" /
   // "Learn more" buttons in the hero and the Gallery section. Two of them were
   // empty TODOs; the other two pushed /agent and /about, both still reachable
@@ -74,7 +79,7 @@ export function HomeScreen() {
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={s.scroll}
+        contentContainerStyle={[s.scroll, { paddingBottom: tabBarH }]}
         bounces={false}
         bottomOffset={24}
         keyboardShouldPersistTaps="handled"

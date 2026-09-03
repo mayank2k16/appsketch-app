@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 
 import { AppsScreen } from './Apps/AppsScreen';
@@ -44,6 +45,9 @@ export function StudioScreen() {
   const isLoggedIn = status === 'signIn';
   const { colorScheme } = useColorScheme();
   const t = useBrandedCoderTheme(colorScheme);
+  // The tab bar floats over the scene, so the body has to end above it rather
+  // than behind it — see useTabBarHeight.
+  const tabBarH = useTabBarHeight();
 
   const [section, setSection] = React.useState<StudioSection>('apps');
   const [search, setSearch] = React.useState('');
@@ -86,7 +90,7 @@ export function StudioScreen() {
       </View>
 
       {!isLoggedIn ? (
-        <View style={st.gate}>
+        <View style={[st.gate, { paddingBottom: tabBarH }]}>
           <Ionicons name="lock-closed-outline" size={36} color={t.textMuted} />
           <Text style={[st.gateTitle, { color: t.text }]}>
             Sign in to view your stores
@@ -100,7 +104,7 @@ export function StudioScreen() {
           </Pressable>
         </View>
       ) : (
-        <View style={st.body}>
+        <View style={[st.body, { paddingBottom: tabBarH }]}>
           {/* Vertical rail replaces the old horizontal pill row. */}
           <View style={[st.rail, { borderRightColor: t.studioCardBorder }]}>
             {SECTIONS.map((s) => {

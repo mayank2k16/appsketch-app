@@ -1,17 +1,36 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 
+import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
 import { F } from '@/lib/fonts';
-import { useCoderTheme, type AppColors } from '@/lib/theme';
+import { useBrandedCoderTheme, type AppColors } from '@/lib/theme';
 
 import { TAB_CONFIG } from './tab-config';
 import { TabIcon } from './TabIcon';
 
 const LABEL_GRADIENT_STOPS_PCT = [0, 40, 68, 100];
+
+/** Border thickness. 1px, not the prompt card's 1.5 — the bar runs the full
+ *  width of the screen, so the same stroke reads heavier here. */
+const RING_W = 1;
+/** Corner radius of the bar's top edge. The bottom corners stay square: the
+ *  bar sits flush against the bottom of the screen and its lower edge is
+ *  behind the home indicator, so rounding it would only round nothing. */
+const RING_RADIUS = 22;
+/** One full turn. Deliberately slower than the prompt card's 6s — the tab bar
+ *  is on screen on EVERY route, so what reads as alive on one card reads as
+ *  restless when it never goes away. */
+const TAB_SPIN_MS = 14000;
+
+/** Where the lit band sits within one turn. Same shape as the prompt card's:
+ *  a bright head, then transparent for most of the sweep, so the border is a
+ *  travelling highlight rather than a permanently glowing outline. */
+const RING_STOPS: [number, number, number, number] = [0, 0.18, 0.42, 1];
 
 // Tab column width, computed the same way GallerySection sizes its marquee
 // columns — used to size the active label's gradient-text SVG box.
@@ -90,39 +109,99 @@ function TabCard({
   );
 }
 
+// ─── Divider between two tabs ─────────────────────────────────────────────────
+// A 1px rule that fades out at both ends, so it reads as a hairline between
+// two labels rather than a hard rule cutting the bar into boxes. Each divider
+// takes ONE stop of the ramp, in order left to right — orange, magenta,
+// violet — so the three of them walk the same warm→cool run the border and
+// the hero heading do, instead of three identical grey lines.
+function TabDivider({ color }: { color: string }) {
+  return (
+    <ExpoLinearGradient
+      colors={['transparent', color, 'transparent']}
+      locations={[0, 0.5, 1]}
+      style={s.divider}
+      pointerEvents="none"
+    />
+  );
+}
+
 // ─── Tab bar ──────────────────────────────────────────────────────────────────
 export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
+  const t = useBrandedCoderTheme(colorScheme);
+
+  // The ramp with a transparent tail appended — see RING_STOPS. Memoised
+  // because `RotatingBorderGradient` takes it as a prop and a fresh array
+  // every render would defeat any downstream memo.
+  const ringColors = React.useMemo(
+    () =>
+      [...t.agentBorderGradient, 'transparent'] as [
+        string,
+        string,
+        ...string[],
+      ],
+    [t.agentBorderGradient]
+  );
 
   return (
-    <View
-      style={[s.root, { backgroundColor: t.tabBarBg, paddingBottom: Math.max(insets.bottom, 10) }]}
-    >
-      <View style={s.row}>
-        {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
-          return (
-            <TabCard
-              key={route.key}
-              routeName={route.name}
-              isFocused={isFocused}
-              onPress={onPress}
-              t={t}
-            />
-          );
-        })}
+    // Two layers: `ring` reserves RING_W all round and clips, the rotating
+    // gradient fills it, and `inner` sits on top with an OPAQUE fill — so all
+    // that shows of the gradient is the RING_W stroke at the edge. Same
+    // arrangement as Home's prompt card, and the same component drawing it.
+    <View style={[s.ring, { paddingBottom: 0 }]}>
+      <RotatingBorderGradient
+        colors={ringColors}
+        locations={RING_STOPS}
+        durationMs={TAB_SPIN_MS}
+      />
+      <View
+        style={[
+          s.inner,
+          {
+            backgroundColor: t.tabBarBg,
+            paddingBottom: Math.max(insets.bottom, 10),
+          },
+        ]}
+      >
+        <View style={s.row}>
+          {state.routes.map((route, index) => {
+            const isFocused = state.index === index;
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
+            return (
+              <React.Fragment key={route.key}>
+                {index > 0 && (
+                  <TabDivider
+                    // index - 1 so the FIRST divider takes the first stop.
+                    // Modulo guards a fifth tab being added later without
+                    // anyone remembering this line exists.
+                    color={
+                      t.agentBorderGradient[
+                        (index - 1) % t.agentBorderGradient.length
+                      ]
+                    }
+                  />
+                )}
+                <TabCard
+                  routeName={route.name}
+                  isFocused={isFocused}
+                  onPress={onPress}
+                  t={t}
+                />
+              </React.Fragment>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -130,17 +209,52 @@ export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: {
-    position: 'relative',
+  // Outer layer: reserves the stroke and clips the spinning gradient to the
+  // bar's silhouette. No background of its own — the gradient IS its fill,
+  // and `inner` covers all of it but the RING_W edge.
+  ring: {
+    // Floats over the scene instead of taking a row under it. In flow, the
+    // wedges outside the rounded top corners are cut out of an opaque strip
+    // with nothing behind them but the navigator's black; floating puts the
+    // screen back there. Every tab screen reserves the height it no longer
+    // occupies — see useTabBarHeight.
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+    borderTopLeftRadius: RING_RADIUS,
+    borderTopRightRadius: RING_RADIUS,
+    paddingTop: RING_W,
+    paddingHorizontal: RING_W,
+  },
+
+  // Inner layer: the bar proper. Opaque — a translucent fill here would let
+  // the sweep wash across the whole bar instead of only its edge.
+  inner: {
+    borderTopLeftRadius: RING_RADIUS - RING_W,
+    borderTopRightRadius: RING_RADIUS - RING_W,
     overflow: 'hidden',
     paddingTop: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 10 - RING_W,
   },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
+  },
+
+  // Sits in the row's flow between two tabs, so the `gap` above spaces it
+  // from both. Fixed width and no flex, so the tabs keep splitting the rest
+  // of the width evenly between them.
+  divider: {
+    width: 1,
+    // Tall enough to span the icon AND the label beneath it. At 26 it covered
+    // only the icon and read as sitting too high in the bar, because
+    // `cardInner` is 50 tall and the icon occupies its top half.
+    height: 36,
+    alignSelf: 'center',
   },
 
   tab: {
