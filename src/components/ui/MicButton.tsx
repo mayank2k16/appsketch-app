@@ -6,6 +6,13 @@
  * it is a static circle, which is what lets a single moving element read as
  * "this is the voice one" rather than as noise. Shared by both composers so
  * the pulse is literally the same animation in Home and the Agent tab.
+ *
+ * It advertises itself with MOTION ONLY. The glyph stays on the same muted
+ * token as the + and camera buttons beside it: a magenta mic sitting next to
+ * the gradient send button made two coloured circles compete at the end of
+ * the row, and send — the button that actually commits the prompt — is the
+ * one that has to win. The halo keeps its brand tint, but faint and moving,
+ * so it registers without becoming a second accent.
  */
 import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
@@ -46,7 +53,7 @@ export function MicButton({
   const haloStyle = useAnimatedStyle(() => ({
     // Fades as it grows, so the ring dissipates outward instead of pumping
     // between two visible sizes.
-    opacity: 0.35 * (1 - pulse.value),
+    opacity: 0.22 * (1 - pulse.value),
     transform: [{ scale: 1 + pulse.value * 0.45 }],
   }));
 
@@ -73,7 +80,7 @@ export function MicButton({
           haloStyle,
         ]}
       />
-      <Ionicons name="mic-outline" size={iconSize} color={BRAND_MID} />
+      <Ionicons name="mic-outline" size={iconSize} color={t.agentBtnIcon} />
     </TouchableOpacity>
   );
 }

@@ -3,6 +3,7 @@ import * as React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import type { AppTypeKey } from '@/api/coder';
+import { PROMPT_RADIUS } from '@/components/ui/prompt-metrics';
 import { SlidingFill } from '@/components/ui/SlidingFill';
 import { F } from '@/lib/fonts';
 import { type AppColors } from '@/lib/theme';
@@ -16,10 +17,10 @@ const TYPE_PILLS: {
   { key: 'mobile', label: 'App', icon: 'phone-portrait-outline' },
 ];
 
-/** Matches the prompt card's own ring (`PromptComposer`'s `ringWrap`). The two
- *  sit stacked with a few px between them, so a different curve on each reads
- *  as a mismatch rather than as two parts of one control. */
-const RADIUS = 18;
+/** The prompt card's own curve — the switch sits directly above the card, so
+ *  a different radius on each reads as a mismatch rather than as two parts of
+ *  one control. See prompt-metrics. */
+const RADIUS = PROMPT_RADIUS;
 /** Gap between the track's edge and the sliding fill. */
 const PAD = 3;
 
@@ -49,6 +50,11 @@ export function AppTypePills({ t, value, onChange }: Props) {
         { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
       ]}
     >
+      {/* Hairline rule between the halves, drawn BEFORE the fill so the fill
+          passes over it rather than being cut by it. Absolute, so it takes no
+          slot in the row and leaves the two halves exactly equal. */}
+      <View style={s.divider} pointerEvents="none" />
+
       <SlidingFill
         count={TYPE_PILLS.length}
         index={index}
@@ -108,11 +114,23 @@ function TypePill({
 const s = StyleSheet.create({
   track: {
     flexDirection: 'row',
+    // Anchors the absolutely-positioned divider below.
+    position: 'relative',
     borderRadius: RADIUS,
     borderWidth: 1,
     padding: PAD,
     // Clips the fill to the track's curve at both ends of its travel.
     overflow: 'hidden',
+  },
+  // Faint by design: a separator only has to be findable, not read as an
+  // element in its own right — and the fill slides straight over it.
+  divider: {
+    position: 'absolute',
+    left: '50%',
+    width: 1,
+    top: PAD + 4,
+    bottom: PAD + 4,
+    backgroundColor: 'rgba(255,255,255,0.14)',
   },
   pill: {
     flex: 1,

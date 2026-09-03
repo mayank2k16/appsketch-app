@@ -16,6 +16,7 @@ import {
 import { GallerySheet } from '@/components/ui/GallerySheet';
 import { MicButton } from '@/components/ui/MicButton';
 import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
+import { PROMPT_RADIUS } from '@/components/ui/prompt-metrics';
 import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { F } from '@/lib/fonts';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
@@ -286,12 +287,12 @@ const s = StyleSheet.create({
   // The 1px bigger wrapper that shows through as the stroke. Its radius is
   // the card's + its padding, so the two curves stay concentric.
   ringWrap: {
-    borderRadius: 18,
+    borderRadius: PROMPT_RADIUS,
     padding: 1,
     overflow: 'hidden',
   },
   composer: {
-    borderRadius: 17,
+    borderRadius: PROMPT_RADIUS - 1,
     paddingHorizontal: 12,
     paddingTop: 5,
     paddingBottom: 10,

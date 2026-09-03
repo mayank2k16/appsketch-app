@@ -32,6 +32,7 @@ import {
   type ModelOption,
   ModelPickerModal,
 } from '@/components/ui/ModelPickerModal';
+import { PROMPT_RADIUS } from '@/components/ui/prompt-metrics';
 import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
 import { SlidingFill } from '@/components/ui/SlidingFill';
 import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
@@ -44,7 +45,7 @@ import { toast } from '@/lib/toast';
 
 import { homeTheme } from '../theme/HomeTheme';
 
-const RADIUS = 15;
+const RADIUS = PROMPT_RADIUS;
 /** Thickness of the prompt card's lit gradient edge — see `ringMask`. */
 const RING_W = 1.5;
 const MAX_IMAGES = 3;
@@ -67,10 +68,6 @@ type AppTypeKey = 'web' | 'mobile';
  *  that shape belongs to a sweeping-highlight treatment, and passing it here
  *  would leave most of the outline at zero alpha instead of coloured. */
 const RING_STOPS: [number, number, number] = [0, 0.5, 1];
-
-/** Matches the prompt card's own ring, so the switch inside the card and the
- *  card's edge are visibly the same curve. */
-const TAB_RADIUS = 18;
 
 export const APP_TABS: {
   key: AppTypeKey;
@@ -438,16 +435,21 @@ export function AgentV2({
                   style={s.tabRow}
                   onLayout={(e) => setTabRowW(e.nativeEvent.layout.width)}
                 >
+                  {/* Hairline rule between the two halves, drawn BEFORE the
+                      fill so the fill passes over it rather than being cut
+                      by it. Absolute, so it does not take a slot in the row
+                      and throw the two halves off equal width — which is
+                      what the old in-flow divider did, and what would leave
+                      the sliding fill short of the segment it fills. */}
+                  <View style={s.tabDivider} pointerEvents="none" />
+
                   {/* One fill that TRAVELS between the halves, rather than
-                      one pill lighting as the other goes out. The divider
-                      that used to sit between them is gone: the moving fill
-                      is what marks the boundary now, and a static rule
-                      underneath it just got cut in half mid-slide. */}
+                      one pill lighting as the other goes out. */}
                   <SlidingFill
                     count={APP_TABS.length}
                     index={APP_TABS.findIndex((tab) => tab.key === appType)}
                     trackWidth={tabRowW}
-                    radius={TAB_RADIUS}
+                    radius={PROMPT_RADIUS}
                   />
                   {APP_TABS.map((tab) => {
                     const active = tab.key === appType;
@@ -807,6 +809,20 @@ const s = StyleSheet.create({
     // No gap: the sliding fill covers exactly 1/n of this row, so any gap
     // would leave it short of the segment it is meant to fill.
     marginBottom: 2,
+    // Anchors the absolutely-positioned divider below.
+    position: 'relative',
+  },
+  // 1px vertical rule at the row's midpoint. Inset top and bottom so it reads
+  // as a separator between labels, not a full-height column splitting the
+  // card. Kept faint: a separator only has to be findable, not read as an
+  // element in its own right — and the fill slides straight over it.
+  tabDivider: {
+    position: 'absolute',
+    left: '50%',
+    width: 1,
+    top: 4,
+    bottom: 4,
+    backgroundColor: 'rgba(255,255,255,0.14)',
   },
   // Bare text + icon. No border, no fill, no radius — the tap target is padded
   // out but draws nothing of its own, so the only thing distinguishing the
