@@ -51,12 +51,37 @@ platform :ios do
     )
 
     # Upload to TestFlight
+    # No transporter flag here: fastlane has used altool for TestFlight
+    # uploads by default since 2.196 on Xcode 13+, and there is no
+    # `use_altool` option to set. It authenticates with the app-specific
+    # password in FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD.
     upload_to_testflight(
-      username:                         APPLE_ID,
+      username:                          APPLE_ID,
       skip_waiting_for_build_processing: true
     )
 
     UI.success("✅  iOS build uploaded to TestFlight!")
+  end
+
+  # ── upload: push an ALREADY-BUILT IPA to TestFlight ─────────────────────────
+  # `beta` rebuilds from clean, which is ~11 minutes. When the build succeeded
+  # and only the upload failed, that rebuild buys nothing — this lane takes the
+  # IPA `beta` already wrote and does just the upload half.
+  desc "Upload the existing ./build/AppSketch.ipa to TestFlight (no rebuild)"
+  lane :upload do
+    # Anchored to this file, NOT to "./build": Ruby in a Fastfile runs with the
+    # cwd set to the `fastlane/` folder, so a relative path here looks inside
+    # `fastlane/build` — while `build_app` writes to the repo root's `build/`.
+    ipa_path = File.expand_path("../build/AppSketch.ipa", __dir__)
+    UI.user_error!("No IPA at #{ipa_path} — run `fastlane ios beta` first.") unless File.exist?(ipa_path)
+
+    upload_to_testflight(
+      username:                          APPLE_ID,
+      ipa:                               ipa_path,
+      skip_waiting_for_build_processing: true
+    )
+
+    UI.success("✅  #{ipa_path} uploaded to TestFlight!")
   end
 
   # ── release: beta + screenshots + App Store review submission ───────────────

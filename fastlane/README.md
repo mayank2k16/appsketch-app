@@ -23,6 +23,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Build release IPA and upload to TestFlight
 
+### ios upload
+
+```sh
+[bundle exec] fastlane ios upload
+```
+
+Upload the existing ./build/AppSketch.ipa to TestFlight (no rebuild)
+
 ### ios release
 
 ```sh

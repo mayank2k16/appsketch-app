@@ -14,11 +14,12 @@ import {
 } from 'react-native';
 
 import { GallerySheet } from '@/components/ui/GallerySheet';
+import { MicButton } from '@/components/ui/MicButton';
 import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
 import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { F } from '@/lib/fonts';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
-import type { AppColors } from '@/lib/theme';
+import { type AppColors } from '@/lib/theme';
 
 export type PromptModel = { value: string; label: string; context: number };
 
@@ -71,6 +72,14 @@ export function PromptComposer({
   const [galleryOpen, setGalleryOpen] = React.useState(false);
   const [voiceOpen, setVoiceOpen] = React.useState(false);
   const selectedModel = models.find((m) => m.value === model) ?? models[0];
+  // Labels are authored as "Name · qualifier" (see MODELS in AgentV2). The
+  // chip shows the two at different weights rather than one long string, so
+  // the model's NAME stays legible at a glance and the qualifier recedes.
+  // Split on the first separator only — a qualifier may contain its own.
+  const [modelName, ...modelRest] = (selectedModel?.label ?? '').split(
+    '\u00B7'
+  );
+  const modelQualifier = modelRest.join('\u00B7').trim();
 
   const voiceSupported = Platform.OS !== 'web';
 
@@ -150,13 +159,30 @@ export function PromptComposer({
               { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
             ]}
           >
+            {/* Live dot, name, qualifier — the three parts read left to
+                right as "this model, and what it is for". The dot is the
+                same green as the Agent header's connected marker, so a lit
+                dot means the same thing in both places. */}
+            <View
+              style={[
+                s.modelDot,
+                { backgroundColor: t.codeEditorConnectedDot },
+              ]}
+            />
             <Text
-              style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
+              style={[s.modelChipLabel, { color: t.text }]}
               numberOfLines={1}
             >
-              {selectedModel?.label}
+              {modelName}
             </Text>
-            <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
+            {!!modelQualifier && (
+              <Text
+                style={[s.modelChipQualifier, { color: t.textMuted }]}
+                numberOfLines={1}
+              >
+                {modelQualifier}
+              </Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -191,19 +217,7 @@ export function PromptComposer({
           </TouchableOpacity>
 
           {voiceSupported && (
-            <TouchableOpacity
-              onPress={() => setVoiceOpen(true)}
-              activeOpacity={0.7}
-              style={[
-                s.circleBtn,
-                {
-                  backgroundColor: t.agentBtnBg,
-                  borderColor: t.agentBtnBorder,
-                },
-              ]}
-            >
-              <Ionicons name="mic-outline" size={18} color={t.agentBtnIcon} />
-            </TouchableOpacity>
+            <MicButton t={t} onPress={() => setVoiceOpen(true)} />
           )}
 
           <View style={{ flex: 1 }} />
@@ -333,7 +347,20 @@ const s = StyleSheet.create({
   modelChipLabel: {
     fontFamily: F.sans600,
     fontSize: 11.5,
+    flexShrink: 0,
+  },
+  // No mono family is loaded app-wide (see lib/fonts), so the qualifier gets
+  // its "code-ish" feel from tracking and a lighter weight instead.
+  modelChipQualifier: {
+    fontFamily: F.sans400,
+    fontSize: 10.5,
+    letterSpacing: 0.3,
     flexShrink: 1,
+  },
+  modelDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   circleBtn: {
     width: 34,

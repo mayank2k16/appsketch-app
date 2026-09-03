@@ -46,6 +46,23 @@ const LAYERS: [number, number][][] = [
 ];
 const BLOCK = 3;
 
+/**
+ * How far to inset the whole field so it sits centred in `width`.
+ *
+ * The pattern used to start at x=0 with each dot drawn at cx=0, which put a
+ * dot's CENTRE exactly on the left edge — so the leftmost column was visibly
+ * sliced in half, while whatever was left over after the last full column
+ * (16px on a 390pt screen) sat empty against the right edge. The field looked
+ * shoved left even though the spacing was even.
+ *
+ * Splitting the remainder puts an equal margin on both sides and stops any
+ * dot straddling an edge. `radius` is added so the first column clears the
+ * edge by its own width rather than resting against it.
+ */
+function centeringOffset(extent: number, spacing: number, radius: number) {
+  return (extent % spacing) / 2 + radius;
+}
+
 type Props = {
   width: number;
   height: number;
@@ -104,15 +121,20 @@ function TwinkleLayer({
 
   const tile = spacing * BLOCK;
   const id = `twinkleLayer${index}`;
+  const dx = centeringOffset(width, spacing, radius);
+  const dy = centeringOffset(height, spacing, radius);
 
   return (
-    <Reanimated.View style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
+    <Reanimated.View
+      style={[StyleSheet.absoluteFill, style]}
+      pointerEvents="none"
+    >
       <Svg width={width} height={height}>
         <Defs>
           <Pattern
             id={id}
-            x={0}
-            y={0}
+            x={dx}
+            y={dy}
             width={tile}
             height={tile}
             patternUnits="userSpaceOnUse"
@@ -153,16 +175,28 @@ export function TwinkleDots({
         <Defs>
           <Pattern
             id="twinkleGrid"
-            x={0}
-            y={0}
+            x={centeringOffset(width, spacing, radius)}
+            y={centeringOffset(height, spacing, radius)}
             width={spacing}
             height={spacing}
             patternUnits="userSpaceOnUse"
           >
-            <Circle cx={0} cy={0} r={radius} fill={color} opacity={baseOpacity} />
+            <Circle
+              cx={0}
+              cy={0}
+              r={radius}
+              fill={color}
+              opacity={baseOpacity}
+            />
           </Pattern>
         </Defs>
-        <Rect x={0} y={0} width={width} height={height} fill="url(#twinkleGrid)" />
+        <Rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          fill="url(#twinkleGrid)"
+        />
       </Svg>
 
       {/* Animations stop entirely when Home is not the focused screen */}

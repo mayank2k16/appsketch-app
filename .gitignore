@@ -27,3 +27,9 @@ build/
 expo-env.d.ts
 # @end expo-cli
 .mcp.json
+
+# Local deploy credentials — never commit
+.env.local
+fastlane/.env.local
+fastlane/.env.local.bak
+*.env.local*
