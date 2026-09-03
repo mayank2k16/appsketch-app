@@ -9,9 +9,7 @@ import {
   Alert,
   Animated,
   Easing,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +18,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  useKeyboardState,
+} from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ActivityStep, ChatMessage, ClarifyBlock } from '@/api/coder';
@@ -805,6 +807,7 @@ export function ChatPanel() {
   const t = useBrandedCoderTheme(colorScheme);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isVisible: keyboardVisible } = useKeyboardState();
   const {
     connected,
     busy,
@@ -850,6 +853,17 @@ export function ChatPanel() {
         listRef.current?.scrollToEnd({ animated: true })
       );
   }, [messages.length, activity.length, clarifyBlock]);
+
+  // …and again when the keyboard opens. The composer rises by the keyboard's
+  // height, so without this the last message is left sitting behind it and
+  // the user is typing a reply to something they can no longer see.
+  React.useEffect(() => {
+    if (!keyboardVisible) return;
+    const id = requestAnimationFrame(() =>
+      listRef.current?.scrollToEnd({ animated: true })
+    );
+    return () => cancelAnimationFrame(id);
+  }, [keyboardVisible]);
 
   function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
@@ -931,10 +945,18 @@ export function ChatPanel() {
         onMenu={() => setMenuOpen(true)}
       />
 
+      {/* react-native-keyboard-controller's, not React Native's. The RN one
+          was `behavior="padding"` on iOS and NOTHING on Android — so Android
+          got no avoidance at all — driven by a hardcoded
+          `keyboardVerticalOffset={90}`. That 90 was a guess at the header
+          stack's height; when it did not match, the whole panel was pushed
+          by the difference, which is the distortion. This one measures its
+          own frame, animates in step with the keyboard rather than after it,
+          and needs no offset because it already starts below the header. */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
+        behavior="padding"
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           ref={listRef}
@@ -989,7 +1011,10 @@ export function ChatPanel() {
           onCamera={handleCameraAttach}
           onRemoveImage={removeImage}
           colors={t}
-          bottomInset={insets.bottom}
+          // Zero while the keyboard is up: the KeyboardAvoidingView above is
+          // already holding the composer clear of it, and the home-indicator
+          // inset on top of that opened a second gap under the bar.
+          bottomInset={keyboardVisible ? 0 : insets.bottom}
           model={model}
           onModelChange={setModel}
           allowedModels={allowedModels}
