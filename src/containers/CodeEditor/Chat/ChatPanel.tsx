@@ -35,6 +35,7 @@ import {
   brandGradient,
   type useAppTheme,
   useBrandedCoderTheme,
+  useCoderTheme,
 } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -324,6 +325,11 @@ function MessageBubble({
 }) {
   const isUser = message.role === 'user';
   const text = message.content || (message.streaming ? '…' : '');
+  // The UNbranded palette, for the user bubble only — see the note at its
+  // call site below. `useCoderTheme` is a pure lookup into a frozen object,
+  // not stateful, so this is a second read of the palette, not a second theme.
+  const { colorScheme } = useColorScheme();
+  const plain = useCoderTheme(colorScheme);
   // Attachments the user sent with this prompt. The web draws them above the
   // bubble (`.cw-bubble-imgs`) and opens one in a lightbox on click; without
   // them the prompt reads as if no image was ever attached.
@@ -353,17 +359,21 @@ function MessageBubble({
             </View>
           ) : null}
           {text ? (
-            <LinearGradient
-              colors={[
-                colors.codeEditorUserBubbleFrom,
-                colors.codeEditorUserBubbleTo,
+            // A flat surface, NOT the ramp. `codeEditorUserBubble*` is
+            // orange->violet under the branded scope because the agent's
+            // sparkle avatar reads it too, but a whole message bubble at
+            // that saturation becomes a coloured slab behind body text —
+            // the one place on this screen where white type has to stay
+            // easy to read. The base palette's own value, unbranded.
+            <View
+              style={[
+                st.bubble,
+                st.bubbleUser,
+                { backgroundColor: plain.codeEditorUserBubbleFrom },
               ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[st.bubble, st.bubbleUser]}
             >
               <Text style={st.userText}>{text}</Text>
-            </LinearGradient>
+            </View>
           ) : null}
         </View>
         <Lightbox uri={zoom} onClose={() => setZoom(null)} />
@@ -1280,10 +1290,13 @@ const st = StyleSheet.create({
     // Shorter than the launch composers: this one sits under a live
     // conversation the user is reading, so it takes as little of that as it
     // can while still showing two lines of a typed follow-up.
-    minHeight: 44,
-    maxHeight: 110,
+    minHeight: 48,
+    maxHeight: 120,
     paddingBottom: 8,
-    paddingTop: 0,
+    // The placeholder used to start hard against the top border. The field is
+    // the full width of the card, so there is nothing else on that line to
+    // set it off — the gap has to come from here.
+    paddingTop: 10,
   },
   composerRow: {
     flexDirection: 'row',
