@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { F } from '@/lib/fonts';
-import type { HomeColors } from '../theme/HomeTheme';
+import { HOME_BRAND_RAMP, type HomeColors } from '../theme/HomeTheme';
 
 // Grid tiles previously sized via `width: '48%'` inside a chain with no
 // explicit width anywhere above it (card → body → content → grid all rely on
@@ -265,7 +265,10 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#3B6FF6',
+    // Brand magenta, not the #3B6FF6 blue this carried. The mockup is a
+    // picture of AppSketch's own builder, so its primary button should be
+    // AppSketch's colour — the blue was the last unexplained hue on Home.
+    backgroundColor: HOME_BRAND_RAMP[1],
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 5,

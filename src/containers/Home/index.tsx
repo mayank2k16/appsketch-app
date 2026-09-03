@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Dimensions, StatusBar, StyleSheet, View } from 'react-native';
@@ -36,28 +35,16 @@ export function HomeScreen() {
   // `useAnimatedScrollHandler` for its parallax; with that effect gone, Home
   // scrolls with nothing subscribed to the offset — no worklet and no JS
   // callback runs per scroll frame.
-  const router = useRouter();
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
   const isDark = colorScheme === 'dark';
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-  function handleStartPress() {
-    router.push('/agent');
-  }
-
-  function handleLearnPress() {
-    router.push('/about');
-  }
-
-  function handleGalleryStartPress() {
-    // TODO: route to gallery
-  }
-
-  function handleGalleryLearnPress() {
-    // TODO: route to examples
-  }
+  // The four CTA handlers that lived here went with the "Get started" /
+  // "Learn more" buttons in the hero and the Gallery section. Two of them were
+  // empty TODOs; the other two pushed /agent and /about, both still reachable
+  // from the drawer.
 
   return (
     <View style={[s.root, { backgroundColor: t.bg }]}>
@@ -97,10 +84,7 @@ export function HomeScreen() {
         removeClippedSubviews
       >
         {/* ── Full-screen hero ── */}
-        <HeroBanner
-          onStartPress={handleStartPress}
-          onLearnPress={handleLearnPress}
-        />
+        <HeroBanner />
 
         {/* AgentV2 — simplified stand-in for the original animated Agent
             preview (no orbit clocks, no per-glyph animation). The original
@@ -108,10 +92,7 @@ export function HomeScreen() {
             (tabs)/agent.tsx; swap this import back to restore it here. */}
         <AgentV2 />
 
-        <GallerySection
-          onStartPress={handleGalleryStartPress}
-          onLearnPress={handleGalleryLearnPress}
-        />
+        <GallerySection />
 
         {/* Everything below the fold mounts after first paint, in order, each
             reserving its height so the scroll content never resizes under the

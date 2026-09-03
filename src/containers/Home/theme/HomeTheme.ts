@@ -27,6 +27,8 @@
  */
 import {
   appTheme,
+  BRAND_RAMP,
+  brandGradient,
   SURFACE_CANVAS,
   SURFACE_RAISED,
   type AppColors,
@@ -39,31 +41,40 @@ const HOME_CANVAS = SURFACE_CANVAS;
 /** Everything raised off the canvas — opaque, never a translucent wash. */
 const HOME_RAISED = SURFACE_RAISED;
 
-/**
- * Home's brand ramp — orange → magenta → violet, read left-to-right.
- *
- * This is the one chromatic run on the screen, and every coloured element
- * takes its stops from HERE rather than picking its own: the hero's second
- * heading line, the prompt card's edge, its selected app-type pill and its
- * send button. They all sit within a few hundred pixels of each other, so a
- * second ramp anywhere in that stack reads immediately as two products.
- *
- * Order matters. `appTheme` declares the same three hues violet-first (see
- * `agentBorderGradient`); the hero heading has to run warm→cool to match the
- * reference, and a border that ran the other way put a violet edge under an
- * orange word. One direction, declared once.
- */
-export const HOME_BRAND_RAMP = ['#F97316', '#EC4899', '#8B5CF6'] as const;
+// The brand ramp used to be declared here. It now lives in AppTheme, because
+// the bottom tab bar and the login screen carry it too and neither can import
+// from a Home container. Re-exported under the old names so Home's own
+// sections keep importing it from their local theme, same as `homeTheme`.
+export { BRAND_RAMP as HOME_BRAND_RAMP, brandGradient as homeBrandGradient };
 
-/** The same ramp as a mutable triple, for `expo-linear-gradient`'s prop type. */
-export const homeBrandGradient = (): [string, string, string] => [
-  ...HOME_BRAND_RAMP,
-];
+/** Ramp midpoint — the single flat colour to use where a gradient will not go.
+ *  `accent` is read by dozens of Home call sites as a plain string (icon
+ *  tints, borders, dots, `ActivityIndicator`), none of which can take three
+ *  stops, so they all land here rather than each picking a favourite hue. */
+const BRAND_MID = BRAND_RAMP[1];
 
-/** Retunes only the surface ladder; chromatic tokens pass through unchanged. */
+/** Retunes the surface ladder and pulls Home's accent onto the brand ramp. */
 function scopeHome(base: (typeof appTheme)['dark']): AppColors {
   return {
     ...base,
+
+    // ── Accent ────────────────────────────────────────────────────────────────
+    // `appTheme` still carries the original indigo #6C5CE7 for the rest of the
+    // app. On Home that indigo was the only hue left that the ramp above does
+    // not contain — the section eyebrows, the "how it works" icon tiles, the
+    // step dots and the card glows all read `accent`, so the screen ran a
+    // warm headline and a cold blue body. Retuned here rather than at the base
+    // palette so the change stays scoped to the marketing face.
+    //
+    // The midpoint is used rather than an end stop: it is the hue the eye
+    // already reads as the ramp's centre of mass, so a flat element tinted
+    // with it sits inside the gradient's range instead of alongside it.
+    accent: BRAND_MID,
+    accentSoft: 'rgba(236,72,153,0.15)',
+    tagText: BRAND_MID,
+    tagBorder: 'rgba(236,72,153,0.55)',
+    glowColor: 'rgba(236,72,153,0.14)',
+    pulseRing: 'rgba(236,72,153,0.40)',
 
     // ── Canvas ────────────────────────────────────────────────────────────────
     bg: HOME_CANVAS,
@@ -110,7 +121,7 @@ function scopeHome(base: (typeof appTheme)['dark']): AppColors {
     //
     // Three stops, not more: `AppColors` fixes this token's length, and the
     // shape wanted here is reachable by moving `locations` instead.
-    agentBorderGradient: homeBrandGradient(),
+    agentBorderGradient: brandGradient(),
   };
 }
 

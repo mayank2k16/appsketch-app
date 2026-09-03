@@ -144,16 +144,11 @@ function MarqueeColumn({
   );
 }
 
-// ─── Centre content: heading, subtitle, CTAs — sits on the flat overlay ────────
-function CenterContent({
-  t,
-  onStartPress,
-  onLearnPress,
-}: {
-  t: HomeColors;
-  onStartPress: () => void;
-  onLearnPress: () => void;
-}) {
+// ─── Centre content: heading + subtitle, sitting on the scrim ─────────────────
+// The "Get started" / "Learn more" pair that used to close this block is gone,
+// removed together with the identical pair in the hero — see the note on
+// `HeroBanner`. The masonry behind it is the section's own call to action.
+function CenterContent({ t }: { t: HomeColors }) {
   return (
     <View style={s.hole}>
       <Text style={[s.heading, { color: t.galleryOverlayText }]}>
@@ -163,41 +158,12 @@ function CenterContent({
         Browse a living gallery of apps and websites — every idea rendered,
         remixable, and ready to ship.
       </Text>
-      <View style={s.btns}>
-        <TouchableOpacity
-          onPress={onStartPress}
-          style={[s.btnPrimary, { backgroundColor: t.heroCtaBg }]}
-          activeOpacity={0.85}
-        >
-          <Text style={[s.btnPrimaryTxt, { color: t.heroCtaText }]}>
-            Get started →
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onLearnPress}
-          style={[
-            s.btnSecondary,
-            { backgroundColor: t.heroSecondaryBg, borderColor: t.heroSecondaryBorder },
-          ]}
-          activeOpacity={0.85}
-        >
-          <Text style={[s.btnSecondaryTxt, { color: t.heroSecondaryText }]}>
-            Learn more
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
 
 // ─── GallerySection ─────────────────────────────────────────────────────────────
-export function GallerySection({
-  onStartPress,
-  onLearnPress,
-}: {
-  onStartPress?: () => void;
-  onLearnPress?: () => void;
-}) {
+export function GallerySection() {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
 
@@ -247,11 +213,7 @@ export function GallerySection({
         />
 
         <View style={[StyleSheet.absoluteFill, s.centerWrap, { pointerEvents: 'box-none' }]}>
-          <CenterContent
-            t={t}
-            onStartPress={onStartPress ?? (() => { })}
-            onLearnPress={onLearnPress ?? (() => { })}
-          />
+          <CenterContent t={t} />
         </View>
       </View>
 
@@ -301,45 +263,14 @@ const s = StyleSheet.create({
     marginBottom: 20,
   },
 
+  // Last element in the block now that the CTAs are gone, so it carries no
+  // trailing margin — the scrim is centred on this text and a bottom margin
+  // would push the pair off that centre.
   subtitle: {
     fontFamily: F.sans500,
     fontSize: 12.5,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 20,
-  },
-
-  btns: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 10
-  },
-
-  btnPrimary: {
-    height: 42,
-    paddingHorizontal: 14,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnPrimaryTxt: {
-    fontFamily: F.sans700,
-    fontSize: 13,
-    letterSpacing: 0.1,
-  },
-
-  btnSecondary: {
-    height: 42,
-    paddingHorizontal: 14,
-    borderRadius: 21,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnSecondaryTxt: {
-    fontFamily: F.sans700,
-    fontSize: 13,
-    letterSpacing: 0.1,
   },
 
   trustedBand: {

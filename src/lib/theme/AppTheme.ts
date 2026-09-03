@@ -11,6 +11,25 @@
  * imports in auth/home components continue to work without changes.
  */
 
+/**
+ * The brand ramp — orange → magenta → violet, read left-to-right.
+ *
+ * The app's one chromatic identity. It started life inside HomeTheme, but the
+ * bottom tab bar is a single component shared by all four tabs and the login
+ * screen sits outside Home entirely, so a Home-local constant meant those
+ * surfaces either drifted (the tab bar's own blue→indigo aura) or went flat
+ * white. It lives here, at the base palette, because everything that carries
+ * brand colour anywhere in the app has to read the same stops.
+ *
+ * Direction is part of the definition: warm first, cool last. Elements that
+ * sit near each other — the hero heading over the prompt card's edge, the tab
+ * bar under both — visibly disagree if one of them runs the ramp backwards.
+ */
+export const BRAND_RAMP = ['#F97316', '#EC4899', '#8B5CF6'] as const;
+
+/** The ramp as a mutable triple, for `expo-linear-gradient`'s prop type. */
+export const brandGradient = (): [string, string, string] => [...BRAND_RAMP];
+
 export const appTheme = {
   dark: {
     // ── Core ──────────────────────────────────────────────────────────────────
@@ -139,7 +158,13 @@ export const appTheme = {
 
     // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
     tabBarBg: '#0A0A0C', // bar background behind the tabs
-    tabLabelGradient: ['#4C8BFF', '#6C5CE7', '#8B5CF6', '#A78BFA'], // blue → indigo → violet aura — active icon + label
+    // The active tab's icon + label aura. Four stops spanning the brand ramp
+    // (BRAND_RAMP's three, plus a light violet tail so the label doesn't end
+    // on the same value it passes through). Was a blue→indigo→violet run,
+    // which was the last blue left in the chrome once Home went brand-orange
+    // — the bar sits directly under every screen, so it read as belonging to
+    // a different app.
+    tabLabelGradient: ['#F97316', '#EC4899', '#8B5CF6', '#A78BFA'],
     tabIconInactive: 'rgba(255,255,255,0.50)',
     tabLabelInactive: 'rgba(255,255,255,0.45)',
 
@@ -429,7 +454,7 @@ export const appTheme = {
 
     // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
     tabBarBg: '#F7F7F9',
-    tabLabelGradient: ['#4C8BFF', '#6C5CE7', '#8B5CF6', '#A78BFA'],
+    tabLabelGradient: ['#F97316', '#EC4899', '#8B5CF6', '#A78BFA'],
     tabIconInactive: 'rgba(17,17,17,0.42)',
     tabLabelInactive: 'rgba(17,17,17,0.45)',
 

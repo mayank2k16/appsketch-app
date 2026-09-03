@@ -15,7 +15,13 @@ import Svg, { ClipPath, Defs, G, Image as SvgImage, Polygon } from 'react-native
 
 import { F } from '@/lib/fonts';
 import { SectionHeading } from '../components/SectionHeading';
-import { homeTheme, type HomeColors } from '../theme/HomeTheme';
+import {
+  HOME_BRAND_RAMP,
+  homeTheme,
+  type HomeColors,
+} from '../theme/HomeTheme';
+
+const [ORANGE, MAGENTA, VIOLET] = HOME_BRAND_RAMP;
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -230,10 +236,14 @@ function Honeycomb({ t }: { t: HomeColors }) {
 }
 
 const LLM_CHIPS: { name: string; gradient: [string, string]; core?: boolean }[] = [
-  { name: 'AppSketch LLM', gradient: ['#8B5CF6', '#6C5CE7'], core: true },
-  { name: 'Claude', gradient: ['#3B82F6', '#22D3EE'] },
-  { name: 'GPT-5', gradient: ['#EC4899', '#F97316'] },
-  { name: 'Gemini', gradient: ['#22D3EE', '#8B5CF6'] },
+  // Slices of the brand ramp rather than each vendor's own colour. These
+  // chips sit inside AppSketch's marketing surface, not in a vendor picker —
+  // the row previously ran blue→cyan for Claude and cyan→violet for Gemini,
+  // which put two colours on Home that appear nowhere else on it.
+  { name: 'AppSketch LLM', gradient: [ORANGE, MAGENTA], core: true },
+  { name: 'Claude', gradient: [MAGENTA, VIOLET] },
+  { name: 'GPT-5', gradient: [VIOLET, ORANGE] },
+  { name: 'Gemini', gradient: [ORANGE, VIOLET] },
 ];
 
 export function ShippedSection() {

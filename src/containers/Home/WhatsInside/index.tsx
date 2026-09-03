@@ -5,7 +5,22 @@ import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { F } from '@/lib/fonts';
 import { SectionHeading } from '../components/SectionHeading';
-import { homeTheme, type HomeColors } from '../theme/HomeTheme';
+import {
+  HOME_BRAND_RAMP,
+  homeTheme,
+  type HomeColors,
+} from '../theme/HomeTheme';
+
+const [ORANGE, MAGENTA, VIOLET] = HOME_BRAND_RAMP;
+
+/** Icon tile colouring: the glyph at full strength over a 16% wash of itself.
+ *  These six tiles used to carry six unrelated hues (violet, indigo, cyan,
+ *  blue…), which is what left this grid reading blue next to a warm headline.
+ *  They now cycle the three brand stops so the grid stays varied without
+ *  introducing a colour the rest of Home does not use. The alpha rides on the
+ *  hex itself (`RRGGBBAA`) rather than a hand-written rgba(), so a stop can
+ *  only ever be changed in one place — the ramp. */
+const tint = (fg: string) => ({ iconBg: `${fg}29`, iconColor: fg });
 
 // Explicit pixel width for the 2-col grid — a plain '48%' width resolves to
 // 0 here (same trap MockupCard's grid hit: no ancestor in this chain sets an
@@ -24,43 +39,37 @@ const FEATURES: {
 }[] = [
     {
       icon: 'sparkles-outline',
-      iconBg: 'rgba(139,92,246,0.16)',
-      iconColor: '#8B5CF6',
+      ...tint(ORANGE),
       title: 'Agentic code gen',
       desc: 'Writes fast-moving code and scaffolds your app in minutes.',
     },
     {
       icon: 'flash-outline',
-      iconBg: 'rgba(108,92,231,0.16)',
-      iconColor: '#6C5CE7',
+      ...tint(VIOLET),
       title: 'Proprietary LLM',
       desc: "Your app's structure, built from our own model.",
     },
     {
       icon: 'layers-outline',
-      iconBg: 'rgba(34,211,238,0.16)',
-      iconColor: '#22D3EE',
+      ...tint(MAGENTA),
       title: 'Any platform',
       desc: 'Web, mobile and internal tools from one brief.',
     },
     {
       icon: 'add-circle-outline',
-      iconBg: 'rgba(139,92,246,0.16)',
-      iconColor: '#8B5CF6',
+      ...tint(ORANGE),
       title: 'Human in the loop',
       desc: 'Real engineers refine every build to spec.',
     },
     {
       icon: 'create-outline',
-      iconBg: 'rgba(59,130,246,0.16)',
-      iconColor: '#3B82F6',
+      ...tint(VIOLET),
       title: 'Production-ready',
       desc: 'Tested, integrated and deployed to launch.',
     },
     {
       icon: 'sync-outline',
-      iconBg: 'rgba(34,211,238,0.16)',
-      iconColor: '#22D3EE',
+      ...tint(MAGENTA),
       title: 'Fraction of the cost',
       desc: 'Enterprise-grade apps without agency pricing.',
     },

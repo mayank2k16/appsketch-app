@@ -23,10 +23,18 @@ import Svg, {
 
 import { F } from '@/lib/fonts';
 import { SectionHeading } from '../components/SectionHeading';
-import { homeTheme, type HomeColors } from '../theme/HomeTheme';
+import {
+  HOME_BRAND_RAMP,
+  homeTheme,
+  type HomeColors,
+} from '../theme/HomeTheme';
+
+const [ORANGE, MAGENTA, VIOLET] = HOME_BRAND_RAMP;
 
 const BADGE_SIZE = 34;
-const PULSE_COLOR = '#22D3EE';
+// Was cyan — the one hue on this section that belonged to no part of the
+// brand ramp, and the thing that read as "blue" next to a warm headline.
+const PULSE_COLOR = MAGENTA;
 
 const STEPS: {
   number: string;
@@ -38,19 +46,23 @@ const STEPS: {
       number: '01',
       title: 'Agent drafts the build',
       desc: "It writes fast-moving code and scaffolds your app's structure from our proprietary LLM — in minutes.",
-      gradient: ['#8B5CF6', '#6C5CE7'],
+      // The three step badges walk the brand ramp in order, so the numbers
+      // 01→02→03 travel warm→cool exactly as the hero headline does. They
+      // were three near-identical violet/indigo tiles before, which gave the
+      // sequence no visible progression at all.
+      gradient: [ORANGE, MAGENTA],
     },
     {
       number: '02',
       title: 'Developers tailor it',
       desc: 'Real human engineers customize every screen, flow and rule to your exact business needs.',
-      gradient: ['#8B5CF6', '#6C5CE7'],
+      gradient: [MAGENTA, VIOLET],
     },
     {
       number: '03',
       title: 'Ship production-ready',
       desc: 'A tested, launch-ready app your business owns — at a fraction of the usual cost.',
-      gradient: ['#8B5CF6', '#22D3EE'],
+      gradient: [VIOLET, '#A78BFA'],
     },
   ];
 
@@ -244,9 +256,9 @@ function SignatureBlock({ t }: { t: HomeColors }) {
             <Svg width={w} height={w * (SIG_H / SIG_W)} viewBox={`0 0 ${SIG_W} ${SIG_H}`}>
               <Defs>
                 <SvgLinearGradient id="sigInk" x1="0" y1="0" x2="1" y2="0">
-                  <Stop offset="0" stopColor="#8B5CF6" />
-                  <Stop offset="0.55" stopColor="#6C5CE7" />
-                  <Stop offset="1" stopColor="#22D3EE" />
+                  <Stop offset="0" stopColor={ORANGE} />
+                  <Stop offset="0.5" stopColor={MAGENTA} />
+                  <Stop offset="1" stopColor={VIOLET} />
                 </SvgLinearGradient>
               </Defs>
               <AnimatedPath
@@ -276,9 +288,9 @@ function SignatureBlock({ t }: { t: HomeColors }) {
 // Overlapping initials of the engineers on the build — the human faces
 // behind "human review", stated without a stock-photo avatar.
 const REVIEWERS: { initials: string; gradient: [string, string] }[] = [
-  { initials: 'AR', gradient: ['#8B5CF6', '#6C5CE7'] },
-  { initials: 'MK', gradient: ['#3B82F6', '#8B5CF6'] },
-  { initials: 'JD', gradient: ['#EC4899', '#8B5CF6'] },
+  { initials: 'AR', gradient: [ORANGE, MAGENTA] },
+  { initials: 'MK', gradient: [MAGENTA, VIOLET] },
+  { initials: 'JD', gradient: [VIOLET, ORANGE] },
 ];
 
 // Static. This was apermanently pulsing ring; a 6px dot does not justify a permanent

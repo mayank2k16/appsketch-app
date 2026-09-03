@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { signInAsGuest } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { brandGradient } from '@/lib/theme';
 
 import { AuthSheet } from './AuthSheet';
 import { loginTheme } from './AuthTheme';
@@ -101,13 +102,28 @@ export function AuthForm() {
       <Text style={[s.heading, { color: t.heading }]}>Build Stunning Websites and Apps</Text>
       <Text style={[s.sub, { color: t.sub }]}>Your journey starts from here</Text>
 
-      {/* Primary — Phone */}
+      {/* Primary — Phone.
+          Carries the brand ramp instead of the flat white it used to have.
+          This is the first screen of the app and, before this, the only
+          colour on it was the montage above — the primary action read as a
+          plain white pill. The ramp is the same one the hero headline and the
+          active bottom tab use, so the brand is stated at the front door.
+          The gradient is a child on `absoluteFill` rather than a background
+          because RN has no gradient `backgroundColor`; `overflow: hidden` on
+          the button is what clips it to the 27px radius. Label is forced
+          white — `primaryText` is near-black, sized for the white pill. */}
       <TouchableOpacity
         onPress={() => openSheet('phone')}
         activeOpacity={0.85}
-        style={[s.btn, { backgroundColor: t.primaryBg }]}
+        style={[s.btn, s.btnPrimary]}
       >
-        <Text style={[s.btnLabel, { color: t.primaryText }]}>Continue with Phone</Text>
+        <LinearGradient
+          colors={brandGradient()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Text style={[s.btnLabel, { color: '#FFFFFF' }]}>Continue with Phone</Text>
       </TouchableOpacity>
 
       {/* Secondary — Email */}
@@ -198,6 +214,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+  },
+  // Clips the gradient layer to the pill; without it the LinearGradient
+  // paints the button's full square bounding box and the radius is lost.
+  btnPrimary: {
+    overflow: 'hidden',
   },
   btnSecondary: {
     borderWidth: 1,
