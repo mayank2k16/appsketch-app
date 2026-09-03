@@ -38,6 +38,11 @@ type Props = {
   radius: number;
   /** Inset from the track's edges. Defaults to 0 for borderless tracks. */
   inset?: number;
+  /** The row's `gap`, if its segments are spaced apart. The fill has to know:
+   *  with a gap, a segment is NOT `trackWidth / count` wide, and stepping by
+   *  that width would leave the fill creeping off its pill by one gap per
+   *  segment. */
+  gap?: number;
 };
 
 export function SlidingFill({
@@ -46,6 +51,7 @@ export function SlidingFill({
   trackWidth,
   radius,
   inset = 0,
+  gap = 0,
 }: Props) {
   // Driven off the selected index rather than off a tap handler, so the fill
   // also animates when the selection changes from outside the control.
@@ -60,11 +66,14 @@ export function SlidingFill({
     [index]
   );
 
-  const segment = trackWidth > 0 ? trackWidth / count : 0;
+  // Total gap is shared between the segments; each step advances by a
+  // segment PLUS one gap.
+  const segment = trackWidth > 0 ? (trackWidth - gap * (count - 1)) / count : 0;
+  const stride = segment + gap;
 
   const style = useAnimatedStyle(() => ({
     width: segment,
-    transform: [{ translateX: progress.value * segment }],
+    transform: [{ translateX: progress.value * stride }],
   }));
 
   if (segment <= 0) return null;

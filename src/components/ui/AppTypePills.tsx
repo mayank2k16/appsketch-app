@@ -21,6 +21,8 @@ const TYPE_PILLS: {
  *  a different radius on each reads as a mismatch rather than as two parts of
  *  one control. See prompt-metrics. */
 const RADIUS = PROMPT_RADIUS;
+/** Space between the two pills. The separator sits centred in it. */
+const GAP = 10;
 /** Gap between the track's edge and the sliding fill. */
 const PAD = 3;
 
@@ -61,6 +63,7 @@ export function AppTypePills({ t, value, onChange }: Props) {
         trackWidth={Math.max(trackW - PAD * 2, 0)}
         radius={RADIUS - PAD}
         inset={PAD}
+        gap={GAP}
       />
 
       {TYPE_PILLS.map((p) => (
@@ -114,6 +117,7 @@ function TypePill({
 const s = StyleSheet.create({
   track: {
     flexDirection: 'row',
+    gap: GAP,
     // Anchors the absolutely-positioned divider below.
     position: 'relative',
     borderRadius: RADIUS,

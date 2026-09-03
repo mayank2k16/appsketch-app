@@ -46,6 +46,8 @@ import { toast } from '@/lib/toast';
 import { homeTheme } from '../theme/HomeTheme';
 
 const RADIUS = PROMPT_RADIUS;
+/** Space between the two app-type pills. The separator sits centred in it. */
+const TAB_GAP = 10;
 /** Thickness of the prompt card's lit gradient edge — see `ringMask`. */
 const RING_W = 1.5;
 const MAX_IMAGES = 3;
@@ -450,6 +452,7 @@ export function AgentV2({
                     index={APP_TABS.findIndex((tab) => tab.key === appType)}
                     trackWidth={tabRowW}
                     radius={PROMPT_RADIUS}
+                    gap={TAB_GAP}
                   />
                   {APP_TABS.map((tab) => {
                     const active = tab.key === appType;
@@ -625,49 +628,35 @@ export function AgentV2({
 
                   <View style={{ flex: 1 }} />
 
-                  {/* Idle, this is the same shape, fill and border as the +
-                        and mic buttons to its left. The moment there is
-                        something to send it inverts to a solid fill with a
-                        dark glyph — the one high-contrast element in the row,
-                        so the action to take next is obvious. Both values come
-                        from the tab tokens, which already flip with the
-                        scheme, rather than hardcoded black/white that would
-                        vanish in light mode. */}
+                  {/* Always carries the brand fill and a white glyph, dimmed
+                        rather than emptied when there is nothing to send —
+                        the same treatment PromptComposer gives its send
+                        button, so the two composers' most important control
+                        looks like one control. It used to go hollow when idle,
+                        which read as a disabled outline sitting where the
+                        primary action should be. */}
                   <TouchableOpacity
                     onPress={() => handleSend()}
                     activeOpacity={0.7}
                     disabled={sending || !prompt.trim()}
-                    style={[
-                      s.circleBtn,
-                      canSend
-                        ? { borderColor: 'transparent' }
-                        : {
-                            backgroundColor: t.agentBtnBg,
-                            borderColor: t.agentBtnBorder,
-                            opacity: 0.5,
-                          },
-                    ]}
+                    style={[s.circleBtn, { borderColor: 'transparent' }]}
                   >
-                    {/* Armed, this fills with the brand ramp — the same run
-                        as the card's edge and the selected pill, so the one
-                        button worth pressing is also the one carrying the
-                        colour. Idle it stays the plain outlined circle its
-                        neighbours are. */}
-                    {canSend && (
-                      <LinearGradient
-                        colors={ringColors}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={StyleSheet.absoluteFill}
-                      />
-                    )}
+                    <LinearGradient
+                      colors={ringColors}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        StyleSheet.absoluteFill,
+                        !canSend && { opacity: 0.5 },
+                      ]}
+                    />
                     {sending ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <Ionicons
                         name="arrow-forward"
                         size={19}
-                        color={canSend ? '#FFFFFF' : t.agentBtnIcon}
+                        color="#FFFFFF"
                       />
                     )}
                   </TouchableOpacity>
@@ -806,8 +795,9 @@ const s = StyleSheet.create({
   // between the two tabs (see `tabPill`).
   tabRow: {
     flexDirection: 'row',
-    // No gap: the sliding fill covers exactly 1/n of this row, so any gap
-    // would leave it short of the segment it is meant to fill.
+    // The pills keep their original spacing; SlidingFill is told the gap so
+    // its travel steps by pill + gap and it still lands on each pill.
+    gap: TAB_GAP,
     marginBottom: 2,
     // Anchors the absolutely-positioned divider below.
     position: 'relative',
