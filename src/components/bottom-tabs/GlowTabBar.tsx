@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
 import { F } from '@/lib/fonts';
-import { useBrandedCoderTheme, type AppColors } from '@/lib/theme';
+import { type AppColors, useBrandedCoderTheme } from '@/lib/theme';
 
 import { TAB_CONFIG } from './tab-config';
 import { TabIcon } from './TabIcon';
@@ -24,10 +24,13 @@ const RING_RADIUS = 22;
  *  restless when it never goes away. */
 const TAB_SPIN_MS = 14000;
 
-/** Where the lit band sits within one turn. Same shape as the prompt card's:
- *  a bright head, then transparent for most of the sweep, so the border is a
- *  travelling highlight rather than a permanently glowing outline. */
-const RING_STOPS: [number, number, number, number] = [0, 0.18, 0.42, 1];
+/** Evenly spread, exactly as the prompt card spreads its own ramp. This used
+ *  to bunch three stops into the first 42% and append a transparent tail, so
+ *  the border was a lit head travelling around an otherwise invisible edge.
+ *  The card's edge is coloured the whole way round AND rotating; the bar now
+ *  matches it — the motion comes from the spin, not from the colour going
+ *  away. */
+const RING_STOPS: [number, number, number] = [0, 0.5, 1];
 
 // ─── One tab ──────────────────────────────────────────────────────────────────
 // Transparent tab, no chip background. Active vs inactive differs ONLY in the
@@ -107,16 +110,11 @@ export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
   const { colorScheme } = useColorScheme();
   const t = useBrandedCoderTheme(colorScheme);
 
-  // The ramp with a transparent tail appended — see RING_STOPS. Memoised
-  // because `RotatingBorderGradient` takes it as a prop and a fresh array
-  // every render would defeat any downstream memo.
+  // The ramp, whole — no transparent tail, so the stroke is lit the whole way
+  // round. Memoised because `RotatingBorderGradient` takes it as a prop and a
+  // fresh array every render would defeat any downstream memo.
   const ringColors = React.useMemo(
-    () =>
-      [...t.agentBorderGradient, 'transparent'] as [
-        string,
-        string,
-        ...string[],
-      ],
+    () => [...t.agentBorderGradient] as [string, string, ...string[]],
     [t.agentBorderGradient]
   );
 
