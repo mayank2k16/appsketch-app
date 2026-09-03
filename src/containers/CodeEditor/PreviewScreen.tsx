@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -10,7 +11,7 @@ import {
 } from 'react-native';
 
 import { previewUrlForTenant } from '@/api/coder';
-import { useAppTheme, useCoderTheme } from '@/lib/theme';
+import { brandGradient, type useAppTheme, useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from './CodeEditorProvider';
 import { LivePreviewWebView } from './Preview/LivePreviewWebView';
@@ -46,10 +47,22 @@ function DeployButton({
       disabled={inProgress}
       style={[
         st.deployBtn,
-        { backgroundColor: failed ? colors.codeEditorDanger : colors.accent },
+        failed && { backgroundColor: colors.codeEditorDanger },
         inProgress && { opacity: 0.7 },
       ]}
     >
+      {/* Deploy is the one irreversible action on this screen and was a flat
+          white pill — the brightest thing above the user's own rendered site.
+          It takes the ramp, except when it has FAILED, where the danger
+          colour has to win over the brand. */}
+      {!failed && (
+        <LinearGradient
+          colors={brandGradient()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
       {inProgress ? (
         <ActivityIndicator size="small" />
       ) : (
@@ -62,6 +75,7 @@ function DeployButton({
                 : 'rocket-outline'
           }
           size={14}
+          color="#FFFFFF"
         />
       )}
       <Text style={st.deployLabel}>
@@ -142,6 +156,8 @@ const st = StyleSheet.create({
     height: 32,
     paddingHorizontal: 12,
     borderRadius: 16,
+    // Clips the gradient fill to the pill.
+    overflow: 'hidden',
   },
-  deployLabel: { fontSize: 12, fontWeight: '700' },
+  deployLabel: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
 });

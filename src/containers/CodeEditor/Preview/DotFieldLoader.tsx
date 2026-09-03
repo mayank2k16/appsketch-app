@@ -2,17 +2,20 @@ import * as React from 'react';
 import {
   Animated,
   Easing,
+  type LayoutChangeEvent,
   StyleSheet,
   Text,
   View,
-  type LayoutChangeEvent,
 } from 'react-native';
 
 import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
 
-const DOT_SPACING = 28;
-const DOT_SIZE = 4;
+// Tightened to match Home's dot field, which is the first dot grid a user
+// sees: smaller dots, closer together, so the two read as the same texture
+// rather than as one screen's fine grid and another's coarse one.
+const DOT_SPACING = 22;
+const DOT_SIZE = 3.2;
 /** Resting opacity of one sweep layer. Two layers multiply, so the field sits
  *  at BASE² (~0.12) at rest and hits 1.0 only where both crests coincide. */
 const BASE = 0.35;
@@ -140,7 +143,10 @@ export function DotFieldLoader({
         })}
       </View>
 
-      <View style={[st.labelWrap, { backgroundColor: colors.bg }]} pointerEvents="none">
+      <View
+        style={[st.labelWrap, { backgroundColor: colors.bg }]}
+        pointerEvents="none"
+      >
         <Text style={[st.label, { color: colors.text }]}>{label}</Text>
       </View>
     </View>

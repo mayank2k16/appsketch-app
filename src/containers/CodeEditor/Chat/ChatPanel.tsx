@@ -533,12 +533,11 @@ function Composer({
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <View
-        style={[
-          st.composerWrap,
-          { backgroundColor: colors.codeEditorActivityBg },
-        ]}
-      >
+      {/* OPAQUE. `codeEditorActivityBg` is rgba(255,255,255,0.04) — at 4%
+          the ramp behind it showed straight through and filled the whole
+          box instead of showing as a 1px edge. `card` is the same opaque
+          surface Home's prompt card lays over its own gradient. */}
+      <View style={[st.composerWrap, { backgroundColor: colors.card }]}>
         <TextInput
           value={input}
           onChangeText={onChangeInput}
@@ -707,7 +706,7 @@ function Composer({
                 end={{ x: 1, y: 1 }}
                 style={st.sendBtn}
               >
-                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
               </LinearGradient>
             </TouchableOpacity>
           )}
@@ -1278,7 +1277,10 @@ const st = StyleSheet.create({
   },
   input: {
     fontSize: 14.5,
-    minHeight: 65,
+    // Shorter than the launch composers: this one sits under a live
+    // conversation the user is reading, so it takes as little of that as it
+    // can while still showing two lines of a typed follow-up.
+    minHeight: 44,
     maxHeight: 110,
     paddingBottom: 8,
     paddingTop: 0,
