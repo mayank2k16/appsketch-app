@@ -46,6 +46,44 @@ const LAYERS: [number, number][][] = [
 ];
 const BLOCK = 3;
 
+/** Gap from the screen edge to the edge of the outermost dot, on all four sides. */
+const EDGE_MARGIN = 8;
+
+/**
+ * Where a dot sits inside its own cell: the middle, never the corner.
+ *
+ * An SVG `<Pattern>` CLIPS its contents to the tile. Dots used to be drawn at
+ * `cell * step`, which puts the cell-0 dots exactly on the tile's edge — so
+ * those rendered as quarter-discs while the interior ones rendered whole. That
+ * is why the field looked like a mix of big and small dots: they were all the
+ * same radius, but three quarters of some of them were being cut off.
+ *
+ * Centring every dot in its cell keeps the whole circle inside the tile, so
+ * all of them draw identically.
+ */
+const cellCentre = (cell: number, step: number) => cell * step + step / 2;
+
+/**
+ * Pitch and pattern origin that pin the outer dots `EDGE_MARGIN` from the edge.
+ *
+ * `spacing` is a target, not a hard pitch: a whole number of columns almost
+ * never divides the screen exactly, and the leftover used to pile up on one
+ * side. Rather than split the remainder (which leaves the margin at whatever
+ * the screen width happens to make it), the remainder is spread across the
+ * gaps — the pitch stretches or shrinks by under a pixel, and the first and
+ * last columns land exactly 8px from their edges.
+ *
+ * `origin` is where the pattern tile starts. It backs off by half a step
+ * because `cellCentre` draws the dot in the middle of its cell, not at 0.
+ */
+const gridMetrics = (extent: number, spacing: number, radius: number) => {
+  // Distance between the first and last dot CENTRES.
+  const span = extent - 2 * (EDGE_MARGIN + radius);
+  const gaps = Math.max(1, Math.round(span / spacing));
+  const step = span / gaps;
+  return { step, origin: EDGE_MARGIN + radius - step / 2 };
+};
+
 type Props = {
   width: number;
   height: number;
@@ -102,17 +140,22 @@ function TwinkleLayer({
     opacity: baseOpacity + (peakOpacity - baseOpacity) * v.value,
   }));
 
-  const tile = spacing * BLOCK;
+  const { step, origin: originX } = gridMetrics(width, spacing, radius);
+  const { origin: originY } = gridMetrics(height, spacing, radius);
+  const tile = step * BLOCK;
   const id = `twinkleLayer${index}`;
 
   return (
-    <Reanimated.View style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
+    <Reanimated.View
+      style={[StyleSheet.absoluteFill, style]}
+      pointerEvents="none"
+    >
       <Svg width={width} height={height}>
         <Defs>
           <Pattern
             id={id}
-            x={0}
-            y={0}
+            x={originX}
+            y={originY}
             width={tile}
             height={tile}
             patternUnits="userSpaceOnUse"
@@ -120,8 +163,8 @@ function TwinkleLayer({
             {cells.map(([cx, cy]) => (
               <Circle
                 key={`${cx}-${cy}`}
-                cx={cx * spacing}
-                cy={cy * spacing}
+                cx={cellCentre(cx, step)}
+                cy={cellCentre(cy, step)}
                 r={radius}
                 fill={color}
               />
@@ -144,6 +187,8 @@ export function TwinkleDots({
   peakOpacity = 0.9,
 }: Props) {
   const isFocused = useIsFocused();
+  const { step, origin: originX } = gridMetrics(width, spacing, radius);
+  const { origin: originY } = gridMetrics(height, spacing, radius);
 
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
@@ -153,16 +198,28 @@ export function TwinkleDots({
         <Defs>
           <Pattern
             id="twinkleGrid"
-            x={0}
-            y={0}
-            width={spacing}
-            height={spacing}
+            x={originX}
+            y={originY}
+            width={step}
+            height={step}
             patternUnits="userSpaceOnUse"
           >
-            <Circle cx={0} cy={0} r={radius} fill={color} opacity={baseOpacity} />
+            <Circle
+              cx={cellCentre(0, step)}
+              cy={cellCentre(0, step)}
+              r={radius}
+              fill={color}
+              opacity={baseOpacity}
+            />
           </Pattern>
         </Defs>
-        <Rect x={0} y={0} width={width} height={height} fill="url(#twinkleGrid)" />
+        <Rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          fill="url(#twinkleGrid)"
+        />
       </Svg>
 
       {/* Animations stop entirely when Home is not the focused screen */}

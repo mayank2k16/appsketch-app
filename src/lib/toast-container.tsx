@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
@@ -10,9 +12,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { type AppColors, brandGradient, useAppTheme } from '@/lib/theme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -23,6 +24,12 @@ export interface ToastOptions {
   description?: string;
   duration?: number;
 }
+
+// Toasts fly in from just off the top-right corner, which is where the eye
+// already is after a tap in the header — and, unlike the old bottom slide, it
+// never collides with the composer or the floating tab bar.
+const ENTER_X = 56;
+const ENTER_Y = -28;
 
 // ── Global handler ref (set by <ToastContainer />) ────────────────────────────
 let _handler: ((opts: ToastOptions) => void) | null = null;
@@ -42,19 +49,29 @@ export function triggerToast(opts: ToastOptions) {
 
 function accentFor(t: AppColors, type: ToastType) {
   switch (type) {
-    case 'success': return t.toastSuccess;
-    case 'error': return t.toastError;
-    case 'warning': return t.toastWarning;
-    case 'info': return t.toastInfo;
+    case 'success':
+      return t.toastSuccess;
+    case 'error':
+      return t.toastError;
+    case 'warning':
+      return t.toastWarning;
+    case 'info':
+      return t.toastInfo;
   }
 }
 
-function iconFor(type: ToastType): React.ComponentProps<typeof Ionicons>['name'] {
+function iconFor(
+  type: ToastType
+): React.ComponentProps<typeof Ionicons>['name'] {
   switch (type) {
-    case 'success': return 'checkmark-circle';
-    case 'error': return 'alert-circle';
-    case 'warning': return 'warning';
-    case 'info': return 'information-circle';
+    case 'success':
+      return 'checkmark-circle';
+    case 'error':
+      return 'alert-circle';
+    case 'warning':
+      return 'warning';
+    case 'info':
+      return 'information-circle';
   }
 }
 
@@ -65,22 +82,37 @@ interface ToastItem extends ToastOptions {
   id: number;
 }
 
-function ToastCard({ item, t, onDone }: { item: ToastItem; t: AppColors; onDone: (id: number) => void }) {
+function ToastCard({
+  item,
+  t,
+  onDone,
+}: {
+  item: ToastItem;
+  t: AppColors;
+  onDone: (id: number) => void;
+}) {
   const duration = item.duration ?? 3500;
-  const translateY = useSharedValue(40);
-  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(ENTER_Y);
+  const translateX = useSharedValue(ENTER_X);
   const opacity = useSharedValue(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const remove = useCallback(() => onDone(item.id), [item.id, onDone]);
 
-  const dismiss = useCallback((direction: 1 | -1) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    translateX.value = withTiming(direction * SCREEN_W, { duration: 220 }, (finished) => {
-      if (finished) runOnJS(remove)();
-    });
-    opacity.value = withTiming(0, { duration: 200 });
-  }, [translateX, opacity, remove]);
+  const dismiss = useCallback(
+    (direction: 1 | -1) => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      translateX.value = withTiming(
+        direction * SCREEN_W,
+        { duration: 220 },
+        (finished) => {
+          if (finished) runOnJS(remove)();
+        }
+      );
+      opacity.value = withTiming(0, { duration: 200 });
+    },
+    [translateX, opacity, remove]
+  );
 
   const armAutoDismiss = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -95,8 +127,9 @@ function ToastCard({ item, t, onDone }: { item: ToastItem; t: AppColors; onDone:
   }, []);
 
   useEffect(() => {
-    // Slide up from the bottom edge + fade in
+    // Fly in from off the top-right corner + fade in
     translateY.value = withSpring(0, { damping: 18, stiffness: 220 });
+    translateX.value = withSpring(0, { damping: 18, stiffness: 220 });
     opacity.value = withTiming(1, { duration: 220 });
     armAutoDismiss();
     return () => {
@@ -115,7 +148,9 @@ function ToastCard({ item, t, onDone }: { item: ToastItem; t: AppColors; onDone:
       opacity.value = 1 - Math.min(Math.abs(e.translationX) / 200, 0.85);
     })
     .onEnd((e) => {
-      const past = Math.abs(e.translationX) > SWIPE_DISMISS_THRESHOLD || Math.abs(e.velocityX) > 800;
+      const past =
+        Math.abs(e.translationX) > SWIPE_DISMISS_THRESHOLD ||
+        Math.abs(e.velocityX) > 800;
       if (past) {
         runOnJS(dismiss)(e.translationX >= 0 ? 1 : -1);
       } else {
@@ -126,7 +161,10 @@ function ToastCard({ item, t, onDone }: { item: ToastItem; t: AppColors; onDone:
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+    ],
     opacity: opacity.value,
   }));
 
@@ -134,19 +172,36 @@ function ToastCard({ item, t, onDone }: { item: ToastItem; t: AppColors; onDone:
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View
-        style={[
-          styles.card,
-          { backgroundColor: t.toastBg, borderColor: t.toastBorder },
-          animatedStyle,
-        ]}
-      >
-        <Ionicons name={iconFor(item.type)} size={20} color={accent} />
-        <View style={styles.textWrap}>
-          <Text style={[styles.title, { color: t.toastText }]} numberOfLines={2}>{item.message}</Text>
-          {!!item.description && (
-            <Text style={[styles.desc, { color: t.toastTextSub }]} numberOfLines={2}>{item.description}</Text>
-          )}
+      <Animated.View style={[styles.shadow, animatedStyle]}>
+        <View style={styles.ring}>
+          {/* The brand ramp as a 1px border: gradient behind, OPAQUE card on top.
+            `toastBg` is a solid hex on both schemes — a translucent fill here
+            would let the ramp through and turn the whole toast into a slab. */}
+          <LinearGradient
+            colors={brandGradient()}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[styles.card, { backgroundColor: t.toastBg }]}>
+            <Ionicons name={iconFor(item.type)} size={20} color={accent} />
+            <View style={styles.textWrap}>
+              <Text
+                style={[styles.title, { color: t.toastText }]}
+                numberOfLines={2}
+              >
+                {item.message}
+              </Text>
+              {!!item.description && (
+                <Text
+                  style={[styles.desc, { color: t.toastTextSub }]}
+                  numberOfLines={2}
+                >
+                  {item.description}
+                </Text>
+              )}
+            </View>
+          </View>
         </View>
       </Animated.View>
     </GestureDetector>
@@ -168,7 +223,9 @@ export function ToastContainer() {
 
   useEffect(() => {
     registerToastHandler(show);
-    return () => { _handler = null; };
+    return () => {
+      _handler = null;
+    };
   }, [show]);
 
   const remove = useCallback((id: number) => {
@@ -179,7 +236,7 @@ export function ToastContainer() {
 
   return (
     <View
-      style={[styles.container, { bottom: insets.bottom + 20 }]}
+      style={[styles.container, { top: insets.top + 8 }]}
       pointerEvents="box-none"
     >
       {items.map((item) => (
@@ -194,24 +251,37 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     left: 16,
-    right: 16,
+    right: 12,
     zIndex: 9999,
-    flexDirection: 'column-reverse',
+    // Anchored top-right: newest stacks below the previous one, and each card
+    // hugs the right edge rather than stretching the full width.
+    alignItems: 'flex-end',
+    flexDirection: 'column',
     gap: 8,
   },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+  // Shadow and clip live on separate views: `overflow: 'hidden'` sets
+  // masksToBounds on iOS, which would clip the shadow away too.
+  shadow: {
+    maxWidth: 340,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 14,
     elevation: 10,
+  },
+  ring: {
+    borderRadius: 12,
+    padding: 1,
+    overflow: 'hidden',
+  },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 11,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
   textWrap: {
     flex: 1,

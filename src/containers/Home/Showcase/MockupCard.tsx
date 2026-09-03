@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { F } from '@/lib/fonts';
+
 import { HOME_BRAND_RAMP, type HomeColors } from '../theme/HomeTheme';
 
 // Grid tiles previously sized via `width: '48%'` inside a chain with no
@@ -19,7 +20,10 @@ import { HOME_BRAND_RAMP, type HomeColors } from '../theme/HomeTheme';
 // view (onLoadStart never fired). Computing an explicit pixel size, the same
 // approach Gallery's columns already use successfully, is the robust fix.
 const { width: SCREEN_W } = Dimensions.get('window');
-const SECTION_PAD_H = 22 * 2;
+// Must track `Showcase`'s own `section.paddingHorizontal`. It read 22 while the
+// section actually pads by 8, so every tile was computed 14px narrower than the
+// room it had — the card came up short and left a gap under the grid.
+const SECTION_PAD_H = 8 * 2;
 const CARD_BORDER = 1 * 2;
 const RAIL_W = 38 + 1;
 const CONTENT_PAD_H = 10 * 2;
@@ -27,6 +31,10 @@ const GRID_GAP = 6;
 const CARD_CONTENT_W =
   SCREEN_W - SECTION_PAD_H - CARD_BORDER - RAIL_W - CONTENT_PAD_H;
 const TILE_SIZE = (CARD_CONTENT_W - GRID_GAP) / 2;
+// The tiles hold website screenshots, which are portrait once cropped to a
+// column. Running them taller than wide spends the leftover height under the
+// card on the images instead of on empty space, and shows more of each page.
+const TILE_H = Math.round(TILE_SIZE * 1.2);
 
 const CDN = 'https://cdn.appsketch.ai/phurti-cloudfront/builder/layouts/';
 // Pre-compressed/descriptive-slug variants (55-108KB) — the original picks
@@ -113,7 +121,7 @@ export function MockupCard({ t }: { t: HomeColors }) {
             {GRID_IMAGES.map((uri, i) => (
               <View
                 key={uri}
-                style={[s.tile, { width: TILE_SIZE, height: TILE_SIZE }]}
+                style={[s.tile, { width: TILE_SIZE, height: TILE_H }]}
               >
                 <ExpoImage
                   source={uri}

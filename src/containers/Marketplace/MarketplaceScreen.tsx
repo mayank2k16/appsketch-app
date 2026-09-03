@@ -81,10 +81,18 @@ export function MarketplaceScreen() {
     [scrollY]
   );
 
+  // `extrapolateLeft: 'extend'` is what keeps the headings out from under the
+  // search bar during an overscroll bounce. Clamped on both ends, a pull-down
+  // (scrollY < 0) pinned the overlay at HEADER_TOP + headingsHeight while the
+  // list content kept travelling down — so the heading slid beneath it.
+  // Extending on the left lets the overlay ride down by exactly the overscroll
+  // distance, holding its position relative to the content. The right end
+  // stays clamped: that is the sticky behaviour itself.
   const stickyTranslateY = scrollY.interpolate({
     inputRange: [0, Math.max(headingsHeight, 1)],
     outputRange: [headingsHeight, 0],
-    extrapolate: 'clamp',
+    extrapolateLeft: 'extend',
+    extrapolateRight: 'clamp',
   });
 
   const handleHeadingsLayout = React.useCallback((e: LayoutChangeEvent) => {
@@ -310,7 +318,7 @@ function CategoryChip({
 const s = StyleSheet.create({
   root: { flex: 1 },
   blob: { position: 'absolute', width: 220, height: 220, borderRadius: 110 },
-  header: { paddingHorizontal: 10, marginBottom: 16, width: '90%' },
+  header: { paddingHorizontal: 10, paddingTop: 18, marginBottom: 16, width: '90%' },
   eyebrow: { fontFamily: F.sans700, fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 },
   heading: { fontFamily: F.display900, fontSize: 22, letterSpacing: -0.4, lineHeight: 27, marginBottom: 6 },
   subtitle: { fontFamily: F.sans400, fontSize: 13, lineHeight: 19 },
