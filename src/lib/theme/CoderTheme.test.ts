@@ -22,6 +22,14 @@ const SRC = path.join(__dirname, '..', '..');
  * built. Home is absent for the opposite reason — it was always branded. */
 const ACHROMATIC_DIRS = [path.join(SRC, 'containers', 'CodeEditor')];
 
+/** Carved OUT of the achromatic list above. The editor's CHAT panel is the
+ * one part of the workspace that is a conversation rather than code: no
+ * syntax highlighting for a coloured control to fight, and the same agent,
+ * composer and primary actions the user just used on Home and the Agent tab.
+ * Greying it made those look like a different product mid-flow. It runs
+ * `useBrandedCoderTheme` with the rest of the branded surfaces. */
+const ACHROMATIC_EXCEPT = [path.join(SRC, 'containers', 'CodeEditor', 'Chat')];
+
 /** The screens that keep the grey ladder but take the ramp on their action
  *  surfaces. Listed so the assertions below can hold them to that split
  *  rather than to a blanket "no brand colour here". */
@@ -30,6 +38,7 @@ const BRANDED_TAB_DIRS = [
   path.join(SRC, 'containers', 'Studio'),
   path.join(SRC, 'containers', 'Marketplace'),
   path.join(SRC, 'components', 'bottom-tabs'),
+  ...ACHROMATIC_EXCEPT,
 ];
 
 /** The brand indigo, and the blues/violets that ramp into it. Correct on Home
@@ -47,7 +56,10 @@ function walk(dir: string): string[] {
   });
 }
 
-const achromaticFiles = () => ACHROMATIC_DIRS.flatMap(walk);
+const achromaticFiles = () =>
+  ACHROMATIC_DIRS.flatMap(walk).filter(
+    (f) => !ACHROMATIC_EXCEPT.some((dir) => f.startsWith(dir + path.sep))
+  );
 const brandedTabFiles = () => BRANDED_TAB_DIRS.flatMap(walk);
 
 /** Flatten a token to a string so a gradient array is searchable too. */
@@ -91,11 +103,7 @@ const BRANDED_ON_RAMP = [
 
 /** The full set the branded scope touches — the ramp tokens plus the two
  *  white "on" values. Nothing else may differ from the achromatic palette. */
-const BRANDED = [
-  ...BRANDED_ON_RAMP,
-  'accentOn',
-  'agentTabActiveText',
-] as const;
+const BRANDED = [...BRANDED_ON_RAMP, 'accentOn', 'agentTabActiveText'] as const;
 
 /** The tokens the scope exists to retune. If someone adds a new branded token
  * to a scoped screen, add it here — that is the point of the list.
@@ -236,7 +244,8 @@ describe('the branded-tab scope', () => {
     // Brand hex in these files is now expected — what is not is a hue from
     // outside the ramp (the old indigo, the blues and cyans that came with
     // it), which is exactly what the sweep of these screens removed.
-    const OFF_RAMP = /#6C5CE7|108\s*,\s*92\s*,\s*231|#4C8BFF|#3B82F6|#4F7DFF|79\s*,\s*125\s*,\s*255|#22D3EE/i;
+    const OFF_RAMP =
+      /#6C5CE7|108\s*,\s*92\s*,\s*231|#4C8BFF|#3B82F6|#4F7DFF|79\s*,\s*125\s*,\s*255|#22D3EE/i;
     const offenders = brandedTabFiles().filter((f) =>
       OFF_RAMP.test(fs.readFileSync(f, 'utf8'))
     );

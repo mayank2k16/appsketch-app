@@ -15,7 +15,7 @@ import type {
   ClarifyPaletteOption,
   ClarifyQuestion,
 } from '@/api/coder';
-import type { AppColors } from '@/lib/theme';
+import { type AppColors, brandGradient } from '@/lib/theme';
 
 /** Small branded avatar shared by every agent-side card header (message
  * bubble, activity card, clarify card) so the whole chat reads as one
@@ -52,7 +52,6 @@ function paletteLabel(p: ClarifyPaletteOption): string {
 function fontLabel(f: ClarifyFontOption): string {
   return `${f.heading} / ${f.body}`;
 }
-
 
 export function ClarifyBlockView({
   block,
@@ -106,9 +105,9 @@ export function ClarifyBlockView({
     if (q.type === 'checklist') {
       const extra = c
         ? c
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
         : [];
       return [...(checks[q.id] ?? []), ...extra].join(', ');
     }
@@ -117,8 +116,8 @@ export function ClarifyBlockView({
     if (v == null) {
       const first = (
         q.options as
-        | (string | ClarifyPaletteOption | ClarifyFontOption)[]
-        | undefined
+          | (string | ClarifyPaletteOption | ClarifyFontOption)[]
+          | undefined
       )?.[0];
       if (q.type === 'palette')
         return isPaletteOption(first) ? paletteLabel(first) : '';
@@ -162,7 +161,10 @@ export function ClarifyBlockView({
             color={colors.codeEditorToolChipActiveText}
           />
           <Text
-            style={[st.badgeText, { color: colors.codeEditorToolChipActiveText }]}
+            style={[
+              st.badgeText,
+              { color: colors.codeEditorToolChipActiveText },
+            ]}
           >
             Design Brief
           </Text>
@@ -180,7 +182,9 @@ export function ClarifyBlockView({
           const answer = answers?.[q.id];
           return (
             <View key={q.id} style={st.questionBlock}>
-              <Text style={[st.label, { color: colors.textSub }]}>{q.label}</Text>
+              <Text style={[st.label, { color: colors.textSub }]}>
+                {q.label}
+              </Text>
 
               {q.type === 'palette' ? (
                 <PaletteOptions
@@ -232,7 +236,10 @@ export function ClarifyBlockView({
                   placeholderTextColor={colors.codeEditorTextMuted}
                   style={[
                     st.textInput,
-                    { color: colors.text, borderColor: colors.codeEditorBorder },
+                    {
+                      color: colors.text,
+                      borderColor: colors.codeEditorBorder,
+                    },
                   ]}
                 />
               ) : null}
@@ -241,11 +248,22 @@ export function ClarifyBlockView({
         })}
 
         {!locked ? (
-          <TouchableOpacity
-            onPress={submit}
-            style={[st.submitBtn, { backgroundColor: colors.accent }]}
-          >
-            <Text style={st.submitLabel}>{block.submitLabel ?? 'Continue'}</Text>
+          <TouchableOpacity onPress={submit} style={st.submitBtn}>
+            {/* The hero ramp, not `colors.accent`. Under the achromatic scope
+                this button resolved to a flat white slab — the single most
+                prominent thing on the screen, and the one element that looked
+                like it came from a different app. It is the primary action of
+                the whole clarify step, so it takes the same fill the send
+                buttons and Home's CTAs do. */}
+            <LinearGradient
+              colors={brandGradient()}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Text style={st.submitLabel}>
+              {block.submitLabel ?? 'Continue'}
+            </Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -413,7 +431,9 @@ function ChecklistOptions({
                 // blue pill — see `.cw-chip.on` in CoderWorkspace.scss. Solid
                 // fills here are what made a black-and-grey surface read as a
                 // coloured one.
-                backgroundColor: on ? colors.accentSoft : colors.codeEditorTabBg,
+                backgroundColor: on
+                  ? colors.accentSoft
+                  : colors.codeEditorTabBg,
                 borderColor: on ? colors.accent : colors.codeEditorBorder,
               },
               locked && !on ? st.dimmed : null,
@@ -659,6 +679,8 @@ const st = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    // Clips the gradient fill to the button's corners.
+    overflow: 'hidden',
   },
   submitLabel: {
     color: '#FFFFFF',

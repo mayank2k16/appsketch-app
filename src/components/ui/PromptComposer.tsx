@@ -18,7 +18,7 @@ import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
 import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { F } from '@/lib/fonts';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
-import type { AppColors } from '@/lib/theme';
+import { type AppColors, brandGradient } from '@/lib/theme';
 
 export type PromptModel = { value: string; label: string; context: number };
 
@@ -150,6 +150,12 @@ export function PromptComposer({
               { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
             ]}
           >
+            <View
+              style={[
+                s.modelDot,
+                { backgroundColor: t.codeEditorConnectedDot },
+              ]}
+            />
             <Text
               style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
               numberOfLines={1}
@@ -214,13 +220,17 @@ export function PromptComposer({
             disabled={sending || !value.trim()}
           >
             <LinearGradient
-              colors={[...t.agentSendGradient] as [string, string, ...string[]]}
+              // The hero heading's own ramp, all three stops — not the
+              // two-stop send gradient, which stopped short of the magenta
+              // that makes the run recognisable at this size.
+              colors={brandGradient()}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={[
-                s.sendBtn,
-                (sending || !value.trim()) && { opacity: 0.5 },
-              ]}
+              // No dimming: the fill is the hero ramp at full strength in
+              // every state. A 50% overlay turned the one primary action into
+              // a muddy plum square that read as broken rather than as idle.
+              // `disabled` on the pressable above already blocks the tap.
+              style={s.sendBtn}
             >
               {sending ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -334,6 +344,13 @@ const s = StyleSheet.create({
     fontFamily: F.sans600,
     fontSize: 11.5,
     flexShrink: 1,
+  },
+  // The live dot beside the model name. Same green as the Agent header's
+  // connected marker, so a lit dot means the same thing in both places.
+  modelDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   circleBtn: {
     width: 34,

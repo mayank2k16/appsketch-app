@@ -324,7 +324,6 @@ export function AgentV2({
 
   // Drives the send button's inverted state — filled the moment there is
   // something to send, including while that send is in flight.
-  const canSend = prompt.trim().length > 0;
 
   const showTypewriter = !inputFocused && prompt.length === 0;
 
@@ -542,6 +541,12 @@ export function AgentV2({
                       },
                     ]}
                   >
+                    <View
+                      style={[
+                        s.modelDot,
+                        { backgroundColor: t.codeEditorConnectedDot },
+                      ]}
+                    />
                     <Text
                       style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
                       numberOfLines={1}
@@ -621,49 +626,37 @@ export function AgentV2({
 
                   <View style={{ flex: 1 }} />
 
-                  {/* Idle, this is the same shape, fill and border as the +
-                        and mic buttons to its left. The moment there is
-                        something to send it inverts to a solid fill with a
-                        dark glyph — the one high-contrast element in the row,
-                        so the action to take next is obvious. Both values come
-                        from the tab tokens, which already flip with the
-                        scheme, rather than hardcoded black/white that would
-                        vanish in light mode. */}
+                  {/* Always the hero ramp at full strength with a white
+                        glyph — no hollow idle state and no dimming overlay.
+                        It went hollow when the field was empty, which put a
+                        disabled-looking outline where the primary action
+                        belongs, and a dimmed fill read as broken rather than
+                        idle. `disabled` on the pressable still blocks the
+                        tap. */}
                   <TouchableOpacity
                     onPress={() => handleSend()}
                     activeOpacity={0.7}
                     disabled={sending || !prompt.trim()}
-                    style={[
-                      s.circleBtn,
-                      canSend
-                        ? { borderColor: 'transparent' }
-                        : {
-                            backgroundColor: t.agentBtnBg,
-                            borderColor: t.agentBtnBorder,
-                            opacity: 0.5,
-                          },
-                    ]}
+                    style={[s.circleBtn, { borderColor: 'transparent' }]}
                   >
                     {/* Armed, this fills with the brand ramp — the same run
                         as the card's edge and the selected pill, so the one
                         button worth pressing is also the one carrying the
                         colour. Idle it stays the plain outlined circle its
                         neighbours are. */}
-                    {canSend && (
-                      <LinearGradient
-                        colors={ringColors}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={StyleSheet.absoluteFill}
-                      />
-                    )}
+                    <LinearGradient
+                      colors={ringColors}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
                     {sending ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <Ionicons
                         name="arrow-forward"
                         size={19}
-                        color={canSend ? '#FFFFFF' : t.agentBtnIcon}
+                        color="#FFFFFF"
                       />
                     )}
                   </TouchableOpacity>
@@ -949,6 +942,13 @@ const s = StyleSheet.create({
     fontFamily: F.sans600,
     fontSize: 11,
     flexShrink: 1,
+  },
+  // The live dot beside the model name — see PromptComposer, which renders
+  // the same marker for the Agent tab's copy of this control.
+  modelDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   circleBtn: {
     width: 36,

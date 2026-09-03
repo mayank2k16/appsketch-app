@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import {
@@ -14,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { F } from '@/lib/fonts';
+import { BRAND_MID, brandGradient } from '@/lib/theme';
 
 import { AuthSheet } from './AuthSheet';
 import { loginTheme } from './AuthTheme';
@@ -59,48 +61,105 @@ export function AuthGateModal({ visible, onClose, onSuccess }: Props) {
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
-      <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFillObject}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <BlurView
+        intensity={45}
+        tint="dark"
+        style={StyleSheet.absoluteFillObject}
+      >
         <Pressable style={s.backdrop} onPress={onClose}>
           <Pressable
-            style={[s.panel, { paddingBottom: Math.max(insets.bottom, 20) + 22 }]}
+            style={[
+              s.panel,
+              { paddingBottom: Math.max(insets.bottom, 20) + 22 },
+            ]}
             onPress={(e) => e.stopPropagation()}
           >
-            <View style={[s.handle, { backgroundColor: 'rgba(255,255,255,0.16)' }]} />
+            <View
+              style={[s.handle, { backgroundColor: 'rgba(255,255,255,0.16)' }]}
+            />
 
-            <TouchableOpacity onPress={onClose} style={s.closeBtn} hitSlop={10} activeOpacity={0.7}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={s.closeBtn}
+              hitSlop={10}
+              activeOpacity={0.7}
+            >
               <Ionicons name="close" size={18} color={t.footer} />
             </TouchableOpacity>
 
-            <View style={s.iconWrap}>
-              <Ionicons name="lock-closed" size={20} color={t.heading} />
+            {/* Tinted, not filled: the badge is decoration above the
+                heading, so it carries the brand at a wash rather than
+                competing with the button below it. */}
+            <View style={[s.iconWrap, { borderColor: `${BRAND_MID}59` }]}>
+              <Ionicons name="lock-closed" size={20} color={BRAND_MID} />
             </View>
 
             <Text style={s.heading}>Build Stunning Websites and Apps</Text>
             <Text style={s.sub}>Your journey starts from here</Text>
 
+            {/* The brand ramp, not the flat white slab this was. It is the
+                primary action of the whole gate, and the full-screen
+                AuthForm's equivalent button is already gradient-filled —
+                two routes to the same sign-in should not look like two
+                different products. */}
             <TouchableOpacity
               onPress={() => openSheet('phone')}
               activeOpacity={0.85}
-              style={[s.btn, { backgroundColor: t.primaryBg }]}
+              style={[s.btn, s.btnPrimary]}
             >
-              <Text style={[s.btnLabel, { color: t.primaryText }]}>Continue with Phone</Text>
+              <LinearGradient
+                colors={brandGradient()}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <Text style={[s.btnLabel, { color: '#FFFFFF' }]}>
+                Continue with Phone
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => openSheet('email')}
               activeOpacity={0.85}
-              style={[s.btn, s.btnSecondary, { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder }]}
+              style={[
+                s.btn,
+                s.btnSecondary,
+                {
+                  backgroundColor: t.secondaryBg,
+                  borderColor: t.secondaryBorder,
+                },
+              ]}
             >
-              <Ionicons name="mail-outline" size={18} color={t.secondaryIcon} style={s.btnIcon} />
-              <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Email</Text>
+              <Ionicons
+                name="mail-outline"
+                size={18}
+                color={t.secondaryIcon}
+                style={s.btnIcon}
+              />
+              <Text style={[s.btnLabel, { color: t.secondaryText }]}>
+                Continue with Email
+              </Text>
             </TouchableOpacity>
 
             <Text style={s.footer}>
               By pressing on "Continue with…" you agree to our{' '}
-              <Text onPress={() => openLegal('/tnc')} style={s.footerLink}>Terms of Service</Text>
-              {' '}and{' '}
-              <Text onPress={() => openLegal('/privacy-policy')} style={s.footerLink}>Privacy Policy</Text>
+              <Text onPress={() => openLegal('/tnc')} style={s.footerLink}>
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text
+                onPress={() => openLegal('/privacy-policy')}
+                style={s.footerLink}
+              >
+                Privacy Policy
+              </Text>
             </Text>
           </Pressable>
         </Pressable>
@@ -132,9 +191,18 @@ const s = StyleSheet.create({
     paddingHorizontal: 26,
     paddingTop: 10,
     ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.45, shadowRadius: 28 },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.45,
+        shadowRadius: 28,
+      },
       android: { elevation: 24 },
     }),
+  },
+  // Clips the gradient fill to the button's pill shape.
+  btnPrimary: {
+    overflow: 'hidden',
   },
   handle: {
     width: 36,
@@ -161,7 +229,10 @@ const s = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    // Brand wash rather than a white one, with a 1px ring the JSX tints to
+    // match. Faint on purpose — see the note at the call site.
+    backgroundColor: 'rgba(236,72,153,0.12)',
+    borderWidth: 1,
     marginTop: 18,
     marginBottom: 14,
   },

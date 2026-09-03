@@ -31,7 +31,11 @@ import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
-import { type useAppTheme, useCoderTheme } from '@/lib/theme';
+import {
+  brandGradient,
+  type useAppTheme,
+  useBrandedCoderTheme,
+} from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useCodeEditor } from '../CodeEditorProvider';
@@ -517,177 +521,197 @@ function Composer({
   }, [voice.listening, micPulse]);
 
   return (
-    <View
-      style={[
-        st.composerWrap,
-        {
-          backgroundColor: colors.codeEditorActivityBg,
-          borderColor: colors.codeEditorGlassBorder,
-          marginBottom: 10 + bottomInset,
-        },
-      ]}
-    >
-      <TextInput
-        value={input}
-        onChangeText={onChangeInput}
-        placeholder="Ask the agent to change something…"
-        placeholderTextColor={colors.codeEditorTextMuted}
-        multiline
-        style={[st.input, { color: colors.text, fontFamily: F.sans400 }]}
+    // Same two-layer construction as the Home and Agent composers: an outer
+    // wrapper padded by the stroke width holding the gradient, and an OPAQUE
+    // inner card on top, so all that shows of the ramp is the edge. This box
+    // was a flat 1px grey outline, which made the one composer a user meets
+    // mid-build look unrelated to the two that got them there.
+    <View style={[st.ringWrap, { marginBottom: 10 + bottomInset }]}>
+      <LinearGradient
+        colors={brandGradient()}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
       />
+      <View
+        style={[
+          st.composerWrap,
+          { backgroundColor: colors.codeEditorActivityBg },
+        ]}
+      >
+        <TextInput
+          value={input}
+          onChangeText={onChangeInput}
+          placeholder="Ask the agent to change something…"
+          placeholderTextColor={colors.codeEditorTextMuted}
+          multiline
+          style={[st.input, { color: colors.text, fontFamily: F.sans400 }]}
+        />
 
-      {images.length > 0 ? (
-        <View style={st.thumbRow}>
-          {images.map((uri, i) => (
-            <View
-              key={`${uri}-${i}`}
-              style={[st.thumb, { borderColor: colors.codeEditorGlassBorder }]}
-            >
-              <Image source={{ uri }} style={st.thumbImg} contentFit="cover" />
-              <Pressable
-                onPress={() => onRemoveImage(i)}
+        {images.length > 0 ? (
+          <View style={st.thumbRow}>
+            {images.map((uri, i) => (
+              <View
+                key={`${uri}-${i}`}
                 style={[
-                  st.thumbRemove,
-                  { backgroundColor: colors.codeEditorTabBg },
+                  st.thumb,
+                  { borderColor: colors.codeEditorGlassBorder },
                 ]}
-                hitSlop={6}
               >
-                <Ionicons name="close" size={11} color={colors.textSub} />
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      ) : null}
+                <Image
+                  source={{ uri }}
+                  style={st.thumbImg}
+                  contentFit="cover"
+                />
+                <Pressable
+                  onPress={() => onRemoveImage(i)}
+                  style={[
+                    st.thumbRemove,
+                    { backgroundColor: colors.codeEditorTabBg },
+                  ]}
+                  hitSlop={6}
+                >
+                  <Ionicons name="close" size={11} color={colors.textSub} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
-      <View style={st.composerRow}>
-        {/* Follow-ups were stuck on whatever model started the thread — the
-         * workspace chat is where most of a project's turns happen, so the
-         * picker has to exist here too, not only on the launch composer. */}
-        <TouchableOpacity
-          onPress={() => setModelPickerOpen(true)}
-          activeOpacity={0.7}
-          style={[
-            st.modelChip,
-            {
-              backgroundColor: colors.codeEditorTabBg,
-              borderColor: colors.codeEditorBorder,
-            },
-          ]}
-        >
-          <Text
-            style={[st.modelChipLabel, { color: colors.textSub }]}
-            numberOfLines={1}
-          >
-            {selectedModel?.label}
-          </Text>
-          <Ionicons name="chevron-down" size={12} color={colors.textSub} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={onAttach}
-          activeOpacity={0.7}
-          disabled={images.length >= MAX_IMAGES}
-          style={[
-            st.attachBtn,
-            {
-              backgroundColor: colors.codeEditorTabBg,
-              borderColor: colors.codeEditorBorder,
-            },
-          ]}
-        >
-          <Ionicons name="add" size={20} color={colors.textSub} />
-          {images.length > 0 ? (
-            <View style={[st.countBadge, { backgroundColor: colors.accent }]}>
-              <Text style={st.countBadgeText}>{images.length}</Text>
-            </View>
-          ) : null}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={onCamera}
-          activeOpacity={0.7}
-          disabled={images.length >= MAX_IMAGES}
-          style={[
-            st.attachBtn,
-            {
-              backgroundColor: colors.codeEditorTabBg,
-              borderColor: colors.codeEditorBorder,
-            },
-          ]}
-        >
-          <Ionicons name="camera-outline" size={17} color={colors.textSub} />
-        </TouchableOpacity>
-
-        {voice.supported ? (
+        <View style={st.composerRow}>
+          {/* Follow-ups were stuck on whatever model started the thread — the
+           * workspace chat is where most of a project's turns happen, so the
+           * picker has to exist here too, not only on the launch composer. */}
           <TouchableOpacity
-            onPress={voice.toggle}
+            onPress={() => setModelPickerOpen(true)}
             activeOpacity={0.7}
             style={[
-              st.attachBtn,
+              st.modelChip,
               {
-                backgroundColor: voice.listening
-                  ? `${colors.codeEditorDanger}1A`
-                  : colors.codeEditorTabBg,
-                borderColor: voice.listening
-                  ? colors.codeEditorDanger
-                  : colors.codeEditorBorder,
+                backgroundColor: colors.codeEditorTabBg,
+                borderColor: colors.codeEditorBorder,
               },
             ]}
           >
-            <Animated.View style={{ transform: [{ scale: micPulse }] }}>
-              <Ionicons
-                name={voice.listening ? 'mic' : 'mic-outline'}
-                size={17}
-                color={
-                  voice.listening ? colors.codeEditorDanger : colors.textSub
-                }
-              />
-            </Animated.View>
-          </TouchableOpacity>
-        ) : null}
-
-        <View style={{ flex: 1 }} />
-
-        {busy ? (
-          <TouchableOpacity
-            onPress={onStop}
-            disabled={stopping}
-            style={stopping && st.sendBtnDisabled}
-            accessibilityLabel={
-              stopping
-                ? 'Stopping — finishing the current step safely'
-                : 'Stop the agent'
-            }
-          >
             <View
-              style={[st.sendBtn, { backgroundColor: colors.codeEditorDanger }]}
-            >
-              {stopping ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <View style={st.stopSquare} />
-              )}
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={onSend}
-            disabled={disabled}
-            style={disabled && st.sendBtnDisabled}
-          >
-            <LinearGradient
-              colors={[
-                colors.codeEditorUserBubbleFrom,
-                colors.codeEditorUserBubbleTo,
+              style={[
+                st.modelDot,
+                { backgroundColor: colors.codeEditorConnectedDot },
               ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={st.sendBtn}
+            />
+            <Text
+              style={[st.modelChipLabel, { color: colors.textSub }]}
+              numberOfLines={1}
             >
-              <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-            </LinearGradient>
+              {selectedModel?.label}
+            </Text>
+            <Ionicons name="chevron-down" size={12} color={colors.textSub} />
           </TouchableOpacity>
-        )}
+
+          <TouchableOpacity
+            onPress={onAttach}
+            activeOpacity={0.7}
+            disabled={images.length >= MAX_IMAGES}
+            style={[
+              st.attachBtn,
+              {
+                backgroundColor: colors.codeEditorTabBg,
+                borderColor: colors.codeEditorBorder,
+              },
+            ]}
+          >
+            <Ionicons name="add" size={20} color={colors.textSub} />
+            {images.length > 0 ? (
+              <View style={[st.countBadge, { backgroundColor: colors.accent }]}>
+                <Text style={st.countBadgeText}>{images.length}</Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={onCamera}
+            activeOpacity={0.7}
+            disabled={images.length >= MAX_IMAGES}
+            style={[
+              st.attachBtn,
+              {
+                backgroundColor: colors.codeEditorTabBg,
+                borderColor: colors.codeEditorBorder,
+              },
+            ]}
+          >
+            <Ionicons name="camera-outline" size={17} color={colors.textSub} />
+          </TouchableOpacity>
+
+          {voice.supported ? (
+            <TouchableOpacity
+              onPress={voice.toggle}
+              activeOpacity={0.7}
+              style={[
+                st.attachBtn,
+                {
+                  backgroundColor: voice.listening
+                    ? `${colors.codeEditorDanger}1A`
+                    : colors.codeEditorTabBg,
+                  borderColor: voice.listening
+                    ? colors.codeEditorDanger
+                    : colors.codeEditorBorder,
+                },
+              ]}
+            >
+              <Animated.View style={{ transform: [{ scale: micPulse }] }}>
+                <Ionicons
+                  name={voice.listening ? 'mic' : 'mic-outline'}
+                  size={17}
+                  color={
+                    voice.listening ? colors.codeEditorDanger : colors.textSub
+                  }
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          ) : null}
+
+          <View style={{ flex: 1 }} />
+
+          {busy ? (
+            <TouchableOpacity
+              onPress={onStop}
+              disabled={stopping}
+              style={stopping && st.sendBtnDisabled}
+              accessibilityLabel={
+                stopping
+                  ? 'Stopping — finishing the current step safely'
+                  : 'Stop the agent'
+              }
+            >
+              <View
+                style={[
+                  st.sendBtn,
+                  { backgroundColor: colors.codeEditorDanger },
+                ]}
+              >
+                {stopping ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <View style={st.stopSquare} />
+                )}
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={onSend} disabled={disabled}>
+              {/* Full hero ramp, undimmed in every state — same as the Home
+                and Agent composers. `disabled` still blocks the tap. */}
+              <LinearGradient
+                colors={brandGradient()}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={st.sendBtn}
+              >
+                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ModelPickerModal
@@ -765,7 +789,11 @@ function EmptyState({ colors }: { colors: ReturnType<typeof useAppTheme> }) {
 
 export function ChatPanel() {
   const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
+  // Branded, not the plain achromatic scope: this panel is a conversation,
+  // not code — nothing here fights syntax highlighting, and it carries the
+  // same agent, composer and primary actions the user just used on Home.
+  // The grey LADDER is unchanged; only what a user taps takes the ramp.
+  const t = useBrandedCoderTheme(colorScheme);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
@@ -1225,14 +1253,28 @@ const st = StyleSheet.create({
     flexShrink: 1,
   },
 
-  composerWrap: {
+  // The wrapper that shows through as the lit stroke. Its radius is the
+  // card's plus its padding, so the two curves stay concentric.
+  ringWrap: {
     marginHorizontal: 10,
     marginTop: 10,
-    borderWidth: 1,
     borderRadius: 18,
+    padding: 1,
+    overflow: 'hidden',
+  },
+  // Opaque — a translucent fill here lets the ramp wash across the whole box
+  // instead of showing only at its edge.
+  composerWrap: {
+    borderRadius: 17,
     paddingHorizontal: 12,
     paddingTop: 0,
     paddingBottom: 8,
+  },
+  // The live dot beside the model name — see PromptComposer.
+  modelDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   input: {
     fontSize: 14.5,
