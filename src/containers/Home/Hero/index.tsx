@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -10,16 +11,41 @@ import {
 
 import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
-import { homeTheme, type HomeColors } from '../theme/HomeTheme';
+import {
+  HOME_BRAND_RAMP,
+  homeBrandGradient,
+  homeTheme,
+  type HomeColors,
+} from '../theme/HomeTheme';
 
 const { width: W } = Dimensions.get('window');
 
-function GradientHeadingLine({ text, t }: { text: string; t: HomeColors }) {
+/** The headline's first line — white, holding its value the whole way across.
+ *  It is the line that has to read as plain product copy so the coloured one
+ *  below it lands as emphasis rather than decoration. */
+function HeadingLine({ text, t }: { text: string; t: HomeColors }) {
   return (
     <GradientText
       style={s.heading}
       colors={[t.text, t.text, t.heroHeadingFade]}
       locations={[0, 0.52, 1]}
+    >
+      {text}
+    </GradientText>
+  );
+}
+
+/** The second line, carrying the brand ramp warm→cool across its full width.
+ *  Only ONE line takes it: running both would leave the headline with no
+ *  hierarchy and nothing for the colour to point at. Stops are held at the
+ *  edges (0 → 1) rather than fading out early, so the last glyph lands on
+ *  full violet instead of trailing into grey the way the white ramp did. */
+function BrandHeadingLine({ text }: { text: string }) {
+  return (
+    <GradientText
+      style={s.heading}
+      colors={[...HOME_BRAND_RAMP]}
+      locations={[0, 0.5, 1]}
     >
       {text}
     </GradientText>
@@ -44,21 +70,36 @@ function HeroContent({
   return (
     <View style={[s.content, { pointerEvents: 'box-none' }]}>
       <View style={s.headingWrap}>
-        <GradientHeadingLine text="Create unlimited" t={t} />
-        <GradientHeadingLine text="beautiful apps." t={t} />
+        <HeadingLine text="Create unlimited" t={t} />
+        <BrandHeadingLine text="beautiful apps." />
       </View>
 
       <Text style={[s.subtitle, { color: t.textSub }]}>
-        {'Write anything and the agentic workspace\ncompiles your dream interface in real-time.'}
+        {
+          'Write anything and the agentic workspace\ncompiles your dream interface in real-time.'
+        }
       </Text>
 
       <View style={s.btns}>
+        {/* Filled with the brand ramp rather than the flat white it used to
+            carry. White made it the single brightest thing on a black screen,
+            which pulled the eye past the coloured headline it sits under; the
+            ramp keeps it the primary action while tying it to that line.
+            The gradient is a child rather than a background because RN has no
+            gradient `backgroundColor` — hence `overflow: hidden` on the
+            button and `absoluteFill` on the layer. */}
         <TouchableOpacity
           onPress={onStartPress}
-          style={[s.btnPrimary, { backgroundColor: t.heroCtaBg }]}
+          style={s.btnPrimary}
           activeOpacity={0.85}
         >
-          <Text style={[s.btnPrimaryTxt, { color: t.heroCtaText }]}>
+          <LinearGradient
+            colors={homeBrandGradient()}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <Text style={[s.btnPrimaryTxt, { color: '#FFFFFF' }]}>
             Get started →
           </Text>
         </TouchableOpacity>
@@ -66,7 +107,10 @@ function HeroContent({
           onPress={onLearnPress}
           style={[
             s.btnSecondary,
-            { backgroundColor: t.heroSecondaryBg, borderColor: t.heroSecondaryBorder },
+            {
+              backgroundColor: t.heroSecondaryBg,
+              borderColor: t.heroSecondaryBorder,
+            },
           ]}
           activeOpacity={0.85}
         >
@@ -97,8 +141,8 @@ export function HeroBanner({
     <View style={s.hero}>
       <HeroContent
         t={t}
-        onStartPress={onStartPress ?? (() => { })}
-        onLearnPress={onLearnPress ?? (() => { })}
+        onStartPress={onStartPress ?? (() => {})}
+        onLearnPress={onLearnPress ?? (() => {})}
       />
     </View>
   );
@@ -106,10 +150,14 @@ export function HeroBanner({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
+  // Density pass: the hero used to open on 25px of dead space under a header
+  // that already carries its own padding, and the block below it added 40 more
+  // before the prompt card. Trimmed at both ends so the headline sits closer
+  // to the wordmark and the card comes up into view without a scroll.
   hero: {
     width: W,
-    paddingTop: 25,
-    paddingBottom: 6,
+    paddingTop: 12,
+    paddingBottom: 2,
     alignItems: 'center',
   },
 
@@ -123,7 +171,7 @@ const s = StyleSheet.create({
   },
 
   headingWrap: {
-    marginBottom: 18,
+    marginBottom: 12,
   },
 
   heading: {
@@ -139,7 +187,7 @@ const s = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 23,
-    marginBottom: 36,
+    marginBottom: 20,
   },
 
   btns: {
@@ -153,6 +201,9 @@ const s = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
+    // Clips the gradient layer to the pill; without it the LinearGradient
+    // paints the button's full square bounding box and the radius is lost.
+    overflow: 'hidden',
   },
   btnPrimaryTxt: {
     fontFamily: F.sans700,

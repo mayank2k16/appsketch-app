@@ -39,6 +39,27 @@ const HOME_CANVAS = SURFACE_CANVAS;
 /** Everything raised off the canvas — opaque, never a translucent wash. */
 const HOME_RAISED = SURFACE_RAISED;
 
+/**
+ * Home's brand ramp — orange → magenta → violet, read left-to-right.
+ *
+ * This is the one chromatic run on the screen, and every coloured element
+ * takes its stops from HERE rather than picking its own: the hero's second
+ * heading line, the prompt card's edge, its selected app-type pill and its
+ * send button. They all sit within a few hundred pixels of each other, so a
+ * second ramp anywhere in that stack reads immediately as two products.
+ *
+ * Order matters. `appTheme` declares the same three hues violet-first (see
+ * `agentBorderGradient`); the hero heading has to run warm→cool to match the
+ * reference, and a border that ran the other way put a violet edge under an
+ * orange word. One direction, declared once.
+ */
+export const HOME_BRAND_RAMP = ['#F97316', '#EC4899', '#8B5CF6'] as const;
+
+/** The same ramp as a mutable triple, for `expo-linear-gradient`'s prop type. */
+export const homeBrandGradient = (): [string, string, string] => [
+  ...HOME_BRAND_RAMP,
+];
+
 /** Retunes only the surface ladder; chromatic tokens pass through unchanged. */
 function scopeHome(base: (typeof appTheme)['dark']): AppColors {
   return {
@@ -73,34 +94,23 @@ function scopeHome(base: (typeof appTheme)['dark']): AppColors {
     templatesTagBg: HOME_RAISED,
 
     // ── Prompt-card ring ──────────────────────────────────────────────────────
-    // The lit edge on the prompt card, and the border + highlighter on the
-    // selected app-type tab above it, all read from this one ramp (see
-    // AgentV2) so the two elements stay in step. They used to be set
+    // The lit edge on the prompt card, and the fill on the selected app-type
+    // pill and the send button beside it, all read from this one ramp (see
+    // AgentV2) so the three elements stay in step. They used to be set
     // independently — a cyan→violet→blue gradient on the card, a hardcoded
     // violet on the tab — which is what put a stray blue edge next to a violet
     // tab wherever they met.
     //
-    // White, and a RAMP rather than a flat stroke — but the range matters more
-    // than the fact of it. An earlier pass ran 0.92 → 0.30 → 0.72, which on a
-    // 1px edge just read as flat grey: too little contrast, and the ramp
-    // returned to bright at the far end so there was no direction to it.
-    //
-    // This runs a full sweep instead — near-solid white down to almost
-    // nothing. The middle stop stays bright and `locations` (see AgentV2)
-    // holds it out to ~45%, so the lit run reads as an edge catching light
-    // rather than a hotspot; past that it falls to a value that is barely
-    // there. That dark end is what makes the outline look like it dissolves
-    // rather than stopping, which is the whole effect.
+    // This was a white ramp through the achromatic pass, which is what left
+    // Home's prompt card as a grey box with a flat orange stroke. Home is the
+    // marketing face of the app and the one screen that keeps its colour (see
+    // this file's header, and the `CoderTheme` scoping note) — so the edge
+    // runs the brand ramp, same three hues and same direction as the hero
+    // heading directly above it.
     //
     // Three stops, not more: `AppColors` fixes this token's length, and the
     // shape wanted here is reachable by moving `locations` instead.
-    //
-    // Stop 0 is the brightest; the selected tab's uniform border takes it.
-    agentBorderGradient: [
-      'rgba(255,255,255,0.95)',
-      'rgba(255,255,255,0.62)',
-      'rgba(255,255,255,0.05)',
-    ],
+    agentBorderGradient: homeBrandGradient(),
   };
 }
 

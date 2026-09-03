@@ -58,13 +58,12 @@ const TYPE_GAP_MS = 300; // pause once a phrase is fully deleted, before the nex
 
 type AppTypeKey = 'web' | 'mobile';
 
-// TEMP: simple solid border/heading colour per tab, swapped in for the
-// rotating gradient ring below while we look at a plain-border treatment.
-// Purple for Web App, orange for Mobile App.
-const TAB_ACCENT: Record<AppTypeKey, string> = {
-  web: '#7C46BE',
-  mobile: '#DF5231',
-};
+/** Where the ring's three brand stops land. Even thirds — a continuous
+ *  gradient edge all the way round, which is what the reference shows. The
+ *  ring component's own docstring describes an early-cut transparent tail;
+ *  that shape belongs to a sweeping-highlight treatment, and passing it here
+ *  would leave most of the outline at zero alpha instead of coloured. */
+const RING_STOPS: [number, number, number] = [0, 0.5, 1];
 
 export const APP_TABS: {
   key: AppTypeKey;
@@ -74,25 +73,25 @@ export const APP_TABS: {
   // rotating typewriter placeholder inside it — one list, two uses.
   suggestions: string[];
 }[] = [
-    {
-      key: 'web',
-      label: 'Web App',
-      icon: 'globe-outline',
-      suggestions: [
-        'Build a landing page for my product launch with an email signup and countdown timer',
-        'Build an online store for my clothing brand with product listings and a shopping cart',
-      ],
-    },
-    {
-      key: 'mobile',
-      label: 'Mobile App',
-      icon: 'phone-portrait-outline',
-      suggestions: [
-        'Build a habit tracker app with daily reminders and streak tracking',
-        'Build a food delivery app with restaurant listings and live order tracking',
-      ],
-    },
-  ];
+  {
+    key: 'web',
+    label: 'Web App',
+    icon: 'globe-outline',
+    suggestions: [
+      'Build a landing page for my product launch with an email signup and countdown timer',
+      'Build an online store for my clothing brand with product listings and a shopping cart',
+    ],
+  },
+  {
+    key: 'mobile',
+    label: 'Mobile App',
+    icon: 'phone-portrait-outline',
+    suggestions: [
+      'Build a habit tracker app with daily reminders and streak tracking',
+      'Build a food delivery app with restaurant listings and live order tracking',
+    ],
+  },
+];
 
 /** Cycles through `phrases`, typing then deleting each in turn, forever —
  * restarts from scratch whenever `phrases` or `enabled` changes (tab switch,
@@ -379,6 +378,14 @@ export function AgentV2({
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
 
+  // The palette declares this ramp readonly; `expo-linear-gradient` wants a
+  // mutable tuple. Copied once here rather than cast at each of the three
+  // places that paint with it (card edge, selected pill, send button).
+  const ringColors = React.useMemo(
+    () => [...t.agentBorderGradient] as [string, string, ...string[]],
+    [t.agentBorderGradient]
+  );
+
   const voiceSupported = Platform.OS !== 'web';
 
   // Drives the send button's inverted state — filled the moment there is
@@ -456,15 +463,15 @@ export function AgentV2({
     <View style={s.wrap}>
       <View style={s.stage}>
         <View style={s.promptStack}>
-          <View
-            style={[
-              s.ringMask,
-              // TEMP: plain solid border in the active tab's colour instead
-              // of the rotating gradient ring (see `RotatingBorderGradient`,
-              // currently unused).
-              { borderWidth: RING_W, borderColor: TAB_ACCENT[appType] },
-            ]}
-          >
+          <View style={s.ringMask}>
+            {/* The lit gradient edge, restored from the flat single-colour
+                stroke that stood in for it. `ringMask` reserves RING_W of
+                padding and clips; this fills that padding and `cardInner`
+                below covers everything except the edge itself. */}
+            <RotatingBorderGradient
+              colors={ringColors}
+              locations={RING_STOPS}
+            />
             <View style={s.cardInner}>
               <BlurView
                 intensity={Platform.OS === 'android' ? 80 : 60}
@@ -502,22 +509,29 @@ export function AgentV2({
                           activeOpacity={0.7}
                           style={s.tabPill}
                         >
+                          {/* Selection is a filled brand pill now, not a
+                              recolour of the label. Two muted labels where
+                              one turns violet and the other orange read as
+                              two unrelated states; a filled pill reads as
+                              one control with one thing selected. */}
+                          {active && (
+                            <LinearGradient
+                              colors={ringColors}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={StyleSheet.absoluteFill}
+                            />
+                          )}
                           <Ionicons
                             name={tab.icon}
                             size={13}
-                            color={
-                              active ? TAB_ACCENT[tab.key] : t.agentTabIcon
-                            }
+                            color={active ? '#FFFFFF' : t.agentTabIcon}
                           />
                           <Text
                             style={[
                               s.tabPillLabel,
                               active && s.tabPillLabelActive,
-                              {
-                                color: active
-                                  ? TAB_ACCENT[tab.key]
-                                  : t.agentTabText,
-                              },
+                              { color: active ? '#FFFFFF' : t.agentTabText },
                             ]}
                             numberOfLines={1}
                           >
@@ -688,24 +702,34 @@ export function AgentV2({
                     style={[
                       s.circleBtn,
                       canSend
-                        ? {
-                          backgroundColor: t.agentTabActiveText,
-                          borderColor: t.agentTabActiveText,
-                        }
+                        ? { borderColor: 'transparent' }
                         : {
-                          backgroundColor: t.agentBtnBg,
-                          borderColor: t.agentBtnBorder,
-                          opacity: 0.5,
-                        },
+                            backgroundColor: t.agentBtnBg,
+                            borderColor: t.agentBtnBorder,
+                            opacity: 0.5,
+                          },
                     ]}
                   >
+                    {/* Armed, this fills with the brand ramp — the same run
+                        as the card's edge and the selected pill, so the one
+                        button worth pressing is also the one carrying the
+                        colour. Idle it stays the plain outlined circle its
+                        neighbours are. */}
+                    {canSend && (
+                      <LinearGradient
+                        colors={ringColors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    )}
                     {sending ? (
-                      <ActivityIndicator size="small" color={t.card} />
+                      <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <Ionicons
                         name="arrow-forward"
                         size={19}
-                        color={canSend ? t.card : t.agentBtnIcon}
+                        color={canSend ? '#FFFFFF' : t.agentBtnIcon}
                       />
                     )}
                   </TouchableOpacity>
@@ -716,7 +740,7 @@ export function AgentV2({
 
           {showSuggestions && (
             <View style={s.suggestionCol}>
-              {activeTab.suggestions.map((suggestion) => (
+              {activeTab.suggestions.map((suggestion, i) => (
                 <TouchableOpacity
                   key={suggestion}
                   onPress={() => setPrompt(suggestion)}
@@ -729,10 +753,14 @@ export function AgentV2({
                     },
                   ]}
                 >
+                  {/* Each chip's sparkle takes the next stop along the ramp
+                      rather than all of them sharing one grey. Indexing the
+                      ramp (rather than hardcoding a colour per chip) means
+                      the list can grow without anyone picking new hues. */}
                   <Ionicons
                     name="sparkles-outline"
                     size={13}
-                    color={t.agentTabIcon}
+                    color={ringColors[i % ringColors.length]}
                     style={s.suggestionIcon}
                   />
                   <Text style={[s.suggestionText, { color: t.agentTabText }]}>
@@ -788,10 +816,14 @@ export function AgentV2({
 }
 
 const s = StyleSheet.create({
+  // Density pass: 40 above and 70 below put most of a screen of empty black
+  // between the hero copy and the suggestion chips, so the card floated alone
+  // with its neighbours out of frame. Tightened to sit as one block with the
+  // hero above it.
   wrap: {
     paddingHorizontal: 12,
-    paddingTop: 40,
-    paddingBottom: 70,
+    paddingTop: 14,
+    paddingBottom: 28,
   },
   stage: {
     alignItems: 'center',
@@ -853,6 +885,10 @@ const s = StyleSheet.create({
     gap: 5,
     paddingVertical: 5,
     paddingHorizontal: 7,
+    // Rounds the selected tab's gradient fill; inert on the unselected one,
+    // which paints nothing of its own.
+    borderRadius: 14,
+    overflow: 'hidden',
   },
   tabPillLabel: {
     fontFamily: F.sans600,
@@ -864,7 +900,10 @@ const s = StyleSheet.create({
     width: 1,
     alignSelf: 'stretch',
     marginVertical: 2,
-    backgroundColor: '#fff'
+    // Was solid white, which out-shouted the labels either side of it and now
+    // would cut hard into the selected tab's gradient fill. A separator only
+    // has to be findable, not read as an element in its own right.
+    backgroundColor: 'rgba(255,255,255,0.14)',
   },
   tabPillLabelActive: {
     fontFamily: F.sans700,
@@ -984,6 +1023,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    // Keeps the send button's gradient fill inside the circle.
+    overflow: 'hidden',
   },
   countBadge: {
     position: 'absolute',
