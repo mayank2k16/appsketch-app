@@ -27,14 +27,11 @@ import Reanimated, {
 
 import { createCoderTenant } from '@/api/coder';
 import { AuthGateModal } from '@/components/AuthForm/AuthGateModal';
-import { MicButton } from '@/components/ui/MicButton';
 import {
   type ModelOption,
   ModelPickerModal,
 } from '@/components/ui/ModelPickerModal';
-import { PROMPT_RADIUS } from '@/components/ui/prompt-metrics';
 import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
-import { SlidingFill } from '@/components/ui/SlidingFill';
 import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
 import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,9 +42,7 @@ import { toast } from '@/lib/toast';
 
 import { homeTheme } from '../theme/HomeTheme';
 
-const RADIUS = PROMPT_RADIUS;
-/** Space between the two app-type pills. The separator sits centred in it. */
-const TAB_GAP = 10;
+const RADIUS = 15;
 /** Thickness of the prompt card's lit gradient edge — see `ringMask`. */
 const RING_W = 1.5;
 const MAX_IMAGES = 3;
@@ -300,7 +295,6 @@ export function AgentV2({
   const router = useRouter();
 
   const [appType, setAppType] = React.useState<AppTypeKey>('web');
-  const [tabRowW, setTabRowW] = React.useState(0);
   const [prompt, setPrompt] = React.useState('');
   const [model, setModel] = React.useState(DEFAULT_MODEL);
   const [images, setImages] = React.useState<string[]>([]);
@@ -317,11 +311,6 @@ export function AgentV2({
 
   const activeTab = APP_TABS.find((tab) => tab.key === appType) ?? APP_TABS[0];
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
-  // "Name \u00B7 qualifier" shown at two weights — see PromptComposer.
-  const [modelName, ...modelRest] = (selectedModel?.label ?? '').split(
-    '\u00B7'
-  );
-  const modelQualifier = modelRest.join('\u00B7').trim();
 
   // The palette declares this ramp readonly; `expo-linear-gradient` wants a
   // mutable tuple. Copied once here rather than cast at each of the three
@@ -433,52 +422,57 @@ export function AgentV2({
                       No border, no fill, no indicator bar — selection is
                       carried entirely by the label and icon going full white
                       against the muted unselected pair. */}
-                <View
-                  style={s.tabRow}
-                  onLayout={(e) => setTabRowW(e.nativeEvent.layout.width)}
-                >
-                  {/* Hairline rule between the two halves, drawn BEFORE the
-                      fill so the fill passes over it rather than being cut
-                      by it. Absolute, so it does not take a slot in the row
-                      and throw the two halves off equal width — which is
-                      what the old in-flow divider did, and what would leave
-                      the sliding fill short of the segment it fills. */}
-                  <View style={s.tabDivider} pointerEvents="none" />
-
-                  {/* One fill that TRAVELS between the halves, rather than
-                      one pill lighting as the other goes out. */}
-                  <SlidingFill
-                    count={APP_TABS.length}
-                    index={APP_TABS.findIndex((tab) => tab.key === appType)}
-                    trackWidth={tabRowW}
-                    radius={PROMPT_RADIUS}
-                    gap={TAB_GAP}
-                  />
-                  {APP_TABS.map((tab) => {
+                <View style={s.tabRow}>
+                  {APP_TABS.map((tab, i) => {
                     const active = tab.key === appType;
                     return (
-                      <TouchableOpacity
-                        key={tab.key}
-                        onPress={() => setAppType(tab.key)}
-                        activeOpacity={0.7}
-                        style={s.tabPill}
-                      >
-                        <Ionicons
-                          name={tab.icon}
-                          size={13}
-                          color={active ? '#FFFFFF' : t.agentTabIcon}
-                        />
-                        <Text
-                          style={[
-                            s.tabPillLabel,
-                            active && s.tabPillLabelActive,
-                            { color: active ? '#FFFFFF' : t.agentTabText },
-                          ]}
-                          numberOfLines={1}
+                      <React.Fragment key={tab.key}>
+                        {/* Hairline rule separating the two halves. Sits
+                              between them rather than around them, so the row
+                              still reads as one control. */}
+                        {i > 0 && (
+                          <View
+                            style={[
+                              s.tabDivider,
+                              // { backgroundColor: t.agentTabBorder },
+                            ]}
+                          />
+                        )}
+                        <TouchableOpacity
+                          onPress={() => setAppType(tab.key)}
+                          activeOpacity={0.7}
+                          style={s.tabPill}
                         >
-                          {tab.label}
-                        </Text>
-                      </TouchableOpacity>
+                          {/* Selection is a filled brand pill now, not a
+                              recolour of the label. Two muted labels where
+                              one turns violet and the other orange read as
+                              two unrelated states; a filled pill reads as
+                              one control with one thing selected. */}
+                          {active && (
+                            <LinearGradient
+                              colors={ringColors}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={StyleSheet.absoluteFill}
+                            />
+                          )}
+                          <Ionicons
+                            name={tab.icon}
+                            size={13}
+                            color={active ? '#FFFFFF' : t.agentTabIcon}
+                          />
+                          <Text
+                            style={[
+                              s.tabPillLabel,
+                              active && s.tabPillLabelActive,
+                              { color: active ? '#FFFFFF' : t.agentTabText },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {tab.label}
+                          </Text>
+                        </TouchableOpacity>
+                      </React.Fragment>
                     );
                   })}
                 </View>
@@ -548,29 +542,17 @@ export function AgentV2({
                       },
                     ]}
                   >
-                    {/* Live dot, name, qualifier — see PromptComposer, which
-                        renders the same three parts for the Agent tab's
-                        copy of this control. */}
-                    <View
-                      style={[
-                        s.modelDot,
-                        { backgroundColor: t.codeEditorConnectedDot },
-                      ]}
-                    />
                     <Text
-                      style={[s.modelChipLabel, { color: t.text }]}
+                      style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
                       numberOfLines={1}
                     >
-                      {modelName}
+                      {selectedModel.label}
                     </Text>
-                    {!!modelQualifier && (
-                      <Text
-                        style={[s.modelChipQualifier, { color: t.textMuted }]}
-                        numberOfLines={1}
-                      >
-                        {modelQualifier}
-                      </Text>
-                    )}
+                    <Ionicons
+                      name="chevron-down"
+                      size={13}
+                      color={t.agentBtnIcon}
+                    />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -618,45 +600,70 @@ export function AgentV2({
                   </TouchableOpacity>
 
                   {voiceSupported && (
-                    <MicButton
-                      t={t}
+                    <TouchableOpacity
                       onPress={() => setVoiceOpen(true)}
-                      size={36}
-                      iconSize={19}
-                    />
+                      activeOpacity={0.7}
+                      style={[
+                        s.circleBtn,
+                        {
+                          backgroundColor: t.agentBtnBg,
+                          borderColor: t.agentBtnBorder,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="mic-outline"
+                        size={19}
+                        color={t.agentBtnIcon}
+                      />
+                    </TouchableOpacity>
                   )}
 
                   <View style={{ flex: 1 }} />
 
-                  {/* Always carries the brand fill and a white glyph, dimmed
-                        rather than emptied when there is nothing to send —
-                        the same treatment PromptComposer gives its send
-                        button, so the two composers' most important control
-                        looks like one control. It used to go hollow when idle,
-                        which read as a disabled outline sitting where the
-                        primary action should be. */}
+                  {/* Idle, this is the same shape, fill and border as the +
+                        and mic buttons to its left. The moment there is
+                        something to send it inverts to a solid fill with a
+                        dark glyph — the one high-contrast element in the row,
+                        so the action to take next is obvious. Both values come
+                        from the tab tokens, which already flip with the
+                        scheme, rather than hardcoded black/white that would
+                        vanish in light mode. */}
                   <TouchableOpacity
                     onPress={() => handleSend()}
                     activeOpacity={0.7}
                     disabled={sending || !prompt.trim()}
-                    style={[s.circleBtn, { borderColor: 'transparent' }]}
+                    style={[
+                      s.circleBtn,
+                      canSend
+                        ? { borderColor: 'transparent' }
+                        : {
+                            backgroundColor: t.agentBtnBg,
+                            borderColor: t.agentBtnBorder,
+                            opacity: 0.5,
+                          },
+                    ]}
                   >
-                    <LinearGradient
-                      colors={ringColors}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[
-                        StyleSheet.absoluteFill,
-                        !canSend && { opacity: 0.5 },
-                      ]}
-                    />
+                    {/* Armed, this fills with the brand ramp — the same run
+                        as the card's edge and the selected pill, so the one
+                        button worth pressing is also the one carrying the
+                        colour. Idle it stays the plain outlined circle its
+                        neighbours are. */}
+                    {canSend && (
+                      <LinearGradient
+                        colors={ringColors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    )}
                     {sending ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <Ionicons
                         name="arrow-forward"
                         size={19}
-                        color="#FFFFFF"
+                        color={canSend ? '#FFFFFF' : t.agentBtnIcon}
                       />
                     )}
                   </TouchableOpacity>
@@ -795,24 +802,8 @@ const s = StyleSheet.create({
   // between the two tabs (see `tabPill`).
   tabRow: {
     flexDirection: 'row',
-    // The pills keep their original spacing; SlidingFill is told the gap so
-    // its travel steps by pill + gap and it still lands on each pill.
-    gap: TAB_GAP,
+    gap: 10,
     marginBottom: 2,
-    // Anchors the absolutely-positioned divider below.
-    position: 'relative',
-  },
-  // 1px vertical rule at the row's midpoint. Inset top and bottom so it reads
-  // as a separator between labels, not a full-height column splitting the
-  // card. Kept faint: a separator only has to be findable, not read as an
-  // element in its own right — and the fill slides straight over it.
-  tabDivider: {
-    position: 'absolute',
-    left: '50%',
-    width: 1,
-    top: 4,
-    bottom: 4,
-    backgroundColor: 'rgba(255,255,255,0.14)',
   },
   // Bare text + icon. No border, no fill, no radius — the tap target is padded
   // out but draws nothing of its own, so the only thing distinguishing the
@@ -826,12 +817,27 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingVertical: 7,
+    paddingVertical: 5,
     paddingHorizontal: 7,
+    // Rounds the selected tab's gradient fill; inert on the unselected one,
+    // which paints nothing of its own.
+    borderRadius: 14,
+    overflow: 'hidden',
   },
   tabPillLabel: {
     fontFamily: F.sans600,
     fontSize: 12,
+  },
+  // 1px vertical rule between the two tabs. Inset top and bottom so it reads
+  // as a separator between labels, not a full-height column splitting the card.
+  tabDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    marginVertical: 2,
+    // Was solid white, which out-shouted the labels either side of it and now
+    // would cut hard into the selected tab's gradient fill. A separator only
+    // has to be findable, not read as an element in its own right.
+    backgroundColor: 'rgba(255,255,255,0.14)',
   },
   tabPillLabelActive: {
     fontFamily: F.sans700,
@@ -934,8 +940,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     height: 36,
-    // Was 120, which truncated the qualifier the moment one was shown.
-    maxWidth: 200,
+    maxWidth: 120,
     borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -943,20 +948,7 @@ const s = StyleSheet.create({
   modelChipLabel: {
     fontFamily: F.sans600,
     fontSize: 11,
-    flexShrink: 0,
-  },
-  // No mono family is loaded app-wide (see lib/fonts), so the qualifier gets
-  // its "code-ish" feel from tracking and a lighter weight instead.
-  modelChipQualifier: {
-    fontFamily: F.sans400,
-    fontSize: 10,
-    letterSpacing: 0.3,
     flexShrink: 1,
-  },
-  modelDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   circleBtn: {
     width: 36,
