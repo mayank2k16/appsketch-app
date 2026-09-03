@@ -21,9 +21,9 @@
  * the page rather than cut into it.
  *
  * Brand colour is untouched. The accent, the logo and the "100X" badge all
- * still carry the indigo/violet identity — only the surfaces underneath them
- * went neutral. Home is still the marketing face of the app; this changes what
- * it's painted ON, not the paint.
+ * still carry the brand identity — only the surfaces underneath them went
+ * neutral. Home is still the marketing face of the app; this changes what it's
+ * painted ON, not the paint.
  */
 import {
   appTheme,
@@ -47,34 +47,20 @@ const HOME_RAISED = SURFACE_RAISED;
 // sections keep importing it from their local theme, same as `homeTheme`.
 export { BRAND_RAMP as HOME_BRAND_RAMP, brandGradient as homeBrandGradient };
 
-/** Ramp midpoint — the single flat colour to use where a gradient will not go.
- *  `accent` is read by dozens of Home call sites as a plain string (icon
- *  tints, borders, dots, `ActivityIndicator`), none of which can take three
- *  stops, so they all land here rather than each picking a favourite hue. */
-const BRAND_MID = BRAND_RAMP[1];
-
-/** Retunes the surface ladder and pulls Home's accent onto the brand ramp. */
+/** Retunes the surface ladder, and the prompt card's ring. Chromatic tokens
+ *  otherwise pass through — the ramp lives in `appTheme` now. */
 function scopeHome(base: (typeof appTheme)['dark']): AppColors {
   return {
     ...base,
 
     // ── Accent ────────────────────────────────────────────────────────────────
-    // `appTheme` still carries the original indigo #6C5CE7 for the rest of the
-    // app. On Home that indigo was the only hue left that the ramp above does
-    // not contain — the section eyebrows, the "how it works" icon tiles, the
-    // step dots and the card glows all read `accent`, so the screen ran a
-    // warm headline and a cold blue body. Retuned here rather than at the base
-    // palette so the change stays scoped to the marketing face.
-    //
-    // The midpoint is used rather than an end stop: it is the hue the eye
-    // already reads as the ramp's centre of mass, so a flat element tinted
-    // with it sits inside the gradient's range instead of alongside it.
-    accent: BRAND_MID,
-    accentSoft: 'rgba(236,72,153,0.15)',
-    tagText: BRAND_MID,
-    tagBorder: 'rgba(236,72,153,0.55)',
-    glowColor: 'rgba(236,72,153,0.14)',
-    pulseRing: 'rgba(236,72,153,0.40)',
+    // Nothing here any more. `accent`/`accentSoft`/`tagText`/`tagBorder`/
+    // `glowColor`/`pulseRing` were overridden onto the ramp at this layer while
+    // `appTheme` still carried the old indigo. The ramp has since moved to the
+    // base palette, so the whole app reads it and these overrides said exactly
+    // what they were overriding — two copies of one value, which is the thing
+    // that drifts. Home reads them straight from `base` now, and this scope is
+    // back to what its header says it is: the surface ladder, plus the ring.
 
     // ── Canvas ────────────────────────────────────────────────────────────────
     bg: HOME_CANVAS,
@@ -93,7 +79,8 @@ function scopeHome(base: (typeof appTheme)['dark']): AppColors {
     sheetBg: HOME_RAISED,
     toastBg: HOME_RAISED,
 
-    // "Learn more" — the secondary CTA next to the white "Get started".
+    // The hero's secondary CTA. That button is gone from Home, but the token
+    // is still part of the shape and other surfaces read it.
     heroSecondaryBg: HOME_RAISED,
 
     // App-type tabs (Web App / Mobile App), the suggestion chips under the
@@ -137,12 +124,16 @@ export type HomeScheme = keyof typeof appTheme;
 export type HomeColors = AppColors;
 
 // ─── Drawer tokens (maps drawer* keys into the shape drawer-menu expects) ─────
-// The dark drawer is pulled onto the same ladder as everything else. Its own
+// The dark drawer sits on the same SURFACE ladder as everything else: its own
 // tokens were a third dark ramp (`drawerPanelBg` #0C0C0C, `drawerScrollBg`
-// #141414, `drawerRowBg` #1C1C1C) with an indigo wash behind every icon, so
-// sliding it open over an achromatic screen swapped in a greyer, violet-tinted
-// panel. Rows now sit on RAISED over a CANVAS panel, same as a card on any
-// other screen, and the icon badge is a neutral wash instead of a tint.
+// #141414, `drawerRowBg` #1C1C1C), so sliding it open swapped in a greyer
+// panel. Rows sit on RAISED over a CANVAS panel now, same as a card anywhere.
+//
+// The two CHROMATIC bits go the other way. The icon badge and the accent line
+// were forced to neutral white washes during the achromatic pass; the drawer
+// opens over Home as often as anywhere, and a grey-on-grey panel over a
+// branded screen read as a different app. Both take the palette's accent
+// again — which is the ramp now, not the indigo that pass was reacting to.
 const buildDrawerTheme = (scheme: 'dark' | 'light') => {
   const t = appTheme[scheme];
   const dark = scheme === 'dark';
@@ -153,12 +144,12 @@ const buildDrawerTheme = (scheme: 'dark' | 'light') => {
     scrollBg: dark ? SURFACE_CANVAS : t.drawerScrollBg,
     rowBg: dark ? SURFACE_RAISED : t.drawerRowBg,
     rowBorder: t.drawerRowBorder,
-    iconWrapBg: dark ? 'rgba(255,255,255,0.07)' : t.drawerIconWrap,
+    iconWrapBg: t.drawerIconWrap,
     labelColor: t.drawerLabel,
     dimColor: t.drawerDim,
     wordmarkColor: t.drawerWordmark,
     shimmerMid: t.drawerShimmer,
-    accentLine: dark ? 'rgba(255,255,255,0.14)' : t.drawerAccentLine,
+    accentLine: t.drawerAccentLine,
     bottomBg: dark ? SURFACE_CANVAS : t.drawerBottomBg,
     bottomText: t.drawerBottomText,
     bottomBorder: t.drawerBottomBorder,

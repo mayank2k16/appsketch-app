@@ -18,7 +18,7 @@ import type { ComponentProps } from 'react';
 
 import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { BRAND_MID, useAppTheme, type AppColors } from '@/lib/theme';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -211,7 +211,9 @@ export function AboutUsScreen() {
               <Text style={[st.infoBadgeText, { color: t.text }]}>50K+ Websites Generated</Text>
             </View>
             <View style={[st.infoBadge, { backgroundColor: t.card, borderColor: t.border }]}>
-              <View style={[st.badgeDot, { backgroundColor: '#3B82F6' }]} />
+              {/* Ramp, not the old blue. The dot beside it is the green
+                  "live" marker and stays semantic; this one is decoration. */}
+              <View style={[st.badgeDot, { backgroundColor: BRAND_MID }]} />
               <Text style={[st.infoBadgeText, { color: t.text }]}>550K+ AI-Generated Pages & Sections</Text>
             </View>
           </View>

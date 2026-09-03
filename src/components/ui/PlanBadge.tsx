@@ -2,7 +2,8 @@
  * PlanBadge — subscription-tier pill for headers.
  *
  * Free renders nothing. The three paid tiers step up in "glow" as they go:
- * `Basic` is a plain tinted outline (no gradient, no motion), `Growth` (and
+ * `Basic` is a plain tinted outline on the brand ramp's warm end (no gradient,
+ * no motion), `Growth` (and
  * any other paid tier) gets the full logo gradient
  * (`#3B82F6 → #8B5CF6 → #EC4899 → #F97316`, lifted straight from
  * `assets/logo.png`'s icon outline), and `100X` gets an enhanced version of
@@ -17,7 +18,12 @@ import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { F } from '@/lib/fonts';
+import { BRAND_RAMP } from '@/lib/theme';
 
+// Stays as it is: this is the LOGO's gradient, read off `assets/logo.png`, not
+// the brand ramp — and the asset has not changed. It already ends on the ramp's
+// own three hues, so the two read as the same family with the logo's blue as
+// its extra stop.
 const LOGO_GRADIENT = ['#3B82F6', '#8B5CF6', '#EC4899', '#F97316'] as const;
 
 type BadgeLevel = 'basic' | 'standard' | 'max';
@@ -123,14 +129,17 @@ const st = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: 'rgba(59,130,246,0.12)',
+    // The ramp's warm end, not the old blue. Basic is the quiet tier — one
+    // hue and no gradient — so it takes the stop the gradient tiers START on,
+    // which puts it at the bottom of the same run rather than off it.
+    backgroundColor: 'rgba(249,115,22,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.35)',
+    borderColor: 'rgba(249,115,22,0.35)',
   },
   basicLabel: {
     fontFamily: F.sans700,
     fontSize: 10,
-    color: '#3B82F6',
+    color: BRAND_RAMP[0],
     letterSpacing: 0.4,
   },
   pill: {

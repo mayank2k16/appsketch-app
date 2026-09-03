@@ -31,7 +31,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
-import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
+import { useTabBarClearance } from '@/components/bottom-tabs/useTabBarHeight';
 import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -43,8 +43,10 @@ export function AgentScreen() {
   // See BrandScope.ts for why the split exists.
   const t = useBrandedCoderTheme(colorScheme);
   // The tab bar floats over the scene, so the composer has to sit above it
-  // rather than behind it — see useTabBarHeight.
-  const tabBarH = useTabBarHeight();
+  // rather than behind it. Clearance, not the bare height: the composer ENDS
+  // here, and at exactly the bar's height its lit border and the bar's touch
+  // along a line, with the bar's rounded corners cutting into the composer's.
+  const tabBarH = useTabBarClearance();
 
   const router = useRouter();
 

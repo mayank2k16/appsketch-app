@@ -3,6 +3,7 @@
  * Theme-aware: colours come from sheetTheme[scheme] so the controls flip
  * dark/light with the app, while layout stays in the StyleSheets below.
  */
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -16,6 +17,7 @@ import {
 } from 'react-native';
 
 import { F } from '@/lib/fonts';
+import { brandGradient } from '@/lib/theme';
 
 import { sheetTheme } from './AuthTheme';
 
@@ -117,13 +119,27 @@ const otpSt = StyleSheet.create({
 });
 
 // ─── CTA button ───────────────────────────────────────────────────────────────
+// The sheet's one primary action ("Continue", "Verify"). It carried a flat
+// `ctaBg` — white in dark mode — which made the last step of signing in the
+// one screen in the app with no brand on it at all. Gradient-filled now, to
+// match the "Continue with Phone" button on the login screen behind it.
+//
+// The gradient is a child on `absoluteFill` rather than a background because
+// RN has no gradient `backgroundColor`; `overflow: hidden` on the button is
+// what clips it to the pill radius. Label and spinner are forced white —
+// `ctaText` is near-black, sized for the white fill this replaces.
 export function CtaButton({ label, onPress, loading }: { label: string; onPress: () => void; loading?: boolean }) {
-  const c = useSheetColors();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={[cta.btn, { backgroundColor: c.ctaBg }]}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={cta.btn}>
+      <LinearGradient
+        colors={brandGradient()}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       {loading
-        ? <ActivityIndicator color={c.ctaText} size="small" />
-        : <Text style={[cta.label, { color: c.ctaText }]}>{label}</Text>}
+        ? <ActivityIndicator color="#FFFFFF" size="small" />
+        : <Text style={[cta.label, { color: '#FFFFFF' }]}>{label}</Text>}
     </TouchableOpacity>
   );
 }
@@ -152,6 +168,9 @@ const cta = StyleSheet.create({
     borderRadius: 50,
     paddingVertical: 15,
     alignItems: 'center', justifyContent: 'center',
+    // Clips the gradient layer to the pill; without it the LinearGradient
+    // paints the button's full square bounding box and the radius is lost.
+    overflow: 'hidden',
   },
   label:      { fontSize: 15, fontFamily: F.sans800, letterSpacing: 0.4 },
   ghost: {

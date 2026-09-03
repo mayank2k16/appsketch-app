@@ -28,3 +28,18 @@ export function useTabBarHeight(): number {
   const insets = useSafeAreaInsets();
   return TAB_BAR_CONTENT_H + Math.max(insets.bottom, 10);
 }
+
+/**
+ * The bar's height plus breathing room, for content that ENDS right at the
+ * bar rather than scrolling past it — the Agent composer being the case that
+ * showed why the plain height is not enough.
+ *
+ * Clearing the bar exactly puts the composer's own lit border in direct
+ * contact with the bar's, two 1px gradient strokes touching along a line, and
+ * the bar's rounded top corners then cut visibly into the composer's bottom
+ * ones. Scrolling content does not have this problem: its last item passing
+ * under the bar is expected.
+ */
+export function useTabBarClearance(): number {
+  return useTabBarHeight() + 14;
+}

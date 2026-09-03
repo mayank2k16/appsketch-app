@@ -40,8 +40,8 @@ export const appTheme = {
     text: '#F6F7FA',
     textSub: 'rgba(255,255,255,0.55)',
     textMuted: 'rgba(255,255,255,0.30)',
-    accent: '#6C5CE7', // electric indigo
-    accentSoft: 'rgba(108,92,231,0.15)',
+    accent: BRAND_RAMP[1], // brand magenta, the ramp's midpoint
+    accentSoft: 'rgba(236,72,153,0.15)',
     /** What sits ON an `accent` fill — button labels, icons, spinners.
      * These call sites used to hardcode '#FFFFFF', which silently assumed the
      * accent would always be dark enough to carry white. It isn't: the
@@ -59,7 +59,7 @@ export const appTheme = {
     toastSuccess: '#3DDC84',
     toastError: '#FF5C5C',
     toastWarning: '#FFC24B',
-    toastInfo: '#6C5CE7',
+    toastInfo: BRAND_RAMP[1],
 
     // ── Header ────────────────────────────────────────────────────────────────
     headerBg: 'rgba(10,10,12,0.96)',
@@ -67,10 +67,10 @@ export const appTheme = {
 
     // ── Hero dot background (twinkling grid) ──────────────────────────────────
     dotColor: '#36454f', // opacity animated
-    glowColor: 'rgba(108,92,231,0.14)',
-    pulseRing: 'rgba(108,92,231,0.40)',
-    tagBorder: 'rgba(108,92,231,0.55)',
-    tagText: '#6C5CE7',
+    glowColor: 'rgba(236,72,153,0.14)',
+    pulseRing: 'rgba(236,72,153,0.40)',
+    tagBorder: 'rgba(236,72,153,0.55)',
+    tagText: BRAND_RAMP[1],
 
     // ── Home CTAs (video: white primary + dark secondary) ─────────────────────
     heroCtaBg: '#FFFFFF',
@@ -142,19 +142,19 @@ export const appTheme = {
     drawerScrollBg: '#141414',
     drawerRowBg: '#1C1C1C',
     drawerRowBorder: 'transparent',
-    drawerIconWrap: 'rgba(108,92,231,0.14)',
+    drawerIconWrap: 'rgba(236,72,153,0.14)',
     drawerLabel: '#FFFFFF',
     drawerDim: 'rgba(255,255,255,0.45)',
     drawerWordmark: '#FFFFFF',
     drawerShimmer: 'rgba(255,255,255,0.45)',
-    drawerAccentLine: '#6C5CE7',
+    drawerAccentLine: BRAND_RAMP[1],
     drawerBottomBg: '#0C0C0C',
     drawerBottomText: 'rgba(255,255,255,0.28)',
     drawerBottomBorder: 'rgba(255,255,255,0.07)',
     drawerCloseIconBg: 'rgba(255,255,255,0.08)',
     drawerCloseIconBorder: 'rgba(255,255,255,0.12)',
     drawerCloseIconText: 'rgba(255,255,255,0.45)',
-    drawerShadow: '#6C5CE7',
+    drawerShadow: BRAND_RAMP[1],
 
     // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
     tabBarBg: '#0A0A0C', // bar background behind the tabs
@@ -167,13 +167,23 @@ export const appTheme = {
     tabLabelGradient: ['#F97316', '#EC4899', '#8B5CF6', '#A78BFA'],
     tabIconInactive: 'rgba(255,255,255,0.50)',
     tabLabelInactive: 'rgba(255,255,255,0.45)',
+    /** The ACTIVE tab's label. White, not the ramp: the icon above it already
+     *  carries the gradient, and at 11px the ramp's stops sit close enough
+     *  together that gradient type just reads as a muddier word than its
+     *  neighbours. Contrast against `tabLabelInactive` is what marks the tab,
+     *  colour is the icon's job. */
+    tabLabelActive: '#FFFFFF',
 
     // ── Agent screen (CipherField + PromptBar) ────────────────────────────────
     // Backdrop fill uses the shared `bg` token (not a separate one) so the
     // Agent section sits seamlessly between Home's other sections (Hero,
     // Gallery) with zero colour seam when scrolled together.
-    agentGlowOrange: '#FF6A33',
-    agentGlowBlue: '#4C8BFF',
+    // The two glows are the ramp's two ENDS, warm and cool — which is what the
+    // token names have always described, just in the pre-ramp palette's hues.
+    // (`agentGlowBlue` briefly took the ramp's orange, which collapsed both
+    // glows onto one colour and lost the field's depth entirely.)
+    agentGlowOrange: BRAND_RAMP[0],
+    agentGlowBlue: BRAND_RAMP[2],
     agentInputBg: 'rgba(20,20,24,0.92)',
     agentInputBorder: 'rgba(255,255,255,0.10)',
     agentInputText: '#FFFFFF',
@@ -181,7 +191,7 @@ export const appTheme = {
     agentBtnBg: 'rgba(255,255,255,0.07)',
     agentBtnBorder: 'rgba(255,255,255,0.12)',
     agentBtnIcon: 'rgba(255,255,255,0.75)',
-    agentSendGradient: ['#3B82F6', '#8B5CF6'], // blue → purple, matches reference
+    agentSendGradient: [BRAND_RAMP[0], BRAND_RAMP[2]], // ramp ends: warm → cool
 
     // Prompt card border ring (rotating LinearGradient, see AgentV2) + the
     // glass tint behind its BlurView. Tint deliberately matches `bg` at
@@ -196,7 +206,7 @@ export const appTheme = {
     agentTabBorder: 'rgba(255,255,255,0.10)',
     agentTabText: 'rgba(255,255,255,0.65)',
     agentTabIcon: 'rgba(255,255,255,0.65)',
-    agentTabActiveBg: '#6C5CE7',
+    agentTabActiveBg: BRAND_RAMP[1],
     agentTabActiveText: '#FFFFFF',
 
     // ── Marketplace — AI Templates screen ──────────────────────────────────────
@@ -206,7 +216,7 @@ export const appTheme = {
     templatesChipBg: 'rgba(255,255,255,0.05)',
     templatesChipBorder: 'rgba(255,255,255,0.10)',
     templatesChipText: 'rgba(255,255,255,0.65)',
-    templatesTagBg: 'rgba(108,92,231,0.22)',
+    templatesTagBg: 'rgba(236,72,153,0.22)',
     templatesTagText: '#B4A9F5',
     templatesSkeletonBase: 'rgba(255,255,255,0.08)',
     templatesSkeletonHighlight: 'rgba(255,255,255,0.16)',
@@ -220,7 +230,7 @@ export const appTheme = {
     studioCardTopEdge: 'rgba(255,255,255,0.16)',
     studioCardLogoBg: 'rgba(255,255,255,0.06)',
     studioRailBg: 'rgba(255,255,255,0.04)',
-    studioRailActiveBg: 'rgba(108,92,231,0.18)',
+    studioRailActiveBg: 'rgba(236,72,153,0.18)',
 
     // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
     // ACHROMATIC, and deliberately the same three depths as the web workspace
@@ -343,8 +353,8 @@ export const appTheme = {
     text: '#111111',
     textSub: 'rgba(17,17,17,0.55)',
     textMuted: 'rgba(17,17,17,0.35)',
-    accent: '#6C5CE7',
-    accentSoft: 'rgba(108,92,231,0.10)',
+    accent: BRAND_RAMP[1],
+    accentSoft: 'rgba(236,72,153,0.10)',
     accentOn: '#FFFFFF',
     border: 'rgba(17,17,17,0.09)',
     statusBar: 'dark-content' as const,
@@ -357,7 +367,7 @@ export const appTheme = {
     toastSuccess: '#1FA971',
     toastError: '#E0392B',
     toastWarning: '#C9860A',
-    toastInfo: '#6C5CE7',
+    toastInfo: BRAND_RAMP[1],
 
     // ── Header ────────────────────────────────────────────────────────────────
     headerBg: 'rgba(247,247,249,0.96)',
@@ -365,10 +375,10 @@ export const appTheme = {
 
     // ── Hero dot background (twinkling grid) ──────────────────────────────────
     dotColor: '#11121A', // dark dot; opacity animated
-    glowColor: 'rgba(108,92,231,0.10)',
-    pulseRing: 'rgba(108,92,231,0.30)',
-    tagBorder: 'rgba(108,92,231,0.40)',
-    tagText: '#6C5CE7',
+    glowColor: 'rgba(236,72,153,0.10)',
+    pulseRing: 'rgba(236,72,153,0.30)',
+    tagBorder: 'rgba(236,72,153,0.40)',
+    tagText: BRAND_RAMP[1],
 
     // ── Home CTAs (video look, inverted for light bg) ─────────────────────────
     heroCtaBg: '#0A0A0A',
@@ -438,12 +448,12 @@ export const appTheme = {
     drawerScrollBg: '#F4F4F6',
     drawerRowBg: '#FFFFFF',
     drawerRowBorder: 'rgba(17,17,17,0.07)',
-    drawerIconWrap: 'rgba(108,92,231,0.09)',
+    drawerIconWrap: 'rgba(236,72,153,0.09)',
     drawerLabel: '#111111',
     drawerDim: 'rgba(17,17,17,0.45)',
     drawerWordmark: '#111111',
     drawerShimmer: 'rgba(17,17,17,0.12)',
-    drawerAccentLine: '#6C5CE7',
+    drawerAccentLine: BRAND_RAMP[1],
     drawerBottomBg: '#FFFFFF',
     drawerBottomText: 'rgba(17,17,17,0.30)',
     drawerBottomBorder: 'rgba(17,17,17,0.09)',
@@ -457,10 +467,12 @@ export const appTheme = {
     tabLabelGradient: ['#F97316', '#EC4899', '#8B5CF6', '#A78BFA'],
     tabIconInactive: 'rgba(17,17,17,0.42)',
     tabLabelInactive: 'rgba(17,17,17,0.45)',
+    tabLabelActive: '#111111',
 
     // ── Agent screen (CipherField + PromptBar) ────────────────────────────────
-    agentGlowOrange: '#FF6A33',
-    agentGlowBlue: '#4C8BFF',
+    // Same pair as dark — see the note there.
+    agentGlowOrange: BRAND_RAMP[0],
+    agentGlowBlue: BRAND_RAMP[2],
     agentInputBg: '#FFFFFF',
     agentInputBorder: 'rgba(17,17,17,0.10)',
     agentInputText: '#111111',
@@ -468,7 +480,7 @@ export const appTheme = {
     agentBtnBg: 'rgba(17,17,17,0.05)',
     agentBtnBorder: 'rgba(17,17,17,0.10)',
     agentBtnIcon: 'rgba(17,17,17,0.62)',
-    agentSendGradient: ['#3B82F6', '#8B5CF6'],
+    agentSendGradient: [BRAND_RAMP[0], BRAND_RAMP[2]],
 
     // Prompt card border ring + glass tint — see dark block above for why
     // the tint needs to be near-opaque rather than a lighter glass alpha.
@@ -480,15 +492,15 @@ export const appTheme = {
     agentTabBorder: 'rgba(17,17,17,0.09)',
     agentTabText: 'rgba(17,17,17,0.60)',
     agentTabIcon: 'rgba(17,17,17,0.60)',
-    agentTabActiveBg: '#6C5CE7',
+    agentTabActiveBg: BRAND_RAMP[1],
     agentTabActiveText: 'rgba(17,17,17,1)',
 
     // ── Marketplace — AI Templates screen ──────────────────────────────────────
     templatesChipBg: 'rgba(17,17,17,0.04)',
     templatesChipBorder: 'rgba(17,17,17,0.09)',
     templatesChipText: 'rgba(17,17,17,0.60)',
-    templatesTagBg: 'rgba(108,92,231,0.12)',
-    templatesTagText: '#6C5CE7',
+    templatesTagBg: 'rgba(236,72,153,0.12)',
+    templatesTagText: BRAND_RAMP[1],
     templatesSkeletonBase: 'rgba(17,17,17,0.06)',
     templatesSkeletonHighlight: 'rgba(17,17,17,0.11)',
 
@@ -500,7 +512,7 @@ export const appTheme = {
     studioCardTopEdge: 'rgba(255,255,255,0.9)',
     studioCardLogoBg: 'rgba(17,17,17,0.05)',
     studioRailBg: 'rgba(17,17,17,0.04)',
-    studioRailActiveBg: 'rgba(108,92,231,0.12)',
+    studioRailActiveBg: 'rgba(236,72,153,0.12)',
 
     // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
     codeEditorTabBarBg: '#F7F7F9',
@@ -607,7 +619,7 @@ export const appTheme = {
 export type AppScheme = keyof typeof appTheme;
 
 /** Colour values are values, not discriminants. Inferred literally, `accent`
- * has the type `'#6C5CE7'` rather than `string`, so nothing may ever hand a
+ * has the type `'#EC4899'` rather than `string`, so nothing may ever hand a
  * component a palette with a different accent — which is exactly what the
  * coder screens need to do (see CoderTheme.ts). Widen the leaves, keep the
  * shape. */

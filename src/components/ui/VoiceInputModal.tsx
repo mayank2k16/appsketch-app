@@ -29,10 +29,14 @@ import Svg, {
 } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
-import type { AppColors } from '@/lib/theme';
+import { BRAND_RAMP, type AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 const AnimatedPath = Reanimated.createAnimatedComponent(Path);
+
+// `Stop` takes a colour string, not a palette token, so the ramp is destructured
+// once here rather than indexed at six call sites below.
+const [ORANGE, MAGENTA, VIOLET] = BRAND_RAMP;
 
 const WAVE_H = 104;
 const STEPS = 72;
@@ -121,20 +125,26 @@ function Waveform({
   return (
     <Svg width={width} height={WAVE_H}>
       <Defs>
+        {/* Three layers, all on the brand ramp and all running warm→cool, so
+            the stack reads as one gradient in depth rather than three. The
+            back layer is the ramp itself; `waveMid` is the same three hues
+            lightened, which is what keeps it legible where it overlaps the
+            back layer at 0.6 opacity. Was cyan→blue→pink, the one place in
+            the app still on the pre-ramp palette. */}
         <SvgGradient id="waveBack" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor="#22D3EE" />
-          <Stop offset="0.45" stopColor="#3B82F6" />
-          <Stop offset="1" stopColor="#EC4899" />
+          <Stop offset="0" stopColor={ORANGE} />
+          <Stop offset="0.5" stopColor={MAGENTA} />
+          <Stop offset="1" stopColor={VIOLET} />
         </SvgGradient>
         <SvgGradient id="waveMid" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor="#60A5FA" />
-          <Stop offset="0.5" stopColor="#A78BFA" />
-          <Stop offset="1" stopColor="#F472B6" />
+          <Stop offset="0" stopColor="#FDBA74" />
+          <Stop offset="0.5" stopColor="#F472B6" />
+          <Stop offset="1" stopColor="#A78BFA" />
         </SvgGradient>
         <SvgGradient id="waveLine" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor="#22D3EE" stopOpacity="0.35" />
+          <Stop offset="0" stopColor={ORANGE} stopOpacity="0.35" />
           <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.95" />
-          <Stop offset="1" stopColor="#EC4899" stopOpacity="0.35" />
+          <Stop offset="1" stopColor={VIOLET} stopOpacity="0.35" />
         </SvgGradient>
       </Defs>
 
