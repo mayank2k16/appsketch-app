@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -17,16 +18,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-const HEADER_LOGO = require('../../assets/logo.png');
 
 import { Text } from '@/components/ui';
+import {
+  type DrawerColors,
+  drawerTheme,
+} from '@/containers/Home/theme/HomeTheme';
 import { signOut, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { drawerTheme, type DrawerColors } from '@/containers/Home/theme/HomeTheme';
-import { useSelectedTheme } from '@/lib/hooks/use-selected-theme';
 import { useVendorFilter } from '@/lib/store/vendor-filter-store';
+
+const HEADER_LOGO = require('../../assets/logo.png');
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DRAWER_W = Math.min(SCREEN_W * 0.72, 290);
@@ -185,7 +187,7 @@ function DrawerRow({
       style={[st.row, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder }]}
     >
       <View style={[st.iconWrap, { backgroundColor: dt.iconWrapBg }]}>
-        <Ionicons name={icon} size={16} color={iconColor ?? ACCENT} />
+        <Ionicons name={icon} size={16} color={iconColor ?? dt.iconColor} />
       </View>
       <Text style={[st.rowLabel, { color: labelColor ?? dt.labelColor }]}>
         {label}
@@ -301,7 +303,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       message:
         'Check out Appsketch — write anything and it compiles your dream interface in real-time. https://appsketch.ai',
       url: 'https://appsketch.ai',
-    }).catch(() => { });
+    }).catch(() => {});
   }
 
   return (

@@ -26,12 +26,13 @@
  * painted ON, not the paint.
  */
 import {
+  type AppColors,
   appTheme,
+  BRAND_MID,
   BRAND_RAMP,
   brandGradient,
   SURFACE_CANVAS,
   SURFACE_RAISED,
-  type AppColors,
 } from '@/lib/theme';
 
 // The same pair the achromatic screens use (see CoderTheme), imported rather
@@ -145,6 +146,13 @@ const buildDrawerTheme = (scheme: 'dark' | 'light') => {
     rowBg: dark ? SURFACE_RAISED : t.drawerRowBg,
     rowBorder: t.drawerRowBorder,
     iconWrapBg: t.drawerIconWrap,
+    // The glyph inside that badge. It used to fall back to the file's own
+    // `ACCENT` — a mid grey chosen to stay legible in BOTH schemes from a
+    // single StyleSheet value — which left a grey icon on a magenta wash
+    // reading as washed out. The ramp's midpoint clears that bar the same
+    // way: vivid on the dark panel and still legible on the light one, so
+    // it can be one value without going grey to get there.
+    iconColor: BRAND_MID,
     labelColor: t.drawerLabel,
     dimColor: t.drawerDim,
     wordmarkColor: t.drawerWordmark,

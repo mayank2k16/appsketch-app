@@ -142,7 +142,9 @@ export const appTheme = {
     drawerScrollBg: '#141414',
     drawerRowBg: '#1C1C1C',
     drawerRowBorder: 'transparent',
-    drawerIconWrap: 'rgba(236,72,153,0.14)',
+    // Lifted from 0.14: with a vivid glyph on it the badge has to read as a
+    // container behind that glyph, not as a smudge the glyph sits near.
+    drawerIconWrap: 'rgba(236,72,153,0.20)',
     drawerLabel: '#FFFFFF',
     drawerDim: 'rgba(255,255,255,0.45)',
     drawerWordmark: '#FFFFFF',
@@ -448,7 +450,7 @@ export const appTheme = {
     drawerScrollBg: '#F4F4F6',
     drawerRowBg: '#FFFFFF',
     drawerRowBorder: 'rgba(17,17,17,0.07)',
-    drawerIconWrap: 'rgba(236,72,153,0.09)',
+    drawerIconWrap: 'rgba(236,72,153,0.12)',
     drawerLabel: '#111111',
     drawerDim: 'rgba(17,17,17,0.45)',
     drawerWordmark: '#111111',
