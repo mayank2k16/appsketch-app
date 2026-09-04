@@ -1,3 +1,6 @@
+/* eslint-disable unicorn/filename-case --
+   Pre-existing name, matches the module it tests (CoderTheme.ts); predates
+   the kebab-case rule. */
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -37,10 +40,16 @@ const ACHROMATIC_DIRS = [path.join(SRC, 'containers', 'CodeEditor')];
  * "the same animated border as the tab bar" is a literal requirement, not
  * just a style note.
  *
- * Both run `useBrandedCoderTheme` with the rest of the branded surfaces. */
+ * The DATA tab (`Collections`) is a live database/API browser, not code —
+ * there is no syntax highlighting here for a coloured control to fight, and
+ * it should read like the rest of the app (Home, Studio) rather than like the
+ * editor around it.
+ *
+ * All three run `useBrandedCoderTheme` with the rest of the branded surfaces. */
 const ACHROMATIC_EXCEPT = [
   path.join(SRC, 'containers', 'CodeEditor', 'Chat'),
   path.join(SRC, 'containers', 'CodeEditor', 'Inspector'),
+  path.join(SRC, 'containers', 'CodeEditor', 'Collections'),
 ];
 
 /** The screens that keep the grey ladder but take the ramp on their action

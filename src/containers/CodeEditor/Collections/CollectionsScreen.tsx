@@ -1,3 +1,6 @@
+/* eslint-disable unicorn/filename-case, max-lines-per-function --
+   Pre-existing: predates the kebab-case rule, and the tabs/search/grid/api
+   list for the whole Data screen doesn't split cleanly. */
 import { Ionicons } from '@expo/vector-icons';
 import { type BottomSheetModal } from '@gorhom/bottom-sheet';
 import { FlashList } from '@shopify/flash-list';
@@ -21,7 +24,7 @@ import type {
   CollectionRecord,
 } from '@/api/coder';
 import { getCollections, setApiActive } from '@/api/coder';
-import { type useAppTheme, useCoderTheme } from '@/lib/theme';
+import { type useAppTheme, useBrandedCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
 import { RecordDrawer } from './RecordDrawer';
@@ -142,7 +145,7 @@ function ApiCard({
 
 export function CollectionsScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
+  const t = useBrandedCoderTheme(colorScheme);
   const { params } = useCodeEditor();
   const tenantId = params.tenantId;
 
@@ -293,9 +296,7 @@ export function CollectionsScreen() {
           onPress={load}
           style={[st.refreshBtn, { backgroundColor: t.accent }]}
         >
-          <Text style={{ fontWeight: '700', fontSize: 12.5 }}>
-            Refresh
-          </Text>
+          <Text style={{ fontWeight: '700', fontSize: 12.5 }}>Refresh</Text>
         </TouchableOpacity>
       </View>
     );

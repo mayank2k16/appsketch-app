@@ -1,3 +1,8 @@
+/* eslint-disable unicorn/filename-case, max-lines-per-function --
+   Pre-existing: predates the kebab-case rule, and the sticky-header scroll
+   math plus the grid for the whole screen doesn't split cleanly. */
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -10,22 +15,22 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 import type { TemplateListItem } from '@/api/templates';
 import { useBrowseTemplates, useTemplateCategories } from '@/api/templates';
+import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { F } from '@/lib/fonts';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
-import { useBrandedCoderTheme, type AppColors } from '@/lib/theme';
+import { type AppColors, useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { TemplateCard } from './components/TemplateCard';
 import { TemplateCardSkeleton } from './components/TemplateCardSkeleton';
+import { TwinkleStars } from './components/TwinkleStars';
 
 const ALL = 'all';
 const SKELETON_COUNT = 6;
@@ -36,12 +41,15 @@ export function MarketplaceScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const t = useBrandedCoderTheme(colorScheme);
+  const { width: winW, height: winH } = useWindowDimensions();
   // The tab bar floats over the scene, so the grid has to end above it rather
   // than behind it — see useTabBarHeight.
   const tabBarH = useTabBarHeight();
   const isDark = colorScheme === 'dark';
 
-  const [activeCategory, setActiveCategory] = React.useState<string | number>(ALL);
+  const [activeCategory, setActiveCategory] = React.useState<string | number>(
+    ALL
+  );
   const [searchInput, setSearchInput] = React.useState('');
   const search = useDebouncedValue(searchInput, 400);
 
@@ -53,11 +61,16 @@ export function MarketplaceScreen() {
     search: search || undefined,
   });
   const pages = templatesQuery.data?.pages ?? [];
-  const templates = React.useMemo(() => pages.flatMap((p) => p.results), [pages]);
+  const templates = React.useMemo(
+    () => pages.flatMap((p) => p.results),
+    [pages]
+  );
   const count = pages[0]?.count ?? 0;
 
   const activeCategoryName =
-    activeCategory === ALL ? 'All templates' : categories.find((c) => c.id === activeCategory)?.name || 'Templates';
+    activeCategory === ALL
+      ? 'All templates'
+      : categories.find((c) => c.id === activeCategory)?.name || 'Templates';
 
   // Headings scroll away normally; the search/pills/result-row group is an
   // absolutely-positioned overlay that rides up with the headings until they
@@ -77,7 +90,10 @@ export function MarketplaceScreen() {
   const [stickyGroupHeight, setStickyGroupHeight] = React.useState(150);
 
   const onScroll = React.useMemo(
-    () => Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false }),
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: false,
+      }),
     [scrollY]
   );
 
@@ -115,7 +131,11 @@ export function MarketplaceScreen() {
   const contentOpacity = React.useRef(new Animated.Value(0)).current;
   React.useEffect(() => {
     if (!templatesQuery.isLoading) {
-      Animated.timing(contentOpacity, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
     }
   }, [templatesQuery.isLoading, contentOpacity]);
 
@@ -155,9 +175,15 @@ export function MarketplaceScreen() {
           {/* Was the old brand indigo typed straight into the style, where no
               palette swap could reach it. On the token now, so it follows the
               ramp with everything else. */}
-          <Text style={[s.eyebrow, { color: t.tagText }]}>AI template library</Text>
-          <Text style={[s.heading, { color: t.text }]}>Make any template yours with ease</Text>
-          <Text style={[s.subtitle, { color: t.textSub }]}>Start from a template and let AI make it yours.</Text>
+          <Text style={[s.eyebrow, { color: t.tagText }]}>
+            AI template library
+          </Text>
+          <Text style={[s.heading, { color: t.text }]}>
+            Make any template yours with ease
+          </Text>
+          <Text style={[s.subtitle, { color: t.textSub }]}>
+            Start from a template and let AI make it yours.
+          </Text>
         </View>
       </View>
       <View style={{ height: stickyGroupHeight + 5 }} />
@@ -178,15 +204,21 @@ export function MarketplaceScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: t.bg }]}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={t.statusBar}
+      />
 
-      {/* Fixed ambient wash the glass cards blur through as the grid scrolls
-          past it — same concentric-circle blur stand-in AgentV2 uses (RN has
-          no shape-blur primitive), reusing the same gradient family. */}
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <View style={[s.blob, { top: 60, left: -70, backgroundColor: t.agentSendGradient[0], opacity: isDark ? 0.16 : 0.10 }]} />
-        <View style={[s.blob, { top: 220, right: -80, backgroundColor: t.agentSendGradient[1], opacity: isDark ? 0.14 : 0.09 }]} />
-      </View>
+      {/* A scattered, twinkling starfield the glass cards float over as the
+          grid scrolls — replaces the old pair of blurred brand-colour
+          circles, which read as a plain wash rather than something alive. */}
+      <TwinkleStars
+        width={winW}
+        height={winH}
+        color={t.textMuted}
+        count={isDark ? 110 : 70}
+      />
 
       {/* Headings scroll away; search/pills/result-row are the sticky overlay below. */}
       {templatesQuery.isLoading ? (
@@ -211,13 +243,22 @@ export function MarketplaceScreen() {
             style={{ flex: 1 }}
             ListEmptyComponent={
               <View style={s.center}>
-                <Text style={[s.emptyTitle, { color: t.text }]}>No templates found</Text>
-                <Text style={{ color: t.textSub, fontSize: 12.5, marginTop: 4 }}>Try a different category or search term.</Text>
+                <Text style={[s.emptyTitle, { color: t.text }]}>
+                  No templates found
+                </Text>
+                <Text
+                  style={{ color: t.textSub, fontSize: 12.5, marginTop: 4 }}
+                >
+                  Try a different category or search term.
+                </Text>
               </View>
             }
             onEndReachedThreshold={0.4}
             onEndReached={() => {
-              if (templatesQuery.hasNextPage && !templatesQuery.isFetchingNextPage) {
+              if (
+                templatesQuery.hasNextPage &&
+                !templatesQuery.isFetchingNextPage
+              ) {
                 templatesQuery.fetchNextPage();
               }
             }}
@@ -235,7 +276,10 @@ export function MarketplaceScreen() {
       {/* Permanently masks the safe-area margin above the sticky bar — once
           scrolled far enough, grid rows reach that strip and would otherwise
           show through it, since the FlatList spans the full screen behind it. */}
-      <View pointerEvents="none" style={[s.topMask, { height: HEADER_TOP, backgroundColor: t.bg }]} />
+      <View
+        pointerEvents="none"
+        style={[s.topMask, { height: HEADER_TOP, backgroundColor: t.bg }]}
+      />
 
       <Animated.View
         onLayout={handleStickyLayout}
@@ -250,7 +294,12 @@ export function MarketplaceScreen() {
           },
         ]}
       >
-        <View style={[s.searchWrap, { backgroundColor: t.card, borderColor: t.border }]}>
+        <View
+          style={[
+            s.searchWrap,
+            { backgroundColor: t.card, borderColor: t.border },
+          ]}
+        >
           <Ionicons name="search" size={16} color={t.textMuted} />
           <TextInput
             value={searchInput}
@@ -262,8 +311,18 @@ export function MarketplaceScreen() {
           />
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll} contentContainerStyle={s.chipScrollContent}>
-          <CategoryChip label="All templates" active={activeCategory === ALL} t={t} onPress={() => setActiveCategory(ALL)} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={s.chipScroll}
+          contentContainerStyle={s.chipScrollContent}
+        >
+          <CategoryChip
+            label="All templates"
+            active={activeCategory === ALL}
+            t={t}
+            onPress={() => setActiveCategory(ALL)}
+          />
           {categories.map((cat) => (
             <CategoryChip
               key={cat.id}
@@ -276,11 +335,21 @@ export function MarketplaceScreen() {
         </ScrollView>
 
         <View style={s.resultRow}>
-          <Text style={[s.resultName, { color: t.text }]}>{activeCategoryName}</Text>
+          <Text style={[s.resultName, { color: t.text }]}>
+            {activeCategoryName}
+          </Text>
           {!templatesQuery.isLoading && (
             <View style={s.resultCountRow}>
-              {templatesQuery.isFetching && <ActivityIndicator size="small" color={t.textMuted} style={{ marginRight: 6 }} />}
-              <Text style={[s.resultCount, { color: t.textMuted }]}>{count} templates</Text>
+              {templatesQuery.isFetching && (
+                <ActivityIndicator
+                  size="small"
+                  color={t.textMuted}
+                  style={{ marginRight: 6 }}
+                />
+              )}
+              <Text style={[s.resultCount, { color: t.textMuted }]}>
+                {count} templates
+              </Text>
             </View>
           )}
         </View>
@@ -306,21 +375,47 @@ function CategoryChip({
       activeOpacity={0.8}
       style={[
         s.chip,
-        { backgroundColor: t.templatesChipBg, borderColor: t.templatesChipBorder },
+        {
+          backgroundColor: t.templatesChipBg,
+          borderColor: t.templatesChipBorder,
+        },
         active && { backgroundColor: t.accent, borderColor: t.accent },
       ]}
     >
-      <Text style={[s.chipLabel, { color: active ? t.accentOn : t.templatesChipText }]}>{label}</Text>
+      <Text
+        style={[
+          s.chipLabel,
+          { color: active ? t.accentOn : t.templatesChipText },
+        ]}
+      >
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  blob: { position: 'absolute', width: 220, height: 220, borderRadius: 110 },
-  header: { paddingHorizontal: 10, paddingTop: 18, marginBottom: 16, width: '90%' },
-  eyebrow: { fontFamily: F.sans700, fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 },
-  heading: { fontFamily: F.display900, fontSize: 22, letterSpacing: -0.4, lineHeight: 27, marginBottom: 6 },
+  header: {
+    paddingHorizontal: 10,
+    paddingTop: 18,
+    marginBottom: 16,
+    width: '90%',
+  },
+  eyebrow: {
+    fontFamily: F.sans700,
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  heading: {
+    fontFamily: F.display900,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    lineHeight: 27,
+    marginBottom: 6,
+  },
   subtitle: { fontFamily: F.sans400, fontSize: 13, lineHeight: 19 },
   searchWrap: {
     flexDirection: 'row',
@@ -333,10 +428,20 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
   },
-  searchInput: { flex: 1, fontFamily: F.sans400, fontSize: 13.5, height: '100%' },
+  searchInput: {
+    flex: 1,
+    fontFamily: F.sans400,
+    fontSize: 13.5,
+    height: '100%',
+  },
   chipScroll: { flexGrow: 0, marginBottom: 14 },
   chipScrollContent: { paddingHorizontal: 16, gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
   chipLabel: { fontFamily: F.sans600, fontSize: 12.5 },
   resultRow: {
     flexDirection: 'row',
@@ -352,7 +457,12 @@ const s = StyleSheet.create({
   // them never shifts card position/spacing. The 5px top gap that used to
   // live here is now baked into the ListHeaderComponent spacer instead.
   gridContent: { paddingHorizontal: 6, paddingBottom: 14 },
-  center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
   emptyTitle: { fontFamily: F.sans700, fontSize: 15 },
   topMask: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9 },
   stickyOverlay: {

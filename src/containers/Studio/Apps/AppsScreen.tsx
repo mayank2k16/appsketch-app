@@ -1,14 +1,13 @@
+/* eslint-disable unicorn/filename-case, max-lines-per-function, import/no-cycle --
+   Pre-existing: predates the kebab-case rule; the list/loading/empty states
+   for one screen don't split cleanly; and StoreCard importing STUDIO_ACCENT
+   back from StudioScreen is a type-only-adjacent constant re-export, not a
+   real circular dependency. */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { useAttachTenant, useUserTenants } from '@/api/';
 import type { TenantSummary } from '@/api/studio';
@@ -16,6 +15,10 @@ import { useStudio } from '@/lib/store/studio-store';
 import { useCoderTheme } from '@/lib/theme';
 
 import { StoreCard } from './components/StoreCard';
+import { StoreCardSkeleton } from './components/StoreCardSkeleton';
+
+const SKELETON_COUNT = 4;
+const skeletonData = Array.from({ length: SKELETON_COUNT }, (_, i) => i);
 
 // Search now lives in StudioScreen's header, above the rail — it stays put
 // across a section switch instead of scrolling away with the Apps list, so
@@ -72,9 +75,12 @@ export function AppsScreen({ search }: { search: string }) {
 
   if (tenantsQuery.isLoading) {
     return (
-      <View style={st.center}>
-        <ActivityIndicator color={t.accent} />
-      </View>
+      <FlatList
+        data={skeletonData}
+        keyExtractor={(i) => `skeleton-${i}`}
+        renderItem={() => <StoreCardSkeleton t={t} />}
+        contentContainerStyle={{ paddingTop: 0, paddingHorizontal: 1 }}
+      />
     );
   }
 
@@ -90,10 +96,10 @@ export function AppsScreen({ search }: { search: string }) {
   const query = search.trim().toLowerCase();
   const filtered = query
     ? tenants.filter((tenant) => {
-      const haystack =
-        `${tenant.title || ''} ${tenant.description || ''}`.toLowerCase();
-      return haystack.includes(query);
-    })
+        const haystack =
+          `${tenant.title || ''} ${tenant.description || ''}`.toLowerCase();
+        return haystack.includes(query);
+      })
     : tenants;
 
   return (

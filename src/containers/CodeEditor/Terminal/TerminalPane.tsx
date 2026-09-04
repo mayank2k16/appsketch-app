@@ -1,3 +1,6 @@
+/* eslint-disable unicorn/filename-case, max-lines-per-function --
+   Pre-existing: predates the kebab-case rule, and the header/log/composer
+   trio for one shell pane doesn't split cleanly. */
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -10,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCoderTheme } from '@/lib/theme';
 
@@ -59,6 +63,7 @@ const SHELL_STATUS: Record<
 export function TerminalPane() {
   const { colorScheme } = useColorScheme();
   const t = useCoderTheme(colorScheme);
+  const insets = useSafeAreaInsets();
   const { params } = useCodeEditor();
   const { output, phase, connected, send, reconnect } = useTerminalSocket(
     params.tenantId
@@ -157,6 +162,7 @@ export function TerminalPane() {
             {
               borderColor: t.terminalInputBorder,
               backgroundColor: t.terminalInputBg,
+              paddingBottom: 8 + insets.bottom,
             },
           ]}
         >
