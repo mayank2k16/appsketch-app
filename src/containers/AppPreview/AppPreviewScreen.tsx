@@ -173,7 +173,7 @@ export function AppPreviewScreen() {
               })}
               {webStatus === 'loading' && (
                 <View style={[st.center, StyleSheet.absoluteFill, { backgroundColor: t.bg }]} pointerEvents="none">
-                  <ActivityIndicator size="small" color={t.accent} />
+                  <DotsLoader color={t.accent} />
                   <Text style={{ color: t.textSub, marginTop: 8 }}>Loading your app…</Text>
                 </View>
               )}
@@ -203,7 +203,7 @@ export function AppPreviewScreen() {
               />
               {webStatus === 'loading' && !hasLoadedOnce && (
                 <View style={[st.center, StyleSheet.absoluteFill, { backgroundColor: t.bg }]} pointerEvents="none">
-                  <ActivityIndicator size="small" color={t.accent} />
+                  <DotsLoader color={t.accent} />
                   <Text style={{ color: t.textSub, marginTop: 8 }}>Loading your app…</Text>
                 </View>
               )}
@@ -326,6 +326,47 @@ function CreatingState({ t, name }: { t: ReturnType<typeof useAppTheme>; name?: 
   );
 }
 
+/** Three-dot bouncing loader — replaces the plain circular ActivityIndicator
+ * on the "Loading your app…" cover (both the web `<iframe>` and native
+ * WebView first-load states). Each dot's rise-and-fall is staggered off the
+ * one before it, same offset-loop trick as CreatingState's pulse rings. */
+function DotsLoader({ color }: { color: string }) {
+  const anims = React.useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
+
+  React.useEffect(() => {
+    const loops = anims.map((val, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 140),
+          Animated.timing(val, { toValue: 1, duration: 320, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+          Animated.timing(val, { toValue: 0, duration: 320, easing: Easing.in(Easing.ease), useNativeDriver: true }),
+          Animated.delay((anims.length - 1 - i) * 140),
+        ])
+      )
+    );
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [anims]);
+
+  return (
+    <View style={st.dotsRow}>
+      {anims.map((val, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            st.dot,
+            {
+              backgroundColor: color,
+              transform: [{ translateY: val.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }],
+              opacity: val.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 /** Non-blocking loading indicator for in-app navigations after the first
  * load — a full-screen cover here is what made subsequent link taps look
  * frozen, since it sat on top of (and blocked touches into) the WebView. */
@@ -370,6 +411,8 @@ const st = StyleSheet.create({
   errorIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   topBarTrack: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
   topBarFill: { flex: 1 },
+  dotsRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 7, height: 7, borderRadius: 3.5 },
 
   orbWrap: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   pulseRing: { position: 'absolute', width: 72, height: 72, borderRadius: 36, borderWidth: 1.5 },
