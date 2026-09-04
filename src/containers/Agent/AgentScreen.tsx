@@ -11,11 +11,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import {
+  KeyboardAvoidingView,
+  useKeyboardState,
+} from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type AppTypeKey, createCoderTenant } from '@/api/coder';
 import { AuthGateModal } from '@/components/AuthForm/AuthGateModal';
+import { useTabBarClearance } from '@/components/bottom-tabs/useTabBarHeight';
 import { AppTypePills } from '@/components/ui/AppTypePills';
 import {
   PromptComposer,
@@ -31,7 +35,6 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
-import { useTabBarClearance } from '@/components/bottom-tabs/useTabBarHeight';
 import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -47,6 +50,7 @@ export function AgentScreen() {
   // here, and at exactly the bar's height its lit border and the bar's touch
   // along a line, with the bar's rounded corners cutting into the composer's.
   const tabBarH = useTabBarClearance();
+  const { isVisible: keyboardVisible } = useKeyboardState();
 
   const router = useRouter();
 
@@ -234,7 +238,16 @@ export function AgentScreen() {
           <AppTypePills t={t} value={appType} onChange={setAppType} />
         </View>
 
-        <View style={[s.composerWrap, { marginBottom: tabBarH }]}>
+        {/* The tab bar is hidden behind the keyboard, not just covered — its
+            reserved clearance has to disappear with it, or the composer sits
+            with a dead gap under it exactly the height of a bar nobody can
+            see. Same fix as `bottomInset` elsewhere in the code editor. */}
+        <View
+          style={[
+            s.composerWrap,
+            { marginBottom: keyboardVisible ? 0 : tabBarH },
+          ]}
+        >
           <PromptComposer
             t={t}
             value={prompt}

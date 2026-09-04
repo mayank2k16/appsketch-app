@@ -11,7 +11,12 @@ import {
 } from 'react-native';
 
 import { previewUrlForTenant } from '@/api/coder';
-import { brandGradient, type useAppTheme, useCoderTheme } from '@/lib/theme';
+import {
+  BRAND_MID,
+  brandGradient,
+  type useAppTheme,
+  useCoderTheme,
+} from '@/lib/theme';
 
 import { useCodeEditor } from './CodeEditorProvider';
 import { LivePreviewWebView } from './Preview/LivePreviewWebView';
@@ -94,8 +99,10 @@ function DeployButton({
 export function PreviewScreen() {
   const { colorScheme } = useColorScheme();
   const t = useCoderTheme(colorScheme);
-  const { params, threadId, buildLog } = useCodeEditor();
+  const { params, threadId, buildLog, previewMode, setPreviewMode } =
+    useCodeEditor();
   const { status, deploying, startBuild } = buildLog;
+  const editing = previewMode !== null;
 
   const livePreviewUrl = params.tenantUid
     ? previewUrlForTenant(params.tenantUid)
@@ -104,7 +111,34 @@ export function PreviewScreen() {
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
       <View style={[st.header, { borderColor: t.border }]}>
-        <Text style={[st.title, { color: t.text }]}>Preview</Text>
+        <TouchableOpacity
+          onPress={() => setPreviewMode(editing ? null : 'select')}
+          activeOpacity={0.75}
+          style={[
+            st.statusToggle,
+            {
+              backgroundColor: editing ? `${BRAND_MID}1F` : t.codeEditorTabBg,
+              borderColor: editing ? BRAND_MID : t.codeEditorBorder,
+            },
+          ]}
+        >
+          <View
+            style={[
+              st.statusDot,
+              {
+                backgroundColor: editing ? BRAND_MID : t.codeEditorConnectedDot,
+              },
+            ]}
+          />
+          <Text style={[st.title, { color: editing ? BRAND_MID : t.text }]}>
+            {editing ? 'Edit' : 'Preview'}
+          </Text>
+          <Ionicons
+            name={editing ? 'checkmark-circle' : 'create-outline'}
+            size={13}
+            color={editing ? BRAND_MID : t.textSub}
+          />
+        </TouchableOpacity>
         <DeployButton
           deploying={deploying}
           status={status}
@@ -143,6 +177,16 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: { fontSize: 14.5, fontWeight: '700' },
+  statusToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
   center: {
     flex: 1,
     alignItems: 'center',

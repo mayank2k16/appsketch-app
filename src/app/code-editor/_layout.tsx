@@ -27,7 +27,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AppTypeKey } from '@/api/coder';
-import { CodeEditorProvider } from '@/containers/CodeEditor/CodeEditorProvider';
+import {
+  CodeEditorProvider,
+  useCodeEditor,
+} from '@/containers/CodeEditor/CodeEditorProvider';
 import { type AppColors, useAppTheme } from '@/lib/theme';
 
 const { Navigator } = createMaterialTopTabNavigator();
@@ -42,14 +45,14 @@ const MaterialTopTabs = withLayoutContext<
 >(Navigator);
 
 const TAB_ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> =
-{
-  chat: 'chatbubble-ellipses-outline',
-  code: 'code-slash-outline',
-  preview: 'phone-portrait-outline',
-  terminal: 'terminal-outline',
-  data: 'server-outline',
-  changes: 'git-branch-outline',
-};
+  {
+    chat: 'chatbubble-ellipses-outline',
+    code: 'code-slash-outline',
+    preview: 'phone-portrait-outline',
+    terminal: 'terminal-outline',
+    data: 'server-outline',
+    changes: 'git-branch-outline',
+  };
 
 type TabBarProps = {
   state: TabNavigationState<ParamListBase>;
@@ -134,6 +137,29 @@ function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
   );
 }
 
+/** Rendered inside `CodeEditorProvider`, so it's the one that can actually
+ * read `previewMode` back out of it — the layout function below only sets
+ * the provider up, it isn't inside its own context. Swipe is locked while
+ * any Preview edit tool is active: a horizontal drag meant for drawing an
+ * annotation or dragging a selection handle would otherwise also flip the
+ * page to the next tab. */
+function CodeEditorTabs() {
+  const { previewMode } = useCodeEditor();
+  return (
+    <MaterialTopTabs
+      tabBar={(props) => <CodeEditorTabBar {...(props as TabBarProps)} />}
+      screenOptions={{ lazy: true, swipeEnabled: previewMode === null }}
+    >
+      <MaterialTopTabs.Screen name="chat" options={{ title: 'Chat' }} />
+      <MaterialTopTabs.Screen name="code" options={{ title: 'Code' }} />
+      <MaterialTopTabs.Screen name="preview" options={{ title: 'Preview' }} />
+      <MaterialTopTabs.Screen name="terminal" options={{ title: 'Terminal' }} />
+      <MaterialTopTabs.Screen name="data" options={{ title: 'Data' }} />
+      <MaterialTopTabs.Screen name="changes" options={{ title: 'Changes' }} />
+    </MaterialTopTabs>
+  );
+}
+
 export default function CodeEditorLayout() {
   const { tenantId, tenantUid, appType, userPrompt, model, images } =
     useLocalSearchParams<{
@@ -168,20 +194,7 @@ export default function CodeEditorLayout() {
         backgroundColor="transparent"
         barStyle={t.statusBar}
       />
-      <MaterialTopTabs
-        tabBar={(props) => <CodeEditorTabBar {...(props as TabBarProps)} />}
-        screenOptions={{ lazy: true, swipeEnabled: true }}
-      >
-        <MaterialTopTabs.Screen name="chat" options={{ title: 'Chat' }} />
-        <MaterialTopTabs.Screen name="code" options={{ title: 'Code' }} />
-        <MaterialTopTabs.Screen name="preview" options={{ title: 'Preview' }} />
-        <MaterialTopTabs.Screen
-          name="terminal"
-          options={{ title: 'Terminal' }}
-        />
-        <MaterialTopTabs.Screen name="data" options={{ title: 'Data' }} />
-        <MaterialTopTabs.Screen name="changes" options={{ title: 'Changes' }} />
-      </MaterialTopTabs>
+      <CodeEditorTabs />
     </CodeEditorProvider>
   );
 }

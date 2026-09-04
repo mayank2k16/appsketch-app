@@ -22,13 +22,26 @@ const SRC = path.join(__dirname, '..', '..');
  * built. Home is absent for the opposite reason — it was always branded. */
 const ACHROMATIC_DIRS = [path.join(SRC, 'containers', 'CodeEditor')];
 
-/** Carved OUT of the achromatic list above. The editor's CHAT panel is the
- * one part of the workspace that is a conversation rather than code: no
- * syntax highlighting for a coloured control to fight, and the same agent,
- * composer and primary actions the user just used on Home and the Agent tab.
- * Greying it made those look like a different product mid-flow. It runs
- * `useBrandedCoderTheme` with the rest of the branded surfaces. */
-const ACHROMATIC_EXCEPT = [path.join(SRC, 'containers', 'CodeEditor', 'Chat')];
+/** Carved OUT of the achromatic list above.
+ *
+ * The editor's CHAT panel is the one part of the workspace that is a
+ * conversation rather than code: no syntax highlighting for a coloured
+ * control to fight, and the same agent, composer and primary actions the
+ * user just used on Home and the Agent tab. Greying it made those look like
+ * a different product mid-flow.
+ *
+ * The Preview tab's INSPECTOR overlay (the floating select/text/annotate
+ * toolbar and its "editor mode" status) is the same case: it floats over the
+ * user's own rendered site, not over code, and it is meant to read as the
+ * same live control the bottom tab bar and the prompt card already are —
+ * "the same animated border as the tab bar" is a literal requirement, not
+ * just a style note.
+ *
+ * Both run `useBrandedCoderTheme` with the rest of the branded surfaces. */
+const ACHROMATIC_EXCEPT = [
+  path.join(SRC, 'containers', 'CodeEditor', 'Chat'),
+  path.join(SRC, 'containers', 'CodeEditor', 'Inspector'),
+];
 
 /** The screens that keep the grey ladder but take the ramp on their action
  *  surfaces. Listed so the assertions below can hold them to that split

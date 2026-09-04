@@ -15,9 +15,28 @@ export type CodeEditorParams = {
   images?: string[];
 };
 
+/** Which of the Preview tab's direct-edit tools is active, if any. Lives here
+ * — not as local state inside `InspectorOverlay` — because two other
+ * screens need to react to it: the tab layout locks horizontal swipe while
+ * it's non-null (an edit-mode drag shouldn't also flip the page), and
+ * `PreviewScreen`'s header shows it as a Preview/Edit status. */
+export type PreviewEditMode = 'select' | 'text' | 'annotate' | null;
+
 type CodeEditorContextValue = ReturnType<typeof useCoderSocket> & {
   params: CodeEditorParams;
   buildLog: ReturnType<typeof useBuildLog>;
+  previewMode: PreviewEditMode;
+  setPreviewMode: React.Dispatch<React.SetStateAction<PreviewEditMode>>;
+  /** An image (data-URI or remote URL) waiting to be dropped into the Chat
+   * tab's composer as an attachment — set by "Add to chat" on the Preview
+   * tab's annotate tool, consumed and cleared by `ChatPanel`. */
+  pendingChatImage: string | null;
+  setPendingChatImage: (uri: string | null) => void;
+  /** Bumped whenever something wants the Chat composer to grab keyboard
+   * focus (e.g. right after `pendingChatImage` lands) — `ChatPanel` watches
+   * this value change, not its number. */
+  chatFocusToken: number;
+  focusChatComposer: () => void;
 };
 
 const CodeEditorContext = React.createContext<CodeEditorContextValue | null>(
@@ -46,6 +65,16 @@ export function CodeEditorProvider({
   });
   const buildLog = useBuildLog(params.tenantId);
 
+  const [previewMode, setPreviewMode] = React.useState<PreviewEditMode>(null);
+  const [pendingChatImage, setPendingChatImage] = React.useState<string | null>(
+    null
+  );
+  const [chatFocusToken, setChatFocusToken] = React.useState(0);
+  const focusChatComposer = React.useCallback(
+    () => setChatFocusToken((n) => n + 1),
+    []
+  );
+
   // Jump to the Preview tab the moment the agent's own verification says the
   // build is ready and clean — see `previewReady` in `useCoderSocket`. Lives
   // here (above the tab navigator) rather than in the hook because the hook
@@ -66,8 +95,26 @@ export function CodeEditorProvider({
   }, [coder.previewReady, router]);
 
   const value = React.useMemo<CodeEditorContextValue>(
-    () => ({ ...coder, params, buildLog }),
-    [coder, params, buildLog]
+    () => ({
+      ...coder,
+      params,
+      buildLog,
+      previewMode,
+      setPreviewMode,
+      pendingChatImage,
+      setPendingChatImage,
+      chatFocusToken,
+      focusChatComposer,
+    }),
+    [
+      coder,
+      params,
+      buildLog,
+      previewMode,
+      pendingChatImage,
+      chatFocusToken,
+      focusChatComposer,
+    ]
   );
 
   return (

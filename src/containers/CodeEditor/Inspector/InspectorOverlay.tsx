@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
@@ -22,12 +23,22 @@ import {
   visualEditStyle,
   visualEditText,
 } from '@/api/coder';
-import { useCoderTheme } from '@/lib/theme';
+import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
+import { useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
+import type { PreviewEditMode } from '../CodeEditorProvider';
 import { useCodeEditor } from '../CodeEditorProvider';
 
-type InspectorMode = 'select' | 'text' | 'annotate' | null;
+type InspectorMode = PreviewEditMode;
+
+/** Border thickness and one-turn duration for the toolbar's animated ring —
+ * same values as the bottom tab bar (`GlowTabBar`), since the point of this
+ * treatment is that the two read as the same live control. */
+const RING_W = 1;
+const BAR_RADIUS = 20;
+const BAR_SPIN_MS = 8000;
+const RING_STOPS: [number, number, number] = [0, 0.5, 1];
 
 type Selection = {
   tag: string;
@@ -94,10 +105,16 @@ export function InspectorOverlay({
   bridgeMessage: BridgeMessage;
 }) {
   const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
-  const { send } = useCodeEditor();
+  const t = useBrandedCoderTheme(colorScheme);
+  const router = useRouter();
+  const {
+    send,
+    previewMode: mode,
+    setPreviewMode: setMode,
+    setPendingChatImage,
+    focusChatComposer,
+  } = useCodeEditor();
 
-  const [mode, setMode] = React.useState<InspectorMode>(null);
   const [selection, setSelection] = React.useState<Selection | null>(null);
   const [toastMsg, setToastMsg] = React.useState('');
   const [strokes, setStrokes] = React.useState<{ x: number; y: number }[][]>(
@@ -113,8 +130,10 @@ export function InspectorOverlay({
   // keyboard's own height and lift the panel by exactly that much instead.
   const [keyboardHeight, setKeyboardHeight] = React.useState(0);
   React.useEffect(() => {
-    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showEvt =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     const onShow = (e: { endCoordinates: { height: number } }) =>
       setKeyboardHeight(e.endCoordinates.height);
     const onHide = () => setKeyboardHeight(0);
@@ -153,14 +172,30 @@ export function InspectorOverlay({
 
   function setInspectorMode(next: InspectorMode) {
     setMode((prev) => (prev === next ? null : next));
+  }
+
+  // The single place `mode` actually takes effect — fires the same way
+  // whether it changed via a toolbar tap (`setInspectorMode` above) or the
+  // header's Preview/Edit toggle (`PreviewScreen`, driven off the same
+  // `previewMode` context value), so neither path can leave the WebView's
+  // own inspector script or a stale selection out of sync with the other.
+  const prevModeRef = React.useRef<InspectorMode>(mode);
+  React.useEffect(() => {
     setSelection(null);
     setStrokes([]);
     setActiveStroke([]);
-    const scriptMode = next === 'annotate' ? null : next;
+    const scriptMode = mode === 'annotate' ? null : mode;
     runInWebView(
       `window.__cwInspector && window.__cwInspector.setMode(${scriptMode ? `'${scriptMode}'` : 'null'})`
     );
-  }
+    // Only the ON transition gets a toast — the point is telling the user
+    // swipe just locked, not narrating every tap of the toolbar.
+    if (prevModeRef.current === null && mode !== null) {
+      toast.success('Editor mode on — swipe is locked while you edit.');
+    }
+    prevModeRef.current = mode;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   // ── react to messages relayed up from the WebView ───────────────────────
   React.useEffect(() => {
@@ -332,13 +367,17 @@ export function InspectorOverlay({
         format: 'png',
         result: 'data-uri',
       });
-      send(
-        'Here is an annotated screenshot of the preview — please make the marked change.',
-        { images: [uri] }
-      );
-      toast.success('Sent to the agent — check the Chat tab.');
+      // Hands the screenshot to the Chat tab as a pending attachment instead
+      // of sending it straight away — the marks only say WHERE, not what
+      // should change there, so the user still needs to type that part
+      // before this is worth a turn. Used to fire a canned message right
+      // from here with the screen never leaving Preview, so the composer
+      // never actually opened for them to add that context.
+      setPendingChatImage(uri);
       clearStrokes();
       setMode(null);
+      router.navigate('/code-editor/chat');
+      focusChatComposer();
     } catch {
       toast.error("Couldn't capture the screenshot.");
     } finally {
@@ -668,95 +707,92 @@ export function InspectorOverlay({
             </View> */}
 
             <Text style={[st.advancedHint, { color: t.textSub }]}>
-              For gradients, shadows, layout and animation, use the web
-              builder — the desktop editor has the full property panel.
+              For gradients, shadows, layout and animation, use the web builder
+              — the desktop editor has the full property panel.
             </Text>
           </View>
         </View>
       )}
 
-      {/* floating 3-mode toolbar */}
-      <View
-        style={[
-          st.bar,
-          {
-            backgroundColor: t.codeEditorSurface,
-            borderColor: t.codeEditorBorder,
-          },
-        ]}
-        pointerEvents="box-none"
-      >
-        <View
-          style={[
-            st.barInner,
-            {
-              backgroundColor: t.codeEditorSurface,
-              borderColor: t.codeEditorBorder,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => setInspectorMode('select')}
-            style={[
-              st.modeBtn,
-              mode === 'select' && { backgroundColor: t.accent },
-            ]}
-          >
-            <Ionicons
-              name="create-outline"
-              size={16}
-              color={mode === 'select' ? t.bg : t.text}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setInspectorMode('text')}
-            style={[
-              st.modeBtn,
-              mode === 'text' && { backgroundColor: t.accent },
-            ]}
-          >
-            <Ionicons
-              name="text-outline"
-              size={16}
-              color={mode === 'text' ? t.bg : t.text}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setInspectorMode('annotate')}
-            style={[
-              st.modeBtn,
-              mode === 'annotate' && { backgroundColor: t.accent },
-            ]}
-          >
-            <Ionicons
-              name="brush-outline"
-              size={16}
-              color={mode === 'annotate' ? t.bg : t.text}
-            />
-          </TouchableOpacity>
+      {/* floating 3-mode toolbar — a pill with the same rotating brand-ramp
+          edge as the bottom tab bar (`GlowTabBar`): a ring that reserves
+          RING_W and clips the spinning gradient, with an OPAQUE inner pill
+          on top so only the edge shows the sweep. */}
+      <View style={st.barPositioner} pointerEvents="box-none">
+        <View style={st.ring}>
+          <RotatingBorderGradient
+            colors={[...t.agentBorderGradient]}
+            locations={RING_STOPS}
+            durationMs={BAR_SPIN_MS}
+          />
+          <View style={[st.barInner, { backgroundColor: t.codeEditorSurface }]}>
+            <TouchableOpacity
+              onPress={() => setInspectorMode('select')}
+              style={[
+                st.modeBtn,
+                mode === 'select' && { backgroundColor: t.accent },
+              ]}
+            >
+              <Ionicons
+                name="create-outline"
+                size={16}
+                color={mode === 'select' ? t.accentOn : t.text}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setInspectorMode('text')}
+              style={[
+                st.modeBtn,
+                mode === 'text' && { backgroundColor: t.accent },
+              ]}
+            >
+              <Ionicons
+                name="text-outline"
+                size={16}
+                color={mode === 'text' ? t.accentOn : t.text}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setInspectorMode('annotate')}
+              style={[
+                st.modeBtn,
+                mode === 'annotate' && { backgroundColor: t.accent },
+              ]}
+            >
+              <Ionicons
+                name="brush-outline"
+                size={16}
+                color={mode === 'annotate' ? t.accentOn : t.text}
+              />
+            </TouchableOpacity>
 
-          {mode === 'annotate' && (
-            <>
-              <TouchableOpacity onPress={clearStrokes} style={st.textBtn}>
-                <Text
-                  style={{ color: t.textSub, fontSize: 12, fontWeight: '600' }}
+            {mode === 'annotate' && (
+              <>
+                <TouchableOpacity onPress={clearStrokes} style={st.textBtn}>
+                  <Text
+                    style={{
+                      color: t.textSub,
+                      fontSize: 12,
+                      fontWeight: '600',
+                    }}
+                  >
+                    Clear
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={sendAnnotation}
+                  disabled={capturing || strokes.length === 0}
+                  style={st.textBtn}
                 >
-                  Clear
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={sendAnnotation}
-                disabled={capturing || strokes.length === 0}
-                style={st.textBtn}
-              >
-                <Text
-                  style={{ color: t.accent, fontSize: 12, fontWeight: '700' }}
-                >
-                  {capturing ? 'Sending…' : 'Add to chat'}
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
+                  <Text
+                    style={{ color: t.accent, fontSize: 12, fontWeight: '700' }}
+                  >
+                    {capturing ? 'Sending…' : 'Add to chat'}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
 
         {toastMsg ? (
@@ -861,21 +897,25 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bar: {
+  barPositioner: {
     position: 'absolute',
     bottom: 12,
     left: 0,
     right: 0,
     alignItems: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: 5,
+  },
+  // Outer layer: reserves RING_W and clips the spinning gradient to the
+  // pill's silhouette — same two-layer construction as the tab bar's `ring`.
+  ring: {
+    borderRadius: BAR_RADIUS,
+    overflow: 'hidden',
+    padding: RING_W,
   },
   barInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: BAR_RADIUS - RING_W,
     paddingHorizontal: 8,
     paddingVertical: 6,
   },

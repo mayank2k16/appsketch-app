@@ -18,10 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {
-  KeyboardAvoidingView,
-  useKeyboardState,
-} from 'react-native-keyboard-controller';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ActivityStep, ChatMessage, ClarifyBlock } from '@/api/coder';
@@ -477,6 +474,7 @@ function Composer({
   onModelChange,
   allowedModels,
   onLockedModelPress,
+  focusSignal,
 }: {
   input: string;
   onChangeInput: (v: string) => void;
@@ -500,8 +498,18 @@ function Composer({
   /** `null` fails open — see `useCoderQuota`. */
   allowedModels: string[] | null;
   onLockedModelPress: (m: Model) => void;
+  /** Bumped (any new number) to pull keyboard focus onto this composer —
+   * e.g. right after an annotated screenshot lands here as a pending image
+   * from the Preview tab's "Add to chat". A plain `autoFocus` only fires on
+   * first mount, and this composer stays mounted the whole time the Chat tab
+   * does. */
+  focusSignal?: number;
 }) {
   const voice = useVoiceInput(input, onChangeInput);
+  const inputRef = React.useRef<TextInput>(null);
+  React.useEffect(() => {
+    if (focusSignal) inputRef.current?.focus();
+  }, [focusSignal]);
   const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
 
@@ -807,7 +815,8 @@ export function ChatPanel() {
   const t = useBrandedCoderTheme(colorScheme);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isVisible: keyboardVisible } = useKeyboardState();
+  const { isVisible: keyboardVisible, height: keyboardHeight } =
+    useKeyboardState();
   const {
     connected,
     busy,
@@ -827,10 +836,27 @@ export function ChatPanel() {
     remove,
     quotaExceeded,
     clearQuotaExceeded,
+    pendingChatImage,
+    setPendingChatImage,
+    chatFocusToken,
   } = useCodeEditor();
 
   const [input, setInput] = React.useState('');
   const [images, setImages] = React.useState<string[]>([]);
+
+  // Picks up a screenshot handed over from the Preview tab's "Add to chat"
+  // (see InspectorOverlay's `sendAnnotation`) as a normal attachment on this
+  // composer, then clears the hand-off slot so it can't be picked up twice —
+  // e.g. if the user leaves and re-enters this tab without sending.
+  React.useEffect(() => {
+    if (!pendingChatImage) return;
+    setImages((prev) =>
+      prev.includes(pendingChatImage)
+        ? prev
+        : [...prev, pendingChatImage].slice(0, MAX_IMAGES)
+    );
+    setPendingChatImage(null);
+  }, [pendingChatImage, setPendingChatImage]);
   const [model, setModel] = React.useState<string>(DEFAULT_MODEL);
   const [upgradeModel, setUpgradeModel] = React.useState<Model | null>(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -945,18 +971,22 @@ export function ChatPanel() {
         onMenu={() => setMenuOpen(true)}
       />
 
-      {/* react-native-keyboard-controller's, not React Native's. The RN one
-          was `behavior="padding"` on iOS and NOTHING on Android — so Android
-          got no avoidance at all — driven by a hardcoded
-          `keyboardVerticalOffset={90}`. That 90 was a guess at the header
-          stack's height; when it did not match, the whole panel was pushed
-          by the difference, which is the distortion. This one measures its
-          own frame, animates in step with the keyboard rather than after it,
-          and needs no offset because it already starts below the header. */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={0}
+      {/* Plain padding driven off `useKeyboardState()`, not the library's own
+          `KeyboardAvoidingView`. That component only starts padding once it
+          sees a `keyboardWillShow`/`keyboardDidShow` EVENT fire after it
+          mounts — so arriving here (e.g. via "Generate" on the Agent tab)
+          with the keyboard already up from typing on the PREVIOUS screen
+          left it unpadded: the composer sat behind the keyboard with only
+          its top edge peeking out, since no new show event was ever going to
+          fire. `useKeyboardState()` instead reads the keyboard's CURRENT
+          state straight from the native module on first render, so it is
+          correct immediately regardless of whether the keyboard opened
+          before or after this screen mounted. */}
+      <View
+        style={{
+          flex: 1,
+          paddingBottom: keyboardVisible ? keyboardHeight : 0,
+        }}
       >
         <ScrollView
           ref={listRef}
@@ -1019,8 +1049,9 @@ export function ChatPanel() {
           onModelChange={setModel}
           allowedModels={allowedModels}
           onLockedModelPress={setUpgradeModel}
+          focusSignal={chatFocusToken}
         />
-      </KeyboardAvoidingView>
+      </View>
 
       <WorkMenu
         visible={menuOpen}
