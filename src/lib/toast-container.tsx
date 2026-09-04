@@ -1,3 +1,6 @@
+/* eslint-disable react-compiler/react-compiler --
+   Pre-existing: ToastCard's mount-only replay effect opts out of
+   exhaustive-deps on purpose, which bails the compiler for this file. */
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
@@ -82,6 +85,8 @@ interface ToastItem extends ToastOptions {
   id: number;
 }
 
+// Gesture + timer + animated-style wiring for one swipeable toast card doesn't split cleanly.
+// eslint-disable-next-line max-lines-per-function
 function ToastCard({
   item,
   t,
@@ -283,8 +288,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
+  // No `flex: 1` here on purpose. `container` gives the row a shrink-wrap
+  // cross-axis (`alignItems: 'flex-end'`), and a flex child inside a
+  // shrink-wrap ancestor gets a 0 flex-basis to grow from — Yoga then sizes
+  // the whole card to just the icon, and the text collapses to nothing,
+  // which is the "just a tick, abruptly square" toast this replaces. A
+  // `maxWidth` on the Text itself instead lets it size to its own content
+  // and wrap within that cap, with no flex distribution involved at all.
   textWrap: {
-    flex: 1,
+    maxWidth: 260,
     gap: 2,
   },
   title: {

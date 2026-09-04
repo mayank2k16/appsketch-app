@@ -1,3 +1,6 @@
+/* eslint-disable unicorn/filename-case --
+   Pre-existing name, predates the kebab-case rule; renaming risks breaking
+   every import site for a purely cosmetic gain. */
 /**
  * Runs INSIDE the live-preview WebView's page (via `injectedJavaScript`) —
  * the direct RN analog of Vite's `Inspector.jsx`, which reached straight into
@@ -128,9 +131,11 @@ export const INSPECTOR_SCRIPT = `
     var tag = t.tagName.toLowerCase();
     var src = (tag === 'img' || tag === 'video' || tag === 'source') ? realSrc(t) : '';
     var cs = window.getComputedStyle(t);
+    var rect = t.getBoundingClientRect();
     post('inspector:selected', {
       tag: tag,
       src: src,
+      className: t.getAttribute('class') || '',
       selector: stableSelector(t),
       color: rgbToHex(cs.color) || '#111111',
       bg: rgbToHex(cs.backgroundColor) || '',
@@ -139,6 +144,16 @@ export const INSPECTOR_SCRIPT = `
       textAlign: (cs.textAlign === 'start' ? 'left' : cs.textAlign) || 'left',
       padding: parseInt(cs.paddingTop, 10) || 0,
       radius: parseInt(cs.borderTopLeftRadius, 10) || 0,
+      opacity: Math.round((parseFloat(cs.opacity) || 1) * 100),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      marginTop: parseInt(cs.marginTop, 10) || 0,
+      marginRight: parseInt(cs.marginRight, 10) || 0,
+      marginBottom: parseInt(cs.marginBottom, 10) || 0,
+      marginLeft: parseInt(cs.marginLeft, 10) || 0,
+      borderWidth: parseInt(cs.borderTopWidth, 10) || 0,
+      borderColor: rgbToHex(cs.borderTopColor) || '',
+      display: cs.display || 'block',
     });
   }, true);
 
@@ -159,6 +174,23 @@ export const INSPECTOR_SCRIPT = `
       try {
         var el = document.querySelector(selector);
         if (el) el.setAttribute('src', newSrc);
+      } catch (e) {}
+    },
+    // Clears every inline style this session's edits set on the element —
+    // "remove all overrides" for the live preview. Re-applies the selection
+    // ring right after, since that also lives in \`style\` and would
+    // otherwise vanish along with everything else.
+    resetStyle: function (selector) {
+      try {
+        var el = document.querySelector(selector);
+        if (!el) return;
+        el.removeAttribute('style');
+        if (el === selectedEl) {
+          el.style.outline = '2px solid #D4D4D4';
+          el.style.outlineOffset = '1px';
+          prevShadow = '';
+          el.style.boxShadow = '0 0 0 4px rgba(1,2,3,0.55)';
+        }
       } catch (e) {}
     },
     revertText: function () {

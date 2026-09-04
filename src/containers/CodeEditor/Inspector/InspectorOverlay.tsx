@@ -1,3 +1,8 @@
+/* eslint-disable unicorn/filename-case, max-lines-per-function, react-compiler/react-compiler --
+   Pre-existing on this file (already the case at the last commit that touched
+   it, 7713f9bf): a WebView bridge overlay with a big prop-panel naturally
+   outgrows the 70-line cap, the mode-effect's exhaustive-deps opt-out bails
+   the compiler, and the historical filename predates the kebab-case rule. */
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -7,6 +12,7 @@ import {
   Keyboard,
   PanResponder,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -43,6 +49,7 @@ const RING_STOPS: [number, number, number] = [0, 0.5, 1];
 type Selection = {
   tag: string;
   src: string;
+  className: string;
   selector: string;
   color: string;
   bg: string;
@@ -51,7 +58,37 @@ type Selection = {
   textAlign: 'left' | 'center' | 'right';
   padding: number;
   radius: number;
+  opacity: number;
+  width: number;
+  height: number;
+  marginTop: number;
+  marginRight: number;
+  marginBottom: number;
+  marginLeft: number;
+  borderWidth: number;
+  borderColor: string;
+  display: string;
 };
+
+type PanelTab = 'design' | 'layout' | 'effects' | 'code';
+const PANEL_TABS: { key: PanelTab; label: string }[] = [
+  { key: 'design', label: 'Design' },
+  { key: 'layout', label: 'Layout' },
+  { key: 'effects', label: 'Effects' },
+  { key: 'code', label: 'Code' },
+];
+
+/** Canned `box-shadow` values — same names the desktop's Shadow preset
+ * dropdown uses. Kept short: a numeric shadow builder is real desktop-editor
+ * territory (the point of this file staying a subset), but "no shadow /
+ * some shadow / a lot of shadow" covers the large majority of what anyone
+ * reaches for on a phone. */
+const SHADOW_PRESETS: { key: string; label: string; value: string }[] = [
+  { key: 'none', label: 'None', value: 'none' },
+  { key: 'sm', label: 'Small', value: '0 1px 3px rgba(0,0,0,0.25)' },
+  { key: 'md', label: 'Medium', value: '0 4px 12px rgba(0,0,0,0.3)' },
+  { key: 'lg', label: 'Large', value: '0 12px 32px rgba(0,0,0,0.35)' },
+];
 
 type BridgeMessage = { type: string; payload?: Record<string, unknown> } | null;
 
@@ -146,14 +183,18 @@ export function InspectorOverlay({
   }, []);
 
   const [customCss, setCustomCss] = React.useState('');
+  const [panelTab, setPanelTab] = React.useState<PanelTab>('design');
   const lastSelectorRef = React.useRef<string | null>(null);
   // A fresh element's textarea starts empty rather than carrying over the
   // previous element's declarations — those already applied via `setStyle`
   // where relevant; nothing here is meant to persist across a selection.
+  // The tab resets too, for the same reason: "Code" for one element has
+  // nothing to do with the next one you tap.
   React.useEffect(() => {
     if (selection && selection.selector !== lastSelectorRef.current) {
       lastSelectorRef.current = selection.selector;
       setCustomCss('');
+      setPanelTab('design');
     }
   }, [selection]);
 
@@ -180,6 +221,7 @@ export function InspectorOverlay({
   // `previewMode` context value), so neither path can leave the WebView's
   // own inspector script or a stale selection out of sync with the other.
   const prevModeRef = React.useRef<InspectorMode>(mode);
+  const mountedRef = React.useRef(false);
   React.useEffect(() => {
     setSelection(null);
     setStrokes([]);
@@ -188,11 +230,19 @@ export function InspectorOverlay({
     runInWebView(
       `window.__cwInspector && window.__cwInspector.setMode(${scriptMode ? `'${scriptMode}'` : 'null'})`
     );
-    // Only the ON transition gets a toast — the point is telling the user
-    // swipe just locked, not narrating every tap of the toolbar.
-    if (prevModeRef.current === null && mode !== null) {
-      toast.success('Editor mode on — swipe is locked while you edit.');
+    // Both directions of the Preview/Edit boundary toast — not the mount
+    // (nothing changed) and not a swap between two edit submodes (that's not
+    // the boundary the toast is telling you about).
+    const wasEditing = prevModeRef.current !== null;
+    const isEditing = mode !== null;
+    if (mountedRef.current && wasEditing !== isEditing) {
+      toast.success(
+        isEditing
+          ? 'Editor mode on — swipe is locked while you edit.'
+          : 'Preview mode — swipe unlocked.'
+      );
     }
+    mountedRef.current = true;
     prevModeRef.current = mode;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
@@ -277,6 +327,22 @@ export function InspectorOverlay({
   function closePanel() {
     setSelection(null);
     runInWebView('window.__cwInspector.clearSelection()');
+  }
+
+  /** "Remove all overrides" — clears every inline style edit on THIS element
+   * from the live preview. Scoped to the preview, not the server: there is
+   * no delete endpoint for a persisted `visual-edit`, only ones that write a
+   * new value, so this can undo what you see right now but not un-persist an
+   * override already saved in an earlier turn — reload the preview after to
+   * see whether anything comes back. */
+  function resetElement() {
+    if (!selection) return;
+    runInWebView(
+      `window.__cwInspector.resetStyle(${JSON.stringify(selection.selector)})`
+    );
+    pendingStyles.current = {};
+    clearTimeout(persistTimer.current ?? undefined);
+    flash('Cleared — reload the preview if anything comes back');
   }
 
   async function pickReplacementAsset() {
@@ -461,7 +527,7 @@ export function InspectorOverlay({
               </TouchableOpacity>
             </View>
 
-            {isAsset ? (
+            {isAsset && (
               <View style={st.assetRow}>
                 <TouchableOpacity
                   onPress={pickReplacementAsset}
@@ -489,226 +555,547 @@ export function InspectorOverlay({
                   </Text>
                 </TouchableOpacity>
               </View>
-            ) : (
-              <View style={st.grid}>
-                <View style={st.gridRow}>
-                  <View style={st.gridCell}>
-                    <Text style={st.gridLabel}>Text</Text>
-                    <TextInput
-                      value={selection.color}
-                      onChangeText={(v) => setStyle('color', v, { color: v })}
-                      style={[
-                        st.hexInput,
-                        { color: t.text, borderColor: t.codeEditorBorder },
-                      ]}
-                    />
-                  </View>
-                  <View style={st.gridCell}>
-                    <Text style={st.gridLabel}>Fill</Text>
-                    <View style={st.fillRow}>
+            )}
+
+            {/* Design / Layout / Effects / Code — the same four groupings
+                the desktop property panel uses. Animate and Interact aren't
+                here: those wire up behaviour (hover transitions, on-click
+                actions), not a style value, and need more runtime plumbing
+                in the injected script than a straight `applyStyle` call —
+                left for a follow-up rather than half-built. */}
+            <View style={[st.panelTabRow, { borderColor: t.codeEditorBorder }]}>
+              {PANEL_TABS.map((tab) => (
+                <TouchableOpacity
+                  key={tab.key}
+                  onPress={() => setPanelTab(tab.key)}
+                  style={[
+                    st.panelTabBtn,
+                    panelTab === tab.key && { backgroundColor: t.accent },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      st.panelTabLabel,
+                      {
+                        color: panelTab === tab.key ? t.accentOn : t.textSub,
+                      },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <ScrollView
+              style={st.panelScroll}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {panelTab === 'design' &&
+                (isAsset ? (
+                  <Text style={[st.tabHint, { color: t.textSub }]}>
+                    Color and type don&rsquo;t apply to {selection.tag} —
+                    replace it above, or switch to Layout/Effects.
+                  </Text>
+                ) : (
+                  <>
+                    <View style={st.grid}>
+                      <View style={st.gridRow}>
+                        <View style={st.gridCell}>
+                          <Text style={st.gridLabel}>Text</Text>
+                          <TextInput
+                            value={selection.color}
+                            onChangeText={(v) =>
+                              setStyle('color', v, { color: v })
+                            }
+                            style={[
+                              st.hexInput,
+                              {
+                                color: t.text,
+                                borderColor: t.codeEditorBorder,
+                              },
+                            ]}
+                          />
+                        </View>
+                        <View style={st.gridCell}>
+                          <Text style={st.gridLabel}>Fill</Text>
+                          <View style={st.fillRow}>
+                            <TextInput
+                              value={selection.bg}
+                              onChangeText={(v) =>
+                                setStyle('background-color', v, { bg: v })
+                              }
+                              placeholder="none"
+                              placeholderTextColor={t.codeEditorTextMuted}
+                              style={[
+                                st.hexInput,
+                                {
+                                  flex: 1,
+                                  color: t.text,
+                                  borderColor: t.codeEditorBorder,
+                                },
+                              ]}
+                            />
+                            <TouchableOpacity
+                              onPress={() =>
+                                setStyle('background-color', 'transparent', {
+                                  bg: '',
+                                })
+                              }
+                              style={[
+                                st.clearFillBtn,
+                                { borderColor: t.codeEditorBorder },
+                              ]}
+                            >
+                              <Text style={{ color: t.textSub }}>⌀</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                        <View style={st.gridCell}>
+                          <Text style={st.gridLabel}>Size</Text>
+                          <TextInput
+                            value={String(selection.fontSize)}
+                            onChangeText={(v) =>
+                              setStyle('font-size', `${Number(v) || 0}px`, {
+                                fontSize: Number(v) || 0,
+                              })
+                            }
+                            keyboardType="numeric"
+                            style={[
+                              st.hexInput,
+                              {
+                                color: t.text,
+                                borderColor: t.codeEditorBorder,
+                              },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                      <View style={st.gridRow}>
+                        <View style={st.gridCell}>
+                          <Text style={st.gridLabel}>Weight</Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              const idx = WEIGHTS.indexOf(selection.fontWeight);
+                              const next = WEIGHTS[(idx + 1) % WEIGHTS.length];
+                              setStyle('font-weight', next, {
+                                fontWeight: next,
+                              });
+                            }}
+                            style={[
+                              st.hexInput,
+                              st.centeredCell,
+                              { borderColor: t.codeEditorBorder },
+                            ]}
+                          >
+                            <Text
+                              style={{
+                                color: t.text,
+                                fontSize: 12.5,
+                                fontWeight: '700',
+                              }}
+                            >
+                              {selection.fontWeight}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                        <View style={st.gridCell}>
+                          <Text style={st.gridLabel}>Opacity %</Text>
+                          <TextInput
+                            value={String(selection.opacity)}
+                            onChangeText={(v) => {
+                              const n = Math.max(
+                                0,
+                                Math.min(100, Number(v) || 0)
+                              );
+                              setStyle('opacity', String(n / 100), {
+                                opacity: n,
+                              });
+                            }}
+                            keyboardType="numeric"
+                            style={[
+                              st.hexInput,
+                              {
+                                color: t.text,
+                                borderColor: t.codeEditorBorder,
+                              },
+                            ]}
+                          />
+                        </View>
+                        <View style={st.gridCell} />
+                      </View>
+                    </View>
+
+                    <View style={st.alignRow}>
+                      {(['left', 'center', 'right'] as const).map((a) => (
+                        <TouchableOpacity
+                          key={a}
+                          onPress={() =>
+                            setStyle('text-align', a, { textAlign: a })
+                          }
+                          style={[
+                            st.alignBtn,
+                            { borderColor: t.codeEditorBorder },
+                            selection.textAlign === a && {
+                              backgroundColor: t.accent,
+                              borderColor: t.accent,
+                            },
+                          ]}
+                        >
+                          <Ionicons
+                            name={
+                              a === 'left'
+                                ? 'menu-outline'
+                                : a === 'center'
+                                  ? 'reorder-two-outline'
+                                  : 'menu-outline'
+                            }
+                            size={14}
+                            color={
+                              selection.textAlign === a ? '#FFFFFF' : t.text
+                            }
+                          />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </>
+                ))}
+
+              {panelTab === 'layout' && (
+                <View style={st.grid}>
+                  <View style={st.gridRow}>
+                    <View style={st.gridCell}>
+                      <Text style={st.gridLabel}>Width</Text>
                       <TextInput
-                        value={selection.bg}
+                        value={String(selection.width)}
                         onChangeText={(v) =>
-                          setStyle('background-color', v, { bg: v })
+                          setStyle('width', `${Number(v) || 0}px`, {
+                            width: Number(v) || 0,
+                          })
+                        }
+                        keyboardType="numeric"
+                        style={[
+                          st.hexInput,
+                          { color: t.text, borderColor: t.codeEditorBorder },
+                        ]}
+                      />
+                    </View>
+                    <View style={st.gridCell}>
+                      <Text style={st.gridLabel}>Height</Text>
+                      <TextInput
+                        value={String(selection.height)}
+                        onChangeText={(v) =>
+                          setStyle('height', `${Number(v) || 0}px`, {
+                            height: Number(v) || 0,
+                          })
+                        }
+                        keyboardType="numeric"
+                        style={[
+                          st.hexInput,
+                          { color: t.text, borderColor: t.codeEditorBorder },
+                        ]}
+                      />
+                    </View>
+                    <View style={st.gridCell}>
+                      <Text style={st.gridLabel}>Padding</Text>
+                      <TextInput
+                        value={String(selection.padding)}
+                        onChangeText={(v) =>
+                          setStyle('padding', `${Number(v) || 0}px`, {
+                            padding: Number(v) || 0,
+                          })
+                        }
+                        keyboardType="numeric"
+                        style={[
+                          st.hexInput,
+                          { color: t.text, borderColor: t.codeEditorBorder },
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  <Text style={[st.gridLabel, st.groupLabel]}>
+                    Margin · top / right / bottom / left
+                  </Text>
+                  <View style={st.gridRow}>
+                    {(
+                      [
+                        ['marginTop', 'margin-top', selection.marginTop],
+                        ['marginRight', 'margin-right', selection.marginRight],
+                        [
+                          'marginBottom',
+                          'margin-bottom',
+                          selection.marginBottom,
+                        ],
+                        ['marginLeft', 'margin-left', selection.marginLeft],
+                      ] as const
+                    ).map(([key, cssProp, value]) => (
+                      <View style={st.gridCell} key={key}>
+                        <TextInput
+                          value={String(value)}
+                          onChangeText={(v) =>
+                            setStyle(cssProp, `${Number(v) || 0}px`, {
+                              [key]: Number(v) || 0,
+                            })
+                          }
+                          keyboardType="numeric"
+                          style={[
+                            st.hexInput,
+                            st.centeredCell,
+                            { color: t.text, borderColor: t.codeEditorBorder },
+                          ]}
+                        />
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={st.gridRow}>
+                    <View style={st.gridCell}>
+                      <Text style={st.gridLabel}>Display</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const opts = [
+                            'block',
+                            'inline-block',
+                            'flex',
+                            'none',
+                          ];
+                          const idx = opts.indexOf(selection.display);
+                          const next = opts[(idx + 1) % opts.length];
+                          setStyle('display', next, { display: next });
+                        }}
+                        style={[
+                          st.hexInput,
+                          st.centeredCell,
+                          { borderColor: t.codeEditorBorder },
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            color: t.text,
+                            fontSize: 11.5,
+                            fontWeight: '700',
+                          }}
+                        >
+                          {selection.display}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={st.gridCell} />
+                    <View style={st.gridCell} />
+                  </View>
+                </View>
+              )}
+
+              {panelTab === 'effects' && (
+                <View style={st.grid}>
+                  <View style={st.gridRow}>
+                    <View style={st.gridCell}>
+                      <Text style={st.gridLabel}>Border width</Text>
+                      <TextInput
+                        value={String(selection.borderWidth)}
+                        onChangeText={(v) =>
+                          setStyle('border-width', `${Number(v) || 0}px`, {
+                            borderWidth: Number(v) || 0,
+                          })
+                        }
+                        keyboardType="numeric"
+                        style={[
+                          st.hexInput,
+                          { color: t.text, borderColor: t.codeEditorBorder },
+                        ]}
+                      />
+                    </View>
+                    <View style={st.gridCell}>
+                      <Text style={st.gridLabel}>Border colour</Text>
+                      <TextInput
+                        value={selection.borderColor}
+                        onChangeText={(v) =>
+                          setStyle('border-color', v, { borderColor: v })
                         }
                         placeholder="none"
                         placeholderTextColor={t.codeEditorTextMuted}
                         style={[
                           st.hexInput,
-                          {
-                            flex: 1,
-                            color: t.text,
-                            borderColor: t.codeEditorBorder,
-                          },
+                          { color: t.text, borderColor: t.codeEditorBorder },
                         ]}
                       />
-                      <TouchableOpacity
-                        onPress={() =>
-                          setStyle('background-color', 'transparent', {
-                            bg: '',
+                    </View>
+                    <View style={st.gridCell}>
+                      <Text style={st.gridLabel}>Radius</Text>
+                      <TextInput
+                        value={String(selection.radius)}
+                        onChangeText={(v) =>
+                          setStyle('border-radius', `${Number(v) || 0}px`, {
+                            radius: Number(v) || 0,
                           })
                         }
+                        keyboardType="numeric"
                         style={[
-                          st.clearFillBtn,
+                          st.hexInput,
+                          { color: t.text, borderColor: t.codeEditorBorder },
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  <Text style={[st.gridLabel, st.groupLabel]}>Shadow</Text>
+                  <View style={st.shadowRow}>
+                    {SHADOW_PRESETS.map((preset) => (
+                      <TouchableOpacity
+                        key={preset.key}
+                        onPress={() => setStyle('box-shadow', preset.value, {})}
+                        style={[
+                          st.shadowChip,
                           { borderColor: t.codeEditorBorder },
                         ]}
                       >
-                        <Text style={{ color: t.textSub }}>⌀</Text>
+                        <Text
+                          style={{
+                            color: t.text,
+                            fontSize: 11,
+                            fontWeight: '600',
+                          }}
+                        >
+                          {preset.label}
+                        </Text>
                       </TouchableOpacity>
-                    </View>
-                  </View>
-                  <View style={st.gridCell}>
-                    <Text style={st.gridLabel}>Size</Text>
-                    <TextInput
-                      value={String(selection.fontSize)}
-                      onChangeText={(v) =>
-                        setStyle('font-size', `${Number(v) || 0}px`, {
-                          fontSize: Number(v) || 0,
-                        })
-                      }
-                      keyboardType="numeric"
-                      style={[
-                        st.hexInput,
-                        { color: t.text, borderColor: t.codeEditorBorder },
-                      ]}
-                    />
+                    ))}
                   </View>
                 </View>
-                <View style={st.gridRow}>
-                  <View style={st.gridCell}>
-                    <Text style={st.gridLabel}>Weight</Text>
+              )}
+
+              {panelTab === 'code' && (
+                <View style={st.cssSection}>
+                  <Text style={st.gridLabel}>Custom CSS</Text>
+                  <TextInput
+                    value={customCss}
+                    onChangeText={setCustomCss}
+                    placeholder={
+                      'backdrop-filter: blur(6px);\nbox-shadow: 0 8px 24px rgba(0,0,0,.35);'
+                    }
+                    placeholderTextColor={t.codeEditorTextMuted}
+                    multiline
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textAlignVertical="top"
+                    style={[
+                      st.cssInput,
+                      {
+                        color: t.text,
+                        borderColor: t.codeEditorBorder,
+                        backgroundColor: t.codeEditorTabBg,
+                      },
+                    ]}
+                  />
+                  <View style={st.cssActions}>
                     <TouchableOpacity
-                      onPress={() => {
-                        const idx = WEIGHTS.indexOf(selection.fontWeight);
-                        const next = WEIGHTS[(idx + 1) % WEIGHTS.length];
-                        setStyle('font-weight', next, { fontWeight: next });
-                      }}
+                      onPress={() => setCustomCss('')}
+                      disabled={!customCss.trim()}
                       style={[
-                        st.hexInput,
-                        st.centeredCell,
-                        { borderColor: t.codeEditorBorder },
+                        st.cssBtn,
+                        {
+                          backgroundColor: t.codeEditorTabBg,
+                          borderColor: t.codeEditorBorder,
+                        },
+                        !customCss.trim() && st.cssBtnDisabled,
                       ]}
                     >
                       <Text
                         style={{
                           color: t.text,
-                          fontSize: 12.5,
+                          fontSize: 12,
                           fontWeight: '700',
                         }}
                       >
-                        {selection.fontWeight}
+                        Clear
                       </Text>
                     </TouchableOpacity>
-                  </View>
-                  <View style={st.gridCell}>
-                    <Text style={st.gridLabel}>Padding</Text>
-                    <TextInput
-                      value={String(selection.padding)}
-                      onChangeText={(v) =>
-                        setStyle('padding', `${Number(v) || 0}px`, {
-                          padding: Number(v) || 0,
-                        })
-                      }
-                      keyboardType="numeric"
+                    <TouchableOpacity
+                      onPress={() => {
+                        const styles = parseCss(customCss);
+                        if (Object.keys(styles).length === 0) return;
+                        applyRawStyles(styles);
+                        flash('CSS applied ✓');
+                      }}
+                      disabled={!customCss.trim()}
                       style={[
-                        st.hexInput,
-                        { color: t.text, borderColor: t.codeEditorBorder },
+                        st.cssBtn,
+                        st.cssBtnPrimary,
+                        { backgroundColor: t.accent },
+                        !customCss.trim() && st.cssBtnDisabled,
                       ]}
-                    />
+                    >
+                      <Text style={st.smallBtnPrimaryText}>Apply CSS</Text>
+                    </TouchableOpacity>
                   </View>
-                  <View style={st.gridCell}>
-                    <Text style={st.gridLabel}>Radius</Text>
-                    <TextInput
-                      value={String(selection.radius)}
-                      onChangeText={(v) =>
-                        setStyle('border-radius', `${Number(v) || 0}px`, {
-                          radius: Number(v) || 0,
-                        })
-                      }
-                      keyboardType="numeric"
-                      style={[
-                        st.hexInput,
-                        { color: t.text, borderColor: t.codeEditorBorder },
-                      ]}
-                    />
-                  </View>
-                </View>
-              </View>
-            )}
 
-            {!isAsset && (
-              <View style={st.alignRow}>
-                {(['left', 'center', 'right'] as const).map((a) => (
-                  <TouchableOpacity
-                    key={a}
-                    onPress={() => setStyle('text-align', a, { textAlign: a })}
+                  <View
                     style={[
-                      st.alignBtn,
+                      st.elementInfo,
                       { borderColor: t.codeEditorBorder },
-                      selection.textAlign === a && {
-                        backgroundColor: t.accent,
-                        borderColor: t.accent,
-                      },
                     ]}
                   >
-                    <Ionicons
-                      name={
-                        a === 'left'
-                          ? 'menu-outline'
-                          : a === 'center'
-                            ? 'reorder-two-outline'
-                            : 'menu-outline'
-                      }
-                      size={14}
-                      color={selection.textAlign === a ? '#FFFFFF' : t.text}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+                    <View style={st.elementInfoRow}>
+                      <Text style={[st.gridLabel, st.elementInfoKey]}>
+                        Element
+                      </Text>
+                      <Text
+                        style={[st.elementInfoValue, { color: t.text }]}
+                        numberOfLines={1}
+                      >
+                        {`<${selection.tag}>`}
+                      </Text>
+                    </View>
+                    {!!selection.className && (
+                      <View style={st.elementInfoRow}>
+                        <Text style={[st.gridLabel, st.elementInfoKey]}>
+                          Classes
+                        </Text>
+                        <Text
+                          style={[st.elementInfoValue, { color: t.textSub }]}
+                          numberOfLines={1}
+                        >
+                          {selection.className}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={st.elementInfoRow}>
+                      <Text style={[st.gridLabel, st.elementInfoKey]}>
+                        Selector
+                      </Text>
+                      <Text
+                        style={[st.elementInfoValue, { color: t.textSub }]}
+                        numberOfLines={1}
+                      >
+                        {selection.selector}
+                      </Text>
+                    </View>
+                  </View>
 
-            {/* <View style={st.cssSection}>
-              <Text style={st.gridLabel}>Custom CSS</Text>
-              <TextInput
-                value={customCss}
-                onChangeText={setCustomCss}
-                placeholder={
-                  'backdrop-filter: blur(6px);\nbox-shadow: 0 8px 24px rgba(0,0,0,.35);'
-                }
-                placeholderTextColor={t.codeEditorTextMuted}
-                multiline
-                autoCapitalize="none"
-                autoCorrect={false}
-                textAlignVertical="top"
-                style={[
-                  st.cssInput,
-                  {
-                    color: t.text,
-                    borderColor: t.codeEditorBorder,
-                    backgroundColor: t.codeEditorTabBg,
-                  },
-                ]}
-              />
-              <View style={st.cssActions}>
-                <TouchableOpacity
-                  onPress={() => setCustomCss('')}
-                  disabled={!customCss.trim()}
-                  style={[
-                    st.cssBtn,
-                    {
-                      backgroundColor: t.codeEditorTabBg,
-                      borderColor: t.codeEditorBorder,
-                    },
-                    !customCss.trim() && st.cssBtnDisabled,
-                  ]}
-                >
-                  <Text style={{ color: t.text, fontSize: 12, fontWeight: '700' }}>
-                    Clear
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    const styles = parseCss(customCss);
-                    if (Object.keys(styles).length === 0) return;
-                    applyRawStyles(styles);
-                    flash('CSS applied ✓');
-                  }}
-                  disabled={!customCss.trim()}
-                  style={[
-                    st.cssBtn,
-                    st.cssBtnPrimary,
-                    { backgroundColor: t.accent },
-                    !customCss.trim() && st.cssBtnDisabled,
-                  ]}
-                >
-                  <Text style={st.smallBtnPrimaryText}>Apply CSS</Text>
-                </TouchableOpacity>
-              </View>
-            </View> */}
+                  <Text style={[st.gridLabel, st.groupLabel]}>Danger zone</Text>
+                  <TouchableOpacity
+                    onPress={resetElement}
+                    style={[st.dangerBtn, { borderColor: t.codeEditorDanger }]}
+                  >
+                    <Text
+                      style={{
+                        color: t.codeEditorDanger,
+                        fontSize: 12,
+                        fontWeight: '700',
+                      }}
+                    >
+                      Remove all overrides
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
 
             <Text style={[st.advancedHint, { color: t.textSub }]}>
-              For gradients, shadows, layout and animation, use the web builder
-              — the desktop editor has the full property panel.
+              Animations and click behaviour still need the web builder — the
+              desktop editor has the full Animate/Interact panel.
             </Text>
           </View>
         </View>
@@ -887,6 +1274,51 @@ const st = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     textAlign: 'center',
+  },
+  panelTabRow: {
+    flexDirection: 'row',
+    gap: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 8,
+  },
+  panelTabBtn: {
+    flex: 1,
+    height: 28,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  panelTabLabel: { fontSize: 11, fontWeight: '700' },
+  // Caps how tall the tab body can grow — the panel is an absolutely
+  // positioned overlay with no outer scroll of its own, and four tabs' worth
+  // of fields is taller than a phone screen can spare above the toolbar.
+  panelScroll: { maxHeight: 280 },
+  tabHint: { fontSize: 11.5, lineHeight: 16, paddingVertical: 4 },
+  groupLabel: { marginTop: 2 },
+  shadowRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  shadowChip: {
+    height: 30,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  elementInfo: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    gap: 4,
+  },
+  elementInfoRow: { flexDirection: 'row', gap: 8, alignItems: 'baseline' },
+  elementInfoKey: { width: 60 },
+  elementInfoValue: { flex: 1, fontSize: 11, fontFamily: 'Menlo' },
+  dangerBtn: {
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   alignRow: { flexDirection: 'row', gap: 6 },
   alignBtn: {
