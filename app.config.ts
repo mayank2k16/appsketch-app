@@ -96,6 +96,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: Env.BUNDLE_ID,
+      // TestFlight build number: bump before every upload (last: 48).
+      buildNumber: '48',
+      // App Store / TestFlight builds are signed with the production push
+      // profile; a 'development' value fails the archive's manual signing.
+      entitlements:
+        Env.APP_ENV === 'production'
+          ? { 'aps-environment': 'production' }
+          : undefined,
       googleServicesFile: './credentials/firebase/GoogleService-Info.plist',
       // Was a hand-edited ios/Zorviaa/PrivacyInfo.xcprivacy before the native
       // folders became generated (CNG); prebuild writes it from here now.
