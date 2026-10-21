@@ -96,6 +96,7 @@ function DeployButton({
   );
 }
 
+// eslint-disable-next-line max-lines-per-function -- one switch over the preview kinds
 export function PreviewScreen() {
   const { colorScheme } = useColorScheme();
   const t = useCoderTheme(colorScheme);
@@ -148,7 +149,11 @@ export function PreviewScreen() {
       </View>
 
       {params.appType === 'mobile' ? (
-        <MobileExpoPreview tenantId={params.tenantId} colors={t} />
+        <MobileExpoPreview
+          tenantId={params.tenantId}
+          tenantUid={params.tenantUid}
+          colors={t}
+        />
       ) : livePreviewUrl ? (
         <LivePreviewWebView
           url={livePreviewUrl}

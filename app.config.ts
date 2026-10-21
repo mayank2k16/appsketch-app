@@ -171,6 +171,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       '@react-native-firebase/app',
       '@react-native-firebase/messaging',
+      // Guest apps (in-app host) use it; the host must ship every native
+      // module published templates use — see docs/in-app-host.md.
+      'expo-sharing',
       [
         'expo-notifications',
         {

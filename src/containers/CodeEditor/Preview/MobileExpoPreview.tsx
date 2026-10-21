@@ -24,13 +24,16 @@ import { useExpoUrlPoll } from '../hooks/useExpoUrlPoll';
  * a second device, which can scan it from AppSketch's Scan screen or Expo Go. */
 export function MobileExpoPreview({
   tenantId,
+  tenantUid,
   colors,
 }: {
   tenantId: string;
+  /** Wakes the app's dev server; without it the QR waits for one to exist. */
+  tenantUid?: string;
   colors: AppColors;
 }) {
   const isFocused = useIsFocused();
-  const expoUrl = useExpoUrlPoll(tenantId, isFocused);
+  const expoUrl = useExpoUrlPoll(tenantId, isFocused, tenantUid);
   const guest = useOpenGuestApp();
 
   async function handleCopy() {

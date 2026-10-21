@@ -38,6 +38,29 @@ autolinked).
 - **SDK must match.** The host is Expo SDK **57** (RN 0.86, Reanimated 4.5).
   `resolveGuestApp` refuses other SDKs with a clear error (`sdk-mismatch`).
   When the generator moves to a new SDK, AppSketch must move with it.
+- **Native modules must be shipped.** A guest that imports a native module
+  AppSketch lacks dies at start (e.g. "AsyncStorage is null"). The builder
+  agent adds packages beyond the starter's. On 2026-10-21, across all 47
+  published mobile templates, that meant:
+
+  | Package | Templates using it |
+  | --- | --- |
+  | `lottie-react-native` | 47 |
+  | `expo-image-manipulator` | 45 |
+  | `react-native-webview` | 45 |
+  | `expo-location` | 44 |
+  | `@react-native-async-storage/async-storage` | 26 |
+  | `expo-device`, `expo-notifications` | 25 |
+  | `expo-video` | 20 |
+  | `expo-clipboard` | 6 |
+  | `expo-camera`, `expo-sharing`, `react-native-view-shot` | 1 |
+
+  All of them are now dependencies here. Before each release, re-run the scan
+  (union of `dependencies` in every published Expo workspace's
+  `package.json`) and `npx expo install` anything new. Fonts and pure-JS
+  packages need nothing. `react-native-webview` stays at the SDK's 13.x,
+  which is what Expo Go runs these apps on, even where a template asks for
+  14.
 - **Live workspaces.** The Metro manifest is fetched with
   `expo-platform: ios|android`. The launch bundle URL is then rewritten to
   `dev=false&hot=false&minify=true` (no `lazy`): a release host has no dev
@@ -99,6 +122,14 @@ On a code template card:
   and for an ecosystem every app in the group. It then opens the builder on
   the copy at `/code-editor/preview` with the app's `tenantId`, `tenantUid`
   and `appType`. Signed out goes to `/login`.
+
+  A fresh copy has no dev server running, and the runner only starts one
+  (Metro and its `exp://` tunnel) when the app's `/preview/<uuid>/` page is
+  requested. The web builder's preview frame does that by loading.
+  `useExpoUrlPoll` does it on purpose: it requests that page until a URL
+  appears, then pings `__keepalive` every 30s, because the runner stops a
+  server that has gone ~90s without a new request. Without this, the mobile
+  preview polled `expo-url` forever on every copied template.
 
 Layout sites keep their old Preview (it creates a tenant from the layout and
 shows its live store).

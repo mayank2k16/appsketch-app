@@ -68,7 +68,7 @@
 		<string>_expo._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Scan the QR code in your AppSketch workspace to open your app on this phone.</string>
+	<string>AppSketch uses the camera to scan the QR code in your workspace and to take product photos.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
