@@ -85,10 +85,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     slug: 'appsketch-ai',
     version: Env.VERSION.toString(),
     orientation: 'portrait',
-    icon: './assets/logo.png',
-    // Dark only — the app ships no light theme, and 'automatic' let the
-    // native shell (splash, system chrome) flash white before JS booted.
-    userInterfaceStyle: 'dark',
+    // Premium white icon (opaque — iOS flattens transparency to black).
+    icon: './assets/icon.png',
+    // White is the default theme, dark is a setting (docs/white-theme.md).
+    // 'automatic' lets the in-app choice drive native chrome (alerts,
+    // keyboard, pickers) through Appearance.setColorScheme.
+    userInterfaceStyle: 'automatic',
     updates: {
       fallbackToCacheTimeout: 0,
     },
@@ -156,8 +158,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/logo.png',
-        backgroundColor: '#FFFFFF',
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundColor: '#FAFAF8',
       },
       package: Env.PACKAGE,
       googleServicesFile: './credentials/firebase/google-services.json',
@@ -205,9 +207,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         'expo-splash-screen',
         {
-          backgroundColor: '#000000',
-          image: './assets/logo.png',
-          imageWidth: 150,
+          // The white canvas of the default theme. Always white: the
+          // splash follows the app's default, not the phone's dark mode.
+          backgroundColor: '#FAFAF8',
+          image: './assets/splash-mark.png',
+          imageWidth: 96,
         },
       ],
       // Declared explicitly (rather than relying on autolinking alone) so the

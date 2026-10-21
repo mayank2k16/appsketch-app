@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as React from 'react';
-import { Dimensions, Pressable, StatusBar, StyleSheet, View } from 'react-native';
+import { useColorScheme } from 'nativewind';
+import { Dimensions, Pressable, StatusBar, StyleSheet } from 'react-native';
 import ReAnimated, {
   Easing,
   useAnimatedStyle,
@@ -20,6 +21,26 @@ import { F } from '@/lib/fonts';
 const { width, height } = Dimensions.get('window');
 
 const HOLD_MS = 2600;
+
+// Dark is the original splash, unchanged. White is the default theme: the
+// same honeycomb as a hairline on the warm canvas, the wordmark in ink.
+const SPLASH = {
+  dark: {
+    bg: '#000000',
+    hex: '#3A3A3D',
+    word: ['#FFFFFF', '#FFFFFF', 'rgba(255,255,255,0.35)'] as const,
+    dot: 'rgba(255,255,255,0.62)',
+    bar: 'light-content' as const,
+  },
+  light: {
+    bg: '#FAFAF8',
+    hex: '#E7E7E4',
+    word: ['#0B0B0C', '#0B0B0C', 'rgba(11,11,12,0.32)'] as const,
+    dot: 'rgba(11,11,12,0.55)',
+    bar: 'dark-content' as const,
+  },
+};
+type SplashColors = (typeof SPLASH)['dark'] | (typeof SPLASH)['light'];
 
 // ─────────────────────────────────────────────────────────────
 // Honeycomb — a flat grid of regular (pointy-top) hexagons, grey
@@ -40,7 +61,7 @@ function hexPoints(cx: number, cy: number, r: number) {
   return pts.join(' ');
 }
 
-function HoneycombField() {
+function HoneycombField({ stroke }: { stroke: string }) {
   // Extra rows/cols of overhang so offset rows and edge cuts never leave a
   // gap, then the whole field is centered on the screen (rather than grown
   // from the top-left) so hexes are cut symmetrically on every edge instead
@@ -69,7 +90,7 @@ function HoneycombField() {
           key={key}
           points={points}
           fill="none"
-          stroke="#3A3A3D"
+          stroke={stroke}
           strokeWidth={0.45}
         />
       ))}
@@ -80,7 +101,7 @@ function HoneycombField() {
 // ─────────────────────────────────────────────────────────────
 // Initializing dots — 3-dot loader beneath the wordmark
 // ─────────────────────────────────────────────────────────────
-function LoaderDot({ index }: { index: number }) {
+function LoaderDot({ index, color }: { index: number; color: string }) {
   const o = useSharedValue(0.25);
 
   React.useEffect(() => {
@@ -99,10 +120,12 @@ function LoaderDot({ index }: { index: number }) {
 
   const st = useAnimatedStyle(() => ({ opacity: o.value }));
 
-  return <ReAnimated.View style={[styles.dot, st]} />;
+  return (
+    <ReAnimated.View style={[styles.dot, { backgroundColor: color }, st]} />
+  );
 }
 
-function InitLoader() {
+function InitLoader({ color }: { color: string }) {
   const op = useSharedValue(0);
 
   React.useEffect(() => {
@@ -113,9 +136,9 @@ function InitLoader() {
 
   return (
     <ReAnimated.View style={[styles.dots, st]} pointerEvents="none">
-      <LoaderDot index={0} />
-      <LoaderDot index={1} />
-      <LoaderDot index={2} />
+      <LoaderDot index={0} color={color} />
+      <LoaderDot index={1} color={color} />
+      <LoaderDot index={2} color={color} />
     </ReAnimated.View>
   );
 }
@@ -126,6 +149,8 @@ function InitLoader() {
 export default function BrandSplashScreen() {
   const router = useRouter();
   const navigated = React.useRef(false);
+  const { colorScheme } = useColorScheme();
+  const c: SplashColors = SPLASH[colorScheme === 'dark' ? 'dark' : 'light'];
 
   // Wordmark rises out of the screen: starts slightly back (scaled down,
   // invisible) and drifts forward into full size/opacity, as if the honeycomb
@@ -159,20 +184,27 @@ export default function BrandSplashScreen() {
   };
 
   return (
-    <Pressable style={styles.screen} onPress={doExit}>
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+    <Pressable
+      style={[styles.screen, { backgroundColor: c.bg }]}
+      onPress={doExit}
+    >
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={c.bar}
+      />
 
-      <HoneycombField />
+      <HoneycombField stroke={c.hex} />
 
       <ReAnimated.View style={[styles.brandBlock, wordStyle]} pointerEvents="none">
         <GradientText
           style={styles.wordmark}
-          colors={['#FFFFFF', '#FFFFFF', 'rgba(255,255,255,0.35)']}
+          colors={[...c.word]}
           locations={[0, 0.52, 1]}
         >
           appsketch.ai
         </GradientText>
-        <InitLoader />
+        <InitLoader color={c.dot} />
       </ReAnimated.View>
     </Pressable>
   );
@@ -181,7 +213,6 @@ export default function BrandSplashScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#000000',
     overflow: 'hidden',
   },
 
@@ -214,6 +245,5 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.62)',
   },
 });

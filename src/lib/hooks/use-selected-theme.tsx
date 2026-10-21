@@ -1,44 +1,46 @@
 import { colorScheme, useColorScheme } from 'nativewind';
 import React from 'react';
+import { useMMKVString } from 'react-native-mmkv';
+
+import { storage } from '../storage';
 
 /**
- * Theme selection — dark only.
+ * Theme selection — premium WHITE by default, dark as a setting.
  *
- * The app used to offer light / dark / system, persisted in MMKV and toggled
- * from the drawer. It ships a single dark theme now: the achromatic surface
- * ladder (see CoderTheme) is a DARK ladder, and the light palettes that
- * remain in the theme files were never brought along with it, so anything
- * that reached light mode rendered half-restyled.
+ * The choice is persisted in MMKV and applied before React renders
+ * (`loadSelectedTheme`), so the first frame is already in the right theme.
+ * Every screen resolves its palette with `colorScheme === 'dark' ? dark :
+ * light`; the white palette is the default branch, see docs/white-theme.md.
  *
- * The hook keeps its old shape rather than being deleted, so callers reading
- * `selectedTheme` keep working — it just never reports anything but 'dark'.
+ * 'system' is still accepted for old call sites and follows the phone.
  */
 export type ColorSchemeType = 'light' | 'dark' | 'system';
 
+const SELECTED_THEME = 'SELECTED_THEME';
+const DEFAULT_THEME: ColorSchemeType = 'light';
+
+function readTheme(value: string | undefined | null): ColorSchemeType {
+  return value === 'dark' || value === 'system' || value === 'light'
+    ? value
+    : DEFAULT_THEME;
+}
+
 export const useSelectedTheme = () => {
   const { setColorScheme } = useColorScheme();
+  const [theme, _setTheme] = useMMKVString(SELECTED_THEME, storage);
 
-  // Kept so existing call sites still type-check; every scheme collapses to
-  // dark, so this is a no-op guard rather than a switch.
   const setSelectedTheme = React.useCallback(
-    (_t: ColorSchemeType) => {
-      setColorScheme('dark');
+    (t: ColorSchemeType) => {
+      setColorScheme(t);
+      _setTheme(t);
     },
-    [setColorScheme]
+    [setColorScheme, _setTheme]
   );
 
-  return {
-    selectedTheme: 'dark' as ColorSchemeType,
-    setSelectedTheme,
-  } as const;
+  return { selectedTheme: readTheme(theme), setSelectedTheme } as const;
 };
 
-/**
- * Called once from the root file, before React renders. Pinning the scheme
- * here is what makes the dark-only guarantee hold app-wide: every screen
- * resolves its palette with `colorScheme === 'dark' ? dark : light`, and with
- * this set there is no path that lands on the light branch.
- */
+/** Called once from the root file, before React renders. */
 export const loadSelectedTheme = () => {
-  colorScheme.set('dark');
+  colorScheme.set(readTheme(storage.getString(SELECTED_THEME)));
 };

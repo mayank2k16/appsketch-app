@@ -346,275 +346,261 @@ export const appTheme = {
     diffMeta: 'rgba(255,255,255,0.40)',
   },
 
+  /**
+   * PREMIUM WHITE — the default theme (dark is a setting).
+   *
+   * Rules every light token follows (see docs/white-theme.md):
+   *  - No shadows and no glows. Depth comes from three flat surfaces —
+   *    CANVAS (warm paper) → RAISED (pure white) → INSET (a grey well) — and
+   *    one hairline.
+   *  - Ink, not grey, for primary actions: a near-black pill with white text.
+   *    Orange (the web's /templates white action colour) marks the ONE
+   *    highlighted action on a screen; the brand ramp is kept for the logo,
+   *    hero type and the active tab icon.
+   *  - Text is three steps of the same ink, never a tinted grey.
+   */
   light: {
     // ── Core ──────────────────────────────────────────────────────────────────
-    bg: '#F7F7F9',
+    bg: '#FAFAF8', // CANVAS: warm paper
     bgDeep: '#FFFFFF',
-    surface: '#FFFFFF',
+    surface: '#FFFFFF', // RAISED
     card: '#FFFFFF',
-    text: '#111111',
-    textSub: 'rgba(17,17,17,0.55)',
-    textMuted: 'rgba(17,17,17,0.35)',
-    accent: BRAND_RAMP[1],
-    accentSoft: 'rgba(236,72,153,0.10)',
+    text: '#0B0B0C', // ink
+    textSub: '#5C5D63',
+    textMuted: '#9C9DA3',
+    accent: '#F2600C', // the one highlighted action
+    accentSoft: 'rgba(242,96,12,0.08)',
     accentOn: '#FFFFFF',
-    border: 'rgba(17,17,17,0.09)',
+    border: '#E7E7E4', // the one hairline
     statusBar: 'dark-content' as const,
 
-    // ── Global toast (bottom, swipe-to-dismiss — ToastContainer) ──────────────
-    toastBg: '#FFFFFF',
-    toastBorder: 'rgba(17,17,17,0.09)',
-    toastText: '#111111',
-    toastTextSub: 'rgba(17,17,17,0.55)',
-    toastSuccess: '#1FA971',
-    toastError: '#E0392B',
-    toastWarning: '#C9860A',
-    toastInfo: BRAND_RAMP[1],
+    // ── Global toast ──────────────────────────────────────────────────────────
+    toastBg: '#0B0B0C', // ink toast on paper: reads instantly, no shadow needed
+    toastBorder: '#0B0B0C',
+    toastText: '#FFFFFF',
+    toastTextSub: 'rgba(255,255,255,0.64)',
+    toastSuccess: '#12A150',
+    toastError: '#E5484D',
+    toastWarning: '#D97706',
+    toastInfo: '#F2600C',
 
     // ── Header ────────────────────────────────────────────────────────────────
-    headerBg: 'rgba(247,247,249,0.96)',
-    headerBorder: 'rgba(17,17,17,0.09)',
+    headerBg: 'rgba(250,250,248,0.96)',
+    headerBorder: '#EDEDEA',
 
-    // ── Hero dot background (twinkling grid) ──────────────────────────────────
-    dotColor: '#11121A', // dark dot; opacity animated
-    glowColor: 'rgba(236,72,153,0.10)',
-    pulseRing: 'rgba(236,72,153,0.30)',
-    tagBorder: 'rgba(236,72,153,0.40)',
-    tagText: BRAND_RAMP[1],
+    // ── Hero dot background ───────────────────────────────────────────────────
+    dotColor: '#D4D4CF',
+    glowColor: 'rgba(242,96,12,0)', // no glows in white
+    pulseRing: 'rgba(11,11,12,0.14)',
+    tagBorder: '#E7E7E4',
+    tagText: '#0B0B0C',
 
-    // ── Home CTAs (video look, inverted for light bg) ─────────────────────────
-    heroCtaBg: '#0A0A0A',
+    // ── Home CTAs ─────────────────────────────────────────────────────────────
+    heroCtaBg: '#0B0B0C',
     heroCtaText: '#FFFFFF',
     heroSecondaryBg: '#FFFFFF',
-    heroSecondaryText: '#111111',
-    heroSecondaryBorder: 'rgba(17,17,17,0.12)',
-    heroGhostBorder: 'rgba(17,17,17,0.22)',
-    heroGhostText: '#111111',
-    heroHeadingFade: '#B8BAC0', // "apps." gradient end
+    heroSecondaryText: '#0B0B0C',
+    heroSecondaryBorder: '#E7E7E4',
+    heroGhostBorder: '#D9D9D5',
+    heroGhostText: '#0B0B0C',
+    heroHeadingFade: '#9C9DA3',
 
-    // ── Gallery overlay ───────────────────────────────────────────────────────
-    // See the dark-theme note: scrim behind the heading/CTA block only, fading
-    // out toward the top/bottom edges so the masonry itself stays undimmed.
-    galleryOverlay: 'rgba(255,255,255,0.8)',
+    // ── Gallery overlay — white has no scrims; the band is paper ──────────────
+    galleryOverlay: 'rgba(250,250,248,0.92)',
     galleryOverlayGradient: [
-      'rgba(255,255,255,0)',
-      'rgba(255,255,255,0.5)',
-      'rgba(255,255,255,0.88)',
-      'rgba(255,255,255,0.88)',
-      'rgba(255,255,255,0.5)',
-      'rgba(255,255,255,0)',
+      'rgba(250,250,248,0)',
+      'rgba(250,250,248,0.7)',
+      'rgba(250,250,248,0.96)',
+      'rgba(250,250,248,0.96)',
+      'rgba(250,250,248,0.7)',
+      'rgba(250,250,248,0)',
     ] as string[],
-    galleryOverlayText: '#111111',
-    galleryOverlayTextSub: 'rgba(17,17,17,0.62)',
+    galleryOverlayText: '#0B0B0C',
+    galleryOverlayTextSub: '#5C5D63',
 
     // ── Auth landing panel ────────────────────────────────────────────────────
     authPanelBg: '#FFFFFF',
     authScrimTo: '#FFFFFF',
-    authHeading: '#111111',
-    authSub: 'rgba(17,17,17,0.50)',
-    authFooter: 'rgba(17,17,17,0.34)',
-    authFooterLink: 'rgba(17,17,17,0.60)',
-    authPrimaryBg: '#111111',
+    authHeading: '#0B0B0C',
+    authSub: '#5C5D63',
+    authFooter: '#9C9DA3',
+    authFooterLink: '#0B0B0C',
+    authPrimaryBg: '#0B0B0C',
     authPrimaryText: '#FFFFFF',
-    authSecondaryBg: '#F4F4F6',
-    authSecBorder: 'rgba(17,17,17,0.10)',
-    authSecText: '#111111',
-    authSecIcon: '#111111',
-    authGuest: 'rgba(17,17,17,0.55)',
+    authSecondaryBg: '#FFFFFF',
+    authSecBorder: '#E7E7E4',
+    authSecText: '#0B0B0C',
+    authSecIcon: '#0B0B0C',
+    authGuest: '#5C5D63',
 
-    // ── Auth bottom sheet ──────────────────────────────────────────────────────
-    sheetOverlay: 'rgba(0,0,0,0.45)',
+    // ── Auth bottom sheet ─────────────────────────────────────────────────────
+    sheetOverlay: 'rgba(11,11,12,0.32)',
     sheetBg: '#FFFFFF',
-    sheetTopBorder: 'rgba(17,17,17,0.06)',
-    sheetHandle: 'rgba(17,17,17,0.18)',
-    sheetCloseIcon: 'rgba(17,17,17,0.40)',
-    sheetBrand: 'rgba(17,17,17,0.50)',
-    sheetTitle: '#111111',
-    sheetSub: 'rgba(17,17,17,0.50)',
-    sheetDivider: 'rgba(17,17,17,0.10)',
-    sheetLabel: 'rgba(17,17,17,0.45)',
-    sheetInputBg: '#F4F4F6',
-    sheetInputBorder: 'rgba(17,17,17,0.12)',
-    sheetInputText: '#111111',
-    sheetPlaceholder: 'rgba(17,17,17,0.30)',
-    sheetSelection: '#111111',
-    sheetCtaBg: '#111111',
+    sheetTopBorder: '#E7E7E4',
+    sheetHandle: '#D9D9D5',
+    sheetCloseIcon: '#5C5D63',
+    sheetBrand: '#5C5D63',
+    sheetTitle: '#0B0B0C',
+    sheetSub: '#5C5D63',
+    sheetDivider: '#EDEDEA',
+    sheetLabel: '#5C5D63',
+    sheetInputBg: '#F4F4F2', // INSET
+    sheetInputBorder: '#E7E7E4',
+    sheetInputText: '#0B0B0C',
+    sheetPlaceholder: '#9C9DA3',
+    sheetSelection: '#F2600C',
+    sheetCtaBg: '#0B0B0C',
     sheetCtaText: '#FFFFFF',
-    sheetGhostBorder: 'rgba(17,17,17,0.24)',
-    sheetGhostText: 'rgba(17,17,17,0.55)',
-    sheetFooter: 'rgba(17,17,17,0.30)',
+    sheetGhostBorder: '#D9D9D5',
+    sheetGhostText: '#0B0B0C',
+    sheetFooter: '#9C9DA3',
 
     // ── Drawer ────────────────────────────────────────────────────────────────
-    drawerOverlay: 'rgba(0,0,0,0.45)',
+    drawerOverlay: 'rgba(11,11,12,0.28)',
     drawerPanelBg: '#FFFFFF',
-    drawerScrollBg: '#F4F4F6',
+    drawerScrollBg: '#FAFAF8',
     drawerRowBg: '#FFFFFF',
-    drawerRowBorder: 'rgba(17,17,17,0.07)',
-    drawerIconWrap: 'rgba(236,72,153,0.12)',
-    drawerLabel: '#111111',
-    drawerDim: 'rgba(17,17,17,0.45)',
-    drawerWordmark: '#111111',
-    drawerShimmer: 'rgba(17,17,17,0.12)',
-    drawerAccentLine: BRAND_RAMP[1],
+    drawerRowBorder: '#EDEDEA',
+    drawerIconWrap: '#F4F4F2',
+    drawerLabel: '#0B0B0C',
+    drawerDim: '#5C5D63',
+    drawerWordmark: '#0B0B0C',
+    drawerShimmer: 'rgba(11,11,12,0.12)',
+    drawerAccentLine: '#F2600C',
     drawerBottomBg: '#FFFFFF',
-    drawerBottomText: 'rgba(17,17,17,0.30)',
-    drawerBottomBorder: 'rgba(17,17,17,0.09)',
-    drawerCloseIconBg: 'rgba(17,17,17,0.06)',
-    drawerCloseIconBorder: 'rgba(17,17,17,0.10)',
-    drawerCloseIconText: 'rgba(17,17,17,0.45)',
-    drawerShadow: 'rgba(0,0,0,0.12)',
+    drawerBottomText: '#9C9DA3',
+    drawerBottomBorder: '#EDEDEA',
+    drawerCloseIconBg: '#F4F4F2',
+    drawerCloseIconBorder: '#E7E7E4',
+    drawerCloseIconText: '#5C5D63',
+    drawerShadow: 'transparent', // no shadows in white
 
-    // ── Bottom tab bar (GlowTabBar — transparent tab, colour-only active state) ─
-    tabBarBg: '#F7F7F9',
+    // ── Bottom tab bar ────────────────────────────────────────────────────────
+    tabBarBg: '#FFFFFF',
     tabLabelGradient: ['#F97316', '#EC4899', '#8B5CF6', '#A78BFA'],
-    tabIconInactive: 'rgba(17,17,17,0.42)',
-    tabLabelInactive: 'rgba(17,17,17,0.45)',
-    tabLabelActive: '#111111',
+    tabIconInactive: '#9C9DA3',
+    tabLabelInactive: '#9C9DA3',
+    tabLabelActive: '#0B0B0C',
 
-    // ── Agent screen (CipherField + PromptBar) ────────────────────────────────
-    // Same pair as dark — see the note there.
-    agentGlowOrange: BRAND_RAMP[0],
-    agentGlowBlue: BRAND_RAMP[2],
+    // ── Agent screen ──────────────────────────────────────────────────────────
+    agentGlowOrange: 'rgba(242,96,12,0)', // no glows in white
+    agentGlowBlue: 'rgba(139,92,246,0)',
     agentInputBg: '#FFFFFF',
-    agentInputBorder: 'rgba(17,17,17,0.10)',
-    agentInputText: '#111111',
-    agentInputPlaceholder: 'rgba(17,17,17,0.38)',
-    agentBtnBg: 'rgba(17,17,17,0.05)',
-    agentBtnBorder: 'rgba(17,17,17,0.10)',
-    agentBtnIcon: 'rgba(17,17,17,0.62)',
-    agentSendGradient: [BRAND_RAMP[0], BRAND_RAMP[2]],
+    agentInputBorder: '#E7E7E4',
+    agentInputText: '#0B0B0C',
+    agentInputPlaceholder: '#9C9DA3',
+    agentBtnBg: '#F4F4F2',
+    agentBtnBorder: '#E7E7E4',
+    agentBtnIcon: '#0B0B0C',
+    agentSendGradient: ['#0B0B0C', '#0B0B0C'], // ink send button
+    agentBorderGradient: ['#E7E7E4', '#E7E7E4', '#E7E7E4'], // flat hairline ring
+    agentCardGlassTint: 'rgba(255,255,255,1)',
 
-    // Prompt card border ring + glass tint — see dark block above for why
-    // the tint needs to be near-opaque rather than a lighter glass alpha.
-    agentBorderGradient: ['#8B5CF6', '#EC4899', '#F97316'],
-    agentCardGlassTint: 'rgba(247,247,249,0.94)', // ≈ bg, near-opaque
+    agentTabBg: '#F4F4F2',
+    agentTabBorder: '#E7E7E4',
+    agentTabText: '#5C5D63',
+    agentTabIcon: '#5C5D63',
+    agentTabActiveBg: '#0B0B0C',
+    agentTabActiveText: '#FFFFFF',
 
-    // App-type tabs (Web/Mobile/Game) above the prompt card
-    agentTabBg: 'rgba(17,17,17,0.04)',
-    agentTabBorder: 'rgba(17,17,17,0.09)',
-    agentTabText: 'rgba(17,17,17,0.60)',
-    agentTabIcon: 'rgba(17,17,17,0.60)',
-    agentTabActiveBg: BRAND_RAMP[1],
-    agentTabActiveText: 'rgba(17,17,17,1)',
+    // ── Marketplace ───────────────────────────────────────────────────────────
+    templatesChipBg: '#FFFFFF',
+    templatesChipBorder: '#E7E7E4',
+    templatesChipText: '#5C5D63',
+    templatesTagBg: '#F4F4F2',
+    templatesTagText: '#3A3B40',
+    templatesSkeletonBase: '#EFEFEC',
+    templatesSkeletonHighlight: '#F7F7F5',
 
-    // ── Marketplace — AI Templates screen ──────────────────────────────────────
-    templatesChipBg: 'rgba(17,17,17,0.04)',
-    templatesChipBorder: 'rgba(17,17,17,0.09)',
-    templatesChipText: 'rgba(17,17,17,0.60)',
-    templatesTagBg: 'rgba(236,72,153,0.12)',
-    templatesTagText: BRAND_RAMP[1],
-    templatesSkeletonBase: 'rgba(17,17,17,0.06)',
-    templatesSkeletonHighlight: 'rgba(17,17,17,0.11)',
+    // ── Studio ────────────────────────────────────────────────────────────────
+    studioCardGradient: ['#FFFFFF', '#FFFFFF', '#FFFFFF'],
+    studioCardBorder: '#E7E7E4',
+    studioCardTopEdge: '#E7E7E4',
+    studioCardLogoBg: '#F4F4F2',
+    studioRailBg: '#F4F4F2',
+    studioRailActiveBg: '#FFFFFF',
 
-    // ── Studio — store cards + section rail ───────────────────────────────────
-    // Light mode keeps the same top-lit direction, just inverted: pure white at
-    // the top edge sinking to a faint grey, so the card still reads as lit.
-    studioCardGradient: ['#FFFFFF', '#FAFAFB', '#F2F2F5'],
-    studioCardBorder: 'rgba(17,17,17,0.09)',
-    studioCardTopEdge: 'rgba(255,255,255,0.9)',
-    studioCardLogoBg: 'rgba(17,17,17,0.05)',
-    studioRailBg: 'rgba(17,17,17,0.04)',
-    studioRailActiveBg: 'rgba(236,72,153,0.12)',
-
-    // ── Code editor (AI coder — chat/code/preview tabs) ───────────────────────
-    codeEditorTabBarBg: '#F7F7F9',
-    codeEditorTabBg: 'rgba(17,17,17,0.04)',
-    codeEditorTabBorder: 'rgba(17,17,17,0.09)',
-    codeEditorTabText: 'rgba(17,17,17,0.55)',
-    codeEditorTabActiveText: '#111111',
-    codeEditorTabIndicator: '#111111',
+    // ── Code editor — the web workspace's light ladder ────────────────────────
+    codeEditorTabBarBg: '#FAFAF8',
+    codeEditorTabBg: '#F4F4F2',
+    codeEditorTabBorder: '#E7E7E4',
+    codeEditorTabText: '#7A7B81',
+    codeEditorTabActiveText: '#0B0B0C',
+    codeEditorTabIndicator: '#0B0B0C',
     codeEditorSurface: '#FFFFFF',
-    codeEditorBg: '#FBFBFC',
-    codeEditorBorder: 'rgba(17,17,17,0.09)',
-    codeEditorGutterBg: '#F1F1F3',
-    codeEditorLineNumber: 'rgba(17,17,17,0.32)',
-    codeEditorText: '#111111',
-    codeEditorTextMuted: 'rgba(17,17,17,0.45)',
-    // Same-surface bubbles, as in dark — the hairline, not a fill, is what
-    // separates a message from the column it sits on.
-    codeEditorChatUserBg: '#FFFFFF',
-    codeEditorChatUserText: '#111111',
+    codeEditorBg: '#FAFAF8',
+    codeEditorBorder: '#E7E7E4',
+    codeEditorGutterBg: '#F7F7F5',
+    codeEditorLineNumber: '#B4B5BA',
+    codeEditorText: '#0B0B0C',
+    codeEditorTextMuted: '#7A7B81',
+    codeEditorChatUserBg: '#F4F4F2',
+    codeEditorChatUserText: '#0B0B0C',
     codeEditorChatAssistantBg: '#FFFFFF',
-    codeEditorChatAssistantText: '#111111',
-    codeEditorActivityBg: 'rgba(17,17,17,0.03)',
-    codeEditorActivityBorder: 'rgba(17,17,17,0.08)',
-    codeEditorActivityText: 'rgba(17,17,17,0.60)',
-    codeEditorConnectedDot: '#1FA971',
-    codeEditorDisconnectedDot: 'rgba(17,17,17,0.25)',
-    codeEditorDanger: '#E0392B',
-    /** Focus rings, and the ONE solid fill the coder surface allows. */
-    codeEditorFocus: '#4A4A4A',
-    /** A selected chip/pill — a wash and a coloured label, never a solid fill.
-     * Darker text here than in dark mode so it carries on white. */
-    codeEditorAccentWash: 'rgba(17,17,17,0.10)',
-    codeEditorAccentText: '#1A1A1A',
+    codeEditorChatAssistantText: '#0B0B0C',
+    codeEditorActivityBg: '#F7F7F5',
+    codeEditorActivityBorder: '#E7E7E4',
+    codeEditorActivityText: '#7A7B81',
+    codeEditorConnectedDot: '#12A150',
+    codeEditorDisconnectedDot: '#C4C5CA',
+    codeEditorDanger: '#E5484D',
+    codeEditorFocus: '#0B0B0C',
+    codeEditorAccentWash: 'rgba(11,11,12,0.06)',
+    codeEditorAccentText: '#0B0B0C',
 
-    // Chat glass surfaces (bubbles / composer) — BlurView + tint overlay,
-    // same recipe as the drawer panel and marketplace TemplateCard.
-    codeEditorGlassOverlay: 'rgba(255,255,255,0.55)',
-    codeEditorGlassBorder: 'rgba(17,17,17,0.10)',
-    codeEditorGlassBorderTop: 'rgba(255,255,255,0.65)',
-    // A pair, but both stops are the surface — see the dark block.
-    codeEditorUserBubbleFrom: '#FFFFFF',
-    codeEditorUserBubbleTo: '#FFFFFF',
+    codeEditorGlassOverlay: 'rgba(255,255,255,0.96)',
+    codeEditorGlassBorder: '#E7E7E4',
+    codeEditorGlassBorderTop: '#E7E7E4',
+    codeEditorUserBubbleFrom: '#F4F4F2',
+    codeEditorUserBubbleTo: '#F4F4F2',
 
-    // Activity step timeline
-    codeEditorTimelineLine: 'rgba(17,17,17,0.09)',
-    codeEditorTimelineDone: '#1FA971',
-    codeEditorTimelineActive: '#111111',
-    codeEditorToolChipBg: 'rgba(17,17,17,0.04)',
-    codeEditorToolChipBorder: 'rgba(17,17,17,0.09)',
-    codeEditorToolChipText: 'rgba(17,17,17,0.55)',
-    codeEditorToolChipActiveBg: 'rgba(17,17,17,0.08)',
-    codeEditorToolChipActiveBorder: 'rgba(17,17,17,0.16)',
-    codeEditorToolChipActiveText: '#111111',
-    // Light theme cannot use white here — the base text is dark, so a white
-    // band would blank the words out for the length of the sweep. A bright
-    // neutral gives the same "light passing over it" motion while staying
-    // legible. (Dark theme is the pure-white one; see above.)
-    codeEditorShimmerHighlight: '#9AA3B2',
+    codeEditorTimelineLine: '#E7E7E4',
+    codeEditorTimelineDone: '#12A150',
+    codeEditorTimelineActive: '#0B0B0C',
+    codeEditorToolChipBg: '#F4F4F2',
+    codeEditorToolChipBorder: '#E7E7E4',
+    codeEditorToolChipText: '#5C5D63',
+    codeEditorToolChipActiveBg: '#FFFFFF',
+    codeEditorToolChipActiveBorder: '#D9D9D5',
+    codeEditorToolChipActiveText: '#0B0B0C',
+    codeEditorShimmerHighlight: '#9C9DA3',
 
-    // Token meter + plan/todos/review activity rows
-    codeEditorTokenIn: '#3B6FB8',
-    codeEditorTokenOut: '#1FA971',
-    codeEditorTokenCachedBg: 'rgba(184,138,20,0.10)',
-    codeEditorTokenCachedText: '#8A6410',
-    codeEditorTodosBadgeBg: 'rgba(17,17,17,0.05)',
-    codeEditorTodosBadgeText: 'rgba(17,17,17,0.65)',
-    codeEditorReviewOkBg: 'rgba(31,169,113,0.14)',
-    codeEditorReviewOkText: '#177A50',
-    codeEditorReviewWarnBg: 'rgba(180,130,10,0.14)',
-    codeEditorReviewWarnText: '#8A6410',
-    codeEditorAmber: '#C9860A',
+    codeEditorTokenIn: '#2F6FDB',
+    codeEditorTokenOut: '#12A150',
+    codeEditorTokenCachedBg: 'rgba(217,119,6,0.08)',
+    codeEditorTokenCachedText: '#B45309',
+    codeEditorTodosBadgeBg: '#F4F4F2',
+    codeEditorTodosBadgeText: '#0B0B0C',
+    codeEditorReviewOkBg: 'rgba(18,161,80,0.08)',
+    codeEditorReviewOkText: '#0E7A3E',
+    codeEditorReviewWarnBg: 'rgba(217,119,6,0.08)',
+    codeEditorReviewWarnText: '#B45309',
+    codeEditorAmber: '#D97706',
 
-    // Terminal — light mode keeps a dark shell surface (real terminal
-    // convention) even though the rest of the app is light, same as most
-    // code editors' console panes.
-    terminalBg: '#16161A',
-    terminalText: 'rgba(255,255,255,0.85)',
-    terminalCmd: '#6C9BFF',
-    terminalOk: '#1FA971',
-    terminalErr: '#E0392B',
-    terminalWarn: '#C9860A',
-    terminalInfo: 'rgba(255,255,255,0.50)',
-    terminalInputBg: 'rgba(255,255,255,0.08)',
-    terminalInputBorder: 'rgba(255,255,255,0.14)',
+    // Terminal stays a dark well in both themes: code reads best on ink.
+    terminalBg: '#111113',
+    terminalText: 'rgba(255,255,255,0.86)',
+    terminalCmd: '#8AB4FF',
+    terminalOk: '#3DDC84',
+    terminalErr: '#FF6B6B',
+    terminalWarn: '#FFC24B',
+    terminalInfo: 'rgba(255,255,255,0.55)',
+    terminalInputBg: '#1B1B1E',
+    terminalInputBorder: '#2A2A2E',
 
-    // Collections / CMS — a selected chip raises, it does not take a brand fill
-    collectionsChipBg: 'rgba(17,17,17,0.04)',
-    collectionsChipActiveBg: 'rgba(17,17,17,0.12)',
-    collectionsBadgeBg: 'rgba(17,17,17,0.06)',
-    collectionsBadgeText: '#111111',
-    collectionsMethodGet: '#1FA971',
-    collectionsMethodPost: '#3B82F6',
-    collectionsMethodOther: '#C9860A',
+    collectionsChipBg: '#F4F4F2',
+    collectionsChipActiveBg: '#0B0B0C',
+    collectionsBadgeBg: '#F4F4F2',
+    collectionsBadgeText: '#0B0B0C',
+    collectionsMethodGet: '#12A150',
+    collectionsMethodPost: '#2F6FDB',
+    collectionsMethodOther: '#D97706',
 
-    // Changes / git diff
-    diffAddedBg: 'rgba(31,169,113,0.10)',
-    diffAddedText: '#1FA971',
-    diffRemovedBg: 'rgba(224,57,43,0.10)',
-    diffRemovedText: '#E0392B',
-    diffMeta: 'rgba(17,17,17,0.35)',
+    diffAddedBg: 'rgba(18,161,80,0.08)',
+    diffAddedText: '#0E7A3E',
+    diffRemovedBg: 'rgba(229,72,77,0.08)',
+    diffRemovedText: '#C2363B',
+    diffMeta: '#9C9DA3',
   },
 } as const;
 

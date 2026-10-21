@@ -10,6 +10,7 @@ export * from './image';
 export * from './input';
 export * from './list';
 export * from './modal';
+export * from './pressable-scale';
 export * from './progress-bar';
 export * from './searchable-select';
 export * from './select';

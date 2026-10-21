@@ -1,7 +1,13 @@
 import type { Theme } from 'expo-router';
-import { DarkTheme as _DarkTheme } from 'expo-router';
+import {
+  DarkTheme as _DarkTheme,
+  DefaultTheme as _LightTheme,
+} from 'expo-router';
+import { useColorScheme } from 'nativewind';
 
 import colors from '@/components/ui/colors';
+
+import { appTheme } from './theme/AppTheme';
 
 const DarkTheme: Theme = {
   ..._DarkTheme,
@@ -15,12 +21,21 @@ const DarkTheme: Theme = {
   },
 };
 
-/**
- * The app is dark only (see use-selected-theme), so there is one theme and no
- * branch. This function used to read `useColorScheme()` and then return
- * `LightTheme` from BOTH sides of its `if` — navigation chrome was light even
- * in dark mode, which is a large part of why the light path looked broken.
- */
+/** Navigation chrome for the premium white theme — the canvas, not pure
+ * white, so screens never flash a different white during transitions. */
+const LightTheme: Theme = {
+  ..._LightTheme,
+  colors: {
+    ..._LightTheme.colors,
+    primary: appTheme.light.text,
+    background: appTheme.light.bg,
+    text: appTheme.light.text,
+    border: appTheme.light.border,
+    card: appTheme.light.surface,
+  },
+};
+
 export function useThemeConfig() {
-  return DarkTheme;
+  const { colorScheme } = useColorScheme();
+  return colorScheme === 'dark' ? DarkTheme : LightTheme;
 }

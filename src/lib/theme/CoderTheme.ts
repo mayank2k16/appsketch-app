@@ -50,7 +50,7 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
   // The web's `--ui-accent-soft` #eaeaea: the selected-chip fill and the
   // colour an active label takes. On light it has to invert — a near-white
   // "accent" is invisible on a white card.
-  const accent = dark ? '#EAEAEA' : '#1A1A1A';
+  const accent = dark ? '#EAEAEA' : '#0B0B0C';
   return {
     ...base,
     accent,
@@ -78,7 +78,7 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
     // whole reason `accentOn` exists; see AppTheme.
     accentOn: dark ? '#010203' : '#FFFFFF',
     // A wash, used as a background and never as text.
-    accentSoft: dark ? 'rgba(234,234,234,0.12)' : 'rgba(26,26,26,0.08)',
+    accentSoft: dark ? 'rgba(234,234,234,0.12)' : 'rgba(11,11,12,0.06)',
 
     // ── the branded gradients, flattened ────────────────────────────────────
     // Each of these is a violet/blue ramp. Kept as ramps (the components
@@ -91,12 +91,12 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
     // this scope, so it just reuses `base.tabLabelGradient` unchanged — see
     // the carve-out note next to `tabLabelGradient` in CoderTheme.test.ts.
     tabLabelGradient: base.tabLabelGradient,
-    agentSendGradient: dark ? ['#3A3A3A', '#1E1E1E'] : ['#2A2A2A', '#111111'],
+    agentSendGradient: dark ? ['#3A3A3A', '#1E1E1E'] : ['#0B0B0C', '#0B0B0C'],
     agentBorderGradient: dark
       ? ['#3A3A3A', '#5A5A5A', '#2A2A2A']
-      : ['#D4D4D4', '#B4B4B4', '#E4E4E4'],
-    agentGlowBlue: dark ? 'rgba(255,255,255,0.10)' : 'rgba(17,17,17,0.08)',
-    agentGlowOrange: dark ? 'rgba(255,255,255,0.06)' : 'rgba(17,17,17,0.05)',
+      : ['#E7E7E4', '#E7E7E4', '#E7E7E4'],
+    agentGlowBlue: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,12,0)',
+    agentGlowOrange: dark ? 'rgba(255,255,255,0.06)' : 'rgba(11,11,12,0)',
 
     // The Web/App pill above the composer — a light fill with dark text, the
     // same "on" treatment the web gives a selected chip.
@@ -106,7 +106,7 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
     // Marketplace tag pills and the Studio section rail were both an indigo
     // wash; they become the same neutral raised surface the web uses
     // (`--ui-ctl`) rather than a tint.
-    templatesTagBg: dark ? 'rgba(255,255,255,0.07)' : 'rgba(17,17,17,0.06)',
+    templatesTagBg: dark ? 'rgba(255,255,255,0.07)' : '#F4F4F2',
     templatesTagText: dark ? '#C9C9C9' : '#3A3A3A',
 
     // Store cards and the section rail — plain surfaces on the same ladder as
@@ -114,9 +114,9 @@ function scope(base: (typeof appTheme)['dark'] | (typeof appTheme)['light']) {
     // gradient/top-edge "lit" treatment `studioCardGradient` used to draw is
     // dropped by StoreCard itself now; these three just carry a flat fill and
     // a uniform hairline.
-    studioCardBorder: dark ? 'rgba(255,255,255,0.16)' : 'rgba(17,17,17,0.12)',
-    studioRailBg: dark ? SURFACE_RAISED : 'rgba(17,17,17,0.04)',
-    studioRailActiveBg: dark ? 'rgba(255,255,255,0.12)' : 'rgba(17,17,17,0.08)',
+    studioCardBorder: dark ? 'rgba(255,255,255,0.16)' : '#E7E7E4',
+    studioRailBg: dark ? SURFACE_RAISED : '#F4F4F2',
+    studioRailActiveBg: dark ? 'rgba(255,255,255,0.12)' : '#FFFFFF',
   } as AppColors;
 }
 

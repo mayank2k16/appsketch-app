@@ -1,0 +1,73 @@
+# Premium white theme
+
+AppSketch is **white by default**. Dark is a setting, and it looks exactly as it
+did before this change. The layouts are the same in both themes. Only the
+colours change, plus the press feedback that every CTA now has.
+
+## How the theme is chosen
+
+- `src/lib/hooks/use-selected-theme.tsx` stores the choice in MMKV
+  (`SELECTED_THEME`), and the default is `light`. `loadSelectedTheme()` applies
+  it before React renders, so the first frame is already in the right theme.
+- The switch lives in the drawer (**Appearance: White / Dark**) and in
+  Settings → Theme.
+- Screens read `const { colorScheme } = useColorScheme()` (nativewind), then
+  `useAppTheme(colorScheme)`, `useCoderTheme(colorScheme)` or
+  `useBrandedCoderTheme(colorScheme)`. Anything other than `'dark'` resolves to
+  the white palette.
+- Native shell:
+  - The icon is `assets/icon.png`: an opaque warm-white canvas with the logo
+    glyph. Android's adaptive icon uses `assets/adaptive-icon.png` on `#FAFAF8`.
+  - The launch splash is always `#FAFAF8` with `assets/splash-mark.png`.
+  - The in-app splash (`src/app/splash.tsx`) follows the theme.
+  - `userInterfaceStyle` is `automatic`, so alerts and the keyboard follow the
+    choice.
+
+## The rules for white
+
+1. **No shadows, no glows, no blur tints.** Use `shadowOpacity: 0`, no
+   `elevation`, and no coloured glow layers. Depth comes from three surface
+   steps and one hairline. Keep shadows in dark wherever they already exist.
+2. **Surfaces.** The canvas is `#FAFAF8` (`bg`). Raised surfaces are `#FFFFFF`
+   (`surface`): cards, sheets and inputs. Inset surfaces are `#F4F4F2`: chips,
+   rails, tracks and pressed rows. The hairline is `#E7E7E4` (`border`), 1px.
+   Never use pure-black borders.
+3. **Ink.**
+   - Text is `#0B0B0C`.
+   - Secondary text is `#5C5D63`.
+   - Muted text and placeholders are `#9C9DA3`.
+   - Primary buttons are ink-filled with white text.
+4. **One accent.**
+   - Orange `#F2600C` marks the single most important action on a screen: Use
+     app, Open app, Send, Pay.
+   - The brand gradient is only for the logo, a hero word, or the active tab
+     icon.
+   - Do not tint whole surfaces with colour.
+5. **Status colours.**
+   - Success is `#12A150`.
+   - Error is `#E5484D`.
+   - Warning is `#D97706`.
+   - Use each at ~8% alpha for the background of its pill.
+6. **Radius.** Keep each component's existing radius. Do not change layouts.
+7. **Images over white.** Images get a 1px hairline frame instead of a shadow.
+   Never overlay a dark gradient on an image just to make text legible: put the
+   text below it instead.
+
+## Interaction: no dead clicks
+
+- Everything tappable uses `PressableScale` (`@/components/ui`). It gives a
+  spring scale to 0.96 and a light haptic. Pass `scaleTo={0.98}` for large
+  cards, and `haptic={false}` for steppers and keys.
+- Every visible button, row, chip, icon and card must *do* something. Either
+  wire it to a real route or action, or remove it. `onPress={() => {}}` is a
+  bug.
+- Show a disabled control at 50% opacity. Do not leave it looking enabled while
+  it ignores taps.
+- Use orange or ink spinners in white. Never use a white spinner on white.
+
+## Palettes
+
+- App: `src/lib/theme/AppTheme.ts` (`appTheme.light`).
+- Coder, Agent, Studio and Marketplace: `CoderTheme.ts` (light branch).
+- CMS: `src/containers/CMS/theme`.
+- Status bar: `appTheme.*.statusBar`, or `FocusAwareStatusBar`.
