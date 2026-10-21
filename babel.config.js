@@ -13,6 +13,7 @@ module.exports = function (api) {
           alias: {
             '@': './src',
             '@env': './src/lib/env.js',
+            'appsketch-host': './modules/appsketch-host',
           },
           extensions: [
             '.ios.ts',
@@ -27,7 +28,6 @@ module.exports = function (api) {
           ],
         },
       ],
-      'react-native-reanimated/plugin',
     ],
   };
 };

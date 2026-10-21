@@ -19,14 +19,17 @@ import {
   SCROLLABLE_TYPE,
 } from '@gorhom/bottom-sheet';
 import { type BottomSheetScrollViewProps } from '@gorhom/bottom-sheet/src/components/bottomSheetScrollable/types';
+import * as React from 'react';
 import { memo } from 'react';
 import { type KeyboardAwareScrollViewProps } from 'react-native-keyboard-controller';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Reanimated from 'react-native-reanimated';
 
 const AnimatedScrollView =
-  Reanimated.createAnimatedComponent<KeyboardAwareScrollViewProps>(
-    KeyboardAwareScrollView
+  // Reanimated 4's overloads pick the FlatList signature for a forwardRef
+  // component; the runtime call is the same as before the SDK 57 upgrade.
+  Reanimated.createAnimatedComponent(
+    KeyboardAwareScrollView as unknown as React.ComponentClass<KeyboardAwareScrollViewProps>
   );
 const BottomSheetScrollViewComponent = createBottomSheetScrollableComponent<
   BottomSheetScrollViewMethods,

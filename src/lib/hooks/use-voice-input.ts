@@ -1,4 +1,4 @@
-import Voice from '@react-native-voice/voice';
+import Voice from '@/lib/voice';
 import * as React from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 

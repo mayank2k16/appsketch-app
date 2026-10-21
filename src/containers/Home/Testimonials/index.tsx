@@ -190,7 +190,7 @@ function TestimonialModal({
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.modalScrim]} />
 
         {/* Tap anywhere outside the card to dismiss */}
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
         {/* Arrows and card sit in one flow row — left arrow, card, right
             arrow — rather than absolutely-positioned overlays, so they stay

@@ -27,9 +27,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   // ── Package-visibility query for the system speech recognizer ───────────────
   // Android 11+ (API 30+) hides the speech-recognition service behind
   // package-visibility filtering. Without declaring it here, SpeechRecognizer
-  // can't bind to it and @react-native-voice/voice's `Voice.start()` rejects
+  // can't bind to it and the speech recognizer's start() fails
   // immediately with no useful message — surfaced in the UI as "Couldn't
-  // start voice input." The voice package's own config plugin only adds the
+  // start voice input." The speech plugin only adds the
   // RECORD_AUDIO permission, not this.
   cfg = withAndroidManifest(cfg, (c) => {
     const manifest = c.modResults.manifest as any;
@@ -89,7 +89,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     // Dark only — the app ships no light theme, and 'automatic' let the
     // native shell (splash, system chrome) flash white before JS booted.
     userInterfaceStyle: 'dark',
-    newArchEnabled: true,
     updates: {
       fallbackToCacheTimeout: 0,
     },
@@ -97,7 +96,31 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: Env.BUNDLE_ID,
-      googleServicesFile: './ios/Zorviaa/GoogleService-Info.plist',
+      googleServicesFile: './credentials/firebase/GoogleService-Info.plist',
+      // Was a hand-edited ios/Zorviaa/PrivacyInfo.xcprivacy before the native
+      // folders became generated (CNG); prebuild writes it from here now.
+      privacyManifests: {
+        NSPrivacyTracking: false,
+        NSPrivacyCollectedDataTypes: [],
+        NSPrivacyAccessedAPITypes: [
+          {
+            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryFileTimestamp',
+            NSPrivacyAccessedAPITypeReasons: ['C617.1', '0A2A.1', '3B52.1'],
+          },
+          {
+            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryUserDefaults',
+            NSPrivacyAccessedAPITypeReasons: ['CA92.1', '1C8F.1', 'C56D.1'],
+          },
+          {
+            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategorySystemBootTime',
+            NSPrivacyAccessedAPITypeReasons: ['35F9.1'],
+          },
+          {
+            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryDiskSpace',
+            NSPrivacyAccessedAPITypeReasons: ['E174.1', '85F4.1'],
+          },
+        ],
+      },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationWhenInUseUsageDescription:
@@ -105,7 +128,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSLocationAlwaysAndWhenInUseUsageDescription:
           'We need your location to show nearby stores and delivery options.',
         NSCameraUsageDescription:
-          'We need camera access to scan barcodes and upload product photos.',
+          'AppSketch uses the camera to scan the QR code in your workspace and to take product photos.',
         NSUserNotificationsUsageDescription:
           'We send notifications about orders, offers, and updates.',
         // Without these keys iOS refuses the PHPhotoLibrary authorization that
@@ -129,7 +152,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundColor: '#FFFFFF',
       },
       package: Env.PACKAGE,
-      googleServicesFile: './android/google-services.json',
+      googleServicesFile: './credentials/firebase/google-services.json',
       permissions: [
         'ACCESS_COARSE_LOCATION',
         'ACCESS_FINE_LOCATION',
@@ -196,11 +219,31 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           isAccessMediaLocationEnabled: false,
         },
       ],
-      '@react-native-voice/voice',
+      [
+        'expo-speech-recognition',
+        {
+          microphonePermission:
+            'Speak your prompt instead of typing it.',
+          speechRecognitionPermission:
+            'Turn what you say into the text of your prompt.',
+        },
+      ],
       'expo-localization',
       'expo-router',
       ['app-icon-badge', appIconBadgeConfig],
-      ['react-native-edge-to-edge'],
+      [
+        'expo-camera',
+        {
+          cameraPermission:
+            'AppSketch uses the camera to scan the QR code in your workspace and to take product photos.',
+          recordAudioAndroid: false,
+        },
+      ],
+      'expo-audio',
+      './plugins/with-release-signing',
+      './plugins/with-firebase-modular-headers',
+      './plugins/with-guest-network',
+      './plugins/with-fcm-notification-color',
       // react-native-maps v1.20.1 auto-links via Podfile — no config plugin needed
     ],
     extra: {

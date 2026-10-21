@@ -78,7 +78,7 @@ function VideoBubble({ uri }: { uri: string }) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = false;
   });
-  return <VideoView player={player} style={st.media} allowsFullscreen nativeControls />;
+  return <VideoView player={player} style={st.media} fullscreenOptions={{ enable: true }} nativeControls />;
 }
 
 const st = StyleSheet.create({

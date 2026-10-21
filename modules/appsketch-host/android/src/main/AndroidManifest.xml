@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- A guest app runs in its own activity (and React instance) on top of AppSketch. -->
+    <activity
+      android:name="ai.appsketch.host.GuestActivity"
+      android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize|assetsPaths|locale|layoutDirection"
+      android:windowSoftInputMode="adjustResize"
+      android:theme="@style/AppSketchGuestTheme"
+      android:exported="false" />
+  </application>
+</manifest>

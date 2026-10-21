@@ -161,7 +161,7 @@ const st = StyleSheet.create({
     overflow: 'hidden',
   },
   field: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
   },
   row: {

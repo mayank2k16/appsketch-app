@@ -23,10 +23,12 @@ const isWeb = Platform.OS === 'web';
 const CREATE_STEPS = ['Fetching your template…', 'Spinning up your workspace…', 'Publishing your app…'];
 
 export function AppPreviewScreen() {
-  const { uuid: uuidParam, templateId, name } = useLocalSearchParams<{
+  const { uuid: uuidParam, templateId, name, url: urlParam } = useLocalSearchParams<{
     uuid?: string;
     templateId?: string;
     name?: string;
+    /** A live site to show as it is (a published code template's preview). */
+    url?: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -34,7 +36,9 @@ export function AppPreviewScreen() {
   const t = useAppTheme(colorScheme);
 
   const useTemplate = useUseTemplate();
-  const [phase, setPhase] = React.useState<'creating' | 'ready' | 'error'>(uuidParam ? 'ready' : 'creating');
+  const [phase, setPhase] = React.useState<'creating' | 'ready' | 'error'>(
+    uuidParam || urlParam ? 'ready' : 'creating'
+  );
   const [uuid, setUuid] = React.useState<string | undefined>(uuidParam);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
@@ -74,13 +78,13 @@ export function AppPreviewScreen() {
   }
 
   React.useEffect(() => {
-    if (uuidParam || hasStartedRef.current) return;
+    if (uuidParam || urlParam || hasStartedRef.current) return;
     hasStartedRef.current = true;
     runCreate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const url = uuid ? `https://appsketch.ai/app/${uuid}/` : undefined;
+  const url = urlParam || (uuid ? `https://appsketch.ai/app/${uuid}/` : undefined);
 
   function handleOpenInBrowser() {
     if (url) Linking.openURL(url);
@@ -168,7 +172,7 @@ export function AppPreviewScreen() {
               {React.createElement('iframe', {
                 key: reloadKey,
                 src: url,
-                style: { ...StyleSheet.absoluteFillObject, border: 0, width: '100%', height: '100%' },
+                style: { ...StyleSheet.absoluteFill, border: 0, width: '100%', height: '100%' },
                 onLoad: () => setWebStatus('loaded'),
               })}
               {webStatus === 'loading' && (

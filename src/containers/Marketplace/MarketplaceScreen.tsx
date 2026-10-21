@@ -20,52 +20,84 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { TemplateListItem } from '@/api/templates';
-import { useBrowseTemplates, useTemplateCategories } from '@/api/templates';
+import type { MarketKind, MarketTemplate } from '@/api/templates';
+import {
+  useCloneTemplate,
+  useMarketTemplates,
+  useTemplateCategories,
+} from '@/api/templates';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
+import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { useOpenGuestApp } from '@/lib/guest-app';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { type AppColors, useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
-import { TemplateCard } from './components/TemplateCard';
-import { TemplateCardSkeleton } from './components/TemplateCardSkeleton';
 import { TwinkleStars } from './components/TwinkleStars';
+import { GalleryCard, GallerySkeleton } from './gallery/gallery-card';
+import { type Block, type Placed, toBlocks } from './gallery/masonry';
+import { type GalleryTheme, galleryTheme, MONO } from './gallery/theme';
 
 const ALL = 'all';
-const SKELETON_COUNT = 6;
-const skeletonData = Array.from({ length: SKELETON_COUNT }, (_, i) => i);
+const KINDS: { kind: MarketKind; label: string }[] = [
+  { kind: 'all', label: 'All' },
+  { kind: 'apps', label: 'Apps' },
+  { kind: 'websites', label: 'Websites' },
+  { kind: 'ecosystems', label: 'Ecosystems' },
+];
+
+/** A published mobile app's JS bundles, exported for this host by the
+ * backend (docs/in-app-host.md, "Published templates"). */
+const nativeManifestUrl = (uuid: string) =>
+  `https://appsketch.ai/api/builder/coder/native/${uuid}/manifest.json`;
+/** The grid runs almost to the screen's edges, as on the web. */
+const OUTER = 10;
+const COL_GAP = 8;
+const skeletonData = [0];
 
 export function MarketplaceScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
-  const t = useBrandedCoderTheme(colorScheme);
+  const isDark = colorScheme === 'dark';
+  // appsketch.ai/templates' own colours: white, or its black theme.
+  const g = galleryTheme(isDark);
   const { width: winW, height: winH } = useWindowDimensions();
+  const fullW = winW - 2 * OUTER;
+  const colW = (fullW - COL_GAP) / 2;
   // The tab bar floats over the scene, so the grid has to end above it rather
   // than behind it — see useTabBarHeight.
   const tabBarH = useTabBarHeight();
-  const isDark = colorScheme === 'dark';
 
   const [activeCategory, setActiveCategory] = React.useState<string | number>(
     ALL
   );
+  const [kind, setKind] = React.useState<MarketKind>('all');
   const [searchInput, setSearchInput] = React.useState('');
   const search = useDebouncedValue(searchInput, 400);
 
   const categoriesQuery = useTemplateCategories();
   const categories = categoriesQuery.data ?? [];
 
-  const templatesQuery = useBrowseTemplates({
-    category: activeCategory === ALL ? undefined : activeCategory,
+  // The same two sources as appsketch.ai/templates: published apps (mobile
+  // apps, websites, ecosystems) and the legacy layout sites.
+  const templatesQuery = useMarketTemplates({
+    kind,
+    categoryId: activeCategory === ALL ? undefined : activeCategory,
+    categoryName:
+      activeCategory === ALL
+        ? undefined
+        : categories.find((c) => c.id === activeCategory)?.name,
     search: search || undefined,
   });
-  const pages = templatesQuery.data?.pages ?? [];
-  const templates = React.useMemo(
-    () => pages.flatMap((p) => p.results),
-    [pages]
+  const pages = React.useMemo(
+    () => templatesQuery.data?.pages ?? [],
+    [templatesQuery.data]
   );
+  const templates = React.useMemo(() => pages.flatMap((p) => p.items), [pages]);
   const count = pages[0]?.count ?? 0;
+  // The web gallery's masonry: phone apps tall, every 5th website a feature.
+  const blocks = React.useMemo(() => toBlocks(templates), [templates]);
 
   const activeCategoryName =
     activeCategory === ALL
@@ -139,52 +171,132 @@ export function MarketplaceScreen() {
     }
   }, [templatesQuery.isLoading, contentOpacity]);
 
-  function handleCustomise() {
-    toast.success('Template customisation is coming soon.');
-  }
+  const guest = useOpenGuestApp();
+  const clone = useCloneTemplate();
+  const [usingKey, setUsingKey] = React.useState<string | null>(null);
 
-  function handleUse(template: TemplateListItem) {
-    // Navigate immediately — the create-tenant-from-template call (~4-7s)
-    // runs on the destination screen instead of blocking this tap on a
-    // spinner. See AppPreviewScreen's "creating" phase.
+  function handlePreview(template: MarketTemplate) {
+    if (template.kind === 'layout') {
+      // Navigate immediately — the create-tenant-from-template call (~4-7s)
+      // runs on the destination screen instead of blocking this tap on a
+      // spinner. See AppPreviewScreen's "creating" phase.
+      router.push({
+        pathname: '/app-preview',
+        params: { templateId: String(template.id), name: template.name },
+      } as never);
+      return;
+    }
+    if (template.app_type === 'mobile') {
+      // A mobile app runs natively here, the way a workspace QR does.
+      guest.open(
+        template.native_manifest_url || nativeManifestUrl(template.uuid)
+      );
+      return;
+    }
+    if (!template.preview_url) {
+      toast.info('This template has no live preview yet.');
+      return;
+    }
     router.push({
       pathname: '/app-preview',
-      params: { templateId: String(template.id), name: template.name },
+      params: { url: template.preview_url, name: template.title },
     } as never);
   }
 
-  const renderItem = React.useCallback(
-    ({ item }: { item: TemplateListItem }) => (
-      <View style={{ flex: 1, marginHorizontal: 4, marginBottom: 10 }}>
-        <TemplateCard
-          t={t}
-          isDark={isDark}
-          template={item}
-          onCustomise={handleCustomise}
-          onUse={() => handleUse(item)}
-        />
-      </View>
-    ),
-    [t, isDark]
+  /** "Use app", as on the web gallery: copy the template into the user's
+   * account (an ecosystem copies every app in it), then open the builder on
+   * the copy with its preview. */
+  function handleUse(template: MarketTemplate) {
+    if (template.kind !== 'code' || usingKey) return;
+    const status = useAuth.getState().status;
+    if (status !== 'signIn') {
+      toast.info('Sign in to use this template.');
+      router.push('/login');
+      return;
+    }
+    setUsingKey(template.key);
+    clone.mutate(template.id, {
+      onSuccess: (app) => {
+        // Straight to the builder's preview tab: the copy, running. The
+        // chat, code and data tabs are one swipe away, as on the web.
+        router.push({
+          pathname: '/code-editor/preview',
+          params: {
+            tenantId: String(app.id),
+            tenantUid: app.uuid,
+            appType: app.app_type ?? template.app_type,
+          },
+        } as never);
+      },
+      onError: (error) => {
+        if (error.response?.status === 401) {
+          toast.info('Sign in to use this template.');
+          router.push('/login');
+          return;
+        }
+        const data = error.response?.data as { error?: string } | undefined;
+        toast.error(data?.error ?? 'Could not copy this template.');
+      },
+      onSettled: () => setUsingKey(null),
+    });
+  }
+
+  const renderCard = (card: Placed, width: number) => (
+    <GalleryCard
+      key={card.template.key}
+      g={g}
+      template={card.template}
+      shape={card.shape}
+      width={width}
+      index={card.index}
+      onPreview={() => handlePreview(card.template)}
+      onUse={() => handleUse(card.template)}
+      using={usingKey === card.template.key}
+    />
   );
+
+  const renderItem = ({ item }: { item: Block }) =>
+    item.type === 'wide' ? (
+      renderCard(item.card, fullW)
+    ) : (
+      <View style={s.cols}>
+        <View style={{ width: colW }}>
+          {item.left.map((c) => renderCard(c, colW))}
+        </View>
+        <View style={{ width: colW }}>
+          {item.right.map((c) => renderCard(c, colW))}
+        </View>
+      </View>
+    );
 
   const listHeader = (
     <>
       <View onLayout={handleHeadingsLayout}>
+        {/* The web gallery's hero, in its words. */}
         <View style={s.header}>
-          {/* Was the old brand indigo typed straight into the style, where no
-              palette swap could reach it. On the token now, so it follows the
-              ramp with everything else. */}
-          <Text style={[s.eyebrow, { color: t.tagText }]}>
-            AI template library
+          <View style={s.eyebrowRow}>
+            <View style={[s.eyebrowDot, { backgroundColor: g.orange }]} />
+            <Text style={[s.eyebrow, { color: g.muted }]}>
+              AppSketch templates
+            </Text>
+          </View>
+          <Text style={[s.heading, { color: g.ink }]}>
+            Start from something{' '}
+            <Text style={{ color: g.orange }}>extraordinary</Text>
           </Text>
-          <Text style={[s.heading, { color: t.text }]}>
-            Make any template yours with ease
-          </Text>
-          <Text style={[s.subtitle, { color: t.textSub }]}>
-            Start from a template and let AI make it yours.
+          <Text style={[s.subtitle, { color: g.muted }]}>
+            Launch-ready apps and layouts. Try any of them, then let AI make it
+            yours.
           </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => router.push('/scan')}
+          hitSlop={8}
+          accessibilityLabel="Scan an app QR code"
+          style={[s.scanBtn, { borderColor: g.line, backgroundColor: g.panel }]}
+        >
+          <Ionicons name="qr-code-outline" size={18} color={g.ink} />
+        </TouchableOpacity>
       </View>
       <View style={{ height: stickyGroupHeight + 5 }} />
     </>
@@ -192,7 +304,6 @@ export function MarketplaceScreen() {
 
   const commonListProps = {
     ListHeaderComponent: listHeader,
-    numColumns: 2 as const,
     showsVerticalScrollIndicator: false,
     contentContainerStyle: [
       s.gridContent,
@@ -203,11 +314,11 @@ export function MarketplaceScreen() {
   };
 
   return (
-    <View style={[s.root, { backgroundColor: t.bg }]}>
+    <View style={[s.root, { backgroundColor: g.bg }]}>
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle={t.statusBar}
+        barStyle={g.statusBar}
       />
 
       {/* A scattered, twinkling starfield the glass cards float over as the
@@ -216,8 +327,8 @@ export function MarketplaceScreen() {
       <TwinkleStars
         width={winW}
         height={winH}
-        color={t.textMuted}
-        count={isDark ? 110 : 70}
+        color={g.faint}
+        count={isDark ? 110 : 50}
       />
 
       {/* Headings scroll away; search/pills/result-row are the sticky overlay below. */}
@@ -227,9 +338,20 @@ export function MarketplaceScreen() {
           data={skeletonData}
           keyExtractor={(item) => `skeleton-${item}`}
           renderItem={() => (
-            <View style={{ flex: 1, marginHorizontal: 4, marginBottom: 10 }}>
-              <TemplateCardSkeleton t={t} isDark={isDark} />
-            </View>
+            <>
+              <GallerySkeleton g={g} width={fullW} shape="" />
+              <View style={s.cols}>
+                <View style={{ width: colW }}>
+                  <GallerySkeleton g={g} width={colW} shape="tall" />
+                  <GallerySkeleton g={g} width={colW} shape="" />
+                </View>
+                <View style={{ width: colW }}>
+                  <GallerySkeleton g={g} width={colW} shape="" />
+                  <GallerySkeleton g={g} width={colW} shape="" />
+                  <GallerySkeleton g={g} width={colW} shape="" />
+                </View>
+              </View>
+            </>
           )}
           style={{ flex: 1 }}
         />
@@ -237,18 +359,17 @@ export function MarketplaceScreen() {
         <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
           <Animated.FlatList
             {...commonListProps}
-            data={templates}
-            keyExtractor={(item) => String(item.id)}
+            data={blocks}
+            keyExtractor={(item) => item.key}
+            extraData={usingKey}
             renderItem={renderItem}
             style={{ flex: 1 }}
             ListEmptyComponent={
               <View style={s.center}>
-                <Text style={[s.emptyTitle, { color: t.text }]}>
+                <Text style={[s.emptyTitle, { color: g.ink }]}>
                   No templates found
                 </Text>
-                <Text
-                  style={{ color: t.textSub, fontSize: 12.5, marginTop: 4 }}
-                >
+                <Text style={{ color: g.muted, fontSize: 12.5, marginTop: 4 }}>
                   Try a different category or search term.
                 </Text>
               </View>
@@ -265,7 +386,7 @@ export function MarketplaceScreen() {
             ListFooterComponent={
               templatesQuery.isFetchingNextPage ? (
                 <View style={{ paddingVertical: 16 }}>
-                  <ActivityIndicator size="small" color={t.accent} />
+                  <ActivityIndicator size="small" color={g.orange} />
                 </View>
               ) : null
             }
@@ -278,7 +399,7 @@ export function MarketplaceScreen() {
           show through it, since the FlatList spans the full screen behind it. */}
       <View
         pointerEvents="none"
-        style={[s.topMask, { height: HEADER_TOP, backgroundColor: t.bg }]}
+        style={[s.topMask, { height: HEADER_TOP, backgroundColor: g.bg }]}
       />
 
       <Animated.View
@@ -287,8 +408,8 @@ export function MarketplaceScreen() {
           s.stickyOverlay,
           {
             top: HEADER_TOP,
-            backgroundColor: t.bg,
-            borderBottomColor: t.border,
+            backgroundColor: g.bg,
+            borderBottomColor: g.line,
             shadowOpacity: isDark ? 0.3 : 0.08,
             transform: [{ translateY: stickyTranslateY }],
           },
@@ -297,18 +418,45 @@ export function MarketplaceScreen() {
         <View
           style={[
             s.searchWrap,
-            { backgroundColor: t.card, borderColor: t.border },
+            { backgroundColor: g.panel, borderColor: g.line },
           ]}
         >
-          <Ionicons name="search" size={16} color={t.textMuted} />
+          <Ionicons name="search" size={16} color={g.faint} />
           <TextInput
             value={searchInput}
             onChangeText={setSearchInput}
             placeholder="Search by name, description or tag…"
-            placeholderTextColor={t.textMuted}
-            style={[s.searchInput, { color: t.text }]}
+            placeholderTextColor={g.faint}
+            style={[s.searchInput, { color: g.ink }]}
             returnKeyType="search"
           />
+        </View>
+
+        <View style={s.kindRow}>
+          {KINDS.map((k) => {
+            const active = kind === k.kind;
+            return (
+              <TouchableOpacity
+                key={k.kind}
+                onPress={() => setKind(k.kind)}
+                activeOpacity={0.8}
+                style={[
+                  s.kindTab,
+                  { backgroundColor: g.panel, borderColor: g.line },
+                  active && {
+                    backgroundColor: g.orange,
+                    borderColor: g.orange,
+                  },
+                ]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[s.kindLabel, { color: active ? '#fff' : g.ink }]}>
+                  {k.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <ScrollView
@@ -320,7 +468,7 @@ export function MarketplaceScreen() {
           <CategoryChip
             label="All templates"
             active={activeCategory === ALL}
-            t={t}
+            g={g}
             onPress={() => setActiveCategory(ALL)}
           />
           {categories.map((cat) => (
@@ -328,14 +476,14 @@ export function MarketplaceScreen() {
               key={cat.id}
               label={cat.name}
               active={activeCategory === cat.id}
-              t={t}
+              g={g}
               onPress={() => setActiveCategory(cat.id)}
             />
           ))}
         </ScrollView>
 
         <View style={s.resultRow}>
-          <Text style={[s.resultName, { color: t.text }]}>
+          <Text style={[s.resultName, { color: g.ink }]}>
             {activeCategoryName}
           </Text>
           {!templatesQuery.isLoading && (
@@ -343,11 +491,11 @@ export function MarketplaceScreen() {
               {templatesQuery.isFetching && (
                 <ActivityIndicator
                   size="small"
-                  color={t.textMuted}
+                  color={g.faint}
                   style={{ marginRight: 6 }}
                 />
               )}
-              <Text style={[s.resultCount, { color: t.textMuted }]}>
+              <Text style={[s.resultCount, { color: g.faint }]}>
                 {count} templates
               </Text>
             </View>
@@ -361,12 +509,12 @@ export function MarketplaceScreen() {
 function CategoryChip({
   label,
   active,
-  t,
+  g,
   onPress,
 }: {
   label: string;
   active: boolean;
-  t: AppColors;
+  g: GalleryTheme;
   onPress: () => void;
 }) {
   return (
@@ -376,18 +524,13 @@ function CategoryChip({
       style={[
         s.chip,
         {
-          backgroundColor: t.templatesChipBg,
-          borderColor: t.templatesChipBorder,
+          backgroundColor: g.panel,
+          borderColor: g.line,
         },
-        active && { backgroundColor: t.accent, borderColor: t.accent },
+        active && { backgroundColor: g.orange, borderColor: g.orange },
       ]}
     >
-      <Text
-        style={[
-          s.chipLabel,
-          { color: active ? t.accentOn : t.templatesChipText },
-        ]}
-      >
+      <Text style={[s.chipLabel, { color: active ? '#fff' : g.ink }]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -396,6 +539,28 @@ function CategoryChip({
 
 const s = StyleSheet.create({
   root: { flex: 1 },
+  kindRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  kindTab: {
+    paddingHorizontal: 13,
+    height: 30,
+    justifyContent: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  kindLabel: { fontFamily: F.sans600, fontSize: 12.5 },
+  cols: { flexDirection: 'row', justifyContent: 'space-between' },
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: 8,
+  },
+  eyebrowDot: { width: 6, height: 6, borderRadius: 3 },
   header: {
     paddingHorizontal: 10,
     paddingTop: 18,
@@ -403,20 +568,30 @@ const s = StyleSheet.create({
     width: '90%',
   },
   eyebrow: {
-    fontFamily: F.sans700,
-    fontSize: 11,
-    letterSpacing: 0.4,
+    fontFamily: MONO,
+    fontSize: 10.5,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 6,
   },
   heading: {
     fontFamily: F.display900,
-    fontSize: 22,
-    letterSpacing: -0.4,
-    lineHeight: 27,
-    marginBottom: 6,
+    fontSize: 27,
+    letterSpacing: -0.9,
+    lineHeight: 31,
+    marginBottom: 8,
   },
   subtitle: { fontFamily: F.sans400, fontSize: 13, lineHeight: 19 },
+  scanBtn: {
+    position: 'absolute',
+    top: 18,
+    right: 4,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -452,11 +627,16 @@ const s = StyleSheet.create({
   },
   resultName: { fontFamily: F.sans700, fontSize: 14.5 },
   resultCountRow: { flexDirection: 'row', alignItems: 'center' },
-  resultCount: { fontFamily: F.sans500, fontSize: 11.5 },
+  resultCount: {
+    fontFamily: MONO,
+    fontSize: 10.5,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
   // Shared by both the skeleton grid and the real grid so swapping between
   // them never shifts card position/spacing. The 5px top gap that used to
   // live here is now baked into the ListHeaderComponent spacer instead.
-  gridContent: { paddingHorizontal: 6, paddingBottom: 14 },
+  gridContent: { paddingHorizontal: OUTER, paddingBottom: 14 },
   center: {
     alignItems: 'center',
     justifyContent: 'center',

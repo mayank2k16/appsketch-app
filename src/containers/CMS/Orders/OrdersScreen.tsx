@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { type AudioPlayer, createAudioPlayer } from 'expo-audio';
 import * as React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,12 +31,12 @@ export function OrdersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =>
   const debouncedQuery = useDebouncedValue(query, 400);
 
   const [notifications, setNotifications] = React.useState(false);
-  const soundRef = React.useRef<Audio.Sound | null>(null);
+  const soundRef = React.useRef<AudioPlayer | null>(null);
   const lastTopIdRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     return () => {
-      soundRef.current?.unloadAsync();
+      soundRef.current?.remove();
     };
   }, []);
 
@@ -51,11 +51,12 @@ export function OrdersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =>
 
   async function playNotificationSound() {
     try {
-      const { sound } = await Audio.Sound.createAsync(
+      soundRef.current?.remove();
+      const player = createAudioPlayer(
         require('../../../../assets/sounds/notification.wav')
       );
-      soundRef.current = sound;
-      await sound.playAsync();
+      soundRef.current = player;
+      player.play();
     } catch {
       // best-effort — notification sound is a nicety, not critical
     }

@@ -3,6 +3,8 @@ import { accountClient } from '@/api/common/client';
 import type {
   BrowseTemplatesParams,
   BrowseTemplatesResponse,
+  ClonedApp,
+  CodeTemplatesResponse,
   CreateTenantResponse,
   LayoutDetail,
   TemplateCategory,
@@ -10,31 +12,39 @@ import type {
 } from './types';
 
 export async function fetchTemplateCategories(): Promise<TemplateCategory[]> {
-  const { data } = await accountClient.get<{ data?: TemplateCategory[] } | TemplateCategory[]>(
-    'builder/layouts/browse-categories/'
-  );
+  const { data } = await accountClient.get<
+    { data?: TemplateCategory[] } | TemplateCategory[]
+  >('builder/layouts/browse-categories/');
   return Array.isArray(data) ? data : (data?.data ?? []);
 }
 
-export async function fetchBrowseTemplates(params: BrowseTemplatesParams): Promise<BrowseTemplatesResponse> {
+export async function fetchBrowseTemplates(
+  params: BrowseTemplatesParams
+): Promise<BrowseTemplatesResponse> {
   const { category, search, limit = 12, offset = 0 } = params;
   const query: Record<string, string | number> = { limit, offset };
   if (category) query.category = category;
   if (search) query.search = search;
 
-  const { data } = await accountClient.get<{ results?: TemplateListItem[]; count?: number } | TemplateListItem[]>(
-    'builder/layouts/browse-portfolios/',
-    { params: query }
-  );
+  const { data } = await accountClient.get<
+    { results?: TemplateListItem[]; count?: number } | TemplateListItem[]
+  >('builder/layouts/browse-portfolios/', { params: query });
   if (Array.isArray(data)) {
     return { count: data.length, next: null, previous: null, results: data };
   }
   const results = data?.results ?? [];
-  return { count: data?.count ?? results.length, next: null, previous: null, results };
+  return {
+    count: data?.count ?? results.length,
+    next: null,
+    previous: null,
+    results,
+  };
 }
 
 export async function fetchLayoutById(id: number): Promise<LayoutDetail> {
-  const { data } = await accountClient.get<LayoutDetail>(`builder/layouts/${id}/`);
+  const { data } = await accountClient.get<LayoutDetail>(
+    `builder/layouts/${id}/`
+  );
   return data;
 }
 
@@ -67,9 +77,13 @@ export async function createTenantFromLayout(params: {
   // sent as real multipart (same pattern as `uploadProductMedia`/`saveProduct`
   // in `api/products/client.ts`) — without it the request silently mis-sends
   // on device even though it works fine from a browser's XHR path.
-  const { data } = await accountClient.post<CreateTenantResponse>('account/tenants/', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const { data } = await accountClient.post<CreateTenantResponse>(
+    'account/tenants/',
+    form,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }
+  );
   return data;
 }
 
@@ -83,10 +97,56 @@ export async function publishTenantAppConfig(params: {
   config: Record<string, unknown>;
 }): Promise<void> {
   const { tenantTemplateId, tenantId, tenantUuid, config } = params;
-  await accountClient.put(`account/tenant-templates/${tenantTemplateId}/update_config/`, {
-    config,
-    tenant_id: tenantId,
-    tenant_uuid: tenantUuid,
-    is_app: false,
+  await accountClient.put(
+    `account/tenant-templates/${tenantTemplateId}/update_config/`,
+    {
+      config,
+      tenant_id: tenantId,
+      tenant_uuid: tenantUuid,
+      is_app: false,
+    }
+  );
+}
+
+/** Published apps, the `/templates` gallery's code half. `category` is a
+ * category NAME (the code half's taxonomy has its own ids). */
+export async function fetchCodeTemplates(params: {
+  category?: string | null;
+  search?: string;
+  appType?: 'web' | 'mobile';
+  ecosystem?: boolean;
+  limit?: number;
+  offset?: number;
+}): Promise<CodeTemplatesResponse> {
+  const {
+    category,
+    search,
+    appType,
+    ecosystem,
+    limit = 12,
+    offset = 0,
+  } = params;
+  const query: Record<string, string | number> = { limit, offset };
+  if (category) query.category = category;
+  if (search) query.search = search;
+  if (appType) query.app_type = appType;
+  if (ecosystem) query.ecosystem = 1;
+  const { data } = await accountClient.get<CodeTemplatesResponse>(
+    'builder/coder/templates/',
+    {
+      params: query,
+    }
+  );
+  return { count: data?.count ?? 0, results: data?.results ?? [] };
+}
+
+/** Copy a published app (an ecosystem copies its whole group) into a new app
+ * owned by the signed-in caller. 401 when nobody is signed in. */
+export async function cloneCodeTemplate(
+  templateId: number
+): Promise<ClonedApp> {
+  const { data } = await accountClient.post<ClonedApp>('builder/coder/clone/', {
+    tenant_id: templateId,
   });
+  return data;
 }

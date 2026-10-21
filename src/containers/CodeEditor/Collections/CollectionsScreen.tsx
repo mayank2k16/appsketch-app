@@ -357,7 +357,6 @@ export function CollectionsScreen() {
               toggling={toggling === item.id}
             />
           )}
-          estimatedItemSize={60}
           contentContainerStyle={{ padding: 12 }}
           ListEmptyComponent={
             <Text
@@ -375,7 +374,6 @@ export function CollectionsScreen() {
               showsHorizontalScrollIndicator={false}
               data={collections}
               keyExtractor={(c) => c.slug}
-              estimatedItemSize={100}
               contentContainerStyle={{ paddingHorizontal: 12 }}
               renderItem={({ item }) => {
                 const isActive = item.slug === active;
@@ -450,7 +448,6 @@ export function CollectionsScreen() {
                 <FlashList
                   data={filteredRows ?? []}
                   keyExtractor={(r) => String(r.id)}
-                  estimatedItemSize={64}
                   contentContainerStyle={{ padding: 12 }}
                   renderItem={({ item }) => (
                     <TouchableOpacity

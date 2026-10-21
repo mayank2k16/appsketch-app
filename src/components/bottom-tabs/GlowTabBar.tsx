@@ -1,4 +1,4 @@
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { Tabs } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -11,6 +11,10 @@ import { type AppColors, useBrandedCoderTheme } from '@/lib/theme';
 
 import { TAB_CONFIG } from './tab-config';
 import { TabIcon } from './TabIcon';
+
+type BottomTabBarProps = Parameters<
+  NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>
+>[0];
 
 /** Border thickness. 1px, not the prompt card's 1.5 — the bar runs the full
  *  width of the screen, so the same stroke reads heavier here. */

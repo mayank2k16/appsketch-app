@@ -5,9 +5,9 @@ default_platform(:ios)
 BUNDLE_ID   = "com.appsketch-ai.app"
 TEAM_ID     = "SU6UH5H6N9"
 APPLE_ID    = "akash@appsketch.ai"
-WORKSPACE   = "ios/Zorviaa.xcworkspace"
-XCODEPROJ   = "ios/Zorviaa.xcodeproj"
-SCHEME      = "Zorviaa"
+WORKSPACE   = "ios/AppSketch.xcworkspace"
+XCODEPROJ   = "ios/AppSketch.xcodeproj"
+SCHEME      = "AppSketch"
 ANDROID_DIR = "android"
 
 # ─── iOS ───────────────────────────────────────────────────────────────────────

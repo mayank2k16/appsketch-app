@@ -112,7 +112,7 @@ function FeaturedPlayer({ video, t }: { video: Tutorial; t: AppColors }) {
         player={player}
         style={st.player}
         nativeControls
-        allowsFullscreen
+        fullscreenOptions={{ enable: true }}
         contentFit="cover"
       />
       <Text style={[st.playerTitle, { color: t.text }]} numberOfLines={2}>

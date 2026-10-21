@@ -74,7 +74,7 @@ export function AuthSheet({
         <TouchableOpacity
           activeOpacity={1}
           onPress={close}
-          style={[StyleSheet.absoluteFillObject, { backgroundColor: c.overlay }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]}
         />
 
         <Animated.View

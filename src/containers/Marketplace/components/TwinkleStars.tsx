@@ -2,7 +2,7 @@
    Matches the PascalCase convention every sibling component in this
    directory already uses (TemplateCard.tsx, TemplateCardSkeleton.tsx,
    Skeleton.tsx). */
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router';
 import * as React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Reanimated, {

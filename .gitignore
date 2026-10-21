@@ -33,3 +33,6 @@ expo-env.d.ts
 fastlane/.env.local
 fastlane/.env.local.bak
 *.env.local*
+
+# Local Expo module build output
+modules/*/android/build/

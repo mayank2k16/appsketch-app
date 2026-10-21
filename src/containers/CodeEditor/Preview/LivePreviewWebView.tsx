@@ -162,7 +162,7 @@ export function LivePreviewWebView({
             key: reloadKey,
             src: url,
             style: {
-              ...StyleSheet.absoluteFillObject,
+              ...StyleSheet.absoluteFill,
               border: 0,
               width: '100%',
               height: '100%',

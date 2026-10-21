@@ -1,13 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import type {
-  MaterialTopTabNavigationEventMap,
-  MaterialTopTabNavigationOptions,
-} from '@react-navigation/material-top-tabs';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+// Expo Router 56+ vendors React Navigation; the standalone packages are no
+// longer compatible with it.
+import {
+  createMaterialTopTabNavigator,
+  type MaterialTopTabBarProps,
+  type MaterialTopTabNavigationEventMap,
+  type MaterialTopTabNavigationOptions,
+} from 'expo-router/js-top-tabs';
 import type {
   ParamListBase,
   TabNavigationState,
-} from '@react-navigation/native';
+} from 'expo-router/react-navigation';
 import {
   useLocalSearchParams,
   useRouter,
@@ -147,7 +150,7 @@ function CodeEditorTabs() {
   const { previewMode } = useCodeEditor();
   return (
     <MaterialTopTabs
-      tabBar={(props) => <CodeEditorTabBar {...(props as TabBarProps)} />}
+      tabBar={(props: MaterialTopTabBarProps) => <CodeEditorTabBar {...(props as TabBarProps)} />}
       screenOptions={{ lazy: true, swipeEnabled: previewMode === null }}
     >
       <MaterialTopTabs.Screen name="chat" options={{ title: 'Chat' }} />

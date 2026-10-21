@@ -71,7 +71,7 @@ export function AuthGateModal({ visible, onClose, onSuccess }: Props) {
       <BlurView
         intensity={45}
         tint="dark"
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       >
         <Pressable style={s.backdrop} onPress={onClose}>
           <Pressable

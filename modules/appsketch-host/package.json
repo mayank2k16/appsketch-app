@@ -1,0 +1,8 @@
+{
+  "name": "appsketch-host",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runs AppSketch-generated Expo apps inside the AppSketch app (Expo-Go-style guest runtime).",
+  "main": "index.ts",
+  "types": "index.ts"
+}

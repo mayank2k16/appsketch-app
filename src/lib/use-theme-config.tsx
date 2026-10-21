@@ -1,5 +1,5 @@
-import type { Theme } from '@react-navigation/native';
-import { DarkTheme as _DarkTheme } from '@react-navigation/native';
+import type { Theme } from 'expo-router';
+import { DarkTheme as _DarkTheme } from 'expo-router';
 
 import colors from '@/components/ui/colors';
 

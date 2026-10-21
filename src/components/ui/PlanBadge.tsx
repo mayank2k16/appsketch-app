@@ -157,7 +157,7 @@ const st = StyleSheet.create({
     position: 'relative',
   },
   glowHalo: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     margin: -4,
     borderRadius: 999,
     backgroundColor: '#EC4899',

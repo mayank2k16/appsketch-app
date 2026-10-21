@@ -3,7 +3,7 @@
  * screen-level aggregator (unlike `src/api/home/use-home.ts`'s `useHomePage`).
  * Any screen can import just what it needs.
  */
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router';
 import type { AxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 

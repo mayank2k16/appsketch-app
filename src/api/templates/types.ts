@@ -65,3 +65,55 @@ export type UseTemplateInput = {
   id: number;
   name: string;
 };
+
+/** A published app (`render_engine="code"`): a whole tenant, offered as a
+ * template by `GET builder/coder/templates/`. Using one CLONES the tenant —
+ * files, data and builder chat; for an ecosystem, every app in its group. */
+export type CodeTemplate = {
+  id: number;
+  uuid: string;
+  title: string;
+  description?: string;
+  thumbnail_url?: string;
+  category?: string | null;
+  app_type: 'web' | 'mobile';
+  /** Live site of a web app; empty for a mobile app. */
+  preview_url?: string;
+  ecosystem?: {
+    id?: number;
+    name?: string;
+    /** Every app in the group: rider app, driver app, website + admin… */
+    apps?: {
+      id: number;
+      title: string;
+      app_type?: string;
+      label?: string;
+      is_home?: boolean;
+    }[];
+  } | null;
+  /** Runs this mobile app on the phone (backend native export); null until
+   * it has one. Older backends leave it out. */
+  native_manifest_url?: string | null;
+  /** Newest Android build, if any. */
+  apk_url?: string | null;
+  tags?: string[];
+  featured?: boolean;
+};
+
+export type CodeTemplatesResponse = { count: number; results: CodeTemplate[] };
+
+/** `POST builder/coder/clone/` — the caller's new copy. */
+export type ClonedApp = {
+  id: number;
+  uuid: string;
+  title: string;
+  app_type: 'web' | 'mobile';
+};
+
+/** The Market's type filter, as on the web gallery. */
+export type MarketKind = 'all' | 'apps' | 'websites' | 'ecosystems';
+
+/** One card in the Market: a code template or a legacy layout site. */
+export type MarketTemplate =
+  | ({ kind: 'code'; key: string } & CodeTemplate)
+  | ({ kind: 'layout'; key: string } & TemplateListItem);

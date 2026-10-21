@@ -62,8 +62,8 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
 
   return (
     <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <Animated.View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.55)', opacity: overlayOpacity }]} pointerEvents="none" />
-      <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)', opacity: overlayOpacity }]} pointerEvents="none" />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
       <Animated.View
         style={[

@@ -2,7 +2,7 @@
 import '../../global.css';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { ThemeProvider } from '@react-navigation/native';
+import { ThemeProvider } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -89,6 +89,8 @@ function RootLayoutContent() {
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="cms" options={{ headerShown: false }} />
       <Stack.Screen name="app-preview" options={{ headerShown: false }} />
+      <Stack.Screen name="scan" options={{ headerShown: false }} />
+      <Stack.Screen name="open" options={{ headerShown: false }} />
       <Stack.Screen name="about" options={{ headerShown: false }} />
       <Stack.Screen name="contact" options={{ headerShown: false }} />
       <Stack.Screen name="code-editor" options={{ headerShown: false }} />

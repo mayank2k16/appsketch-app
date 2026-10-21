@@ -227,7 +227,7 @@ function VideoPreview({ uri }: { uri: string }) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = false;
   });
-  return <VideoView player={player} style={st.videoPreview} allowsFullscreen nativeControls />;
+  return <VideoView player={player} style={st.videoPreview} fullscreenOptions={{ enable: true }} nativeControls />;
 }
 
 const st = StyleSheet.create({

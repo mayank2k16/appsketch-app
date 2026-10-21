@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -287,7 +287,7 @@ const s = StyleSheet.create({
 
   tileImg: { width: '100%', height: '100%' },
   tileSelected: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 3,
   },
   badge: {

@@ -1,8 +1,8 @@
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Platform } from 'react-native';
-import { SystemBars } from 'react-native-edge-to-edge';
+import { StatusBar } from 'expo-status-bar';
 
 type Props = { hidden?: boolean };
 export const FocusAwareStatusBar = ({ hidden = false }: Props) => {
@@ -12,7 +12,7 @@ export const FocusAwareStatusBar = ({ hidden = false }: Props) => {
   if (Platform.OS === 'web') return null;
 
   return isFocused ? (
-    <SystemBars
+    <StatusBar
       style={colorScheme === 'light' ? 'dark' : 'light'}
       hidden={hidden}
     />

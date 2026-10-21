@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import Voice from '@react-native-voice/voice';
+import Voice from '@/lib/voice';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
@@ -16,6 +16,7 @@ import Reanimated, {
   cancelAnimation,
   Easing,
   useAnimatedProps,
+  type SharedValue,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -100,8 +101,8 @@ function Waveform({
   phase,
   width,
 }: {
-  energy: Reanimated.SharedValue<number>;
-  phase: Reanimated.SharedValue<number>;
+  energy: SharedValue<number>;
+  phase: SharedValue<number>;
   width: number;
 }) {
   const back = useAnimatedProps(() => ({

@@ -154,7 +154,7 @@ function LiveDot() {
     >
       <Animated.View style={[st.dotRing, { transform: [{ scale: pulse }] }]} />
       <View
-        style={[st.dotCore, StyleSheet.absoluteFillObject, { margin: 'auto' }]}
+        style={[st.dotCore, StyleSheet.absoluteFill, { margin: 'auto' }]}
       />
     </View>
   );
@@ -316,14 +316,14 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
     >
       {/* ── Backdrop ── */}
       <Animated.View
-        style={[StyleSheet.absoluteFillObject, { opacity: overlayOpacity }]}
+        style={[StyleSheet.absoluteFill, { opacity: overlayOpacity }]}
         pointerEvents="none"
       >
         <View style={[st.overlay, { backgroundColor: dt.overlay }]} />
       </Animated.View>
 
       {/* Tap outside to close */}
-      <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
       {/* ── Drawer panel — full-panel glass: same BlurView-plus-tint-overlay
           recipe as AgentV2's prompt card / Marketplace's TemplateCard, just

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as React from 'react';
 import {
@@ -12,16 +12,16 @@ import {
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
+import { useOpenGuestApp } from '@/lib/guest-app';
 import type { AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useExpoUrlPoll } from '../hooks/useExpoUrlPoll';
 
 /** Mobile (Expo) app_type preview — a phone-frame + QR pointing at the
- * backend's `exp://…exp.direct` tunnel, mirroring Vite's `.cw-expo-panel`.
- * There's no in-app WebView preview for native RN screens (nothing to
- * render them with), so this is the actual "see your app running" surface
- * for mobile builds — open it with a real device via Expo Go. */
+ * workspace's `exp://` tunnel, mirroring Vite's `.cw-expo-panel`. AppSketch
+ * itself can run the app ("Run on this phone", appsketch-host); the QR is for
+ * a second device, which can scan it from AppSketch's Scan screen or Expo Go. */
 export function MobileExpoPreview({
   tenantId,
   colors,
@@ -31,6 +31,7 @@ export function MobileExpoPreview({
 }) {
   const isFocused = useIsFocused();
   const expoUrl = useExpoUrlPoll(tenantId, isFocused);
+  const guest = useOpenGuestApp();
 
   async function handleCopy() {
     if (!expoUrl) return;
@@ -39,7 +40,9 @@ export function MobileExpoPreview({
   }
 
   function handleOpen() {
-    if (expoUrl) Linking.openURL(expoUrl);
+    if (!expoUrl) return;
+    if (guest.supported) guest.open(expoUrl);
+    else Linking.openURL(expoUrl);
   }
 
   return (
@@ -82,24 +85,33 @@ export function MobileExpoPreview({
         )}
       </View>
 
-      <Text style={[st.title, { color: colors.text }]}>Scan with Expo Go</Text>
+      <Text style={[st.title, { color: colors.text }]}>
+        {guest.supported ? 'Run it on this phone' : 'Scan with Expo Go'}
+      </Text>
       <Text style={[st.subtitle, { color: colors.textSub }]}>
-        Install the free Expo Go app, then scan this code to preview your app
-        live on a real device.
+        {guest.supported
+          ? 'Your app runs right inside AppSketch. On another phone, scan this code from AppSketch’s Scan screen.'
+          : 'Install the free Expo Go app, then scan this code to preview your app live on a real device.'}
       </Text>
 
       <View style={st.actionsRow}>
         <TouchableOpacity
           onPress={handleOpen}
-          disabled={!expoUrl}
+          disabled={!expoUrl || guest.opening}
           style={[
             st.actionBtn,
             { backgroundColor: colors.accent },
-            !expoUrl && st.actionBtnDisabled,
+            (!expoUrl || guest.opening) && st.actionBtnDisabled,
           ]}
         >
-          <Ionicons name="phone-portrait-outline" size={15} color="#FFFFFF" />
-          <Text style={st.actionLabelPrimary}>Open in Expo Go</Text>
+          {guest.opening ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="phone-portrait-outline" size={15} color="#FFFFFF" />
+          )}
+          <Text style={st.actionLabelPrimary}>
+            {guest.supported ? 'Run on this phone' : 'Open in Expo Go'}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity

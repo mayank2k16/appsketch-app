@@ -1,0 +1,12 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["AppSketchHostModule", "GuestUpdatesModule"]
+  },
+  "android": {
+    "modules": [
+      "ai.appsketch.host.AppSketchHostModule",
+      "ai.appsketch.host.GuestUpdatesModule"
+    ]
+  }
+}
