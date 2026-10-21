@@ -8,16 +8,21 @@ bubble on top for **Reload** and **Back to AppSketch**.
 ## How to use it
 
 - **Market tab → QR button** (top right of the header) opens `/scan`.
-- **Coder workspace → "Run on this phone"** in `MobileExpoPreview` opens the
-  workspace's app directly when the host is available. Builds without the
-  native module (web, older binaries) fall back to Expo Go.
+- **Coder workspace → Preview tab** (`MobileExpoPreview`) opens the app full
+  screen as soon as the tab gains focus; **Open app** reopens it. The small
+  QR icon in the corner opens a share sheet: the QR, **Share** (system sheet:
+  WhatsApp, Instagram, …) and **Copy link**. The shared link is the
+  workspace's `https://appsketch.ai/preview/<uuid>/`: a browser shows the web
+  preview, AppSketch's scanner runs it natively. Builds without the native
+  module (web, older binaries) fall back to Expo Go.
 - From code: `useOpenGuestApp().open(link)` in `src/lib/guest-app.ts`.
 
 Accepted links:
 
 | Link | Meaning |
 | --- | --- |
-| `exp://host:port` | Live Metro dev server of a Coder workspace |
+| `https://appsketch.ai/preview/<uuid>/` | Live workspace through the site's https proxy (preferred) |
+| `exp://host:port` | Live Metro dev server of a Coder workspace (tunnel port) |
 | `exps://…/manifest.json`, `https://…/manifest.json` | Published native bundle (see below) |
 | `<scheme>://open?url=<encoded exp link>` | Deep link that wraps one of the above |
 
@@ -61,6 +66,18 @@ autolinked).
   packages need nothing. `react-native-webview` stays at the SDK's 13.x,
   which is what Expo Go runs these apps on, even where a template asks for
   14.
+- **Live workspaces go over https.** The tunnel (`http://tunnel.appsketch.ai:81xx`)
+  is plain http on a high port, which many Wi-Fi and mobile networks block:
+  on a real phone that was "Couldn't reach the app" or a black screen while
+  the 9 MB bundle stalled. The same Metro answers at
+  `https://appsketch.ai/preview/<uuid>/` on 443, so the builder uses that.
+  The manifest still names the tunnel in `launchAsset`; `resolve.ts` rebases
+  the bundle URL onto the preview path (assets follow, they already carry
+  the `/preview/<uuid>` base). A sleeping workspace answers with its HTML
+  boot page; the resolver keeps asking for up to 2 minutes.
+- **Loading screen.** The guest shows "Starting <app>…" until its first frame
+  (iOS: `RCTContentDidAppearNotification` from inside the guest's root view;
+  Android: the first child of its `ReactRootView`).
 - **Live workspaces.** The Metro manifest is fetched with
   `expo-platform: ios|android`. The launch bundle URL is then rewritten to
   `dev=false&hot=false&minify=true` (no `lazy`): a release host has no dev

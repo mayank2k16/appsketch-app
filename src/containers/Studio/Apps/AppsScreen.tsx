@@ -68,7 +68,8 @@ export function AppsScreen({ search }: { search: string }) {
       params: {
         tenantId: String(tenant.id),
         tenantUid: tenant.uuid || String(tenant.id),
-        appType: 'web',
+        // A mobile app opened as 'web' got the web preview, not the phone one.
+        appType: tenant.app_type === 'mobile' ? 'mobile' : 'web',
       },
     } as never);
   }

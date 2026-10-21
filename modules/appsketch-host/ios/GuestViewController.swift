@@ -9,6 +9,8 @@ final class GuestViewController: UIViewController {
   private let appTitle: String
   private var rootView: UIView?
   private var errorView: UIView?
+  private var loadingView: UIView?
+  private var appearObserver: NSObjectProtocol?
   private let bubble = UIButton(type: .custom)
 
   init(title: String) {
@@ -18,6 +20,10 @@ final class GuestViewController: UIViewController {
 
   @available(*, unavailable)
   required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+  deinit {
+    if let appearObserver { NotificationCenter.default.removeObserver(appearObserver) }
+  }
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -34,10 +40,64 @@ final class GuestViewController: UIViewController {
     newRoot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     view.insertSubview(newRoot, at: 0)
     rootView = newRoot
+    showLoading()
+  }
+
+  /// The bundle downloads and runs before anything paints; until the guest's
+  /// first frame, say so instead of showing a blank screen.
+  private func showLoading() {
+    loadingView?.removeFromSuperview()
+    let panel = UIView(frame: view.bounds)
+    panel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    panel.backgroundColor = .systemBackground
+
+    let spinner = UIActivityIndicatorView(style: .large)
+    spinner.startAnimating()
+    let label = UILabel()
+    label.text = "Starting \(appTitle)…"
+    label.font = .boldSystemFont(ofSize: 17)
+    label.textAlignment = .center
+    let hint = UILabel()
+    hint.text = "Downloading the latest version of your app"
+    hint.font = .systemFont(ofSize: 13)
+    hint.textColor = .secondaryLabel
+    hint.textAlignment = .center
+
+    let stack = UIStackView(arrangedSubviews: [spinner, label, hint])
+    stack.axis = .vertical
+    stack.spacing = 12
+    stack.alignment = .center
+    stack.translatesAutoresizingMaskIntoConstraints = false
+    panel.addSubview(stack)
+    NSLayoutConstraint.activate([
+      stack.centerYAnchor.constraint(equalTo: panel.centerYAnchor),
+      stack.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 24),
+      stack.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -24),
+    ])
+    view.insertSubview(panel, belowSubview: bubble)
+    loadingView = panel
+
+    if appearObserver == nil {
+      appearObserver = NotificationCenter.default.addObserver(
+        forName: NSNotification.Name(rawValue: "RCTContentDidAppearNotification"), object: nil, queue: .main
+      ) { [weak self] note in
+        guard let self, let root = self.rootView,
+              let source = note.object as? UIView, source.isDescendant(of: root) else { return }
+        self.hideLoading()
+      }
+    }
+  }
+
+  private func hideLoading() {
+    guard let panel = loadingView else { return }
+    loadingView = nil
+    UIView.animate(withDuration: 0.2, animations: { panel.alpha = 0 }) { _ in panel.removeFromSuperview() }
   }
 
   func showError(_ message: String) {
     guard errorView == nil else { return }
+    loadingView?.removeFromSuperview()
+    loadingView = nil
     let panel = UIView(frame: view.bounds)
     panel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     panel.backgroundColor = .systemBackground

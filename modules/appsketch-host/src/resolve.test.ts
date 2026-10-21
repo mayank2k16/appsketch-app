@@ -141,3 +141,45 @@ describe('resolveGuestApp, published and failing', () => {
     });
   });
 });
+
+describe('resolveGuestApp, workspace preview over https', () => {
+  const preview =
+    'https://appsketch.ai/preview/e1dc7a9d-dd73-483f-8e7a-7c1ae2a61399/';
+
+  it('loads the bundle through the preview path, not the tunnel port', async () => {
+    mockFetch(metroManifest);
+    const app = await resolveGuestApp(preview);
+    expect(app.source).toBe('live');
+    expect(app.bundleUrl).toMatch(
+      /^https:\/\/appsketch\.ai\/preview\/e1dc7a9d-dd73-483f-8e7a-7c1ae2a61399\/node_modules\/expo-router\/entry\.bundle\?/
+    );
+    expect(app.bundleUrl).toContain('dev=false');
+    expect(app.bundleUrl).not.toContain('tunnel.appsketch.ai');
+  });
+
+  it('waits while the workspace shows its boot page', async () => {
+    jest.useFakeTimers();
+    const boot = {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'text/html; charset=utf-8' },
+      text: () => Promise.resolve('<html>booting</html>'),
+    };
+    const ready = {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/expo+json' },
+      text: () => Promise.resolve(JSON.stringify(metroManifest)),
+    };
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(boot)
+      .mockResolvedValueOnce(ready) as unknown as typeof fetch;
+    const pending = resolveGuestApp(preview);
+    await jest.advanceTimersByTimeAsync(3_000);
+    const app = await pending;
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(app.title).toBe('Zaika');
+    jest.useRealTimers();
+  });
+});

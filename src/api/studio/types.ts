@@ -28,6 +28,8 @@ export type TenantSummary = {
    * the default e-commerce case, don't assume it's one of the known ones.
    */
   tenant_type?: string;
+  /** `"web"` or `"mobile"` (Expo); picks the builder's preview. */
+  app_type?: string;
   /**
    * Not yet in `TenantSerializer.Meta.fields` (`account/serializers.py`) —
    * the model has it via `TimeStamped.created_on`, the serializer just

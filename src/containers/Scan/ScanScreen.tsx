@@ -135,7 +135,7 @@ export function ScanScreen() {
         <TextInput
           value={link}
           onChangeText={setLink}
-          placeholder="…or paste an app link (exp://…)"
+          placeholder="…or paste an app link"
           placeholderTextColor={t.textMuted}
           autoCapitalize="none"
           autoCorrect={false}

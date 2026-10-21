@@ -10,13 +10,16 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.ReactHost
+import com.facebook.react.ReactRootView
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 import kotlin.math.abs
@@ -28,6 +31,8 @@ import kotlin.math.abs
  */
 class GuestActivity : ReactActivity() {
   private var errorView: View? = null
+  private var loadingView: View? = null
+  private var layoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
   override fun getMainComponentName(): String = "main"
 
@@ -45,7 +50,64 @@ class GuestActivity : ReactActivity() {
     }
     super.onCreate(null)
     GuestSession.onError = { showError(it) }
+    showLoading()
     addBubble()
+  }
+
+  /** The guest's root view, once React has attached it. */
+  private fun findReactRoot(v: View): ReactRootView? {
+    if (v is ReactRootView) return v
+    if (v is ViewGroup) for (i in 0 until v.childCount) findReactRoot(v.getChildAt(i))?.let { return it }
+    return null
+  }
+
+  /**
+   * The bundle downloads and runs before anything paints; until the guest's
+   * first views mount, say so instead of showing a blank screen.
+   */
+  private fun showLoading() {
+    loadingView?.let { root.removeView(it) }
+    val panel = LinearLayout(this).apply {
+      orientation = LinearLayout.VERTICAL
+      gravity = Gravity.CENTER
+      setBackgroundColor(Color.WHITE)
+      isClickable = true
+    }
+    panel.addView(ProgressBar(this))
+    panel.addView(TextView(this).apply {
+      text = "Starting ${GuestSession.current?.title ?: "your app"}…"
+      textSize = 17f
+      setTextColor(Color.parseColor("#111111"))
+      typeface = android.graphics.Typeface.DEFAULT_BOLD
+      gravity = Gravity.CENTER
+      setPadding(0, dp(14f), 0, dp(4f))
+    })
+    panel.addView(TextView(this).apply {
+      text = "Downloading the latest version of your app"
+      textSize = 13f
+      setTextColor(Color.parseColor("#666666"))
+      gravity = Gravity.CENTER
+    })
+    loadingView = panel
+    root.addView(
+      panel,
+      FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+    )
+    if (layoutListener == null) {
+      val listener = ViewTreeObserver.OnGlobalLayoutListener {
+        val reactRoot = findReactRoot(root)
+        if (reactRoot != null && reactRoot.childCount > 0) hideLoading()
+      }
+      layoutListener = listener
+      root.viewTreeObserver.addOnGlobalLayoutListener(listener)
+    }
+  }
+
+  private fun hideLoading() {
+    loadingView?.let { root.removeView(it) }
+    loadingView = null
+    layoutListener?.let { root.viewTreeObserver.removeOnGlobalLayoutListener(it) }
+    layoutListener = null
   }
 
   override fun onDestroy() {
@@ -132,11 +194,13 @@ class GuestActivity : ReactActivity() {
   private fun reload() {
     errorView?.let { root.removeView(it) }
     errorView = null
+    showLoading()
     GuestSession.reload()
   }
 
   private fun showError(error: Exception) {
     if (isFinishing || errorView != null) return
+    hideLoading()
     val pad = dp(24f)
     val panel = LinearLayout(this).apply {
       orientation = LinearLayout.VERTICAL

@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import { useIsFocused } from 'expo-router';
 import * as React from 'react';
 import {
   ActivityIndicator,
   Linking,
+  Modal,
+  Pressable,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,130 +15,247 @@ import {
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
+import { previewUrlForTenant } from '@/api/coder';
 import { useOpenGuestApp } from '@/lib/guest-app';
 import type { AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useExpoUrlPoll } from '../hooks/useExpoUrlPoll';
 
-/** Mobile (Expo) app_type preview — a phone-frame + QR pointing at the
- * workspace's `exp://` tunnel, mirroring Vite's `.cw-expo-panel`. AppSketch
- * itself can run the app ("Run on this phone", appsketch-host); the QR is for
- * a second device, which can scan it from AppSketch's Scan screen or Expo Go. */
+/**
+ * Opens the app once each time the Preview tab gains focus. Coming back from
+ * the app ("Back to AppSketch") doesn't change focus, so it doesn't loop.
+ */
+function useAutoOpen(
+  link: string | null,
+  focused: boolean,
+  open: (link: string) => unknown
+) {
+  const openedFor = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!focused) {
+      openedFor.current = null;
+      return;
+    }
+    if (!link || openedFor.current === link) return;
+    openedFor.current = link;
+    open(link);
+  }, [link, focused, open]);
+}
+
+/** Share (system sheet: WhatsApp, Instagram, …) and Copy link. */
+function ShareActions({ link, colors }: { link: string; colors: AppColors }) {
+  async function share() {
+    await Share.share({
+      message: `Try my app, built with AppSketch: ${link}`,
+      url: link,
+    });
+  }
+  async function copy() {
+    await Clipboard.setStringAsync(link);
+    toast.success('Link copied.');
+  }
+  return (
+    <View style={st.row}>
+      <TouchableOpacity
+        onPress={share}
+        style={[st.btn, { backgroundColor: '#f2600c' }]}
+      >
+        <Ionicons name="share-social-outline" size={15} color="#FFFFFF" />
+        <Text style={st.btnLabel}>Share</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={copy}
+        style={[st.btn, st.btnGhost, { borderColor: colors.codeEditorBorder }]}
+      >
+        <Ionicons name="copy-outline" size={15} color={colors.text} />
+        <Text style={[st.btnLabel, { color: colors.text }]}>Copy link</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+/** The small share button's sheet: QR for another phone + the system share. */
+function ShareSheet({
+  link,
+  visible,
+  onClose,
+  colors,
+}: {
+  link: string;
+  visible: boolean;
+  onClose: () => void;
+  colors: AppColors;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable style={st.scrim} onPress={onClose}>
+        <Pressable
+          style={[
+            st.sheet,
+            {
+              backgroundColor: colors.codeEditorSurface,
+              borderColor: colors.codeEditorBorder,
+            },
+          ]}
+        >
+          <Text style={[st.sheetTitle, { color: colors.text }]}>
+            Share your app
+          </Text>
+          <View style={st.qrBox}>
+            <QRCode
+              value={link}
+              size={176}
+              color="#000000"
+              backgroundColor="#FFFFFF"
+            />
+          </View>
+          <Text style={[st.sheetHint, { color: colors.textSub }]}>
+            Anyone can open the link in a browser. In AppSketch, scan the code
+            to run it as a real app.
+          </Text>
+          <ShareActions link={link} colors={colors} />
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+/** The small round share button in the corner. */
+function ShareIcon({
+  onPress,
+  colors,
+}: {
+  onPress: () => void;
+  colors: AppColors;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      accessibilityLabel="Share app"
+      style={[st.shareIcon, { borderColor: colors.codeEditorBorder }]}
+    >
+      <Ionicons name="qr-code-outline" size={18} color={colors.text} />
+    </TouchableOpacity>
+  );
+}
+
+/** What the panel says while the app opens, after it closes, or without the host. */
+function Status({
+  opening,
+  ready,
+  supported,
+  colors,
+}: {
+  opening: boolean;
+  ready: boolean;
+  supported: boolean;
+  colors: AppColors;
+}) {
+  const title = !supported
+    ? 'Preview in Expo Go'
+    : opening || !ready
+      ? 'Starting your app…'
+      : 'Your app runs right here';
+  const body = !supported
+    ? 'This build of AppSketch can’t run apps. Open the preview in Expo Go instead.'
+    : opening || !ready
+      ? 'The first start of a session can take up to a minute.'
+      : 'It opens full screen, with your latest changes. Use the AS bubble to come back.';
+  return (
+    <>
+      <View style={[st.icon, { borderColor: colors.codeEditorBorder }]}>
+        {opening || !ready ? (
+          <ActivityIndicator color="#f2600c" />
+        ) : (
+          <Ionicons
+            name="phone-portrait-outline"
+            size={30}
+            color={colors.text}
+          />
+        )}
+      </View>
+      <Text style={[st.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[st.subtitle, { color: colors.textSub }]}>{body}</Text>
+    </>
+  );
+}
+
+/**
+ * Mobile (Expo) app_type preview. The app opens straight away, natively inside
+ * AppSketch (appsketch-host), loaded over https through the workspace's
+ * `/preview/<uuid>/` path. Sharing (QR, WhatsApp, …) sits behind a small icon.
+ * Builds without the host fall back to Expo Go on the `exp://` tunnel.
+ */
 export function MobileExpoPreview({
   tenantId,
   tenantUid,
   colors,
 }: {
   tenantId: string;
-  /** Wakes the app's dev server; without it the QR waits for one to exist. */
+  /** The workspace's preview path; also wakes its dev server. */
   tenantUid?: string;
   colors: AppColors;
 }) {
   const isFocused = useIsFocused();
   const expoUrl = useExpoUrlPoll(tenantId, isFocused, tenantUid);
   const guest = useOpenGuestApp();
+  const [sharing, setSharing] = React.useState(false);
 
-  async function handleCopy() {
-    if (!expoUrl) return;
-    await Clipboard.setStringAsync(expoUrl);
-    toast.success('Copied the Expo Go link.');
-  }
+  const previewLink = tenantUid ? previewUrlForTenant(tenantUid) : null;
+  const runLink = previewLink ?? expoUrl;
+  const shareLink = previewLink ?? expoUrl;
+
+  useAutoOpen(guest.supported ? runLink : null, isFocused, guest.open);
 
   function handleOpen() {
-    if (!expoUrl) return;
-    if (guest.supported) guest.open(expoUrl);
-    else Linking.openURL(expoUrl);
+    if (!runLink) return;
+    if (guest.supported) guest.open(runLink);
+    else if (expoUrl) Linking.openURL(expoUrl);
   }
 
   return (
     <View style={[st.root, { backgroundColor: colors.bg }]}>
-      <View
+      {shareLink ? (
+        <ShareIcon onPress={() => setSharing(true)} colors={colors} />
+      ) : null}
+
+      <Status
+        opening={guest.opening}
+        ready={!!runLink}
+        supported={guest.supported}
+        colors={colors}
+      />
+
+      <TouchableOpacity
+        onPress={handleOpen}
+        disabled={!runLink || guest.opening}
         style={[
-          st.phoneFrame,
-          {
-            borderColor: colors.codeEditorBorder,
-            backgroundColor: colors.codeEditorSurface,
-          },
+          st.btn,
+          st.btnWide,
+          { backgroundColor: '#f2600c' },
+          (!runLink || guest.opening) && st.disabled,
         ]}
       >
-        <View
-          style={[st.notch, { backgroundColor: colors.codeEditorBorder }]}
+        <Ionicons name="play" size={15} color="#FFFFFF" />
+        <Text style={st.btnLabel}>
+          {guest.supported ? 'Open app' : 'Open in Expo Go'}
+        </Text>
+      </TouchableOpacity>
+
+      {shareLink ? (
+        <ShareSheet
+          link={shareLink}
+          visible={sharing}
+          onClose={() => setSharing(false)}
+          colors={colors}
         />
-        {expoUrl ? (
-          <View style={st.qrWrap}>
-            <QRCode
-              value={expoUrl}
-              size={168}
-              color={colors.text}
-              backgroundColor="transparent"
-            />
-          </View>
-        ) : (
-          <View style={st.qrWrap}>
-            <ActivityIndicator size="small" color={colors.accent} />
-            <Text
-              style={{
-                color: colors.textSub,
-                fontSize: 12,
-                marginTop: 10,
-                textAlign: 'center',
-              }}
-            >
-              Waiting for your app to boot…
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <Text style={[st.title, { color: colors.text }]}>
-        {guest.supported ? 'Run it on this phone' : 'Scan with Expo Go'}
-      </Text>
-      <Text style={[st.subtitle, { color: colors.textSub }]}>
-        {guest.supported
-          ? 'Your app runs right inside AppSketch. On another phone, scan this code from AppSketch’s Scan screen.'
-          : 'Install the free Expo Go app, then scan this code to preview your app live on a real device.'}
-      </Text>
-
-      <View style={st.actionsRow}>
-        <TouchableOpacity
-          onPress={handleOpen}
-          disabled={!expoUrl || guest.opening}
-          style={[
-            st.actionBtn,
-            { backgroundColor: colors.accent },
-            (!expoUrl || guest.opening) && st.actionBtnDisabled,
-          ]}
-        >
-          {guest.opening ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Ionicons name="phone-portrait-outline" size={15} color="#FFFFFF" />
-          )}
-          <Text style={st.actionLabelPrimary}>
-            {guest.supported ? 'Run on this phone' : 'Open in Expo Go'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleCopy}
-          disabled={!expoUrl}
-          style={[
-            st.actionBtn,
-            {
-              backgroundColor: colors.codeEditorTabBg,
-              borderWidth: 1,
-              borderColor: colors.codeEditorBorder,
-            },
-            !expoUrl && st.actionBtnDisabled,
-          ]}
-        >
-          <Ionicons name="copy-outline" size={15} color={colors.text} />
-          <Text style={[st.actionLabelSecondary, { color: colors.text }]}>
-            Copy link
-          </Text>
-        </TouchableOpacity>
-      </View>
+      ) : null}
     </View>
   );
 }
@@ -147,29 +267,27 @@ const st = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  phoneFrame: {
-    width: 220,
-    height: 240,
-    borderRadius: 28,
-    borderWidth: 6,
-    alignItems: 'center',
-    paddingTop: 22,
-    marginBottom: 20,
-  },
-  notch: {
+  shareIcon: {
     position: 'absolute',
-    top: 6,
-    width: 60,
-    height: 8,
-    borderRadius: 4,
-  },
-  qrWrap: {
+    top: 14,
+    right: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 180,
-    height: 180,
   },
-  title: { fontSize: 15.5, fontWeight: '700', marginBottom: 6 },
+  icon: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  title: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
   subtitle: {
     fontSize: 12.5,
     textAlign: 'center',
@@ -177,16 +295,42 @@ const st = StyleSheet.create({
     marginBottom: 20,
     maxWidth: 280,
   },
-  actionsRow: { flexDirection: 'row', gap: 10 },
-  actionBtn: {
+  row: { flexDirection: 'row', gap: 10 },
+  btn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    height: 40,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+    height: 42,
+    paddingHorizontal: 18,
+    borderRadius: 12,
   },
-  actionBtnDisabled: { opacity: 0.5 },
-  actionLabelPrimary: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
-  actionLabelSecondary: { fontSize: 12.5, fontWeight: '700' },
+  btnWide: { minWidth: 180 },
+  btnGhost: { borderWidth: 1 },
+  btnLabel: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  disabled: { opacity: 0.5 },
+  scrim: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  sheet: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 20,
+    alignItems: 'center',
+  },
+  sheetTitle: { fontSize: 16, fontWeight: '700', marginBottom: 14 },
+  qrBox: { padding: 12, borderRadius: 14, backgroundColor: '#FFFFFF' },
+  sheetHint: {
+    fontSize: 12.5,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 14,
+    marginBottom: 16,
+  },
 });

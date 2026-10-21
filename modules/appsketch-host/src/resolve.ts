@@ -2,6 +2,9 @@
  * Turns whatever the user scanned or tapped into a bundle the host can run.
  *
  * Accepted inputs:
+ *  - a workspace's https preview: `https://appsketch.ai/preview/<uuid>/`
+ *    (Metro behind the site's proxy, port 443 — what the builder and shared
+ *    links use, since many networks block the tunnel's own ports);
  *  - a Coder workspace QR: `exp://host:port` (Metro, live) — Expo Go's own
  *    sign-in params are stripped, the host doesn't need them;
  *  - a published template: `https://…/builds/<uuid>/native/manifest.json`;
@@ -125,20 +128,72 @@ function parseManifestBody(body: string, contentType: string): unknown {
 type ManifestBody = UpdatesManifest & PublishedManifest;
 type Platformish = 'ios' | 'android';
 
+/** `/preview/<uuid>` when the URL is a workspace's https preview, else null. */
+export function previewPathOf(url: string): string | null {
+  const m = new URL(url).pathname.match(/^(\/preview\/[^/]+)\/?$/);
+  return m ? m[1] : null;
+}
+
+/** How long to wait for a sleeping workspace to boot its dev server. */
+const BOOT_WAIT_MS = 120_000;
+const BOOT_POLL_MS = 3_000;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Whether this answer means "a workspace preview is still booting". */
+function isBooting(res: Response): boolean {
+  const html = (res.headers.get('content-type') ?? '').includes('text/html');
+  return html || res.status === 502 || res.status === 503 || res.status === 504;
+}
+
+function requestManifest(manifestUrl: string, platform: Platformish) {
+  return fetch(manifestUrl, {
+    headers: {
+      'expo-platform': platform,
+      'expo-protocol-version': '0',
+      accept: 'application/expo+json,application/json',
+    },
+  });
+}
+
+/**
+ * A workspace preview that is asleep answers with its boot page (HTML) while
+ * the runner starts Metro; each request also counts as a wake-up. Keep asking
+ * until the manifest arrives.
+ */
+async function requestPreviewManifest(
+  manifestUrl: string,
+  platform: Platformish
+): Promise<Response> {
+  const deadline = Date.now() + BOOT_WAIT_MS;
+  for (;;) {
+    try {
+      const res = await requestManifest(manifestUrl, platform);
+      if (!isBooting(res)) return res;
+    } catch {
+      // network blip while the proxy swaps upstreams: try again
+    }
+    if (Date.now() > deadline) {
+      throw new GuestAppError(
+        'Your app is taking too long to start. Try again in a minute.',
+        'unreachable'
+      );
+    }
+    await sleep(BOOT_POLL_MS);
+  }
+}
+
 async function fetchManifest(
   manifestUrl: string,
   platform: Platformish
 ): Promise<ManifestBody> {
   let res: Response;
   try {
-    res = await fetch(manifestUrl, {
-      headers: {
-        'expo-platform': platform,
-        'expo-protocol-version': '0',
-        accept: 'application/expo+json,application/json',
-      },
-    });
-  } catch {
+    res = previewPathOf(manifestUrl)
+      ? await requestPreviewManifest(manifestUrl, platform)
+      : await requestManifest(manifestUrl, platform);
+  } catch (e) {
+    if (e instanceof GuestAppError) throw e;
     throw new GuestAppError(
       "Couldn't reach the app. If it's a live workspace, open it in the builder so it wakes up, then scan again.",
       'unreachable'
@@ -205,8 +260,22 @@ function fromPublished(
   };
 }
 
+/**
+ * Metro names its own tunnel address in `launchAsset`. When the manifest came
+ * through the https preview, load the bundle through it too: same Metro, but
+ * port 443, which every network allows. Assets follow, since they resolve
+ * against the bundle's origin and already carry the `/preview/<uuid>` base.
+ */
+function viaPreview(launchUrl: string, manifestUrl: string): string {
+  const path = previewPathOf(manifestUrl);
+  if (!path) return launchUrl;
+  const launch = new URL(launchUrl);
+  const origin = new URL(manifestUrl).origin;
+  return `${origin}${path}${launch.pathname}${launch.search}`;
+}
+
 /** A live Coder workspace's Metro manifest, pointed at a production bundle. */
-function fromMetro(data: ManifestBody): ResolvedGuestApp {
+function fromMetro(data: ManifestBody, manifestUrl: string): ResolvedGuestApp {
   const launch = data.launchAsset?.url;
   if (!launch) {
     throw new GuestAppError(
@@ -221,7 +290,7 @@ function fromMetro(data: ManifestBody): ResolvedGuestApp {
       runtimeVersion: data.runtimeVersion,
     })
   );
-  const bundleUrl = productionBundleUrl(launch);
+  const bundleUrl = productionBundleUrl(viaPreview(launch, manifestUrl));
   return {
     bundleUrl,
     manifest: JSON.stringify({
@@ -242,5 +311,5 @@ export async function resolveGuestApp(
   const data = await fetchManifest(manifestUrl, platform);
   return data.bundles
     ? fromPublished(data, manifestUrl, platform)
-    : fromMetro(data);
+    : fromMetro(data, manifestUrl);
 }
