@@ -16,7 +16,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { haptic } from '@/lib/haptics';
 import { type AppColors, brandGradient, useAppTheme } from '@/lib/theme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -32,9 +31,6 @@ export interface ToastOptions {
 // Toasts fly in from just off the top-right corner, which is where the eye
 // already is after a tap in the header — and, unlike the old bottom slide, it
 // never collides with the composer or the floating tab bar.
-// Swiping a toast away lands softly (the toast's own haptic fired from
-// `toast.*` when it appeared).
-const swipedAway = () => haptic.soft();
 
 const ENTER_X = 56;
 const ENTER_Y = -28;
@@ -164,7 +160,6 @@ function ToastCard({
         Math.abs(e.translationX) > SWIPE_DISMISS_THRESHOLD ||
         Math.abs(e.velocityX) > 800;
       if (past) {
-        runOnJS(swipedAway)();
         runOnJS(dismiss)(e.translationX >= 0 ? 1 : -1);
       } else {
         translateX.value = withSpring(0, { damping: 20, stiffness: 260 });

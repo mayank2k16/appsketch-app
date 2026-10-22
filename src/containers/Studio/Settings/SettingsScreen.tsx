@@ -41,7 +41,6 @@ export function SettingsScreen() {
           const active = s.key === tab;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={s.key}
               onPress={() => setTab(s.key)}
               accessibilityState={{ selected: active }}

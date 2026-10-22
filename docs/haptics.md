@@ -1,43 +1,64 @@
 # Haptics
 
-Every touch, tab change and event in AppSketch has a haptic, on iOS and
-Android. Every haptic goes through `src/lib/haptics.ts`. Never call
-`expo-haptics` directly.
+Haptics in AppSketch are **restrained and opt-in**. Users found the earlier
+"a haptic on every touch" sweep too much, so a vibration now marks only a
+real moment. Ordinary taps, scrolls and typing stay silent. Every haptic goes
+through `src/lib/haptics.ts`. Never call `expo-haptics` directly.
+
+## Rules
+
+1. **Opt-in.** `PressableScale` (and `Button`, which wraps it) fires nothing
+   unless you pass a `haptic` prop.
+2. **One haptic per event.** There are no sequences or multi-step flourishes.
+   `haptic.magic()` is a single `success`.
+3. **Light by default.** Use `select` or `tap`. `press` (medium) is reserved
+   for the prompt's Send / Build action. Nothing uses a heavy impact.
+4. **Fire only on change.** A segmented toggle or tab vibrates when the value
+   changes, not when the user taps the option that is already selected
+   (`haptic={active ? false : 'select'}`).
+
+## Where haptics are allowed
+
+| Where | Call |
+| --- | --- |
+| Bottom tab bar and code-editor tab changes | `select` |
+| Prompt Send / Build (Home composer, coder chat Send) | `press` |
+| Segmented toggles: Web App / Mobile App, Pricing monthly / yearly | `select` |
+| Switches (Appearance, Haptics, CMS switches, collection toggles) | `toggle(on)`, always light |
+| Opening an app or template (Use template, Open app, guest app launch) | `tap` |
+| A build or template finishing | `magic()`, a single `success` |
+| A build or socket failing, a payment gateway error | `error` |
+| Error and warning toasts | `error` / `warning`, fired by `toast.*` |
+| Splash: the pencil snaps into the logo | one `soft` |
+
+## Where haptics are not allowed
+
+Ordinary rows, cards, links, icons, chips, header buttons, drawer items, sheet
+and modal opens, closes and dismiss buttons, idea chips, carousel snaps,
+scrolling, focus, typing, list renders, form validation, cart quantity changes,
+drag-to-reorder, long press, success and info toasts, and swiping a toast away.
 
 ## The vocabulary
 
-| Call | When | iOS | Android |
-| --- | --- | --- | --- |
-| `haptic.tap()` | any button, row, card or icon | light impact | `VIRTUAL_KEY` |
-| `haptic.press()` | a screen's primary action: Send, Build, Pay, Use app | medium impact | `CONFIRM` |
-| `haptic.heavy()` | a weighty moment, such as opening an app | heavy impact | `LONG_PRESS` |
-| `haptic.soft()` | sheets, drawers and drags landing | soft impact | `GESTURE_END` |
-| `haptic.rigid()` | chips, segmented controls, steppers | rigid impact | `SEGMENT_TICK` |
-| `haptic.select()` | tab changes, pickers, carousel snaps | selection | `SEGMENT_TICK` |
-| `haptic.toggle(on)` | switches | medium or light | `TOGGLE_ON` / `TOGGLE_OFF` |
-| `haptic.success()` / `warning()` / `error()` | outcomes and toasts | notification | `CONFIRM` / `CONTEXT_CLICK` / `REJECT` |
-| `haptic.magic()` | a build finishing, or another "wow" moment | soft → tap → rigid → success | same |
-| `haptic.sequence([[ms, kind], …])` | choreographed moments; returns a cancel function | | |
+| Call | iOS | Android |
+| --- | --- | --- |
+| `haptic.select()` | selection | `SEGMENT_TICK` |
+| `haptic.tap()` | light impact | `VIRTUAL_KEY` |
+| `haptic.press()` | medium impact | `CONFIRM` |
+| `haptic.soft()` | soft impact | `GESTURE_END` |
+| `haptic.toggle(on)` | light impact | `TOGGLE_ON` / `TOGGLE_OFF` |
+| `haptic.success()` / `warning()` / `error()` | notification | `CONFIRM` / `CONTEXT_CLICK` / `REJECT` |
+| `haptic.magic()` | same as `success()` | same |
 
-- Android uses `performHapticFeedback` constants rather than raw vibration.
-  They are crisp, tuned by the system, and respect the phone's touch-feedback
-  setting.
-- `PressableScale` taps on press-in by default. Pass `haptic="press"` for a
-  screen's primary action, or `haptic={false}` for rapid-fire keys.
+Android uses `performHapticFeedback` constants rather than raw vibration.
+They are crisp, tuned by the system, and respect the phone's touch-feedback
+setting.
 
 ## The splash
 
-The white splash fires a sequence timed to the Lottie's frames at 30fps,
-defined as `SPLASH_HAPTICS` in `src/app/splash.tsx`:
-
-1. The drop lands: press.
-2. The flood starts, then fills the screen: soft, soft.
-3. The tile snaps into place, then settles: rigid, tap.
-4. The pencil lands: tap.
-5. The logo completes and the wordmark rises: success.
-
-If you change the animation, change these timings with it. The dark splash
-fires a soft haptic as its wordmark surfaces, then success.
+The splash (both themes) fires one `soft` haptic as the pencil snaps into
+the logo, 2.43s in (`SPLASH_T.haptic` in
+`src/components/splash/logo-splash.tsx`). Do not add more steps.
 
 ## Off switch
 

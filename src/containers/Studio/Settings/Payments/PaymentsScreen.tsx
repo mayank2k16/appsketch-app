@@ -134,7 +134,6 @@ export function PaymentsScreen() {
           style={{ flex: 1 }}
         >
           <PressableScale
-            haptic={!filterTenant ? true : 'select'}
             onPress={() => setFilterTenant(null)}
             style={[
               st.tenantChip,
@@ -158,7 +157,6 @@ export function PaymentsScreen() {
             const active = filterTenant?.id === tenant.id;
             return (
               <PressableScale
-                haptic={active ? true : 'select'}
                 key={String(tenant.id)}
                 onPress={() => setFilterTenant(tenant)}
                 style={[

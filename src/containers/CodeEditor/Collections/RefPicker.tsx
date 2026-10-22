@@ -13,7 +13,6 @@ import {
 import type { CollectionOption } from '@/api/coder';
 import { getCollectionOptions } from '@/api/coder';
 import { PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 /**
@@ -170,7 +169,6 @@ export function RefPicker({
       </View>
 
       <Modal
-        onShow={haptic.soft}
         visible={open}
         animationType="slide"
         transparent

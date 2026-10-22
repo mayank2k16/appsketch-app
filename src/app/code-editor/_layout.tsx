@@ -80,8 +80,7 @@ function TabButton({
     <PressableScale
       onPress={onPress}
       // A switch to another tab ticks from the bar's index effect (it covers
-      // swipes too); only a re-press of the open tab taps here.
-      haptic={isFocused}
+      // swipes too); the press itself is silent.
       style={styles.tab}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}

@@ -116,10 +116,7 @@ export function StudioScreen() {
           <Text style={[st.gateTitle, { color: t.text }]}>
             Sign in to view your stores
           </Text>
-          <PressableScale
-            haptic="press"
-            onPress={() => router.push('/login' as never)}
-          >
+          <PressableScale onPress={() => router.push('/login' as never)}>
             <View style={[st.gateBtn, { backgroundColor: w.ctaBg }]}>
               <Text style={[st.gateBtnText, { color: w.ctaText }]}>
                 Sign In
@@ -135,7 +132,6 @@ export function StudioScreen() {
               const active = s.key === section;
               return (
                 <PressableScale
-                  haptic={active ? true : 'select'}
                   key={s.key}
                   onPress={() => setSection(s.key)}
                   accessibilityState={{ selected: active }}

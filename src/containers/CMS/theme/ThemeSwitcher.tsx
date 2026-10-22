@@ -91,7 +91,6 @@ const ThemeSwitcherSheet = React.forwardRef<BottomSheetModal, { onSelect: () => 
             const selected = name === themeName;
             return (
               <PressableScale
-                haptic={selected ? true : 'select'}
                 scaleTo={0.98}
                 onPress={() => choose(name)}
                 style={[st.row, { borderColor: colors.border }]}

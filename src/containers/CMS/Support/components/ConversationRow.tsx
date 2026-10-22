@@ -22,7 +22,6 @@ export const ConversationRow = React.memo(function ConversationRow({ colors, con
 
   return (
     <PressableScale
-      haptic={active ? true : 'select'}
       scaleTo={0.98}
       onPress={onPress}
       style={[

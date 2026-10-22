@@ -55,21 +55,13 @@ export function MiniCalendar({ colors, selectedDate, onSelectDate, highlightDate
   return (
     <View style={[st.wrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={st.header}>
-        <PressableScale
-          haptic="rigid"
-          onPress={() => changeMonth(-1)}
-          hitSlop={8}
-        >
+        <PressableScale onPress={() => changeMonth(-1)} hitSlop={8}>
           <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
         </PressableScale>
         <Text style={[st.headerLabel, { color: colors.textPrimary }]}>
           {monthCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
         </Text>
-        <PressableScale
-          haptic="rigid"
-          onPress={() => changeMonth(1)}
-          hitSlop={8}
-        >
+        <PressableScale onPress={() => changeMonth(1)} hitSlop={8}>
           <Ionicons name="chevron-forward" size={18} color={colors.textPrimary} />
         </PressableScale>
       </View>
@@ -90,7 +82,6 @@ export function MiniCalendar({ colors, selectedDate, onSelectDate, highlightDate
             const hasBookings = highlightSet.has(date.toDateString());
             return (
               <PressableScale
-                haptic={isSelected ? true : 'select'}
                 key={di}
                 onPress={() => onSelectDate(date)}
                 style={st.cell}

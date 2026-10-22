@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 
 import { useCmsTheme } from './theme';
 import type { CmsTab, CmsTabKey } from './tabs';
@@ -41,7 +40,6 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
 
   React.useEffect(() => {
     if (visible) {
-      haptic.soft();
       setModalVisible(true);
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
@@ -67,11 +65,7 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
   return (
     <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.kind === 'light' ? colors.scrim : 'rgba(0,0,0,0.55)', opacity: overlayOpacity }]} pointerEvents="none" />
-      <Pressable
-        style={StyleSheet.absoluteFill}
-        onPressIn={haptic.tap}
-        onPress={onClose}
-      />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
       <Animated.View
         style={[
@@ -105,7 +99,6 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
               >
                 <PressableScale
                   scaleTo={0.98}
-                  haptic={active ? true : 'select'}
                   onPress={() => onSelectTab(tab.key)}
                   style={[st.row, active && { backgroundColor: colors.sidebarActiveBg }]}
                 >

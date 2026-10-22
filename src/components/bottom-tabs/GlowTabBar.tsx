@@ -2,11 +2,16 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import type { Tabs } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
+import { CHROME_BLACK, chromeTone, INK_AT } from '@/lib/chrome-tone';
 import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
 import { type AppColors, useBrandedCoderTheme } from '@/lib/theme';
@@ -38,6 +43,29 @@ const TAB_SPIN_MS = 14000;
  *  away. */
 const RING_STOPS: [number, number, number] = [0, 0.5, 1];
 
+/** White theme's border colour: firmer than the page hairline. */
+const WHITE_RING = '#D3D3CE';
+
+// ─── Chrome tone ──────────────────────────────────────────────────────────────
+// Home's one black showcase turns the bar black while it passes: everything
+// below reads the shared `chromeTone` (0 = page theme, 1 = black) on the UI
+// thread. Inactive icons keep their grey (it reads on both), the active icon
+// keeps its ramp; only fills, the ring, hairlines and labels move.
+function useToneColor(
+  prop: 'backgroundColor' | 'color',
+  from: string,
+  to: string
+) {
+  // Text crosses over around the middle (INK_AT) so a label never sits
+  // grey on grey; fills glide the whole way.
+  return useAnimatedStyle(() => ({
+    [prop]:
+      prop === 'color'
+        ? interpolateColor(chromeTone.value, INK_AT, [from, from, to, to])
+        : interpolateColor(chromeTone.value, [0, 1], [from, to]),
+  }));
+}
+
 // ─── One tab ──────────────────────────────────────────────────────────────────
 // Transparent tab, no chip background. Active vs inactive differs ONLY in the
 // colour of the icon and label — no glow, no scale, no lift, no transform of
@@ -56,6 +84,11 @@ function TabCard({
 }) {
   const conf = TAB_CONFIG.find((c) => c.name === routeName) ?? TAB_CONFIG[0];
   const iconGradientId = `tabIconAura-${routeName}`;
+  const labelTone = useToneColor(
+    'color',
+    isFocused ? t.tabLabelActive : t.tabLabelInactive,
+    isFocused ? CHROME_BLACK.ink : CHROME_BLACK.inkMuted
+  );
 
   return (
     <PressableScale
@@ -87,16 +120,13 @@ function TabCard({
             the word muddier than its neighbours. One coloured element per
             tab, and it is the one with room for it. */}
         <View style={s.labelWrap}>
-          <Text
+          <Animated.Text
             allowFontScaling={false}
             numberOfLines={1}
-            style={[
-              s.label,
-              { color: isFocused ? t.tabLabelActive : t.tabLabelInactive },
-            ]}
+            style={[s.label, labelTone]}
           >
             {conf.label}
-          </Text>
+          </Animated.Text>
         </View>
       </View>
     </PressableScale>
@@ -111,6 +141,10 @@ function TabCard({
 // the hero heading do, instead of three identical grey lines.
 // White: a solid hairline — no fade at the ends.
 function TabDivider({ color, dark }: { color: string; dark: boolean }) {
+  const tone = useToneColor('backgroundColor', color, CHROME_BLACK.hairline);
+  if (!dark) {
+    return <Animated.View style={[s.divider, tone]} pointerEvents="none" />;
+  }
   return (
     <ExpoLinearGradient
       colors={
@@ -149,15 +183,18 @@ function TabBarFrame({
     () => [...t.agentBorderGradient] as [string, string, ...string[]],
     [t.agentBorderGradient]
   );
+  // White: a clearly visible neutral border round the bar (the page
+  // hairline, #E7E7E4, all but vanished against the white canvas). Dark:
+  // transparent — the spinning ramp is the border.
+  const ringTone = useToneColor(
+    'backgroundColor',
+    dark ? 'rgba(0,0,0,0)' : WHITE_RING,
+    dark ? 'rgba(0,0,0,0)' : CHROME_BLACK.ring
+  );
+  const fillTone = useToneColor('backgroundColor', t.tabBarBg, CHROME_BLACK.bg);
 
   return (
-    <View
-      style={[
-        s.ring,
-        { paddingBottom: 0 },
-        !dark && { backgroundColor: t.border },
-      ]}
-    >
+    <Animated.View style={[s.ring, { paddingBottom: 0 }, ringTone]}>
       {dark ? (
         <RotatingBorderGradient
           colors={ringColors}
@@ -165,18 +202,16 @@ function TabBarFrame({
           durationMs={TAB_SPIN_MS}
         />
       ) : null}
-      <View
+      <Animated.View
         style={[
           s.inner,
-          {
-            backgroundColor: t.tabBarBg,
-            paddingBottom: Math.max(insets.bottom, 10),
-          },
+          { paddingBottom: Math.max(insets.bottom, 10) },
+          fillTone,
         ]}
       >
         {children}
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -200,8 +235,6 @@ export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
             if (!isFocused && !event.defaultPrevented) {
               haptic.select();
               navigation.navigate(route.name);
-            } else {
-              haptic.tap();
             }
           };
           return (

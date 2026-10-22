@@ -167,7 +167,6 @@ export function ScanScreen() {
           ]}
         />
         <PressableScale
-          haptic="press"
           disabled={!link.trim() || opening}
           onPress={() => open(link)}
           style={[st.go, { backgroundColor: t.accent }]}

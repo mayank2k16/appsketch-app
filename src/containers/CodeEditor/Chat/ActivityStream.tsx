@@ -20,7 +20,6 @@ import type { ActivityStep } from '@/api/coder';
 import { PressableScale } from '@/components/ui';
 import { AnimatedGradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 import { PulsingDot } from './PulsingDot';
@@ -183,7 +182,6 @@ export function Lightbox({
   const light = colorScheme !== 'dark';
   return (
     <Modal
-      onShow={haptic.soft}
       visible={!!uri}
       transparent
       animationType="fade"
@@ -192,7 +190,6 @@ export function Lightbox({
       statusBarTranslucent
     >
       <Pressable
-        onPressIn={haptic.tap}
         style={[st.lbBackdrop, light && st.lbBackdropLight]}
         onPress={onClose}
       >
@@ -407,7 +404,6 @@ function PlanRow({
     <View>
       <PressableScale
         scaleTo={0.98}
-        haptic={hasBody}
         style={st.actRow}
         // Guarded, not `disabled`: a plan with no body is a plain row, not a
         // dimmed one.
@@ -529,7 +525,6 @@ function ReviewRow({
     <View>
       <PressableScale
         scaleTo={0.98}
-        haptic={hasGaps}
         style={st.actRow}
         onPress={hasGaps ? () => setOpen((o) => !o) : undefined}
         accessibilityRole={hasGaps ? 'button' : 'text'}

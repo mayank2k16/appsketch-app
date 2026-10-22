@@ -6,7 +6,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PressableScale } from '@/components/ui';
 import type { WalletListItem, WalletTransactionType } from '@/api/wallets';
 import { useAdjustWallet } from '@/api/wallets';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -56,12 +55,10 @@ export const AdjustWalletModal = React.forwardRef<BottomSheetModal, Props>(
     function handleSubmit() {
       setFormError('');
       if (isInvalidNumber) {
-        haptic.error();
         setFormError('Enter an amount greater than 0.');
         return;
       }
       if (overflowsDebit) {
-        haptic.error();
         setFormError(`Cannot debit more than spendable balance (${inr(spendable)}).`);
         return;
       }
@@ -98,7 +95,6 @@ export const AdjustWalletModal = React.forwardRef<BottomSheetModal, Props>(
 
           <View style={st.directionGroup}>
             <PressableScale
-              haptic={direction === 'CREDIT' ? true : 'select'}
               scaleTo={0.98}
               onPress={() => setDirection('CREDIT')}
               style={[
@@ -112,7 +108,6 @@ export const AdjustWalletModal = React.forwardRef<BottomSheetModal, Props>(
               </Text>
             </PressableScale>
             <PressableScale
-              haptic={direction === 'DEBIT' ? true : 'select'}
               scaleTo={0.98}
               onPress={() => setDirection('DEBIT')}
               style={[

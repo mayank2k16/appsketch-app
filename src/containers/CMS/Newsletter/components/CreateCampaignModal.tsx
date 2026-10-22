@@ -2,7 +2,6 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 
 import { useCreateNewsletterCampaign } from '@/api/newsletter';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSheetScrollView } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -43,7 +42,6 @@ export const CreateCampaignModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.subject.trim()) next.subject = 'Subject is required';
       if (!form.body_html.trim()) next.body_html = 'Body (HTML) is required';
       setErrors(next);
-      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

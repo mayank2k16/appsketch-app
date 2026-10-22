@@ -576,7 +576,6 @@ export function InspectorOverlay({
             <View style={[st.panelTabRow, { borderColor: t.codeEditorBorder }]}>
               {PANEL_TABS.map((tab) => (
                 <PressableScale
-                  haptic={panelTab === tab.key ? true : 'select'}
                   key={tab.key}
                   onPress={() => setPanelTab(tab.key)}
                   style={[
@@ -687,7 +686,6 @@ export function InspectorOverlay({
                         <View style={st.gridCell}>
                           <Text style={st.gridLabel}>Weight</Text>
                           <PressableScale
-                            haptic="rigid"
                             onPress={() => {
                               const idx = WEIGHTS.indexOf(selection.fontWeight);
                               const next = WEIGHTS[(idx + 1) % WEIGHTS.length];
@@ -866,7 +864,6 @@ export function InspectorOverlay({
                     <View style={st.gridCell}>
                       <Text style={st.gridLabel}>Display</Text>
                       <PressableScale
-                        haptic="rigid"
                         onPress={() => {
                           const opts = [
                             'block',
@@ -957,7 +954,6 @@ export function InspectorOverlay({
                   <View style={st.shadowRow}>
                     {SHADOW_PRESETS.map((preset) => (
                       <PressableScale
-                        haptic="rigid"
                         key={preset.key}
                         onPress={() => setStyle('box-shadow', preset.value, {})}
                         style={[
@@ -1132,7 +1128,6 @@ export function InspectorOverlay({
           />
           <View style={[st.barInner, { backgroundColor: t.codeEditorSurface }]}>
             <PressableScale
-              haptic={mode === 'select' ? true : 'select'}
               onPress={() => setInspectorMode('select')}
               style={[
                 st.modeBtn,
@@ -1146,7 +1141,6 @@ export function InspectorOverlay({
               />
             </PressableScale>
             <PressableScale
-              haptic={mode === 'text' ? true : 'select'}
               onPress={() => setInspectorMode('text')}
               style={[
                 st.modeBtn,
@@ -1160,7 +1154,6 @@ export function InspectorOverlay({
               />
             </PressableScale>
             <PressableScale
-              haptic={mode === 'annotate' ? true : 'select'}
               onPress={() => setInspectorMode('annotate')}
               style={[
                 st.modeBtn,

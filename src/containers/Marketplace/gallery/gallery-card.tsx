@@ -314,7 +314,7 @@ function Actions({
       </PressableScale>
       {d.isCode && (
         <PressableScale
-          haptic="press"
+          haptic="tap"
           onPress={onUse}
           disabled={using}
           // Black never dimmed the busy button; white shows it at 50%.

@@ -31,7 +31,6 @@ export function CustomHtmlField({ colors, value, onChange }: Props) {
           const active = mode === m;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={m}
               onPress={() => setMode(m)}
               style={[st.modeTab, active && { backgroundColor: colors.accent }]}

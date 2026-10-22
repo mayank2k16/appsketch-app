@@ -32,12 +32,7 @@ export function StarRatingInput({ colors, rating, onChange, size = 18, readonly 
         // them at full opacity (PressableScale dims `disabled` to 50%).
         if (readonly || !onChange) return <View key={star}>{icon}</View>;
         return (
-          <PressableScale
-            key={star}
-            haptic="select"
-            onPress={() => onChange(star)}
-            hitSlop={4}
-          >
+          <PressableScale key={star} onPress={() => onChange(star)} hitSlop={4}>
             {icon}
           </PressableScale>
         );

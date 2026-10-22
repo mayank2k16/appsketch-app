@@ -518,13 +518,9 @@ export function useCoderSocket(params: CoderSocketParams) {
             msg.intent !== 'chat' &&
             msg.built !== false;
           if (worthPreviewing && verifyOkRef.current !== false) {
-            // The build landed and passed: the signature flourish.
+            // The build landed and passed: one success haptic.
             haptic.magic();
             setPreviewReady((n) => n + 1);
-          } else if (worthPreviewing) {
-            haptic.warning();
-          } else if (msg.status !== 'cancelled') {
-            haptic.soft();
           }
           verifyOkRef.current = null;
           break;

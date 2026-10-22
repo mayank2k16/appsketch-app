@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { PressableScale } from '@/components/ui';
 import type { PickedShortVideoAsset, ShortVideoItem } from '@/api/short-videos';
 import { useCreateShortVideo, useUpdateShortVideo } from '@/api/short-videos';
-import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
 import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSheetScrollView, CmsSwitch, parseValue } from '../../components';
@@ -105,7 +104,6 @@ export const ManageShortVideoModal = React.forwardRef<BottomSheetModal, Props>(
       // A reel with no video can never play, so require one on create.
       if (!isEdit && !videoAsset) next.video = 'Please upload a video.';
       setErrors(next);
-      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

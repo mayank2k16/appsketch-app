@@ -22,7 +22,6 @@ import { PressableScale } from '@/components/ui';
 import { PlanBadge } from '@/components/ui/PlanBadge';
 import { getUserSubscription, signOut, updateUserFields, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 import { useAppTheme, type AppColors } from '@/lib/theme';
 
@@ -144,13 +143,12 @@ export function ProfileScreen() {
 
   function handleLogout() {
     signOut();
-    router.replace('/login');
+    router.replace('/welcome');
   }
 
   const [deletingAccount, setDeletingAccount] = React.useState(false);
 
   function handleDeleteAccount() {
-    haptic.warning();
     Alert.alert(
       'Delete Account',
       'This will permanently delete your account and all associated data. This action cannot be undone.',
@@ -168,7 +166,7 @@ export function ProfileScreen() {
               // AppSketch storefront apps use).
               await accountClient.post('account/tenant-users/delete_account/');
               signOut();
-              router.replace('/login');
+              router.replace('/welcome');
             } catch {
               toast.error('Could not delete account', 'Please try again.');
             } finally {
@@ -224,8 +222,7 @@ export function ProfileScreen() {
                   Sign in to see and manage your account details.
                 </Text>
                 <PressableScale
-                  haptic="press"
-                  onPress={() => router.replace('/login')}
+                  onPress={() => router.replace('/welcome')}
                   style={[st.primaryBtn, { backgroundColor: p.primary, marginTop: 16 }]}
                 >
                   <Text style={st.primaryBtnText}>Sign In / Register</Text>

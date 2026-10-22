@@ -105,7 +105,6 @@ function FilterRow({
 }) {
   return (
     <PressableScale
-      haptic={active ? true : 'select'}
       scaleTo={0.98}
       onPress={onPress}
       style={[st.row, { borderColor: colors.border }]}

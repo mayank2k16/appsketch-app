@@ -4,9 +4,11 @@ import { Platform } from 'react-native';
 import { storage } from './storage';
 
 /**
- * The app's haptic language (docs/haptics.md). Every touch, tab change and
- * event speaks through these few semantic calls so the whole app has one
- * consistent feel, on both platforms:
+ * The app's haptic language (docs/haptics.md). Haptics are RESTRAINED and
+ * opt-in: only tab changes, segmented toggles, switches, the prompt's Send,
+ * opening an app/template, a finished build and errors vibrate — never
+ * ordinary rows, cards, links, sheets, scrolls or keystrokes. One haptic per
+ * event, never a sequence. On both platforms:
  *
  * - iOS uses the Taptic Engine through impact / selection / notification.
  * - Android uses `performHapticFeedback` constants (crisp, system-tuned,
@@ -52,67 +54,35 @@ function notify(
 }
 
 export const haptic = {
-  /** Any button, row, card or icon press. */
+  /** A light tap: opening an app or template. */
   tap: () => impact(S.Light, A.Virtual_Key),
-  /** The primary action of a screen: Send, Build, Pay, Use app. */
+  /** The prompt's Send / Build action — the only medium impact. */
   press: () => impact(S.Medium, A.Confirm),
-  /** A big, weighty moment: deploy, publish, opening an app. */
-  heavy: () => impact(S.Heavy, A.Long_Press),
-  /** A soft, cushioned touch: sheets landing, cards settling. */
+  /** A soft, cushioned touch: the splash icon landing (once). */
   soft: () => impact(S.Soft, A.Gesture_End),
-  /** A crisp, small click: chips, segmented controls, steppers. */
-  rigid: () => impact(S.Rigid, A.Segment_Tick),
-  /** Tab changes, pickers, sliders, carousel snaps. */
+  /** Tab changes and segmented toggles (only when the value changes). */
   select: () => {
     if (!hapticsEnabled()) return;
     if (isAndroid)
       Haptics.performAndroidHapticsAsync(A.Segment_Tick).catch(ignore);
     else Haptics.selectionAsync().catch(ignore);
   },
-  /** Switches. */
-  toggle: (on: boolean) =>
-    impact(on ? S.Medium : S.Light, on ? A.Toggle_On : A.Toggle_Off),
-  /** Long press recognised. */
-  longPress: () => impact(S.Heavy, A.Long_Press),
-  /** Drag picked up (reorder, pull-to-refresh threshold). */
-  dragStart: () => impact(S.Medium, A.Drag_Start),
+  /** Switches: always a light click, on or off. */
+  toggle: (on: boolean) => impact(S.Light, on ? A.Toggle_On : A.Toggle_Off),
   success: () => notify(Haptics.NotificationFeedbackType.Success, A.Confirm),
   warning: () =>
     notify(Haptics.NotificationFeedbackType.Warning, A.Context_Click),
   error: () => notify(Haptics.NotificationFeedbackType.Error, A.Reject),
 
-  /**
-   * A short choreographed sequence: [delay ms from now, kind]. Returns a
-   * cancel function. Used for the splash and for "magic" moments (an app
-   * finishing its build, a template opening).
-   */
-  sequence(steps: readonly (readonly [number, HapticKind])[]) {
-    const timers = steps.map(([ms, kind]) => setTimeout(() => run(kind), ms));
-    return () => timers.forEach(clearTimeout);
-  },
-
-  /** The signature "something wonderful just happened" flourish. */
-  magic() {
-    return haptic.sequence([
-      [0, 'soft'],
-      [70, 'tap'],
-      [140, 'rigid'],
-      [260, 'success'],
-    ]);
-  },
+  /** An app finished building: one success, no multi-step flourish. */
+  magic: () => haptic.success(),
 };
 
 export type HapticKind =
   | 'tap'
   | 'press'
-  | 'heavy'
   | 'soft'
-  | 'rigid'
   | 'select'
   | 'success'
   | 'warning'
   | 'error';
-
-function run(kind: HapticKind) {
-  haptic[kind]();
-}

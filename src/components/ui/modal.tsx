@@ -9,18 +9,7 @@ import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
-import { haptic } from '@/lib/haptics';
-
 import { Text } from './text';
-
-/** A sheet landing: a soft cushion as it starts to rise from closed. */
-const softOnOpen =
-  (onAnimate?: BottomSheetModalProps['onAnimate']) =>
-  (...args: Parameters<NonNullable<BottomSheetModalProps['onAnimate']>>) => {
-    const [from, to] = args;
-    if (from === -1 && to >= 0) haptic.soft();
-    onAnimate?.(...args);
-  };
 
 type ModalProps = BottomSheetModalProps & {
   title?: string;
@@ -83,7 +72,7 @@ export const Modal = React.forwardRef(
         {...detachedProps}
         ref={modal.ref}
         index={0}
-        onAnimate={softOnOpen(onAnimate)}
+        onAnimate={onAnimate}
         snapPoints={snapPoints}
         backdropComponent={props.backdropComponent || renderBackdrop}
         enableDynamicSizing={false}
@@ -107,7 +96,6 @@ const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
     colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(11, 11, 12, 0.32)';
   return (
     <AnimatedPressable
-      onPressIn={haptic.tap}
       onPress={() => close()}
       entering={FadeIn.duration(50)}
       exiting={FadeOut.duration(20)}
@@ -164,7 +152,6 @@ const ModalHeader = React.memo(({ title, dismiss }: ModalHeaderProps) => {
 const CloseButton = ({ close }: { close: () => void }) => {
   return (
     <Pressable
-      onPressIn={haptic.tap}
       onPress={close}
       className="absolute right-3 top-3 size-[24px] items-center justify-center "
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}

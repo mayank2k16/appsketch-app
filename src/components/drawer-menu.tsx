@@ -24,10 +24,7 @@ import {
   HapticsSwitch,
 } from '@/components/appearance-switch';
 import { Text } from '@/components/ui';
-import {
-  PressableScale,
-  type PressableScaleProps,
-} from '@/components/ui/pressable-scale';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import {
   type DrawerColors,
   drawerTheme,
@@ -144,7 +141,6 @@ function DrawerRow({
   labelColor,
   onPress,
   right,
-  haptic: hapticKind,
 }: {
   dt: DrawerColors;
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -153,12 +149,10 @@ function DrawerRow({
   labelColor?: string;
   onPress: () => void;
   right?: React.ReactNode;
-  haptic?: PressableScaleProps['haptic'];
 }) {
   return (
     <PressableScale
       onPress={onPress}
-      haptic={hapticKind}
       scaleTo={0.98}
       style={[st.row, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder }]}
     >
@@ -210,7 +204,6 @@ function PreferencesSection({
         dt={dt}
         icon={dark ? 'moon-outline' : 'sunny-outline'}
         label="Appearance"
-        haptic={false}
         onPress={() => {
           haptic.toggle(!dark);
           setSelectedTheme(dark ? 'light' : 'dark');
@@ -224,7 +217,6 @@ function PreferencesSection({
         dt={dt}
         icon="pulse-outline"
         label="Haptics"
-        haptic={false}
         onPress={() => {
           if (hapticsOn) haptic.toggle(false);
           setHapticsOn(!hapticsOn);
@@ -281,7 +273,6 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
   React.useEffect(() => {
     if (visible) {
-      haptic.soft();
       setModalVisible(true);
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
@@ -342,13 +333,13 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
     setTimeout(() => {
       useVendorFilter.getState().clearSelectedVendor();
       signOut();
-      router.replace('/login');
+      router.replace('/welcome');
     }, 80);
   }
 
   function handleSignIn() {
     onClose();
-    setTimeout(() => router.replace('/login'), 80);
+    setTimeout(() => router.replace('/welcome'), 80);
   }
 
   return (
@@ -368,11 +359,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       </Animated.View>
 
       {/* Tap outside to close */}
-      <Pressable
-        style={StyleSheet.absoluteFill}
-        onPressIn={haptic.tap}
-        onPress={onClose}
-      />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
       {/* ── Drawer panel — full-panel glass: same BlurView-plus-tint-overlay
           recipe as AgentV2's prompt card / Marketplace's TemplateCard, just
@@ -414,7 +401,6 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             </Text>
 
             <Pressable
-              onPressIn={haptic.tap}
               onPress={onClose}
               style={({ pressed }) => [
                 st.closeBtn,
@@ -546,7 +532,6 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             { borderColor: dt.bottomBorder },
             pressed && { opacity: 0.6 },
           ]}
-          onPressIn={haptic.tap}
           onPress={() => Linking.openURL('https://appsketch.ai')}
         >
           <TextInput

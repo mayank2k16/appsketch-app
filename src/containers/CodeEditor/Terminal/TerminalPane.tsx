@@ -190,7 +190,6 @@ export function TerminalPane() {
             // the empty state, and `disabled` would also dim it to 50%.
             onPress={input.trim() ? handleSend : undefined}
             accessibilityState={{ disabled: !input.trim() }}
-            haptic={input.trim() ? 'press' : false}
             style={st.sendBtn}
           >
             <Text

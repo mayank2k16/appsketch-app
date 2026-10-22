@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { authenticatedClient } from '@/api/common/client';
-import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
 export type DeliveryLocation = {
@@ -185,8 +184,6 @@ export const useCart = create<CartState>((set, get) => ({
 
     // Haptic feedback — fires on the same frame as the UI update
     // (remove: a light tap; add/update: a satisfying bump).
-    if (quantity <= 0) haptic.tap();
-    else haptic.press();
 
     // ── background API call ─────────────────────────────────────────────────
     try {

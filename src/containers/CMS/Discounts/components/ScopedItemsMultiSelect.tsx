@@ -78,7 +78,6 @@ export function ScopedItemsMultiSelect<T>({
               const checked = value.includes(id);
               return (
                 <PressableScale
-                  haptic="rigid"
                   scaleTo={0.98}
                   onPress={() => toggle(id)}
                   style={[st.option, { borderColor: colors.border }]}

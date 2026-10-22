@@ -4,7 +4,6 @@ import { StyleSheet } from 'react-native';
 
 import { searchInvoices, useCreatePayment } from '@/api/payments';
 import type { PaymentTransactionType, PaymentTxnMode } from '@/api/payments';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
@@ -57,7 +56,6 @@ export const AddPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     if (!form.mode) next.mode = 'Mode is required';
     if (!form.date.trim()) next.date = 'Date is required';
     setErrors(next);
-    if (Object.keys(next).length > 0) haptic.error();
     return Object.keys(next).length === 0;
   }
 

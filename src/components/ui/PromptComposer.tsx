@@ -148,7 +148,6 @@ export function PromptComposer({
                 <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
                 <PressableScale
                   onPress={() => removeImage(i)}
-                  haptic="rigid"
                   scaleTo={0.88}
                   style={[s.thumbRemove, { backgroundColor: t.agentBtnBg }]}
                   hitSlop={6}

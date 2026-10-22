@@ -35,7 +35,6 @@ export const CampaignRow = React.memo(function CampaignRow({ campaign, colors, s
       </View>
 
       <PressableScale
-        haptic="press"
         onPress={onSend}
         disabled={!canSend}
         style={[st.sendBtn, { borderColor: colors.border, backgroundColor: colors.background }, !canSend && st.sendBtnDisabled]}

@@ -152,7 +152,6 @@ export function OrdersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =>
     <View style={[st.root, { backgroundColor: colors.background }]}>
       <View style={[st.header, { paddingTop: 12 }]}>
         <PressableScale
-          haptic="rigid"
           onPress={() => setNotifications((v) => !v)}
           style={[st.iconBtn, { backgroundColor: colors.sidebarActiveBg }]}
           hitSlop={8}

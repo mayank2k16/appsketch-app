@@ -55,7 +55,6 @@ function DeployButton({
 
   return (
     <PressableScale
-      haptic={inProgress ? false : 'press'}
       // Not `disabled`: that would force 50% opacity; the in-progress pill
       // keeps its own 0.7 dim while it ignores taps.
       onPress={inProgress ? undefined : onPress}
@@ -111,7 +110,6 @@ export function PreviewScreen() {
     <View style={[st.root, { backgroundColor: t.bg }]}>
       <View style={[st.header, { borderColor: t.border }]}>
         <PressableScale
-          haptic="rigid"
           onPress={() => setPreviewMode(editing ? null : 'select')}
           style={[
             st.statusToggle,

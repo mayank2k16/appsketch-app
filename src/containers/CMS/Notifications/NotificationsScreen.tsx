@@ -23,7 +23,6 @@ export function NotificationsScreen({ onMenuPress: _onMenuPress }: { onMenuPress
           const active = tab.key === activeTab;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
               style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}

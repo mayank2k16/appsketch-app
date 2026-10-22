@@ -162,7 +162,6 @@ export function AppPreviewScreen() {
                 <Text style={[st.retryBtnText, { color: t.text }]}>Back to templates</Text>
               </PressableScale>
               <PressableScale
-                haptic="press"
                 onPress={handleRetryCreate}
                 style={[st.retryBtn, { backgroundColor: t.accent }]}
               >

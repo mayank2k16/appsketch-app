@@ -84,7 +84,6 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
               const checked = (temp.entity ?? []).includes(entity.id);
               return (
                 <PressableScale
-                  haptic="rigid"
                   scaleTo={0.98}
                   key={entity.id}
                   onPress={() => toggle('entity', entity.id)}
@@ -109,7 +108,6 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
             const checked = (temp.type ?? []).includes(opt.value);
             return (
               <PressableScale
-                haptic="rigid"
                 scaleTo={0.98}
                 key={opt.value}
                 onPress={() => toggle('type', opt.value)}

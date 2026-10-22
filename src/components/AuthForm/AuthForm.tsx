@@ -120,7 +120,6 @@ export function AuthForm() {
           White theme: a flat ink pill (primaryBg) — the ramp is not a button
           fill there (docs/white-theme.md). */}
       <PressableScale
-        haptic="press"
         onPress={() => openSheet('phone')}
         style={[s.btn, s.btnPrimary, !isDark && { backgroundColor: t.primaryBg }]}
       >
@@ -147,7 +146,6 @@ export function AuthForm() {
 
       {/* Tertiary — Guest */}
       <PressableScale
-        haptic="press"
         onPress={() => { signInAsGuest(); goBack(); }}
         style={s.guestBtn}
       >

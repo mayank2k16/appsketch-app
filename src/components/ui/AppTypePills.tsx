@@ -40,7 +40,7 @@ export function AppTypePills({ t, value, onChange }: Props) {
         const active = p.key === value;
         return (
           <PressableScale
-            haptic={active ? true : 'select'}
+            haptic={active ? false : 'select'}
             key={p.key}
             onPress={() => onChange(p.key)}
             accessibilityState={{ selected: active }}

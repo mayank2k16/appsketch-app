@@ -10,7 +10,6 @@ import {
   useCreateInventoryLocation,
   useUpdateInventoryLocation,
 } from '@/api/inventory';
-import { haptic } from '@/lib/haptics';
 
 import {
   CmsButton,
@@ -97,7 +96,6 @@ export const ManageInventoryModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.delivery_distance.trim())
         next.delivery_distance = 'Deliverable distance is required';
       setErrors(next);
-      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

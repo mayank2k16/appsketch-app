@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 import { PressableScale } from './pressable-scale';
@@ -53,14 +52,12 @@ export function UpgradeSheet({ visible, onClose, t, modelLabel, body }: Props) {
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
       <Pressable
-        onPressIn={haptic.tap}
         style={[s.backdrop, !dark && { backgroundColor: WHITE.scrim }]}
         onPress={onClose}
       >

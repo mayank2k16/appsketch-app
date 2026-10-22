@@ -24,8 +24,8 @@ export function useOpenGuestApp() {
     }
     busy.current = true;
     setOpening(true);
-    // A weighty thump as another app takes over the screen.
-    haptic.heavy();
+    // One light tap as another app takes over the screen.
+    haptic.tap();
     try {
       await openGuestApp(input);
       return true;

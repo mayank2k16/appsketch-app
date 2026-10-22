@@ -1,17 +1,6 @@
 // Import  global CSS file
 import '../../global.css';
 
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { ThemeProvider } from 'expo-router';
-import { Image as ExpoImage } from 'expo-image';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import React from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
-import { ToastContainer } from '@/lib/toast-container';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { useFonts } from 'expo-font';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -20,15 +9,25 @@ import {
   Inter_800ExtraBold,
   Inter_900Black,
 } from '@expo-google-fonts/inter';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { useFonts } from 'expo-font';
+import { Image as ExpoImage } from 'expo-image';
+import { Stack, ThemeProvider } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'nativewind';
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
-import { appTheme } from '@/lib/theme';
-import { loadSelectedTheme } from '@/lib';
 import { hydrateAuth } from '@/hooks/useAuth';
-import { hydrateStudio } from '@/lib/store/studio-store';
+import { loadSelectedTheme } from '@/lib';
 import { LOGIN_MONTAGE_IMAGES } from '@/lib/login-montage-images';
+import { hydrateStudio } from '@/lib/store/studio-store';
 import { TenantProvider } from '@/lib/tenant';
+import { appTheme } from '@/lib/theme';
+import { ToastContainer } from '@/lib/toast-container';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 export { ErrorBoundary } from 'expo-router';
@@ -49,8 +48,10 @@ ExpoImage.prefetch(LOGIN_MONTAGE_IMAGES, 'memory-disk');
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 // Set the animation options. This is optional.
+// The in-app splash starts on the launch screen's exact picture, so the fade
+// is only a guard against a first paint that lands a frame late.
 SplashScreen.setOptions({
-  duration: 500,
+  duration: 200,
   fade: true,
 });
 
@@ -84,6 +85,12 @@ function RootLayoutContent() {
     >
       <Stack.Screen name="splash" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/* The splash irises into the canvas the welcome screen starts on, so
+          it arrives with no stack animation. */}
+      <Stack.Screen
+        name="welcome"
+        options={{ headerShown: false, animation: 'none' }}
+      />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="(app)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
@@ -100,6 +107,19 @@ function RootLayoutContent() {
       <Stack.Screen name="profile" options={{ headerShown: false }} />
       <Stack.Screen name="support" options={{ headerShown: false }} />
       <Stack.Screen name="support-chat" options={{ headerShown: false }} />
+      <Stack.Screen name="category/[name]" options={{ headerShown: false }} />
+      {/* The template product page draws its own grow-from-tile motion over
+          a still-visible Home, so: no stack animation, transparent card. */}
+      <Stack.Screen
+        name="template/[key]"
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          animation: 'none',
+          gestureEnabled: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
     </Stack>
   );
 }

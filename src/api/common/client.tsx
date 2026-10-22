@@ -8,7 +8,7 @@ import { toast } from '@/lib/toast';
 /** Any authenticated request that comes back 401 means the access token is
  * expired/invalid — DRF SimpleJWT's standard signal for this. Handled once
  * here rather than in every screen's catch block: clear the session and kick
- * the user back to `/login`. Guarded on current status so a burst of
+ * the user back to `/welcome`. Guarded on current status so a burst of
  * concurrently in-flight requests after expiry doesn't fire this repeatedly. */
 function handleAuthError(error: AxiosError) {
   console.log(error);
@@ -17,7 +17,7 @@ function handleAuthError(error: AxiosError) {
   if (errorStatus == 400 && errorMsg == 'Invalid authentication token.' && useAuth.getState().status !== 'signOut') {
     signOut();
     toast.error('Your session has expired. Please log in again.');
-    router.replace('/login');
+    router.replace('/welcome');
   }
   return Promise.reject(error);
 }

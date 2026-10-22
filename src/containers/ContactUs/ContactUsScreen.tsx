@@ -279,7 +279,6 @@ export function ContactUsScreen() {
               </View>
 
               <PressableScale
-                haptic="press"
                 onPress={handleSubmit}
                 disabled={createTicket.isPending}
                 disabledOpacity={0.7}

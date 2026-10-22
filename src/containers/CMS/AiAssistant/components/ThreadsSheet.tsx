@@ -36,7 +36,6 @@ export const ThreadsSheet = React.forwardRef<BottomSheetModal, Props>(
             const active = item.thread_id === activeThreadId;
             return (
               <PressableScale
-                haptic={active ? true : 'select'}
                 scaleTo={0.98}
                 onPress={() => onSelect(item.thread_id)}
                 style={[

@@ -332,7 +332,6 @@ export function CollectionsScreen() {
     <View style={[st.root, { backgroundColor: t.bg }]}>
       <View style={[st.tabRow, { borderColor: t.codeEditorBorder }]}>
         <PressableScale
-          haptic={tab === 'db' ? true : 'select'}
           onPress={() => setTab('db')}
           style={[
             st.tabBtn,
@@ -350,7 +349,6 @@ export function CollectionsScreen() {
           </Text>
         </PressableScale>
         <PressableScale
-          haptic={tab === 'apis' ? true : 'select'}
           onPress={() => setTab('apis')}
           style={[
             st.tabBtn,
@@ -411,7 +409,6 @@ export function CollectionsScreen() {
                 const isActive = item.slug === active;
                 return (
                   <PressableScale
-                    haptic={isActive ? true : 'select'}
                     onPress={() => setActive(item.slug)}
                     style={[
                       st.chip,

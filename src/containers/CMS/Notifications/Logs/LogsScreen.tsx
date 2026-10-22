@@ -36,7 +36,6 @@ export function LogsScreen() {
           const active = item.value === statusFilter;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               onPress={() => setStatusFilter(item.value)}
               style={[
                 st.chip,

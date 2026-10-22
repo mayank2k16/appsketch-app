@@ -140,7 +140,6 @@ export function CtaButton({ label, onPress, loading }: { label: string; onPress:
   return (
     <PressableScale
       onPress={onPress}
-      haptic="press"
       style={[cta.btn, !dark && { backgroundColor: c.ctaBg }]}
     >
       {dark ? (

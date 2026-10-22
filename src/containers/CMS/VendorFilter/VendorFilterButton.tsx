@@ -118,7 +118,6 @@ const VendorFilterSheet = React.forwardRef<BottomSheetModal, { onSelect: () => v
             const isSelf = item.id === selfVendor?.id;
             return (
               <PressableScale
-                haptic={isSelected ? true : 'select'}
                 scaleTo={0.98}
                 onPress={() => choose(item)}
                 style={[st.row, { borderColor: colors.border }]}

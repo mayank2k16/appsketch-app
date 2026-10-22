@@ -4,7 +4,6 @@ import { StyleSheet, View } from 'react-native';
 
 import type { ProductListItem } from '@/api/products';
 import { useLeafCategories, useManufacturers, useProductInventories, useSaveProduct } from '@/api/products';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -63,7 +62,6 @@ export const ManageProductModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.description.trim()) next.description = 'Description is required';
       if (!form.quantity.trim()) next.quantity = 'Quantity is required';
       setErrors(next);
-      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

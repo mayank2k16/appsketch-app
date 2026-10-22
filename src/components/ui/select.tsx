@@ -16,7 +16,6 @@ import { tv } from 'tailwind-variants';
 
 import colors from '@/components/ui/colors';
 import { CaretDown } from '@/components/ui/icons';
-import { haptic } from '@/lib/haptics';
 
 import type { InputControllerType } from './input';
 import { Modal, useModal } from './modal';
@@ -123,7 +122,6 @@ const Option = React.memo(
   }) => {
     return (
       <Pressable
-        onPressIn={haptic.select}
         className="flex-row items-center border-b border-[#EDEDEA] bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
         {...props}
       >
@@ -200,7 +198,6 @@ export const Select = (props: SelectProps) => {
           </Text>
         )}
         <Pressable
-          onPressIn={haptic.tap}
           className={styles.input()}
           disabled={disabled}
           onPress={modal.present}

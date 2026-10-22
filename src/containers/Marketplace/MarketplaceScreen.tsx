@@ -409,7 +409,6 @@ export function MarketplaceScreen() {
             const active = kind === k.kind;
             return (
               <PressableScale
-                haptic={active ? true : 'select'}
                 key={k.kind}
                 onPress={() => setKind(k.kind)}
                 style={[
@@ -491,7 +490,6 @@ function CategoryChip({
 }) {
   return (
     <PressableScale
-      haptic={active ? true : 'select'}
       onPress={onPress}
       style={[
         s.chip,

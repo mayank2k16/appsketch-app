@@ -4,7 +4,6 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { ReferralRule, ReferralTrigger } from '@/api/referrals';
 import { useCreateReferralRule, useUpdateReferralRule } from '@/api/referrals';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsSelect, CmsSheetScrollView, CmsSwitch, CmsModal, parseValue } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
@@ -180,7 +179,6 @@ export const ManageRuleModal = React.forwardRef<BottomSheetModal, Props>(({ colo
       if (!Number.isFinite(n) || n <= 0) errs.referrer_milestone_spend = 'Enter a value > 0';
     }
     setErrors(errs);
-    if (Object.keys(errs).length > 0) haptic.error();
     return Object.keys(errs).length === 0;
   }
 

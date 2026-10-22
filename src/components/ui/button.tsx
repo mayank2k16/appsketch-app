@@ -113,7 +113,7 @@ interface Props
   loading?: boolean;
   className?: string;
   textClassName?: string;
-  /** Press haptic — 'press' for a screen's primary action. */
+  /** Opt-in press haptic (none by default, docs/haptics.md). */
   haptic?: PressableScaleProps['haptic'];
 }
 
@@ -136,7 +136,7 @@ export const Button = React.forwardRef<View, Props>(
       () => button({ variant, disabled, size }),
       [variant, disabled, size]
     );
-    // Press feedback is PressableScale's spring + haptic.
+    // Press feedback is PressableScale's spring (haptic only if opted in).
     return (
       <ScalePressable
         disabled={Boolean(disabled || loading)}

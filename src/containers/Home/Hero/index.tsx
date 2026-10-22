@@ -4,10 +4,11 @@ import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
+
 import {
   HOME_BRAND_RAMP,
-  homeTheme,
   type HomeColors,
+  homeTheme,
 } from '../theme/HomeTheme';
 
 const { width: W } = Dimensions.get('window');
@@ -44,8 +45,36 @@ function BrandHeadingLine({ text }: { text: string }) {
   );
 }
 
+/**
+ * White theme's headline (docs/white-theme.md). The dark ramp is tuned to
+ * glow on black; on white the same orange/pink/violet read washed out. Here
+ * the first line is solid ink, and the brand line takes a deeper, more
+ * saturated ramp on its own — no highlighter behind it.
+ */
+const INK = '#0B0B0C';
+const WHITE_RAMP = ['#FF5A0A', '#EE1B7E', '#7B2FF2'];
+
+function WhiteHeading() {
+  return (
+    <View style={s.headingWrap}>
+      <Text style={[s.heading, s.headingWhite, { color: INK }]}>
+        Create unlimited
+      </Text>
+      <View style={s.brandLine}>
+        <GradientText
+          style={{ ...s.heading, ...s.headingWhite }}
+          colors={WHITE_RAMP}
+          locations={[0, 0.48, 1]}
+        >
+          beautiful apps.
+        </GradientText>
+      </View>
+    </View>
+  );
+}
+
 // ─── Hero content with staggered entrance ─────────────────────────────────────
-function HeroContent({ t }: { t: HomeColors }) {
+function HeroContent({ t, dark }: { t: HomeColors; dark: boolean }) {
   // A one-shot `Animated.timing().start()` fired this early in the component
   // lifecycle silently never completes on this device/RN build (looped
   // animations elsewhere in this screen work fine — only one-shot entrance
@@ -53,10 +82,14 @@ function HeroContent({ t }: { t: HomeColors }) {
   // content invisible. Rendering it statically visible is the robust fix.
   return (
     <View style={[s.content, { pointerEvents: 'box-none' }]}>
-      <View style={s.headingWrap}>
-        <HeadingLine text="Create unlimited" t={t} />
-        <BrandHeadingLine text="beautiful apps." />
-      </View>
+      {dark ? (
+        <View style={s.headingWrap}>
+          <HeadingLine text="Create unlimited" t={t} />
+          <BrandHeadingLine text="beautiful apps." />
+        </View>
+      ) : (
+        <WhiteHeading />
+      )}
 
       <Text style={[s.subtitle, { color: t.textSub }]}>
         {
@@ -83,7 +116,7 @@ export function HeroBanner() {
     // now renders a single shared dotted backdrop behind Header+Hero+AgentV2
     // instead of each section owning its own animated instance.
     <View style={s.hero}>
-      <HeroContent t={t} />
+      <HeroContent t={t} dark={colorScheme === 'dark'} />
     </View>
   );
 }
@@ -126,6 +159,15 @@ const s = StyleSheet.create({
   // so its bottom margin is the only gap left between the headline block and
   // the prompt card. Kept small: the card should read as the hero's own input,
   // not as a separate section below it.
+  // White: a touch tighter and heavier-set, so the ink line reads as solid.
+  headingWhite: {
+    fontSize: 42,
+    letterSpacing: -1.7,
+    lineHeight: 48,
+  },
+
+  brandLine: { alignSelf: 'center' },
+
   subtitle: {
     fontFamily: F.sans400,
     fontSize: 15,

@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Conversation, ConversationStatus, InboxEvent } from '@/api/support';
 import { fetchConversations, supportInboxSocketUrl } from '@/api/support';
 import { useModal, PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsModal } from '../../components';
@@ -75,7 +74,6 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
         const isCustomerMsg = evt.event === 'message' && evt.sender_type === 'CUSTOMER';
         const isNewConvo = evt.event === 'new_conversation';
         if ((isCustomerMsg && evt.conversation_id !== activeIdRef.current) || isNewConvo) {
-          haptic.success();
         }
         loadConversations();
       };
@@ -165,7 +163,6 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
             const checked = statusFilter === opt.value;
             return (
               <PressableScale
-                haptic={checked ? true : 'select'}
                 key={opt.value}
                 onPress={() => {
                   setStatusFilter(opt.value);

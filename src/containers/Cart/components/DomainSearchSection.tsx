@@ -104,7 +104,6 @@ export function DomainSearchSection({
                       <PressableScale
                         key={years}
                         onPress={() => onSelect(item, years, price)}
-                        haptic={yearSelected ? true : 'select'}
                         style={[
                           st.yearChip,
                           { borderColor: t.border },
@@ -121,7 +120,6 @@ export function DomainSearchSection({
                 </View>
               ) : item.available ? (
                 <PressableScale
-                  haptic={isSelected ? true : 'select'}
                   onPress={() => onSelect(item, 1, getDomainPriceFromItem(item))}
                   scaleTo={0.98}
                   style={[st.flatSelectRow, isSelected && { backgroundColor: t.accentSoft }]}

@@ -101,7 +101,6 @@ export const ProductListCard = React.memo(function ProductListCard({
             </Text>
           ) : null}
           <PressableScale
-            haptic="press"
             onPress={handleResubmit}
             disabled={resubmitProduct.isPending}
             disabledOpacity={0.6}

@@ -99,7 +99,6 @@ export function NewsletterScreen({ onMenuPress: _onMenuPress }: { onMenuPress: (
             const active = s.key === segment;
             return (
               <PressableScale
-                haptic={active ? true : 'select'}
                 key={s.key}
                 onPress={() => setSegment(s.key)}
                 style={[st.segment, active && { backgroundColor: colors.accent }]}

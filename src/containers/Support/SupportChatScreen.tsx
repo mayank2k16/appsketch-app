@@ -32,7 +32,6 @@ import {
 import { PressableScale } from '@/components/ui';
 import { OFFLINE_DEBOUNCE_MS, PRESENCE, uuid } from '@/containers/CMS/Support/utils';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { getDocumentPicker } from '@/lib/safe-document-picker';
 import { useAppTheme } from '@/lib/theme';
@@ -483,7 +482,6 @@ export function SupportChatScreen() {
               </PressableScale>
             ) : null}
             <PressableScale
-              haptic="press"
               onPress={handleSend}
               disabled={!draft.trim()}
               accessibilityLabel="Send"
@@ -497,14 +495,12 @@ export function SupportChatScreen() {
 
       {/* ── Attachment source sheet ── */}
       <Modal
-        onShow={haptic.soft}
         visible={attachOpen}
         transparent
         animationType="slide"
         onRequestClose={() => setAttachOpen(false)}
       >
         <Pressable
-          onPressIn={haptic.tap}
           style={[st.sheetBackdrop, { backgroundColor: scrim }]}
           accessibilityLabel="Close"
           onPress={() => setAttachOpen(false)}

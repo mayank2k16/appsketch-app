@@ -453,9 +453,12 @@ export function AgentV2({
   onAttachPress,
   onSendPress,
   showSuggestions = true,
+  inputRef,
 }: {
   onAttachPress?: () => void;
   onSendPress?: () => void;
+  /** The prompt field, so Home's "Create yours" tiles can focus it. */
+  inputRef?: React.Ref<TextInput>;
   /** The starter-idea rail inside the card — on by default (the Hero-section
    *  usage), off for other placements (e.g. ClosingCTA) that just want the
    *  prompt card itself. */
@@ -618,7 +621,7 @@ export function AgentV2({
                             />
                           )}
                           <PressableScale
-                            haptic={active ? true : 'select'}
+                            haptic={active ? false : 'select'}
                             onPress={() => setAppType(tab.key)}
                             style={s.tabPill}
                           >
@@ -657,6 +660,7 @@ export function AgentV2({
 
                   <View style={s.inputWrap}>
                     <TextInput
+                      ref={inputRef}
                       placeholder={activeTab.suggestions[0]}
                       placeholderTextColor={
                         showTypewriter ? 'transparent' : t.agentInputPlaceholder

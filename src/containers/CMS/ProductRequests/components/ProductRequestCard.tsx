@@ -48,7 +48,6 @@ export const ProductRequestCard = React.memo(function ProductRequestCard({
 
   return (
     <PressableScale
-      haptic="rigid"
       scaleTo={0.98}
       onPress={onToggle}
       style={[

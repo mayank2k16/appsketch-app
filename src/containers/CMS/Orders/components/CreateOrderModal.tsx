@@ -17,7 +17,6 @@ import {
 import type { CreateOrderPayload, DeliveryType, FulfilmentType, OrderDetail, OrderStatus, PaymentStatus } from '@/api/orders';
 import type { SearchOption } from '@/components/ui/searchable-select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { haptic } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSummaryRow } from '../../components';
@@ -279,7 +278,6 @@ export const CreateOrderModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.order_status) next.order_status = 'Order status is required';
       if (!form.payment_status) next.payment_status = 'Payment status is required';
       setErrors(next);
-      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

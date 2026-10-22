@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PressableScale } from '@/components/ui';
 import { useContinueAuthFlow } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 
 import { sheetTheme } from './AuthTheme';
 import { CtaButton, GhostButton, OtpInput, StepInput } from './FormControls';
@@ -69,7 +68,6 @@ export function AuthSheet({
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
@@ -82,7 +80,6 @@ export function AuthSheet({
         keyboardVerticalOffset={0}
       >
         <Pressable
-          onPressIn={haptic.tap}
           accessibilityLabel="Close"
           onPress={close}
           style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]}

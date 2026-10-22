@@ -201,7 +201,7 @@ function BillingToggle({
         />
         <PressableScale
           style={st.toggleOption}
-          haptic={value === 'monthly' ? true : 'select'}
+          haptic={value === 'monthly' ? false : 'select'}
           accessibilityState={{ selected: value === 'monthly' }}
           onPress={() => onChange('monthly')}
         >
@@ -211,7 +211,7 @@ function BillingToggle({
         </PressableScale>
         <PressableScale
           style={st.toggleOption}
-          haptic={value === 'yearly' ? true : 'select'}
+          haptic={value === 'yearly' ? false : 'select'}
           accessibilityState={{ selected: value === 'yearly' }}
           onPress={() => onChange('yearly')}
         >
@@ -284,7 +284,6 @@ function PlanCard({
       {/* Free tier has no CTA button, same as the web reference */}
       {!isPlanFree(plan) && (
         <PressableScale
-          haptic="press"
           onPress={onPress}
           style={[
             st.ctaButton,

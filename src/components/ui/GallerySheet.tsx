@@ -17,7 +17,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 const COLUMNS = 3;
@@ -154,7 +153,6 @@ export function GallerySheet({
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       animationType="slide"
       onRequestClose={onClose}
@@ -162,12 +160,7 @@ export function GallerySheet({
     >
       <View style={[s.root, { backgroundColor: t.bg, paddingTop: insets.top }]}>
         <View style={[s.header, { borderColor: t.border }]}>
-          <TouchableOpacity
-            onPressIn={haptic.tap}
-            onPress={onClose}
-            hitSlop={12}
-            style={s.headerBtn}
-          >
+          <TouchableOpacity onPress={onClose} hitSlop={12} style={s.headerBtn}>
             <Ionicons name="close" size={24} color={t.text} />
           </TouchableOpacity>
           <View style={s.headerCenter}>
@@ -179,7 +172,6 @@ export function GallerySheet({
             </Text>
           </View>
           <TouchableOpacity
-            onPressIn={haptic.press}
             onPress={confirm}
             hitSlop={12}
             disabled={picked.length === 0 || resolving}
@@ -233,7 +225,6 @@ export function GallerySheet({
               const selected = order >= 0;
               return (
                 <Pressable
-                  onPressIn={haptic.select}
                   onPress={() => toggle(item.id)}
                   style={{ width: tile, height: tile }}
                 >

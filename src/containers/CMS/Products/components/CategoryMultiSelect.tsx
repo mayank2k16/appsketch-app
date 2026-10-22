@@ -54,7 +54,6 @@ export function CategoryMultiSelect({ colors, label, categories, value, onChange
             const checked = value.includes(item.id);
             return (
               <PressableScale
-                haptic="rigid"
                 scaleTo={0.98}
                 onPress={() => toggle(item.id)}
                 style={[st.option, { borderColor: colors.border }]}

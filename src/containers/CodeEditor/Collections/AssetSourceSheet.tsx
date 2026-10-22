@@ -3,7 +3,6 @@ import * as React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 import type { AssetSource } from './pickAsset';
@@ -86,7 +85,6 @@ export function AssetSourceSheet({
   const light = colors.statusBar !== 'light-content';
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="slide"
@@ -95,7 +93,6 @@ export function AssetSourceSheet({
       {/* Plain Pressables: the backdrop dismisses and the sheet swallows taps
           that miss a row — neither is a control, so neither animates. */}
       <Pressable
-        onPressIn={haptic.tap}
         style={[st.backdrop, light && { backgroundColor: colors.sheetOverlay }]}
         onPress={onClose}
       >

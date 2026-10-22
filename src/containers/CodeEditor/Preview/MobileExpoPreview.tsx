@@ -17,7 +17,6 @@ import QRCode from 'react-native-qrcode-svg';
 import { previewUrlForTenant } from '@/api/coder';
 import { PressableScale } from '@/components/ui';
 import { useOpenGuestApp } from '@/lib/guest-app';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -96,14 +95,12 @@ function ShareSheet({
 }) {
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
       <Pressable
-        onPressIn={haptic.tap}
         style={[st.scrim, { backgroundColor: scrimFor(colors) }]}
         onPress={onClose}
       >
@@ -245,7 +242,7 @@ export function MobileExpoPreview({
       />
 
       <PressableScale
-        haptic="press"
+        haptic="tap"
         onPress={handleOpen}
         disabled={!runLink || guest.opening}
         style={[st.btn, st.btnWide, { backgroundColor: '#f2600c' }]}

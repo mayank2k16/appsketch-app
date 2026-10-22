@@ -11,7 +11,6 @@ import * as React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { tv } from 'tailwind-variants';
 
-import { haptic } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CaretDown } from './icons';
@@ -98,7 +97,6 @@ export function SearchableSelect(props: SearchableSelectProps) {
           </Text>
         )}
         <Pressable
-          onPressIn={haptic.tap}
           className={styles.input()}
           disabled={disabled}
           onPress={modal.present}
@@ -176,7 +174,6 @@ const SearchableSelectSheet = React.forwardRef<BottomSheetModal, SheetProps>(
     const renderItem = React.useCallback(
       ({ item }: { item: SearchOption }) => (
         <Pressable
-          onPressIn={haptic.select}
           className="flex-row items-center border-b border-[#EDEDEA] bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800"
           onPress={() => choose(item)}
         >

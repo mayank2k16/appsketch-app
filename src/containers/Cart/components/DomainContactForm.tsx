@@ -92,7 +92,6 @@ export function DomainContactForm({
           <Text style={[st.secondaryBtnText, { color: t.textSub }]}>Back</Text>
         </PressableScale>
         <PressableScale
-          haptic="press"
           onPress={handleSubmit}
           disabled={submitting || !isValid}
           style={[st.primaryBtn, { backgroundColor: t.accent }]}

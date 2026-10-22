@@ -15,7 +15,6 @@ import {
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
@@ -208,7 +207,6 @@ function TestimonialModal({
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible
       transparent
       animationType="fade"
@@ -230,11 +228,7 @@ function TestimonialModal({
         />
 
         {/* Tap anywhere outside the card to dismiss */}
-        <Pressable
-          onPressIn={haptic.tap}
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-        />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
         {/* Arrows and card sit in one flow row — left arrow, card, right
             arrow — rather than absolutely-positioned overlays, so they stay

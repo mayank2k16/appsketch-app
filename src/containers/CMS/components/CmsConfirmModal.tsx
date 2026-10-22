@@ -6,7 +6,6 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
@@ -101,7 +100,6 @@ export const CmsConfirmModal = React.forwardRef<BottomSheetModal, CmsConfirmModa
               <Text style={[st.btnLabel, { color: palette.cancelText }]}>{cancelLabel}</Text>
             </PressableScale>
             <PressableScale
-              haptic="press"
               onPress={onConfirm}
               disabled={loading}
               disabledOpacity={0.6}
@@ -120,7 +118,6 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 function CmsConfirmBackdrop({ style, onPress, scrim }: BottomSheetBackdropProps & { onPress: () => void; scrim: string }) {
   return (
     <AnimatedPressable
-      onPressIn={haptic.tap}
       onPress={onPress}
       entering={FadeIn.duration(50)}
       exiting={FadeOut.duration(20)}

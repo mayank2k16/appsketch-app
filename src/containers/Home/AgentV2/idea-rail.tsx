@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 
 export type Idea = { label: string; prompt: string };
 
@@ -50,7 +49,6 @@ export const IdeaRail = React.memo(function IdeaRail({
             key={idea.label}
             haptic={false}
             onPress={() => {
-              haptic.select();
               onPick(idea.prompt);
             }}
             accessibilityLabel={`Use idea: ${idea.prompt}`}

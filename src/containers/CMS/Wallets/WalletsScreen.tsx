@@ -104,7 +104,6 @@ export function WalletsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
           const active = item.value === activeFilter;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               onPress={() => setActiveFilter(item.value)}
               style={[
                 st.chip,

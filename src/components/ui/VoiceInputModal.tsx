@@ -28,7 +28,6 @@ import Svg, {
 } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import { type AppColors, BRAND_RAMP } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 import Voice from '@/lib/voice';
@@ -319,8 +318,6 @@ export function VoiceInputModal({
       -1,
       false
     );
-    // Listening starts: one firm bump (it doubles as the sheet's open cue).
-    haptic.press();
     void start();
     return () => {
       cancelAnimation(phase);
@@ -469,7 +466,6 @@ function VoiceActions({
       </PressableScale>
 
       <PressableScale
-        haptic="rigid"
         onPress={onToggle}
         style={[
           s.micBtn,
@@ -486,7 +482,6 @@ function VoiceActions({
 
       {/* Disabled ✓ dims to 40% in both themes, as it always did in dark. */}
       <PressableScale
-        haptic="press"
         onPress={onSubmit}
         disabled={!canSubmit}
         disabledOpacity={0.4}

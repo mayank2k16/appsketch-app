@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useModal, PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsInput, CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -85,7 +84,6 @@ export function AttributeListEditor({
       }
     });
     if (Object.keys(nextErrors).length > 0) {
-      haptic.error();
       setErrors(nextErrors);
       return;
     }

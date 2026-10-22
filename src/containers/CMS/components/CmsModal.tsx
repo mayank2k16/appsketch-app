@@ -15,19 +15,9 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
-
-/** A sheet landing: a soft cushion as it starts to rise from closed. */
-const softOnOpen =
-  (onAnimate?: BottomSheetModalProps['onAnimate']) =>
-  (...args: Parameters<NonNullable<BottomSheetModalProps['onAnimate']>>) => {
-    const [from, to] = args;
-    if (from === -1 && to >= 0) haptic.soft();
-    onAnimate?.(...args);
-  };
 
 type CmsModalProps = Omit<BottomSheetModalProps, 'children'> & {
   title?: string;
@@ -118,7 +108,7 @@ export const CmsModal = React.forwardRef<BottomSheetModal, CmsModalProps>(
         {...props}
         ref={ref}
         index={0}
-        onAnimate={softOnOpen(onAnimate)}
+        onAnimate={onAnimate}
         snapPoints={snapPoints}
         backdropComponent={backdropComponent || renderBackdrop}
         enableDynamicSizing={false}
@@ -169,7 +159,6 @@ function CmsBackdrop({ style, scrim }: BottomSheetBackdropProps & { scrim: strin
   const { close } = useBottomSheet();
   return (
     <AnimatedPressable
-      onPressIn={haptic.tap}
       onPress={() => close()}
       entering={FadeIn.duration(50)}
       exiting={FadeOut.duration(20)}

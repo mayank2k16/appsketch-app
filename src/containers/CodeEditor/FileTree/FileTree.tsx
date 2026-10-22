@@ -11,7 +11,6 @@ import {
 
 import type { FileTreeNode } from '@/api/coder';
 import { PressableScale } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 function PromptActions({
@@ -76,14 +75,12 @@ function PromptModal({
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onCancel}
     >
       <Pressable
-        onPressIn={haptic.tap}
         style={[pm.backdrop, light && { backgroundColor: colors.sheetOverlay }]}
         onPress={onCancel}
       >
@@ -153,7 +150,6 @@ function Row({
         scaleTo={0.98}
         onPress={() => (isDir ? onToggle(node.path) : onSelectFile(node.path))}
         onLongPress={() => {
-          haptic.longPress();
           onLongPress(node);
         }}
         style={[
@@ -331,14 +327,12 @@ export function FileTree({
       />
 
       <Modal
-        onShow={haptic.soft}
         visible={!!actionsFor}
         transparent
         animationType="fade"
         onRequestClose={() => setActionsFor(null)}
       >
         <Pressable
-          onPressIn={haptic.tap}
           style={[
             pm.backdrop,
             light && { backgroundColor: colors.sheetOverlay },

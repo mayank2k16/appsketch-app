@@ -39,7 +39,6 @@ export function CmsButton({ colors, label, onPress, loading, disabled, variant =
     <PressableScale
       onPress={onPress}
       // The filled button is a form's primary action (Save, Create).
-      haptic={variant === 'primary' ? 'press' : true}
       disabled={isDisabled}
       style={[st.btn, variantStyle, isDisabled && st.disabled, style]}
     >

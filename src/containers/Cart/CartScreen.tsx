@@ -392,7 +392,6 @@ export function CartScreen() {
                   </View>
 
                   <PressableScale
-                    haptic="press"
                     onPress={handleContinue}
                     disabled={checkingOut}
                     disabledOpacity={0.6}

@@ -262,7 +262,6 @@ export function AiAssistantScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
             style={[st.input, { color: colors.textPrimary, borderColor: colors.border }]}
           />
           <PressableScale
-            haptic="press"
             onPress={send}
             disabled={!connected || busy || !!pendingPlan || !input.trim()}
             style={[

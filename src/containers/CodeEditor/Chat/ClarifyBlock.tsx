@@ -245,7 +245,6 @@ export function ClarifyBlockView({
 
         {!locked ? (
           <PressableScale
-            haptic="press"
             onPress={submit}
             scaleTo={0.98}
             style={[
@@ -306,7 +305,6 @@ function PaletteOptions({
           : isPaletteOption(sel) && sel.name === p.name;
         return (
           <PressableScale
-            haptic={selected ? true : 'select'}
             key={p.name}
             scaleTo={0.98}
             onPress={locked ? undefined : () => onPick(p)}
@@ -370,7 +368,6 @@ function FontOptions({
           : isFontOption(sel) && sel.name === f.name;
         return (
           <PressableScale
-            haptic={selected ? true : 'select'}
             key={f.name}
             scaleTo={0.98}
             onPress={locked ? undefined : () => onPick(f)}
@@ -431,7 +428,6 @@ function ChecklistOptions({
         const on = locked ? lockedPicked.includes(opt) : checked.includes(opt);
         return (
           <PressableScale
-            haptic="rigid"
             key={opt}
             onPress={locked ? undefined : () => onToggle(opt)}
             style={[
@@ -488,7 +484,6 @@ function ChoiceOptions({
         const selected = locked ? opt === answer : sel === opt;
         return (
           <PressableScale
-            haptic={selected ? true : 'select'}
             key={opt}
             onPress={locked ? undefined : () => onPick(opt)}
             style={[

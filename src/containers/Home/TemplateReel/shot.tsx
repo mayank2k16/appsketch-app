@@ -2,8 +2,8 @@ import { Image as ExpoImage } from 'expo-image';
 import * as React from 'react';
 import { StyleSheet } from 'react-native';
 
-/** A template screenshot: the API's small thumbnail, cover-fit and top
- *  aligned, cached to memory+disk. Nothing is ever laid over it (no scrim,
+/** A template screenshot: the API's small thumbnail, cover-fit and anchored at the
+ *  top-left corner (only the bottom/right is ever trimmed), cached to memory+disk. Nothing is ever laid over it (no scrim,
  *  no fade, no opacity) — the solid `bg` shows while it loads. */
 export const Shot = React.memo(function Shot({
   uri,
@@ -18,7 +18,7 @@ export const Shot = React.memo(function Shot({
       recyclingKey={uri}
       style={[s.shot, { backgroundColor: bg }]}
       contentFit="cover"
-      contentPosition="top"
+      contentPosition="top left"
       cachePolicy="memory-disk"
       transition={150}
     />

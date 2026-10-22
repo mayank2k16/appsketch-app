@@ -113,7 +113,6 @@ export function PaymentForm({
           const active = selectedTenant?.id === tenant.id;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={String(tenant.id)}
               onPress={() => setSelectedTenant(tenant)}
               style={[
@@ -136,7 +135,6 @@ export function PaymentForm({
           const active = form.provider === p.key;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={p.key}
               onPress={() => setField('provider', p.key)}
               style={[
@@ -174,7 +172,6 @@ export function PaymentForm({
       />
 
       <PressableScale
-        haptic="press"
         onPress={handleSubmit}
         disabled={addMerchant.isPending}
         disabledOpacity={0.6}
@@ -221,7 +218,6 @@ function FormField({
             onPress={onToggleSecure}
             style={st.eyeBtn}
             hitSlop={8}
-            haptic="rigid"
           >
             <Ionicons name={secure ? 'eye-off-outline' : 'eye-outline'} size={16} color={t.textMuted} />
           </PressableScale>

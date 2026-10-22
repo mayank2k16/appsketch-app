@@ -6,7 +6,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PressableScale } from '@/components/ui';
 import type { CustomVariable, CustomVariablePayload, VariableSource } from '@/api/notifications';
 import { useCreateCustomVariable, useUpdateCustomVariable } from '@/api/notifications';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSwitch } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
@@ -80,7 +79,6 @@ export const ManageVariableModal = React.forwardRef<BottomSheetModal, Props>(
       if (form.source === 'STATIC' && !form.static_value.trim()) next.static_value = 'Static value is required';
       if (form.source === 'ATTRIBUTE' && !form.attribute_path.trim()) next.attribute_path = 'Attribute path is required';
       setErrors(next);
-      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 
@@ -122,7 +120,6 @@ export const ManageVariableModal = React.forwardRef<BottomSheetModal, Props>(
                 const active = form.source === source;
                 return (
                   <PressableScale
-                    haptic={active ? true : 'select'}
                     scaleTo={0.98}
                     key={source}
                     onPress={() => set('source', source)}

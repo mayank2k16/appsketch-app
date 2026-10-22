@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { PressableScale } from '@/components/ui';
 import type { PaymentTransactionType } from '@/api/payments';
 import { searchEntities, useCreateBulkPayment, usePendingPaymentsForEntity } from '@/api/payments';
-import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../../components';
@@ -93,12 +92,10 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
   function handleSubmit() {
     setError('');
     if (!form.entity || !form.amount.trim() || !form.date.trim() || !form.type) {
-      haptic.error();
       setError('Enter all required details.');
       return;
     }
     if (markManually && selectedAmount < Number(form.amount)) {
-      haptic.error();
       setError('Invoices marked sums less than the payment received.');
       return;
     }
@@ -213,7 +210,6 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
                   const checked = selectedIds.includes(p.id);
                   return (
                     <PressableScale
-                      haptic="rigid"
                       scaleTo={0.98}
                       key={p.id}
                       onPress={() => toggleMark(p.id, p.amount)}

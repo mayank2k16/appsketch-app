@@ -49,7 +49,6 @@ export function GroupsPermissionsMultiSelect({ colors, label, items, value, onCh
             const checked = value.includes(item.id);
             return (
               <PressableScale
-                haptic="rigid"
                 scaleTo={0.98}
                 onPress={() => toggle(item.id)}
                 style={[st.option, { borderColor: colors.border }]}

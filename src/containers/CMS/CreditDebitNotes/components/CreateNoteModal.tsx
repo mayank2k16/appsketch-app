@@ -10,7 +10,6 @@ import { useCompanyDetails } from '@/api/invoices';
 import { searchEntities, searchInvoices } from '@/api/payments';
 import type { EntityOption } from '@/api/payments';
 import { useProductInventories, useProducts } from '@/api/products';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsField, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -224,7 +223,6 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     if (!entity) next.entity = 'Select an entity';
     if (!refNo.trim()) next.refNo = 'Enter a reference number';
     setErrors(next);
-    if (Object.keys(next).length > 0) haptic.error();
     return Object.keys(next).length === 0;
   }
 

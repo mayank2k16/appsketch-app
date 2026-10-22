@@ -27,7 +27,6 @@ import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
 import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
 import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
@@ -137,14 +136,12 @@ function RenameModal({
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
       <Pressable
-        onPressIn={haptic.tap}
         style={[
           st.backdrop,
           isLight(colors) && { backgroundColor: colors.sheetOverlay },
@@ -188,7 +185,6 @@ function RenameModal({
               </Text>
             </PressableScale>
             <PressableScale
-              haptic={trimmed ? 'press' : false}
               // Guarded, not `disabled`, so the empty state keeps its own 0.4.
               onPress={trimmed ? () => onSubmit(trimmed) : undefined}
               accessibilityState={{ disabled: !trimmed }}
@@ -241,14 +237,12 @@ function WorkMenu({
 }) {
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
       <Pressable
-        onPressIn={haptic.tap}
         style={[
           st.menuBackdrop,
           isLight(colors) && { backgroundColor: colors.sheetOverlay },
@@ -1050,7 +1044,6 @@ export function ChatPanel() {
   function handleDelete() {
     // Deleting the conversation is not reversible from the app, so it asks
     // once. It does NOT delete the built site — see the backend endpoint.
-    haptic.warning();
     Alert.alert(
       'Delete this project?',
       'The chat and its history are removed. Your generated files stay on the server.',

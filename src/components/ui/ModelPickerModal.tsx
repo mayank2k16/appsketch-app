@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 import { PressableScale } from './pressable-scale';
@@ -54,14 +53,12 @@ export function ModelPickerModal({
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
       <Pressable
-        onPressIn={haptic.tap}
         style={[s.modalBackdrop, !dark && s.whiteScrim]}
         onPress={onClose}
       >

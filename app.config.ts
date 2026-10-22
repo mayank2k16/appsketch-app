@@ -97,9 +97,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
+      // iPad runs full screen in portrait like the phone; the layouts are
+      // portrait-only, so no landscape or split-view sizes.
+      requireFullScreen: true,
       bundleIdentifier: Env.BUNDLE_ID,
-      // TestFlight build number: bump before every upload (last: 49).
-      buildNumber: '50',
+      // TestFlight build number: bump before every upload (last: 50).
+      buildNumber: '51',
       // App Store / TestFlight builds are signed with the production push
       // profile; a 'development' value fails the archive's manual signing.
       entitlements:
@@ -207,11 +210,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         'expo-splash-screen',
         {
-          // The white canvas of the default theme. Always white: the
-          // splash follows the app's default, not the phone's dark mode.
+          // The warm canvas with the logo's orange dot at the centre, in
+          // both themes. The in-app splash (src/app/splash.tsx) starts on
+          // this exact picture: the dot glides into place while the pencil
+          // draws the logo around it. Assets: scripts/make-splash-logo.py,
+          // which also writes the prebuilt ios/ and android/ copies.
           backgroundColor: '#FAFAF8',
-          image: './assets/splash-mark.png',
-          imageWidth: 96,
+          image: './assets/splash-dot.png',
+          imageWidth: 16,
         },
       ],
       // Declared explicitly (rather than relying on autolinking alone) so the

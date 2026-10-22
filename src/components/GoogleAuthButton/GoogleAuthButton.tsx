@@ -4,14 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useGoogleSignIn } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 
 export function GoogleAuthButton({ onSuccess }: { onSuccess: () => void }) {
   const { signInWithGoogle, loading, isConfigured } = useGoogleSignIn(onSuccess);
 
   return (
     <TouchableOpacity
-      onPressIn={haptic.press}
       onPress={signInWithGoogle}
       activeOpacity={0.85}
       style={[st.btn, !isConfigured && st.btnDisabled]}

@@ -408,7 +408,6 @@ function SelectField({
         const on = o === value;
         return (
           <PressableScale
-            haptic="rigid"
             key={o}
             onPress={() => onChange(on ? '' : o)}
             style={[

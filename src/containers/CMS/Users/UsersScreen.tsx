@@ -167,7 +167,6 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
           const active = s.key === segment;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={s.key}
               onPress={() => setSegment(s.key)}
               style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}

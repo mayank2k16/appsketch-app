@@ -339,7 +339,6 @@ export function ChatView({ colors, conversationId, onBack }: Props) {
             style={[st.input, { color: colors.textPrimary, borderColor: colors.border }]}
           />
           <PressableScale
-            haptic="press"
             onPress={handleSend}
             disabled={!draft.trim()}
             style={[st.sendBtn, { backgroundColor: colors.accent }, !draft.trim() && st.sendBtnDisabled]}

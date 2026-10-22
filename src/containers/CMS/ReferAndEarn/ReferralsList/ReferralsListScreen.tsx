@@ -161,7 +161,6 @@ export function ReferralsListScreen() {
             const checked = statusFilter === f;
             return (
               <PressableScale
-                haptic="rigid"
                 key={f}
                 onPress={() => {
                   setStatusFilter(f);

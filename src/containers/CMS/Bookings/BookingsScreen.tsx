@@ -120,7 +120,6 @@ export function BookingsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
           const active = timeFilter === f.value;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={f.value}
               onPress={() => setTimeFilter(f.value)}
               style={[
@@ -136,7 +135,6 @@ export function BookingsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
           );
         })}
         <PressableScale
-          haptic="rigid"
           onPress={() => setView(view === 'list' ? 'calendar' : 'list')}
           style={[st.viewToggleBtn, { borderColor: colors.border }]}
         >

@@ -6,7 +6,6 @@ import { useTenantUsersSearch } from '@/api/orders';
 import type { FeedbackItem } from '@/api/products';
 import { useModal, PressableScale } from '@/components/ui';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsInput, CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -81,7 +80,6 @@ export function FeedbackListEditor({ colors, items, onChange }: Props) {
     if (!draft.title.trim()) nextErrors.title = 'Title is required';
     if (!draft.content.trim()) nextErrors.content = 'Review content is required';
     if (Object.keys(nextErrors).length > 0) {
-      haptic.error();
       setErrors(nextErrors);
       return;
     }

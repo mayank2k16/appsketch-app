@@ -20,7 +20,6 @@ export function VideoListItem({
 }) {
   return (
     <PressableScale
-      haptic={active ? true : 'select'}
       onPress={onPress}
       scaleTo={0.98}
       accessibilityState={{ selected: active }}

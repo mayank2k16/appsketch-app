@@ -4,7 +4,6 @@ import * as React from 'react';
 
 import type { SmsTemplate, SmsTemplatePayload } from '@/api/notifications';
 import { useCreateSMSTemplate, useCustomVariables, useSystemVariables, useUpdateSMSTemplate } from '@/api/notifications';
-import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsVariableInput } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
@@ -58,7 +57,6 @@ export const ManageSmsTemplateModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.title.trim()) next.title = 'Title is required';
       if (!form.body.trim()) next.body = 'Body is required';
       setErrors(next);
-      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

@@ -79,7 +79,6 @@ export const LinkProductSheet = React.forwardRef<BottomSheetModal, Props>(({ col
             const checked = selectedIds.includes(item.id);
             return (
               <PressableScale
-                haptic="rigid"
                 scaleTo={0.98}
                 onPress={() => toggle(item.id)}
                 style={[st.row, { borderColor: colors.border }]}

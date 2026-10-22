@@ -24,7 +24,6 @@ export function CartScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => v
           const active = tab.key === activeTab;
           return (
             <PressableScale
-              haptic={active ? true : 'select'}
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
               style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}

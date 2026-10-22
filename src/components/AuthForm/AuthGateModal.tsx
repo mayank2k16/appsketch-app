@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
-import { haptic } from '@/lib/haptics';
 import { BRAND_MID, brandGradient } from '@/lib/theme';
 
 import { AuthSheet } from './AuthSheet';
@@ -89,7 +88,6 @@ export function AuthGateModal({ visible, onClose, onSuccess }: Props) {
 
   return (
     <Modal
-      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
@@ -102,7 +100,6 @@ export function AuthGateModal({ visible, onClose, onSuccess }: Props) {
         style={StyleSheet.absoluteFill}
       >
         <Pressable
-          onPressIn={haptic.tap}
           style={[s.backdrop, { backgroundColor: g.backdrop }]}
           onPress={onClose}
         >

@@ -102,7 +102,6 @@ function SegmentSwitch<T extends string>({
         return (
           <Pressable
             key={o.value}
-            onPressIn={active ? haptic.tap : undefined}
             onPress={() => choose(o.value)}
             hitSlop={4}
             accessibilityRole="radio"
