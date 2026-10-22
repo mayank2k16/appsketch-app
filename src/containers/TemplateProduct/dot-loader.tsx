@@ -97,8 +97,42 @@ function useClock(animate: boolean) {
   return clock;
 }
 
+/** The cluster at rest (the ripple's first frame), as plain views: a page
+ *  that is not animating its loader — every neighbour in the pager, the
+ *  grow's flying copy — mounts 21 static views instead of 21 animated
+ *  styles (each one a UI-thread mapper), which made a swipe's new
+ *  neighbour cost a burst of work as the spring started. */
+const STILL = DOTS.map((d) => {
+  const c = 0.5 + 0.5 * Math.cos(-d.dist * 1.35);
+  const v = c * c * c;
+  return {
+    k: d.k,
+    style: {
+      left: (d.cx + MID) * PITCH,
+      top: (d.cy + MID) * PITCH,
+      opacity: 0.2 + 0.8 * v,
+      transform: [{ scale: 0.55 + 0.75 * v }],
+    },
+  };
+});
+
+const StillCluster = React.memo(function StillCluster() {
+  return (
+    <View pointerEvents="none" style={s.cluster}>
+      {STILL.map((d) => (
+        <View key={d.k} style={[s.dot, d.style]} />
+      ))}
+    </View>
+  );
+});
+
 export function DotCluster({ animate }: { animate: boolean }) {
-  const clock = useClock(animate);
+  if (!animate) return <StillCluster />;
+  return <RippleCluster />;
+}
+
+function RippleCluster() {
+  const clock = useClock(true);
   return (
     <View pointerEvents="none" style={s.cluster}>
       {DOTS.map((d) => (

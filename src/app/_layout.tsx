@@ -45,6 +45,10 @@ hydrateStudio();
 // time the login screen mounts — whichever path gets there (splash, sign-out,
 // session expiry, pricing gate, etc.), not just the splash->login route.
 ExpoImage.prefetch(LOGIN_MONTAGE_IMAGES, 'memory-disk');
+// The in-memory image cache is unbounded by default and the template feed
+// shows hundreds of screenshots: cap it (bytes of decoded pixels) so a deep
+// scroll recycles old images instead of growing until iOS kills the app.
+ExpoImage.configureCache({ maxMemoryCost: 160 * 1024 * 1024 });
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 // Set the animation options. This is optional.

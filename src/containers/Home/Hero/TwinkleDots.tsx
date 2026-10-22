@@ -94,32 +94,22 @@ type Props = {
   baseOpacity?: number;
   /** brightest opacity a twinkling dot reaches */
   peakOpacity?: number;
+  /** Lay the grid out as if the field were this tall (default `height`), so
+   *  a field cut shorter keeps exactly the same dot positions. */
+  gridHeight?: number;
+  /** False while the field is off screen: the twinkle freezes in place. */
+  live?: boolean;
 };
 
-function TwinkleLayer({
-  index,
-  cells,
-  width,
-  height,
-  spacing,
-  radius,
-  color,
-  baseOpacity,
-  peakOpacity,
-}: {
-  index: number;
-  cells: [number, number][];
-  width: number;
-  height: number;
-  spacing: number;
-  radius: number;
-  color: string;
-  baseOpacity: number;
-  peakOpacity: number;
-}) {
+/** One layer's opacity, base → peak and back, frozen while not `live`. */
+function useTwinkle(index: number, live: boolean, [lo, hi]: [number, number]) {
   const v = useSharedValue(0);
 
   React.useEffect(() => {
+    if (!live) {
+      cancelAnimation(v);
+      return;
+    }
     // Staggered durations and delays keep the three layers permanently out of
     // phase, so the field shimmers instead of pulsing as one sheet.
     v.value = withDelay(
@@ -134,14 +124,42 @@ function TwinkleLayer({
       )
     );
     return () => cancelAnimation(v);
-  }, [v, index]);
+  }, [v, index, live]);
 
-  const style = useAnimatedStyle(() => ({
-    opacity: baseOpacity + (peakOpacity - baseOpacity) * v.value,
+  return useAnimatedStyle(() => ({
+    opacity: lo + (hi - lo) * v.value,
   }));
+}
+
+function TwinkleLayer({
+  index,
+  cells,
+  width,
+  height,
+  spacing,
+  radius,
+  color,
+  baseOpacity,
+  peakOpacity,
+  gridHeight,
+  live,
+}: {
+  index: number;
+  cells: [number, number][];
+  width: number;
+  height: number;
+  spacing: number;
+  radius: number;
+  color: string;
+  baseOpacity: number;
+  peakOpacity: number;
+  gridHeight: number;
+  live: boolean;
+}) {
+  const style = useTwinkle(index, live, [baseOpacity, peakOpacity]);
 
   const { step, origin: originX } = gridMetrics(width, spacing, radius);
-  const { origin: originY } = gridMetrics(height, spacing, radius);
+  const { origin: originY } = gridMetrics(gridHeight, spacing, radius);
   const tile = step * BLOCK;
   const id = `twinkleLayer${index}`;
 
@@ -177,6 +195,16 @@ function TwinkleLayer({
   );
 }
 
+/**
+ * The field is the three twinkle layers alone. There used to be a fourth,
+ * constant base grid under them (every dot at `baseOpacity`), but each dot
+ * sits in exactly one layer, so base-under-layer is the same as that layer
+ * alone with its opacity remapped: 1 - (1 - base)(1 - a) is linear in a,
+ * running from 1 - (1 - base)² to 1 - (1 - base)(1 - peak). Same pixels,
+ * one full-size layer fewer (Home's white dots were 16 per colour band).
+ * The layers stay mounted when Home is blurred or the field is off screen —
+ * they freeze — so coming back never re-draws them.
+ */
 export function TwinkleDots({
   width,
   height,
@@ -185,59 +213,30 @@ export function TwinkleDots({
   radius = 1.4,
   baseOpacity = 0.6,
   peakOpacity = 0.9,
+  gridHeight = height,
+  live = true,
 }: Props) {
   const isFocused = useIsFocused();
-  const { step, origin: originX } = gridMetrics(width, spacing, radius);
-  const { origin: originY } = gridMetrics(height, spacing, radius);
-
+  const lo = 1 - (1 - baseOpacity) ** 2;
+  const hi = 1 - (1 - baseOpacity) * (1 - peakOpacity);
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
-      {/* Constant base grid — holds the full dot field at rest, and is all
-          that remains when the screen is not focused. */}
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-        <Defs>
-          <Pattern
-            id="twinkleGrid"
-            x={originX}
-            y={originY}
-            width={step}
-            height={step}
-            patternUnits="userSpaceOnUse"
-          >
-            <Circle
-              cx={cellCentre(0, step)}
-              cy={cellCentre(0, step)}
-              r={radius}
-              fill={color}
-              opacity={baseOpacity}
-            />
-          </Pattern>
-        </Defs>
-        <Rect
-          x={0}
-          y={0}
+      {LAYERS.map((cells, i) => (
+        <TwinkleLayer
+          key={i}
+          index={i}
+          cells={cells}
           width={width}
           height={height}
-          fill="url(#twinkleGrid)"
+          spacing={spacing}
+          radius={radius}
+          color={color}
+          baseOpacity={lo}
+          peakOpacity={hi}
+          gridHeight={gridHeight}
+          live={live && isFocused}
         />
-      </Svg>
-
-      {/* Animations stop entirely when Home is not the focused screen */}
-      {isFocused &&
-        LAYERS.map((cells, i) => (
-          <TwinkleLayer
-            key={i}
-            index={i}
-            cells={cells}
-            width={width}
-            height={height}
-            spacing={spacing}
-            radius={radius}
-            color={color}
-            baseOpacity={baseOpacity}
-            peakOpacity={peakOpacity}
-          />
-        ))}
+      ))}
     </View>
   );
 }

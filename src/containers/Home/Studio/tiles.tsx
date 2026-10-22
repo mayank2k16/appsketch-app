@@ -6,9 +6,9 @@ import type { MarketTemplate } from '@/api/templates';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 
-import { thumbOf, titleOf } from '../TemplateReel/layout';
+import { isMobile, thumbOf, titleOf } from '../TemplateReel/layout';
 import { PhoneFrame } from '../TemplateReel/phone-frame';
-import { Shot } from '../TemplateReel/shot';
+import { Shot, SHOT_RATIO } from '../TemplateReel/shot';
 import { BrowserFrame } from './browser-frame';
 import {
   BAR_H,
@@ -186,6 +186,15 @@ export const SmallTile = React.memo(function SmallTile({
 }: TileProps & { height: number }) {
   const { dark } = useStudioActions();
   const { ref, onPress } = useOpenTemplate(template, 'browser');
+  const mobile = isMobile(template);
+  const fit = React.useMemo(
+    () => ({
+      w: COL_W - CARD_EDGE_W * 2,
+      h: height - LABEL_H - CARD_EDGE_W * 2,
+      ratio: mobile ? SHOT_RATIO.app : SHOT_RATIO.web,
+    }),
+    [height, mobile]
+  );
   return (
     <PressableScale
       scaleTo={0.97}
@@ -202,7 +211,7 @@ export const SmallTile = React.memo(function SmallTile({
           { height: height - LABEL_H, borderColor: cardEdge(dark) },
         ]}
       >
-        <Shot uri={thumbOf(template)} />
+        <Shot uri={thumbOf(template)} fit={fit} />
       </View>
       <TileFoot template={template} tone={metaTone(dark)} width={COL_W} />
     </PressableScale>

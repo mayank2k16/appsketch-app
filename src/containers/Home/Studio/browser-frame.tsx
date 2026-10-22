@@ -5,7 +5,7 @@ import type { MarketTemplate } from '@/api/templates';
 import { F } from '@/lib/fonts';
 
 import { buildUrl } from '../../TemplateProduct/live-url';
-import { Shot } from '../TemplateReel/shot';
+import { Shot, SHOT_RATIO } from '../TemplateReel/shot';
 import { BAR_H, CARD_EDGE_W, cardEdge } from './geometry';
 import { useIsLive } from './live-budget';
 import { LiveSite } from './live-site';
@@ -66,6 +66,10 @@ export const BrowserFrame = React.memo(function BrowserFrame({
   // shows (a border must never clip its right edge).
   const bw = onPage ? CARD_EDGE_W : StyleSheet.hairlineWidth;
   const inner = width - bw * 2;
+  const fit = React.useMemo(
+    () => ({ w: inner, h: pageH, ratio: SHOT_RATIO.web }),
+    [inner, pageH]
+  );
   return (
     <View
       style={[
@@ -82,7 +86,7 @@ export const BrowserFrame = React.memo(function BrowserFrame({
         {live && playing ? <LiveTag /> : null}
       </View>
       <View style={{ width: inner, height: pageH }}>
-        <Shot uri={thumb || ''} />
+        <Shot uri={thumb || ''} fit={fit} />
         {live && url ? (
           <LiveSite
             url={url}

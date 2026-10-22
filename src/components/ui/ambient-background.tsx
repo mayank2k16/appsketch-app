@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   type SharedValue,
   useAnimatedStyle,
@@ -10,7 +11,6 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 /**
  * The Home hero's background in white (docs/white-theme.md), after the
@@ -21,8 +21,11 @@ import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
  * melts through three pastels; over its last stretch it melts back into the
  * canvas. Both edges are long gradients, so no line ever shows.
  *
- * Cheap by construction: every pool is a static SVG radial gradient drawn
- * once; only transforms and opacities animate, on the UI thread.
+ * Cheap by construction: every pool is one small white radial-gradient image
+ * (assets/home/glow.png, the same stops the SVG used: 1 → 0.55 at 45% → 0)
+ * scaled up and tinted on the GPU — twelve full-size SVG layers were ~100 MB
+ * of backing store. Only transforms and opacities animate, on the UI thread,
+ * and only while `live` (Home focused, hero on screen).
  *
  * Renders nothing in dark.
  */
@@ -85,36 +88,25 @@ const POOLS: readonly Pool[] = [
 const STEP_MS = 7000;
 const STEPS = 3;
 
-const Glow = React.memo(function Glow({
-  id,
-  color,
-}: {
-  id: string;
-  color: string;
-}) {
+const GLOW = require('../../../assets/home/glow.png');
+
+const Glow = React.memo(function Glow({ color }: { color: string }) {
   return (
-    <Svg width={SIZE} height={SIZE} style={StyleSheet.absoluteFill}>
-      <Defs>
-        <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-          <Stop offset="0" stopColor={color} stopOpacity={1} />
-          <Stop offset="0.45" stopColor={color} stopOpacity={0.55} />
-          <Stop offset="1" stopColor={color} stopOpacity={0} />
-        </RadialGradient>
-      </Defs>
-      <Rect width={SIZE} height={SIZE} fill={`url(#${id})`} />
-    </Svg>
+    <Image
+      source={GLOW}
+      resizeMode="stretch"
+      style={[styles.glow, { tintColor: color }]}
+    />
   );
 });
 
 /** One colour of a pool; its opacity peaks when the cycle reaches it. */
 function Shade({
-  id,
   color,
   k,
   index,
   t,
 }: {
-  id: string;
   color: string;
   k: number;
   index: number;
@@ -129,7 +121,7 @@ function Shade({
   });
   return (
     <Animated.View style={[StyleSheet.absoluteFill, style]}>
-      <Glow id={id} color={color} />
+      <Glow color={color} />
     </Animated.View>
   );
 }
@@ -140,21 +132,28 @@ function PoolView({
   t,
   bandTop,
   bandH,
+  live,
 }: {
   pool: Pool;
   index: number;
   t: SharedValue<number>;
   bandTop: number;
   bandH: number;
+  live: boolean;
 }) {
   const drift = useSharedValue(0);
   React.useEffect(() => {
+    if (!live) {
+      cancelAnimation(drift);
+      return;
+    }
     drift.value = withRepeat(
       withTiming(1, { duration: pool.ms, easing: Easing.inOut(Easing.sin) }),
       -1,
       true
     );
-  }, [drift, pool.ms]);
+    return () => cancelAnimation(drift);
+  }, [drift, pool.ms, live]);
 
   const move = useAnimatedStyle(() => ({
     transform: [
@@ -174,23 +173,50 @@ function PoolView({
       ]}
     >
       {pool.colors.map((color, k) => (
-        <Shade
-          key={k}
-          id={`pool${index}c${k}`}
-          color={color}
-          k={k}
-          index={index}
-          t={t}
-        />
+        <Shade key={k} color={color} k={k} index={index} t={t} />
       ))}
     </Animated.View>
   );
+}
+
+/** The pools' colour clock: 0 → STEPS, wrapping; frozen while not live. */
+function useColourCycle(live: boolean) {
+  const t = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (!live) {
+      cancelAnimation(t);
+      return;
+    }
+    // Resume from wherever the cycle froze.
+    const left = STEPS - (t.value % STEPS);
+    t.value = t.value % STEPS;
+    t.value = withTiming(
+      STEPS,
+      { duration: STEP_MS * left, easing: Easing.linear },
+      (done) => {
+        if (!done) return;
+        t.value = 0;
+        t.value = withRepeat(
+          withTiming(STEPS, {
+            duration: STEP_MS * STEPS,
+            easing: Easing.linear,
+          }),
+          -1,
+          false
+        );
+      }
+    );
+    return () => cancelAnimation(t);
+  }, [t, live]);
+  return t;
 }
 
 export const AmbientBackground = React.memo(function AmbientBackground({
   height,
   startY,
   children,
+  live = true,
 }: {
   /** Drawn over the colour (e.g. a dot field), melting out with it. */
   children?: React.ReactNode;
@@ -198,17 +224,11 @@ export const AmbientBackground = React.memo(function AmbientBackground({
   height: number;
   /** Where the colour begins rising in (e.g. the prompt card's middle). */
   startY: number;
+  /** False while off screen / not focused: the drift and colours freeze. */
+  live?: boolean;
 }) {
   const { colorScheme } = useColorScheme();
-  const t = useSharedValue(0);
-
-  React.useEffect(() => {
-    t.value = withRepeat(
-      withTiming(STEPS, { duration: STEP_MS * STEPS, easing: Easing.linear }),
-      -1,
-      false
-    );
-  }, [t]);
+  const t = useColourCycle(live);
 
   if (colorScheme === 'dark' || height <= 0) return null;
   const bandTop = startY;
@@ -223,6 +243,7 @@ export const AmbientBackground = React.memo(function AmbientBackground({
           t={t}
           bandTop={bandTop}
           bandH={bandH}
+          live={live}
         />
       ))}
       {/* Clean canvas above startY, the colour rising in below it. */}
@@ -262,4 +283,5 @@ const styles = StyleSheet.create({
   },
   edge: { position: 'absolute', left: 0, right: 0 },
   pool: { position: 'absolute', width: SIZE, height: SIZE },
+  glow: { position: 'absolute', top: 0, left: 0, width: SIZE, height: SIZE },
 });

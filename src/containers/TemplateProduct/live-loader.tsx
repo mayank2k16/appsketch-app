@@ -65,6 +65,29 @@ function useLoop(animate: boolean, ms: number, reverse: boolean) {
 
 type Size = { w: number; h: number };
 
+/** expo-linear-gradient draws its layer on the CPU, on the main thread, at
+ *  full screen scale: a Flow layer (3 × 3 panels) was a ~3300 × 5600 px
+ *  bitmap (~74 MB), two per app card, drawn in the frame a card mounted —
+ *  the 150-270 ms hitches as a swipe brought an app neighbour in. A smooth
+ *  gradient loses nothing when drawn small and magnified by the GPU, so
+ *  every gradient here is drawn at 1/SHRINK size and scaled back up. */
+const SHRINK = 12;
+
+type GradientProps = React.ComponentProps<typeof LinearGradient> & {
+  width: number;
+  height: number;
+};
+
+/** A LinearGradient filling width × height, drawn at 1/SHRINK size. */
+export function CheapGradient({ width, height, ...rest }: GradientProps) {
+  return (
+    <LinearGradient
+      {...rest}
+      style={[s.cheap, { width: width / SHRINK, height: height / SHRINK }]}
+    />
+  );
+}
+
 function Flow({
   colors,
   p,
@@ -88,11 +111,12 @@ function Flow({
     <Animated.View
       style={[s.flow, { width: size.w * OVER, height: size.h * OVER }, style]}
     >
-      <LinearGradient
+      <CheapGradient
         colors={[a, b, c, a, b]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        width={size.w * OVER}
+        height={size.h * OVER}
       />
     </Animated.View>
   );
@@ -111,7 +135,7 @@ function Sheen({ p, size }: { p: SharedValue<number>; size: Size }) {
       style={[s.sheen, { width: band, height: size.h * 1.5 }, style]}
       pointerEvents="none"
     >
-      <LinearGradient
+      <CheapGradient
         colors={[
           'rgba(255,255,255,0)',
           'rgba(255,255,255,0.32)',
@@ -119,7 +143,8 @@ function Sheen({ p, size }: { p: SharedValue<number>; size: Size }) {
         ]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
-        style={StyleSheet.absoluteFill}
+        width={band}
+        height={size.h * 1.5}
       />
     </Animated.View>
   );
@@ -166,4 +191,11 @@ const s = StyleSheet.create({
   flow: { position: 'absolute', top: 0, left: 0 },
   dim: { backgroundColor: 'rgba(0,0,0,0.35)' },
   sheen: { position: 'absolute', top: '-25%', left: 0 },
+  cheap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    transformOrigin: 'top left',
+    transform: [{ scale: SHRINK }],
+  },
 });

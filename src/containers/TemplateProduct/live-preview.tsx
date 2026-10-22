@@ -133,14 +133,34 @@ const LiveLayer = React.memo(function LiveLayer(p: LayerProps) {
   );
 });
 
+/** The page's auto-scroll follows `active`. Its script starts running, so
+ *  every load sends the current state with it (a warm, hidden neighbour
+ *  stays paused — no scrolling, no frames — until it is centred); later
+ *  changes are sent as they happen, never to a page that has not loaded.
+ *  iOS can skip `injectedJavaScript`, so the script is also injected on
+ *  load; it installs once per document. */
+function useAutoScrollSync(
+  ref: React.RefObject<WebView | null>,
+  active: boolean
+) {
+  const activeRef = React.useRef(active);
+  activeRef.current = active;
+  const loaded = React.useRef(false);
+  React.useEffect(() => {
+    if (loaded.current) ref.current?.injectJavaScript(pauseAutoScroll(active));
+  }, [ref, active]);
+  return React.useCallback(() => {
+    loaded.current = true;
+    ref.current?.injectJavaScript(SCRIPT + pauseAutoScroll(activeRef.current));
+  }, [ref]);
+}
+
 const LiveWeb = React.memo(function LiveWeb(
   p: LayerProps & { onGone: () => void; onFail: () => void }
 ) {
   const ref = React.useRef<WebView>(null);
   const { style, reveal } = useReveal(p.device, p.onReady);
-  React.useEffect(() => {
-    ref.current?.injectJavaScript(pauseAutoScroll(p.active));
-  }, [p.active]);
+  const onLoad = useAutoScrollSync(ref, p.active);
   // Mobile lays out at the panel's own width (a phone width already), so it
   // needs no transform and scrolls natively; Tablet / Desktop render at
   // their real width and are scaled down.
@@ -163,9 +183,7 @@ const LiveWeb = React.memo(function LiveWeb(
           source={{ uri: p.url }}
           style={s.web}
           injectedJavaScript={SCRIPT}
-          // iOS can skip `injectedJavaScript`, so it is also injected on
-          // load; both scripts install once per document.
-          onLoad={() => ref.current?.injectJavaScript(SCRIPT)}
+          onLoad={onLoad}
           onMessage={onMessage}
           onContentProcessDidTerminate={p.onGone}
           onRenderProcessGone={p.onGone}

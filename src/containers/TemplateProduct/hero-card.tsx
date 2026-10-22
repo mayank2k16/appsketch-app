@@ -4,7 +4,6 @@ import { StyleSheet, Text } from 'react-native';
 import Animated, {
   interpolate,
   type SharedValue,
-  useAnimatedProps,
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
@@ -39,7 +38,8 @@ import type { ProductMotion } from './use-product-transition';
  * blur rises over it — the quick blur as heroes come and go.
  */
 
-const AnimatedBlur = Animated.createAnimatedComponent(BlurView);
+/** The motion blur at its peak (half a page off centre). */
+const MOTION_BLUR = 26;
 
 type Props = {
   template: MarketTemplate;
@@ -75,20 +75,15 @@ function useHeroStyles(p: Props) {
       transform: [{ translateX: d * g.stride - near - peek }, { scale }],
     };
   });
-  const blur = useAnimatedProps(() => ({
-    // Starts once the page is 12% out and stays light: a big blur radius
-    // over a live WebView is the costliest thing on screen mid-swipe.
-    intensity: interpolate(
-      Math.abs(i - x.value),
-      [0.12, 0.5],
-      [0, 26],
-      'clamp'
-    ),
-  }));
-  // A blur view at intensity 0 still composites the live site under it on
-  // every scrolled frame; at opacity 0 iOS skips it entirely.
+  // The motion blur is a FIXED-intensity blur whose opacity follows the
+  // pager (0 when centred, full at half a page out). Animating expo-blur's
+  // `intensity` instead re-created a UIViewPropertyAnimator in the native
+  // view's draw() on EVERY frame for every card (plus a shadow-tree commit
+  // per frame for the non-style prop); opacity is a plain layer property.
+  // At opacity 0 iOS skips the effect view entirely, so the centred live
+  // site is never composited through it.
   const blurOn = useAnimatedStyle(() => ({
-    opacity: Math.abs(i - x.value) > 0.12 ? 1 : 0,
+    opacity: interpolate(Math.abs(i - x.value), [0.12, 0.5], [0, 1], 'clamp'),
   }));
   // At rest a neighbour shows only a 4pt sliver at the screen edge: its
   // orange border plus a solid strip of its loader colour, like the edge of
@@ -96,7 +91,7 @@ function useHeroStyles(p: Props) {
   const tint = useAnimatedStyle(() => ({
     opacity: interpolate(Math.abs(i - x.value), [0.6, 1], [0, 1], 'clamp'),
   }));
-  return { card, blur, blurOn, tint };
+  return { card, blurOn, tint };
 }
 
 function NoLive({ dark }: { dark: boolean }) {
@@ -189,12 +184,13 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
         <LiveLoader seed={template.key} dark={p.dark} animate={spin} />
       )}
       <HeroBody {...p} onLive={onLive} />
-      <AnimatedBlur
-        pointerEvents="none"
-        tint={p.dark ? 'dark' : 'light'}
-        animatedProps={st.blur}
-        style={[StyleSheet.absoluteFill, st.blurOn]}
-      />
+      <Animated.View pointerEvents="none" style={[s.fill, st.blurOn]}>
+        <BlurView
+          intensity={MOTION_BLUR}
+          tint={p.dark ? 'dark' : 'light'}
+          style={s.fill}
+        />
+      </Animated.View>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -210,6 +206,7 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
 const BORDER = 1.5;
 
 const s = StyleSheet.create({
+  fill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   card: {
     position: 'absolute',
     overflow: 'hidden',

@@ -5,7 +5,10 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  type SharedValue,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MarketTemplate } from '@/api/templates';
@@ -103,33 +106,56 @@ function useLiveKeys() {
 /** Wait before warming neighbours when the centred page never goes live
  *  (no live site, or a cold app still starting). */
 const WARM_FALLBACK_MS = 2500;
+/** Between the two neighbours' WebView mounts, and before the first one
+ *  once the centred site is up: creating a WKWebView costs the main thread
+ *  a frame or two, so they never land in the same frame (or on top of the
+ *  centred site's own reveal fade). */
+const WARM_GAP_MS = 350;
 
 /**
- * The page whose neighbours may preload their live sites: the centred page
- * once its own site is up (it goes first), or after WARM_FALLBACK_MS.
+ * Which neighbours of the settled page may preload their live sites: none
+ * until the centred page's own site is up (it goes first) or
+ * WARM_FALLBACK_MS has passed, then the NEXT page, then the previous one,
+ * WARM_GAP_MS apart — and never while the pager is moving (a mount during
+ * a drag or a spring is a dropped frame), it waits for the page to be still.
  * Neighbours' screenshots are prefetched at once (apps show only that).
+ * Returns how many are warm: 0, 1 (index + 1) or 2 (both).
  */
-function useWarmNeighbours(
-  list: readonly MarketTemplate[],
-  index: number,
-  currentLive: boolean
-) {
-  const [warmFor, setWarmFor] = React.useState(-1);
+function useWarmNeighbours({
+  list,
+  index,
+  currentLive,
+  x,
+}: {
+  list: readonly MarketTemplate[];
+  index: number;
+  currentLive: boolean;
+  x: SharedValue<number>;
+}) {
+  const [warm, setWarm] = React.useState({ at: -1, n: 0 });
   React.useEffect(() => {
     for (const i of [index + 1, index - 1]) {
       const uri = list[i] ? thumbOf(list[i]) : '';
       if (uri) void Image.prefetch(uri, 'memory-disk');
     }
   }, [list, index]);
+  const n = warm.at === index ? warm.n : 0;
   React.useEffect(() => {
-    if (currentLive) {
-      setWarmFor(index);
-      return;
-    }
-    const t = setTimeout(() => setWarmFor(index), WARM_FALLBACK_MS);
+    if (n >= 2) return;
+    const wait = n === 0 && !currentLive ? WARM_FALLBACK_MS : WARM_GAP_MS;
+    let t: ReturnType<typeof setTimeout>;
+    const step = () => {
+      // Still moving (a drag or the settle spring): try again shortly.
+      if (Math.abs(x.get() - index) > 0.002) {
+        t = setTimeout(step, 120);
+        return;
+      }
+      setWarm({ at: index, n: n + 1 });
+    };
+    t = setTimeout(step, wait);
     return () => clearTimeout(t);
-  }, [index, currentLive]);
-  return warmFor === index;
+  }, [index, currentLive, n, x]);
+  return n;
 }
 
 /** Page-wide choices: the device the live sites render at (Desktop first)
@@ -169,11 +195,12 @@ function usePageState(p: PageProps) {
   // Neighbours warm around the SETTLED page: nothing mounts or unmounts a
   // WebView while a swipe's spring is still running (a WebView's creation
   // blocks the main thread for a frame or two).
-  const warm = useWarmNeighbours(
+  const warm = useWarmNeighbours({
     list,
-    pager.settled,
-    lives.live.has(list[pager.settled].key)
-  );
+    index: pager.settled,
+    currentLive: lives.live.has(list[pager.settled].key),
+    x: pager.x,
+  });
   const nav = useCrumbNav(p.templateKey);
   return {
     list,
@@ -245,8 +272,9 @@ function windowOf(
  *  (swiping back). While a swipe lands, only WebViews that already exist
  *  stay; a page that had none gets its own once the swipe has settled. */
 function loadOf(st: State, key: string, i: number) {
+  const d = i - st.settled;
   const mounted =
-    st.live.has(key) || (st.warm && Math.abs(i - st.settled) <= 1);
+    st.live.has(key) || (d === 1 && st.warm >= 1) || (d === -1 && st.warm >= 2);
   if (i === st.index) {
     return st.settled === i || mounted ? ('on' as const) : ('off' as const);
   }

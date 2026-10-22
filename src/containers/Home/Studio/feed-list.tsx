@@ -10,13 +10,16 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import type Animated from 'react-native-reanimated';
 import {
   type AnimatedRef,
+  runOnJS,
   type SharedValue,
+  useAnimatedReaction,
   useAnimatedRef,
   useScrollOffset,
   useSharedValue,
 } from 'react-native-reanimated';
 
 import { useHeaderCollapse } from '../header-collapse';
+import { setOnScreen } from '../on-screen';
 import type { HomeColors } from '../theme/HomeTheme';
 import { useChromeDriver } from './chrome-driver';
 import { COL_W, GAP, PAD, TALL } from './geometry';
@@ -209,6 +212,36 @@ export function StudioFeed(props: Props) {
   );
 }
 
+type Geometry = {
+  offset: SharedValue<number>;
+  listTop: SharedValue<number>;
+  showcase: SharedValue<{ y: number; h: number }>;
+  viewport: SharedValue<number>;
+};
+
+/** Flags (on-screen.ts) whether the hero's dot field and the showcase's
+ *  floating sheets are on screen, so their loops pause off it. */
+function useZones({ offset, listTop, showcase, viewport }: Geometry) {
+  // The hero's colour band runs ~150pt past the list header's end.
+  useAnimatedReaction(
+    () => listTop.value <= 0 || offset.value < listTop.value + 200,
+    (shown, was) => {
+      if (shown !== was) runOnJS(setOnScreen)('hero', shown);
+    }
+  );
+  useAnimatedReaction(
+    () => {
+      const sc = showcase.value;
+      if (sc.h <= 0) return false;
+      const top = listTop.value + sc.y - offset.value;
+      return top < viewport.value && top + sc.h > 0;
+    },
+    (shown, was) => {
+      if (shown !== was) runOnJS(setOnScreen)('showcase', shown);
+    }
+  );
+}
+
 /** Feeds the tone driver and the live budget the list's geometry. */
 function useFeedLayout(
   studio: StudioState,
@@ -220,6 +253,7 @@ function useFeedLayout(
   const viewport = useSharedValue(viewportH);
   const [topH, setTop] = React.useState(0);
   useChromeDriver({ offset, listTop, showcase, viewportH: viewport });
+  useZones({ offset, listTop, showcase, viewport });
 
   React.useEffect(() => {
     showcase.value = studio.feed.showcase ?? { y: 0, h: 0 };

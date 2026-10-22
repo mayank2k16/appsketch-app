@@ -10,24 +10,42 @@ const { width, height } = Dimensions.get('window');
 
 /**
  * Real AppSketch template screens, bundled so the first launch never waits on
- * the network. Four columns of three, read column by column.
+ * the network, column by column. Most carry their app's own accent, drawn
+ * as the tile's border stripe. The tilt lifts the right of the collage, so
+ * the first and third columns end early and get a fourth screen (plain
+ * hairline, no accent) to fill the space down to the brand, faded out above
+ * it by the welcome screen.
  */
-const SCREENS = [
-  require('../../../assets/splash/zaika.webp'),
-  require('../../../assets/splash/pastelpop.webp'),
-  require('../../../assets/splash/aurelia.webp'),
-  require('../../../assets/splash/voltline.webp'),
-  require('../../../assets/splash/kanakam.webp'),
-  require('../../../assets/splash/wagwell.webp'),
-  require('../../../assets/splash/shelfie.webp'),
-  require('../../../assets/splash/yello.webp'),
-  require('../../../assets/splash/nimbl.webp'),
-  require('../../../assets/splash/basketly.webp'),
-  require('../../../assets/splash/keyhaven.webp'),
-  require('../../../assets/splash/smashyard.webp'),
+type Screen = { src: number; accent?: string };
+const S = (src: number, accent?: string): Screen => ({ src, accent });
+
+const COLUMNS: readonly (readonly Screen[])[] = [
+  [
+    S(require('../../../assets/splash/zaika.webp'), '#C2582F'),
+    S(require('../../../assets/splash/pastelpop.webp'), '#A3C93A'),
+    S(require('../../../assets/splash/aurelia.webp'), '#3DA4FB'),
+    S(require('../../../assets/splash/bloomstead.webp')),
+  ],
+  [
+    S(require('../../../assets/splash/voltline.webp'), '#7A4BF7'),
+    S(require('../../../assets/splash/kanakam.webp'), '#B8892E'),
+    S(require('../../../assets/splash/wagwell.webp'), '#F0B91F'),
+  ],
+  [
+    S(require('../../../assets/splash/shelfie.webp'), '#E51D8A'),
+    S(require('../../../assets/splash/yello.webp'), '#E8B90F'),
+    S(require('../../../assets/splash/nimbl.webp'), '#356EE8'),
+    S(require('../../../assets/splash/napoletto.webp')),
+  ],
+  [
+    S(require('../../../assets/splash/basketly.webp'), '#7A2E7E'),
+    S(require('../../../assets/splash/keyhaven.webp'), '#197F65'),
+    S(require('../../../assets/splash/smashyard.webp'), '#E2681E'),
+  ],
 ];
 
 const COLS = 4;
+/** The frame's height is three rows; a fourth tile hangs below it. */
 const ROWS = 3;
 const GAP = 12;
 export const TILE_W = Math.round(width * 0.3);
@@ -56,12 +74,12 @@ const TILE_TONE = {
 type Tone = keyof typeof TILE_TONE;
 
 function Tile({
-  source,
+  screen,
   start,
   clock,
   tone,
 }: {
-  source: number;
+  screen: Screen;
   start: number;
   clock: SharedValue<number>;
   tone: Tone;
@@ -72,9 +90,18 @@ function Tile({
     return { opacity: e, transform: [{ scale: 0.92 + 0.08 * e }] };
   });
   return (
-    <ReAnimated.View style={[styles.tile, TILE_TONE[tone], style]}>
+    <ReAnimated.View
+      style={[
+        styles.tile,
+        TILE_TONE[tone],
+        screen.accent
+          ? { borderColor: screen.accent, borderWidth: 2 }
+          : styles.plain,
+        style,
+      ]}
+    >
       <ExpoImage
-        source={source}
+        source={screen.src}
         style={styles.img}
         contentFit="cover"
         contentPosition="top"
@@ -104,12 +131,12 @@ function Column({
   }));
   return (
     <ReAnimated.View style={[styles.column, style]}>
-      {SCREENS.slice(col * ROWS, col * ROWS + ROWS).map((src, row) => (
+      {COLUMNS[col].map((screen, row) => (
         <Tile
           key={row}
-          source={src}
+          screen={screen}
           // The lowest (most visible) tiles arrive first, sweeping across.
-          start={(ROWS - 1 - row) * 90 + col * 70}
+          start={Math.max(0, ROWS - 1 - row) * 90 + col * 70}
           clock={clock}
           tone={tone}
         />
@@ -158,8 +185,9 @@ const styles = StyleSheet.create({
     width: TILE_W,
     height: TILE_H,
     borderRadius: 14,
+    borderCurve: 'continuous',
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
   },
+  plain: { borderWidth: StyleSheet.hairlineWidth },
   img: { width: '100%', height: '100%' },
 });

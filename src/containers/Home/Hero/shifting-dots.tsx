@@ -11,6 +11,7 @@ import Reanimated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useOnScreen, type Zone } from '../on-screen';
 import { TwinkleDots } from './TwinkleDots';
 
 /**
@@ -56,15 +57,26 @@ function Layer({
 export function ShiftingDots({
   width,
   height,
+  gridHeight = height,
+  zone,
 }: {
   width: number;
   height: number;
+  /** See TwinkleDots: the height the grid is laid out for. */
+  gridHeight?: number;
+  /** Which on-screen flag (on-screen.ts) pauses this field. */
+  zone?: Zone;
 }) {
   const focused = useIsFocused();
+  const live = useOnScreen(zone);
+  const on = focused && live;
   const t = useSharedValue(0);
 
   React.useEffect(() => {
-    if (!focused) return;
+    if (!on) {
+      cancelAnimation(t);
+      return;
+    }
     const n = DOT_COLORS.length;
     // Start where the shared clock is, then run linearly round the cycle.
     const at = (((Date.now() - EPOCH) % CYCLE_MS) / CYCLE_MS) * n;
@@ -86,7 +98,7 @@ export function ShiftingDots({
       }
     );
     return () => cancelAnimation(t);
-  }, [focused, t]);
+  }, [on, t]);
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -100,6 +112,8 @@ export function ShiftingDots({
             radius={1.1}
             baseOpacity={0.55}
             peakOpacity={1}
+            gridHeight={gridHeight}
+            live={live}
           />
         </Layer>
       ))}

@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { F } from '@/lib/fonts';
 
 import { Rim } from './rim';
-import { Shot } from './shot';
+import { Shot, SHOT_RATIO, type ShotFit } from './shot';
 
 /**
  * The appsketch.ai landing-page iPhone, in RN. Every length is proportional
@@ -143,6 +143,20 @@ const StatusBar = React.memo(function StatusBar({ w }: { w: number }) {
 
 type PhoneProps = { uri: string; w: number; dark: boolean };
 
+const fits = new Map<number, ShotFit>();
+
+/** The screen under the status bar, for the screenshot's decode size. */
+function screenFit(w: number): ShotFit {
+  let f = fits.get(w);
+  if (!f) {
+    const inset = w * 0.0091 * 2 + w * 0.023 * 2;
+    const h = (w * 812) / 390 - inset - (40 * w) / 300;
+    f = { w: w - inset, h, ratio: SHOT_RATIO.app };
+    fits.set(w, f);
+  }
+  return f;
+}
+
 export const PhoneFrame = React.memo(function PhoneFrame({
   uri,
   w,
@@ -154,7 +168,7 @@ export const PhoneFrame = React.memo(function PhoneFrame({
       <View style={st.glass}>
         <View style={st.screen}>
           <StatusBar w={w} />
-          <Shot uri={uri} />
+          <Shot uri={uri} fit={screenFit(w)} />
           <View style={st.home} />
           <View style={st.island} />
         </View>

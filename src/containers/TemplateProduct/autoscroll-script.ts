@@ -1,4 +1,28 @@
 /**
+ * One frame of the auto-scroll (inlined into autoScrollScript; it shares
+ * that script's closure). Eased, sub-pixel motion: the speed ramps up over
+ * RAMP ms from every start (first run, resume, each turn at an end) and
+ * eases out over the last EASE px before an end, so the scroll never jumps
+ * from 0 to full speed. Positions step in device-pixel quanta (1/dpr CSS
+ * px) instead of whole CSS px: whole-px steps at ~0.7 px/frame came as an
+ * uneven 1-0-1-1-0 cadence, a visible shimmer ("blinking") on text, worse
+ * on 120Hz screens.
+ */
+const MOVE_JS = `function move(el, max, t){
+    var y0 = el.scrollTop;
+    if (pos < 0 || Math.abs(pos - y0) > 2) pos = y0;
+    if (!rampAt) rampAt = t;
+    var k = Math.min(1, (t - rampAt) / RAMP);
+    k = k * k * (3 - 2 * k);
+    var left = dir > 0 ? max - pos : pos;
+    var near = Math.max(0.12, Math.min(1, left / EASE));
+    pos += dir * speed * k * near * Math.min(t - last, 64) / 1000;
+    pos = Math.max(0, Math.min(max, pos));
+    var q = Math.round(pos * dpr) / dpr;
+    if (q !== y0) el.scrollTop = q;
+  }`;
+
+/**
  * Injected into the live preview: scrolls the page slowly by itself, so the
  * template "plays" in its frame. A requestAnimationFrame loop inside the
  * page (no per-frame bridge traffic): `speed` page-px/s down, a short rest
@@ -12,7 +36,8 @@
 export function autoScrollScript(speed: number, userStops = false) {
   return `(function(){
   if (window.__asAutoInstalled) return; window.__asAutoInstalled = true;
-  var speed = ${speed}, dir = 1, on = true, last = 0, acc = 0;
+  var speed = ${speed}, dir = 1, on = true, last = 0, pos = -1, rampAt = 0;
+  var RAMP = 1200, EASE = 90, dpr = window.devicePixelRatio || 1;
   var userStops = ${userStops ? 'true' : 'false'}, taken = false;
   // Once the user has touched the site it stays theirs, across its own
   // page navigations too (sessionStorage lives as long as the WebView).
@@ -44,26 +69,33 @@ export function autoScrollScript(speed: number, userStops = false) {
       if (!userStops) return hold(3000);
       taken = true;
       try { sessionStorage.setItem('__asTaken', '1'); } catch (e) {}
+      stop();
     }, { passive: true, capture: true });
   });
-  window.__asAuto = function(v){ on = !!v; last = 0; if (v) hold(800); };
+  // The loop only runs while it can scroll: a paused (hidden neighbour,
+  // screen blurred) or user-taken page schedules no frames at all, so its
+  // web process idles instead of waking 60 times a second.
+  var raf = 0;
+  function stop(){ if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+  function start(){ if (!raf && on && !taken) { last = 0; raf = requestAnimationFrame(tick); } }
+  window.__asAuto = function(v){ on = !!v; last = 0; rampAt = 0; if (v) { hold(800); start(); } else stop(); };
+  ${MOVE_JS}
   function tick(t){
-    if (on && !taken && last && t > holdUntil) {
+    raf = 0;
+    if (!on || taken) return;
+    if (last && t > holdUntil) {
       var el = root();
       var max = room(el);
       if (max > 8) {
-        acc += dir * speed * Math.min(t - last, 64) / 1000;
-        var step = acc > 0 ? Math.floor(acc) : Math.ceil(acc);
-        if (step !== 0) { acc -= step; el.scrollTop = el.scrollTop + step; }
-        var y = el.scrollTop;
-        if (dir > 0 && y >= max - 1) { dir = -1; acc = 0; holdUntil = t + 1600; }
-        else if (dir < 0 && y <= 0) { dir = 1; acc = 0; holdUntil = t + 1600; }
+        move(el, max, t);
+        if (dir > 0 && pos >= max - 0.5) { dir = -1; rampAt = 0; holdUntil = t + 1600; }
+        else if (dir < 0 && pos <= 0.5) { dir = 1; rampAt = 0; holdUntil = t + 1600; }
       }
-    }
+    } else rampAt = 0;
     last = t;
-    requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  start();
 })(); true;`;
 }
 

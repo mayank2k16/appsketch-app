@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -108,6 +109,7 @@ export default function WelcomeScreen() {
           dark={dark}
         />
       )}
+      {brandY !== null && <CollageFade top={brandY} bg={t.bg} />}
       <SkipButton t={t} onPress={browseAsGuest} />
       <View
         onLayout={(e) => setBrandY(e.nativeEvent.layout.y)}
@@ -129,7 +131,21 @@ export default function WelcomeScreen() {
   );
 }
 
+/** The outer columns' fourth screens hang below the collage: fade them out
+ *  just above the brand, and keep everything under it plain paper. */
+const FADE_H = 110;
+function CollageFade({ top, bg }: { top: number; bg: string }) {
+  return (
+    <View pointerEvents="none" style={[st.fade, { top: top - FADE_H }]}>
+      <LinearGradient colors={[`${bg}00`, bg]} style={{ height: FADE_H }} />
+      <View style={[st.fill, { backgroundColor: bg }]} />
+    </View>
+  );
+}
+
 const st = StyleSheet.create({
+  fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  fill: { flex: 1 },
   root: { flex: 1, overflow: 'hidden', justifyContent: 'flex-end' },
   bottom: { paddingHorizontal: 24 },
   brand: { alignItems: 'center', marginBottom: 22 },

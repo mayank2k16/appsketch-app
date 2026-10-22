@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Ellipse, Path } from 'react-native-svg';
 
+import { useOnScreen } from '../on-screen';
 import { thumbOf } from '../TemplateReel/layout';
 import { Shot } from '../TemplateReel/shot';
 import { su } from './geometry';
@@ -23,7 +24,8 @@ import type { Story } from './stories';
  * edge to edge, on a near-black top that deepens into the card's vivid
  * tint; the sheets' lower part melts into that tint, and a few sparkles sit
  * top-right. Static images only (never a live site). One gentle motion: the
- * sheets float a few points on the UI thread, only while Home is focused.
+ * sheets float a few points on the UI thread, only while Home is focused
+ * and the showcase is on screen.
  *
  * Coordinates are the art's own (its origin is just inside the card's
  * border), measured off the App Store card at the same width.
@@ -32,10 +34,13 @@ import type { Story } from './stories';
 const FLOAT_MS = 3600;
 
 function useFloat() {
+  // Only while Home is focused AND the showcase is on screen.
   const focused = useIsFocused();
+  const shown = useOnScreen('showcase');
+  const on = focused && shown;
   const p = useSharedValue(0);
   React.useEffect(() => {
-    if (!focused) {
+    if (!on) {
       cancelAnimation(p);
       return;
     }
@@ -47,7 +52,7 @@ function useFloat() {
       )
     );
     return () => cancelAnimation(p);
-  }, [focused, p]);
+  }, [on, p]);
   return useAnimatedStyle(() => ({
     transform: [{ translateY: 2 - p.value * 4 }],
   }));

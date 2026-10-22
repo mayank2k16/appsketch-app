@@ -75,7 +75,11 @@ function rememberHere(name: string, liked: boolean) {
 const kindOf = (t: MarketTemplate): TemplateKind =>
   t.kind === 'code' ? 'code' : 'layout';
 
-function useSocial() {
+const NONE: Counts = { likes: 0, liked: false };
+
+/** All counts in one request; each heart subscribes to its OWN entry
+ *  (`select`), so a refetch or one like re-renders one heart, not all. */
+function useSocial(name: string) {
   return useQuery({
     queryKey: [...templateKeys.all, 'social'],
     queryFn: async () => {
@@ -95,6 +99,10 @@ function useSocial() {
     },
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    select: React.useCallback(
+      (all: Record<string, Counts>) => all[name] ?? NONE,
+      [name]
+    ),
   });
 }
 
@@ -121,15 +129,10 @@ export type Like = { likes: number; liked: boolean; toggle: () => void };
 
 /** The template's heart, or null when counts are unavailable. */
 export function useLike(t: MarketTemplate): Like | null {
-  const q = useSocial();
   const name = `${kindOf(t)}:${t.id}`;
+  const fetched = useSocial(name).data;
   const local = useLikeStore((s) => s.over[name]);
-  const fetched = q.data?.[name];
-  const ready = !!q.data;
-  const now = React.useMemo(
-    () => local ?? fetched ?? (ready ? { likes: 0, liked: false } : null),
-    [local, fetched, ready]
-  );
+  const now = local ?? fetched ?? null;
   const put = useLikeStore((s) => s.put);
   const toggle = React.useCallback(() => {
     if (!now) return;
@@ -144,7 +147,10 @@ export function useLike(t: MarketTemplate): Like | null {
       }
     });
   }, [now, put, name, t]);
-  return now ? { ...now, toggle } : null;
+  return React.useMemo(
+    () => (now ? { likes: now.likes, liked: now.liked, toggle } : null),
+    [now, toggle]
+  );
 }
 
 /** 950 → "950", 1234 → "1.2k", 12500 → "12.5k". */

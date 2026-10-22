@@ -72,10 +72,12 @@ export function useStudio() {
     setCategoryState(name);
   }, []);
 
-  // Warm the first screenful's screenshots as soon as the list lands.
+  // Fetch the first screenfuls' screenshots to disk as soon as the list
+  // lands. Disk only: each tile decodes its own downsized copy (Shot `fit`),
+  // so a full-size copy in memory would only take room.
   React.useEffect(() => {
     const urls = feed.order.slice(0, 16).map(thumbOf);
-    if (urls.length) ExpoImage.prefetch(urls, 'memory-disk').catch(() => {});
+    if (urls.length) ExpoImage.prefetch(urls, 'disk').catch(() => {});
   }, [feed]);
 
   return {

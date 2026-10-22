@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 import Animated, {
   interpolateColor,
+  runOnJS,
   type SharedValue,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
@@ -27,6 +29,7 @@ import { HomeHeader } from './Header';
 import { HeroBanner } from './Hero';
 import { ShiftingDots } from './Hero/shifting-dots';
 import { TwinkleDots } from './Hero/TwinkleDots';
+import { setOnScreen, useOnScreen } from './on-screen';
 import { StudioFeed } from './Studio';
 import { type HomeColors, homeTheme } from './theme/HomeTheme';
 
@@ -42,6 +45,8 @@ function HomeTop({
 }) {
   /** The prompt card block's position, which places the hero's colour band. */
   const [card, setCard] = React.useState<{ y: number; h: number } | null>(null);
+  const focused = useIsFocused();
+  const shown = useOnScreen('hero');
   return (
     <View>
       {/* The hero's colour band (white only): scrolls with the hero, clean
@@ -50,8 +55,11 @@ function HomeTop({
       <AmbientBackground
         startY={card ? card.y + card.h * 0.5 : 0}
         height={card ? card.y + card.h + 150 : 0}
+        live={focused && shown}
       >
-        {card && <ShiftingDots width={W} height={card.y + card.h + 150} />}
+        {card && (
+          <ShiftingDots width={W} height={card.y + card.h + 150} zone="hero" />
+        )}
       </AmbientBackground>
       <HeroBanner />
       <View
@@ -109,6 +117,16 @@ function useHomeStatusBar(t: HomeColors) {
 
 type Collapse = { hide: SharedValue<number>; max: SharedValue<number> };
 
+/** The header's dots twinkle only while some of the header is on screen. */
+function useHeaderDotsLive({ hide, max }: Collapse) {
+  useAnimatedReaction(
+    () => max.value <= 0 || hide.value < max.value - 0.5,
+    (shown, was) => {
+      if (shown !== was) runOnJS(setOnScreen)('header', shown);
+    }
+  );
+}
+
 function useCollapse(): Collapse {
   const hide = useSharedValue(0);
   const max = useSharedValue(0);
@@ -141,6 +159,7 @@ function CollapsingHeader(p: {
     transform: [{ translateY: -hide.value }],
   }));
   const bg = p.t.bg;
+  useHeaderDotsLive(p.collapse);
   const strip = useAnimatedStyle(() => ({
     opacity: max.value > 0 ? Math.min(1, hide.value / (max.value * 0.6)) : 0,
     backgroundColor: interpolateColor(chromeTone.value, [0, 1], [bg, '#000']),
@@ -153,7 +172,10 @@ function CollapsingHeader(p: {
       >
         {!p.dark && h > 0 ? (
           <View pointerEvents="none" style={[s.headerDots, { height: h }]}>
-            <ShiftingDots width={W} height={H} />
+            {/* Only the header's height is drawn (a full-screen field per
+                colour was ~190 MB of layers); the grid keeps the
+                full-screen layout so the dots sit exactly where they did. */}
+            <ShiftingDots width={W} height={h} gridHeight={H} zone="header" />
           </View>
         ) : null}
         <HomeHeader onMenuPress={p.onMenuPress} />

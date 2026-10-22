@@ -27,10 +27,16 @@ import { formatLikes, useLike } from './template-social';
 
 export type MetaTone = { ink: string; sub: string; dark: boolean };
 
+const TONE_DARK: MetaTone = {
+  ink: '#F4F4F5',
+  sub: 'rgba(244,244,245,0.62)',
+  dark: true,
+};
+const TONE_LIGHT: MetaTone = { ink: '#0B0B0C', sub: '#5C5D63', dark: false };
+
+/** One shared object per theme, so `TileFoot` / `Heart` memo holds. */
 export const metaTone = (dark: boolean): MetaTone =>
-  dark
-    ? { ink: '#F4F4F5', sub: 'rgba(244,244,245,0.62)', dark }
-    : { ink: '#0B0B0C', sub: '#5C5D63', dark };
+  dark ? TONE_DARK : TONE_LIGHT;
 
 const LIKED = '#FF375F';
 

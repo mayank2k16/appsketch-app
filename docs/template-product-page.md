@@ -15,8 +15,10 @@ device pills) keep a neutral edge (`panelEdge`), so the orange reads as the
 panels' frame only. The geometry is fixed in `geometry.ts`.
 
 - **Backdrop** (`page-backdrop.tsx`). The centred template's own screenshot
-  (`thumbnail_url`), scaled to cover the screen and blurred (expo-image
-  `blurRadius` 60), under a frosted wash (white 30% light, black 38% dark).
+  (`thumbnail_url`), scaled to cover the screen and blurred, under a frosted
+  wash (white 30% light, black 38% dark). It is decoded and blurred at 1/8
+  of the screen (`enforceEarlyResizing`, `blurRadius` 12) and magnified ×8
+  by the GPU; on screen it matches the old full-size `blurRadius` 60.
   Because the panels are opaque, it only shows in the gaps: the 8pt
   gutters, the strip above the hero, the gap between the panels and the strip under
   the box. Each page in the ±1 window has its own layer whose opacity
@@ -119,7 +121,15 @@ decoded image. Only the centred page scrolls.
 - It auto-scrolls (`autoScrollScript(speed, userStops = true)`). The first
   touch stops it for good, also across in-site navigation
   (`sessionStorage.__asTaken`). It pauses when the screen loses focus or the
-  app backgrounds (`use-page-active.ts`).
+  app backgrounds (`use-page-active.ts`), and a warm (hidden) neighbour is
+  paused from its first load (the pause state is sent with the onLoad
+  injection; before, the only pause was injected before the page existed,
+  so hidden neighbours scrolled offscreen). A paused or taken page runs no
+  rAF loop at all. The motion is eased: the speed ramps up over 1.2s from
+  every start and eases out over the last 90 px before an end, and the
+  position moves in device-pixel steps (1/dpr CSS px) rather than whole CSS
+  px — whole-px steps at ~0.7 px/frame gave an uneven 1-0-1 cadence that
+  shimmered ("the initial scroll is blinking").
 - **Never half-rendered.** `READY_SCRIPT` (`autoscroll-script.ts`) polls
   every 80ms and posts `{"as":"ready"}` only once the first screen has
   painted: the body has real content, `document.readyState` is `complete`,
@@ -146,7 +156,9 @@ decoded image. Only the centred page scrolls.
 **Loading timeline (website).** The centred page mounts its WebView at once,
 during the grow animation (it does not wait for landing). Its neighbours
 mount theirs hidden and paused (`load: 'warm'`) once the centred site is
-live, or 2.5s after the page settles if it never goes live; a page that
+live, or 2.5s after the page settles if it never goes live — the NEXT page
+first, the previous one 350ms later, and each only while the pager is
+still (a mount during a drag or the settle spring waits); a page that
 already rendered stays loaded when you swipe back. At most the ±1 window,
 three WebViews, exists. Measured on the simulator (tap → site visible):
 5.7s before, 1.8-2.5s after (measured before the stricter "painted" check,
@@ -191,7 +203,8 @@ How the pager works (`use-pager.ts`):
   orange border plus a solid strip of its loader colour (an overlay that
   fades in as the page leaves the centre, from |d| 0.6 to 1). It also
   derives a slight scale about the near edge and an animated `BlurView`
-  that rises as the page leaves the centre (motion blur). The details panels cross-fade with a short parallax.
+  whose opacity rises as the page leaves the centre (motion blur: a
+  fixed-intensity 26 blur faded in from 12% to 50% off centre). The details panels cross-fade with a short parallax.
 - One swipe moves at most one page.
 - Only the current page and its two neighbours are rendered.
 - WebViews: see the loading timeline above. The release settles after a
@@ -213,7 +226,8 @@ How the pager works (`use-pager.ts`):
   gets one only after it settles. The hero's motion blur starts at 12% off
   centre, peaks at intensity 26, and is at opacity 0 when centred (a blur
   view at intensity 0 still composited the live site every scrolled
-  frame). The loader under a site stops animating once the site is live.
+  frame). The loader under a site stops animating once the site is live,
+  and a loader that is not animating is plain views (no animated styles).
 - **Recovery.** A killed web process (`onContentProcessDidTerminate`,
   Android `onRenderProcessGone` — the classic blank white WebView) remounts
   the layer; a 4xx/5xx or network error shows "Preview unavailable" + Retry.
@@ -253,3 +267,63 @@ None for apps. Home and the product page no longer fetch `/preview/<uuid>/`
 on press-in, on screen or for neighbours. (`src/lib/preview-prewarm.ts`
 remains only because the category screen, `src/containers/TemplateCategory/`,
 still calls it.)
+
+## Performance (Oct 2026 pass)
+
+Measured on a Release simulator build (iPhone 16e sim), Plinth Desktop,
+12 fast swipes (8 forward, then back/forth), with a temporary UI-thread
+frame sampler (`useFrameCallback`, dropped frames per swipe split into
+drag / spring / settle) and a JS rAF gap sampler; both removed afterwards.
+Xcode's Animation Hitches instrument does not run on the simulator ("Hitches
+is not supported on this platform"), so Time Profiler was used for causes.
+
+| | before | after |
+| --- | --- | --- |
+| dropped frames, 12 swipes | 58 (6.5% of frames) | 11 (1.3%) |
+| swipes with a >50ms frame | 4 | 0 |
+| worst UI frame | 266ms | 44ms |
+| worst JS-thread gap | 97ms | 32ms |
+| reveal | 200ms fade, unchanged | 200ms fade |
+
+Root causes and fixes:
+- **Loader gradients drawn on the CPU at giant sizes** (the big hitches,
+  150-270ms, whenever a mobile-app page entered the ±1 window).
+  `LiveLoader`'s two `Flow` gradients are 3 × 3 panels; expo-linear-gradient
+  draws its layer on the main thread at screen scale — ~3300 × 5600 px
+  (~74 MB) each. Time Profiler showed `argb32_shade_axial_RGB` /
+  `LinearGradientLayer.display` filling those windows. Now every loader
+  gradient is drawn at 1/12 size and magnified (`CheapGradient`); a smooth
+  gradient looks identical.
+- **Animated blur intensity.** expo-blur's `intensity` setter calls
+  `setNeedsDisplay`, and its `draw(_:)` builds a new
+  `UIViewPropertyAnimator` — every frame, for every moving card, plus a
+  shadow-tree commit per frame for the non-style prop. Now the blur has a
+  fixed intensity and only its wrapper's opacity animates.
+- **21 animated dot styles per card.** Every card mounted its dot cluster
+  with 21 `useAnimatedStyle`s even when still (all neighbours). A still
+  cluster is now plain views; only the centred loading page animates.
+- **Hidden neighbours auto-scrolling** (see the auto-scroll bullet): two
+  offscreen WebViews committed layer trees every frame on the main thread.
+- **Neighbour WebViews mounting together, right at settle** (warm sites
+  were already live, so both mounted in the settle frame). Now staggered
+  and only when still.
+- **Backdrop blur on the full-size screenshot** (see Backdrop).
+
+Rejected / not done:
+- Reanimated's `IOS_SYNCHRONOUSLY_UPDATE_UI_PROPS` static flag would take
+  every animated opacity/transform off the per-frame shadow-tree commit
+  (`ReanimatedModuleProxy::commitUpdates` was ~16% of main-thread time) —
+  but it is an app-wide native flag (package.json + pod install) shared
+  with the Home work and the debug build, so it was left as a
+  recommendation.
+- `shouldRasterizeIOS` on the scaled Desktop WebView: the site keeps
+  painting (auto-scroll), so the cache would be invalidated every frame.
+- Replacing the motion blur with a dim or a pre-blurred screenshot: the
+  fixed-intensity blur faded by opacity looked the same and was enough.
+
+The "blink" after a site loads was checked frame by frame (30fps screen
+recordings): our reveal is a clean monotonic 200ms fade; what follows on
+Plinth is the site's own intro animation. The part that was ours was the
+auto-scroll's uneven whole-pixel cadence (now eased, sub-pixel). Real-device
+feel (120Hz ProMotion, GPU cost of the blur over a WebView) cannot be
+proven on the simulator.
