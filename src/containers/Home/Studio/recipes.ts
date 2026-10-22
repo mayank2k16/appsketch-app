@@ -8,9 +8,11 @@ import {
   SHOWCASE_AFTER,
   SHOWCASE_BODY_Y,
   showcaseHeight,
+  STORY_H,
   TALL,
   WIDE_H,
 } from './geometry';
+import { pickStories, type Story } from './stories';
 
 /**
  * The studio feed as data — pure, no React.
@@ -45,9 +47,21 @@ export type Column = { span: 1 | 2 | 3; cells: Cell[] };
 /** One bento row: a recipe's height and its filled columns. */
 export type Row = { h: number; cols: Column[] };
 
+/** The showcase, top to bottom: bento rows with the story cards between. */
+export type ShowcaseBlock =
+  | { kind: 'row'; row: Row }
+  | { kind: 'story'; story: Story };
+
 export type FeedItem =
   | ({ kind: 'row'; key: string; recipe: string } & Row)
-  | { kind: 'showcase'; key: string; h: number; rows: Row[] };
+  | {
+      kind: 'showcase';
+      key: string;
+      h: number;
+      /** Just the bento rows (the category screen flattens these). */
+      rows: Row[];
+      blocks: ShowcaseBlock[];
+    };
 
 /** A tile that can host a live WebView, in list-content coordinates. */
 export type LiveSpot = {
@@ -166,6 +180,7 @@ function needs(recipe: Recipe) {
 }
 
 type Pool = {
+  all: MarketTemplate[];
   phones: MarketTemplate[];
   webs: MarketTemplate[];
   p: number;
@@ -268,6 +283,23 @@ const fillRow = (recipe: Recipe, pool: Pool, word: () => Cell): Row => ({
   })),
 });
 
+/** The three stories go after the first row group (two rows), about
+ *  60% down, and after the last row. */
+function interleave(rows: Row[], stories: Story[]): ShowcaseBlock[] {
+  const last = rows.length - 1;
+  const at = [Math.min(1, last), Math.max(1, Math.round(last * 0.6)), last];
+  const blocks: ShowcaseBlock[] = [];
+  rows.forEach((row, i) => {
+    blocks.push({ kind: 'row', row });
+    stories.forEach((story, k) => {
+      if (Math.min(at[k], last) === i) blocks.push({ kind: 'story', story });
+    });
+  });
+  return blocks;
+}
+
+const blockH = (b: ShowcaseBlock) => (b.kind === 'row' ? b.row.h : STORY_H);
+
 /** The ONE black showcase at content y `y` (rows indexed in place), or
  *  null if the pool cannot fill at least two of its rows. */
 function takeShowcase(pool: Pool, y: number, feed: Feed): FeedItem | null {
@@ -282,13 +314,15 @@ function takeShowcase(pool: Pool, y: number, feed: Feed): FeedItem | null {
   if (usable.length < 2) return null;
   const word = () => ({ kind: 'action' }) as Cell;
   const rows = usable.map((r) => fillRow(r, pool, word));
-  let ry = y + SHOWCASE_BODY_Y;
-  for (const row of rows) {
-    indexRow(row, ry, feed);
-    ry += row.h + GAP;
+  const blocks = interleave(rows, pickStories(pool.all));
+  let by = y + SHOWCASE_BODY_Y;
+  for (const b of blocks) {
+    if (b.kind === 'row') indexRow(b.row, by, feed);
+    by += blockH(b) + GAP;
   }
-  const h = showcaseHeight(rows.map((r) => r.h));
-  return { kind: 'showcase', key: `showcase-${feed.items.length}`, h, rows };
+  const h = showcaseHeight(blocks.map(blockH));
+  const key = `showcase-${feed.items.length}`;
+  return { kind: 'showcase', key, h, rows, blocks };
 }
 
 export function buildFeed(
@@ -297,6 +331,7 @@ export function buildFeed(
   tag: string
 ): Feed {
   const pool: Pool = {
+    all: templates,
     phones: templates.filter(isMobile),
     webs: templates.filter((t) => !isMobile(t)),
     p: 0,

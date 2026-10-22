@@ -1,12 +1,16 @@
-"""The launch: the AppSketch logo drawn by its own pencil.
+"""The launch: an orange screen swept clockwise to white, gathered into a
+dot, and the AppSketch logo drawn from that dot by its own pencil.
 
 Run: python3 scripts/make-splash-logo.py   (needs Pillow + cairosvg)
 
 Writes
 - assets/lottie/splash-logo.json   the in-app splash Lottie (src/app/splash.tsx)
-- assets/splash-dot.png            the native launch image: the orange dot
-- ios/AppSketch/Images.xcassets/SplashScreenLogo.imageset/*.png
-- android/app/src/main/res/drawable-*/splashscreen_logo.png
+- assets/splash-blank.png          the native launch image: fully transparent,
+                                   so the launch screen is solid ORANGE
+- ios/AppSketch/Images.xcassets/SplashScreenLogo.imageset/*.png  (transparent)
+- android/app/src/main/res/drawable-*/splashscreen_logo.png       (transparent)
+The launch colour itself (ORANGE) lives in app.config.ts, the iOS
+SplashScreenBackground colorset/storyboard and Android splashscreen_background.
 
 There is no vector source for the logo, so its geometry and gradients were
 measured from assets/splash-mark.png (1024px): shapes fitted by maximising the
@@ -14,9 +18,18 @@ alpha overlap (IoU 0.97, the rest is the PNG's soft edges), gradients fitted
 per part as the linear direction with the least colour error. All numbers
 below are in that 1024 space.
 
-The native launch screen is the warm canvas with the orange dot at the centre.
-The Lottie's first frames are that exact picture, then (60fps, ~2.8s, shape
-layers only):
+The native launch screen is solid ORANGE, edge to edge. The Lottie is a
+CW x CH comp (drawn 1:1 in points around the screen centre, big enough to
+cover any portrait phone or iPad) whose frame 0 is that same solid orange.
+Opening (frames 0..OPEN, 1s):
+  0. a short hold; then the warm canvas sweeps in clockwise from 12 o'clock
+     (the orange left is an exact pie sector: a filled path of 4 cubic arcs
+     reaching past the comp's corners, keyed every frame), while the orange
+     around the centre gathers into a shrinking disc that lands, with a small
+     settle, on the 16pt dot at the centre.
+From there the logo precomp (480pt, the original sequence, unchanged and
+clipped to its own 480pt box as before) plays, starting on that dot
+(60fps, ~2.8s, shape layers only):
   1. the dot glides to its place in the logo as the pencil flies in, turning
      to its writing angle with a soft overshoot;
   2. the graphite tip draws the outer frame, its gradient stroke revealed
@@ -38,13 +51,17 @@ import cairosvg
 from PIL import Image
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
-CANVAS = '#FAFAF8'       # appTheme.light.bg: native launch + splash field
+CANVAS = '#FAFAF8'       # appTheme.light.bg: the splash field
 DOT_HEX = '#FA8F32'      # the logo's dot, measured
+ORANGE = DOT_HEX         # the native launch screen: it becomes the dot
 MARK_PT = 168            # finished logo box on screen, points
 SEED_PT = 16             # the native launch dot, points
-COMP = 480               # Lottie comp, drawn 1:1 in points around the centre
+COMP = 480               # logo precomp, drawn 1:1 in points around the centre
+CW, CH = 1120, 1440      # outer comp: covers any portrait phone/iPad (13" = 1032x1376)
+OPEN = 60                # opening frames (orange -> sweep -> dot), before the logo
 S = MARK_PT / 1024       # 1024 space -> points
-FR, OP = 60, 168
+FR, OP = 60, 168         # OP: the logo precomp's length
+OP_ALL = OPEN + OP
 K = 0.5523
 
 # ── Geometry (fitted) ───────────────────────────────────────────────────────
@@ -179,6 +196,8 @@ EASE = {
     'in': (0.55, 0, 0.75, 0.2),
     'back': (0.3, 1.5, 0.5, 1),
     'snap': (0.25, 1.35, 0.45, 1),
+    'sweep': (0.6, 0, 0.3, 1),      # a clock hand: eases away, glides home
+    'gather': (0.5, 0, 0.2, 1),     # the orange draws in, then lands soft
 }
 
 
@@ -260,13 +279,13 @@ def static(v):
     return {'a': 0, 'k': v}
 
 
-def per_frame(fn):
+def per_frame(fn, op=OP):
     """Every frame keyed, with the easing baked into the values; runs of
     equal values keep only their ends."""
-    vals = [[round(x, 3) for x in fn(f)] for f in range(OP + 1)]
+    vals = [[round(x, 3) for x in fn(f)] for f in range(op + 1)]
     ks = []
     for f, v in enumerate(vals):
-        if 0 < f < OP and vals[f - 1] == v == vals[f + 1]:
+        if 0 < f < op and vals[f - 1] == v == vals[f + 1]:
             continue
         ks.append({'t': f, 's': v, 'o': {'x': [0], 'y': [0]}, 'i': {'x': [1], 'y': [1]}})
     del ks[-1]['o'], ks[-1]['i']
@@ -441,39 +460,118 @@ def sheen_layers(ind):
     return [matte, sheen]
 
 
+# ── Opening: orange screen -> clockwise sweep -> the dot ─────────────────────
+O_T = dict(sweep=(6, 52), gather=(6, 55), settle=(55, OPEN))
+GATHER_FROM = 200        # disc radius (pt) when the sweep starts
+GATHER_DIP = 0.82        # it lands a touch small, then settles on the dot
+
+
+def sector(a, r, n=4):
+    """The pie sector from a clockwise angle `a` (radians from 12 o'clock) on
+    round to 12 o'clock again, radius r, centred on the origin: the centre
+    plus n exact cubic arcs, so the vertex count never changes."""
+    d = (2 * math.pi - a) / n
+    h = 4 / 3 * math.tan(d / 4) * r
+
+    def pt(phi):
+        return (r * math.sin(phi), -r * math.cos(phi))
+
+    def tan_(phi):
+        return (math.cos(phi), math.sin(phi))
+    v, i, o = [(0, 0)], [(0, 0)], [(0, 0)]
+    for k in range(n + 1):
+        phi = a + k * d
+        t = tan_(phi)
+        v.append(pt(phi))
+        i.append((0, 0) if k == 0 else (-h * t[0], -h * t[1]))
+        o.append((0, 0) if k == n else (h * t[0], h * t[1]))
+    return v, i, o, True
+
+
+def gather_r(f):
+    rd = SEED_PT / 2
+    if f <= O_T['settle'][0]:
+        return lerp(GATHER_FROM, rd * GATHER_DIP, phase(f, *O_T['gather'], 'gather'))
+    return lerp(rd * GATHER_DIP, rd, phase(f, *O_T['settle'], 'out'))
+
+
+def sweep_s(f):
+    return 100 * phase(f, *O_T['sweep'], 'sweep')
+
+
+def opening_layers(ind):
+    """The orange left behind the clockwise sweep: an exact pie sector (a
+    filled path keyed every frame, reaching past the comp's corners) plus a
+    disc around the centre that gathers into the dot. Filled, not a
+    diagonal-wide trimmed stroke: wide strokes leave antialiasing specks."""
+    centre = (CW / 2, CH / 2)
+    reach = math.ceil(math.hypot(CW / 2, CH / 2)) + 24
+    keys = []
+    for f in range(OPEN + 2):
+        v, i, o, c = sector(2 * math.pi * sweep_s(f) / 100, reach)
+        keys.append({'t': f, 's': [{'v': [r2(q) for q in v], 'i': [r2(q) for q in i],
+                                    'o': [r2(q) for q in o], 'c': c}],
+                     'o': {'x': [0], 'y': [0]}, 'i': {'x': [1], 'y': [1]}})
+    del keys[-1]['o'], keys[-1]['i']
+    path = {'ty': 'sh', 'nm': 'sector', 'ks': {'a': 1, 'k': keys}}
+    sweep = layer(ind + 1, 'sweep', [group('sector', [path, fill(ORANGE)])],
+                  ks3(centre), op=OPEN + 1)
+    size = per_frame(lambda f: [2 * gather_r(f)] * 2, OPEN + 1)
+    disc = layer(ind, 'gather', [group('disc', [
+        {'ty': 'el', 'nm': 'disc', 'd': 1, 'p': static([0, 0]), 's': size}, fill(ORANGE)])],
+        ks3(centre), op=OPEN + 1)
+    for L in (sweep, disc):
+        del L['parent']
+    return [disc, sweep]
+
+
 def write_lottie():
-    layers = [null_layer(), *sheen_layers(2), pencil_layer(4), dot_layer(5),
-              inner_layer(6), outer_layer(7)]
-    doc = {'v': '5.7.0', 'fr': FR, 'ip': 0, 'op': OP, 'w': COMP, 'h': COMP,
-           'nm': 'AppSketch splash (logo)', 'ddd': 0, 'assets': [], 'markers': [],
-           'layers': layers}
+    logo = [null_layer(), *sheen_layers(2), pencil_layer(4), dot_layer(5),
+            inner_layer(6), outer_layer(7)]
+    pre = {'ddd': 0, 'ind': 1, 'ty': 0, 'nm': 'logo', 'refId': 'logo', 'sr': 1, 'ao': 0,
+           'ks': ks3((CW / 2, CH / 2), (COMP / 2, COMP / 2)), 'w': COMP, 'h': COMP,
+           'ip': OPEN, 'op': OP_ALL, 'st': OPEN, 'bm': 0}
+    doc = {'v': '5.7.0', 'fr': FR, 'ip': 0, 'op': OP_ALL, 'w': CW, 'h': CH,
+           'nm': 'AppSketch splash (logo)', 'ddd': 0,
+           'assets': [{'id': 'logo', 'layers': logo}], 'markers': [],
+           'layers': [pre, *opening_layers(2)]}
     out = os.path.join(ROOT, 'assets', 'lottie', 'splash-logo.json')
     with open(out, 'w') as f:
         json.dump(doc, f, separators=(',', ':'))
-    print('wrote', os.path.relpath(out, ROOT), os.path.getsize(out), 'bytes')
+    print('wrote', os.path.relpath(out, ROOT), os.path.getsize(out), 'bytes,',
+          OP_ALL, 'frames =', round(OP_ALL / FR * 1000), 'ms')
 
 
-# ── Native launch image: the orange dot ─────────────────────────────────────
-def dot_png(px, box=None):
-    box = box or px
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{box}" height="{box}">'
-           f'<circle cx="{box / 2}" cy="{box / 2}" r="{px / 2}" fill="{DOT_HEX}"/></svg>')
-    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode()))).convert('RGBA')
+# ── Native launch image: none (solid ORANGE); a transparent placeholder ─────
+def blank_png(px):
+    return Image.new('RGBA', (px, px), (0, 0, 0, 0))
 
 
 def write_pngs():
-    dot_png(SEED_PT * 8).save(os.path.join(ROOT, 'assets', 'splash-dot.png'), optimize=True)
+    blank_png(64).save(os.path.join(ROOT, 'assets', 'splash-blank.png'), optimize=True)
     ios = os.path.join(ROOT, 'ios', 'AppSketch', 'Images.xcassets', 'SplashScreenLogo.imageset')
     for scale, name in ((1, 'image.png'), (2, 'image@2x.png'), (3, 'image@3x.png')):
-        dot_png(SEED_PT * scale).save(os.path.join(ios, name), optimize=True)
-    # Android 12+ draws the splash icon in a 288dp box; the dot sits centred.
+        blank_png(SEED_PT * scale).save(os.path.join(ios, name), optimize=True)
+    # Android 12+ draws the splash icon in a 288dp box. Kept as (transparent)
+    # PNGs: drawable/ic_launcher_background.xml uses it as a <bitmap> src.
     res = os.path.join(ROOT, 'android', 'app', 'src', 'main', 'res')
     for dpi, d in (('mdpi', 1), ('hdpi', 1.5), ('xhdpi', 2), ('xxhdpi', 3), ('xxxhdpi', 4)):
-        dot_png(round(SEED_PT * d), round(288 * d)).save(
+        blank_png(round(288 * d)).save(
             os.path.join(res, f'drawable-{dpi}', 'splashscreen_logo.png'), optimize=True)
-    print('wrote splash-dot.png, iOS imageset, Android drawables')
+    print('wrote splash-blank.png, iOS imageset, Android drawables (all transparent)')
+
+
+def status_dark_ms(deg=30):
+    """When the sweep has passed the status bar's right side (about 30deg
+    clockwise from 12 on a phone): the moment to switch to dark content."""
+    f = 0
+    while sweep_s(f) < deg / 360 * 100:
+        f += 1
+    return round(f / FR * 1000)
 
 
 if __name__ == '__main__':
     write_lottie()
     write_pngs()
+    print('opening', round(OPEN / FR * 1000), 'ms; status bar to dark at',
+          status_dark_ms(), 'ms')

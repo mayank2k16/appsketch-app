@@ -76,7 +76,19 @@ function useHeroStyles(p: Props) {
     };
   });
   const blur = useAnimatedProps(() => ({
-    intensity: interpolate(Math.abs(i - x.value), [0, 0.35], [0, 45], 'clamp'),
+    // Starts once the page is 12% out and stays light: a big blur radius
+    // over a live WebView is the costliest thing on screen mid-swipe.
+    intensity: interpolate(
+      Math.abs(i - x.value),
+      [0.12, 0.5],
+      [0, 26],
+      'clamp'
+    ),
+  }));
+  // A blur view at intensity 0 still composites the live site under it on
+  // every scrolled frame; at opacity 0 iOS skips it entirely.
+  const blurOn = useAnimatedStyle(() => ({
+    opacity: Math.abs(i - x.value) > 0.12 ? 1 : 0,
   }));
   // At rest a neighbour shows only a 4pt sliver at the screen edge: its
   // orange border plus a solid strip of its loader colour, like the edge of
@@ -84,7 +96,7 @@ function useHeroStyles(p: Props) {
   const tint = useAnimatedStyle(() => ({
     opacity: interpolate(Math.abs(i - x.value), [0.6, 1], [0, 1], 'clamp'),
   }));
-  return { card, blur, tint };
+  return { card, blur, blurOn, tint };
 }
 
 function NoLive({ dark }: { dark: boolean }) {
@@ -149,11 +161,18 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
   const st = useHeroStyles(p);
   const hero = heroRectOf(p.template, p.g);
   const { onLive: report, template } = p;
+  // Once the site (or screenshot) is up, the loader under it stops
+  // animating: it is covered, and would cost frames while the site scrolls.
+  const [live, setLive] = React.useState(false);
   const onLive = React.useCallback(
-    (on: boolean) => report(template.key, on),
+    (on: boolean) => {
+      setLive(on);
+      report(template.key, on);
+    },
     [report, template.key]
   );
   const on = p.load === 'on';
+  const spin = on && p.active && !live;
   return (
     <Animated.View
       pointerEvents={on ? 'box-none' : 'none'}
@@ -165,20 +184,16 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
       ]}
     >
       {liveUrlOf(template) ? (
-        <DotSurface dark={p.dark} animate={on && p.active} />
+        <DotSurface dark={p.dark} animate={spin} />
       ) : (
-        <LiveLoader
-          seed={template.key}
-          dark={p.dark}
-          animate={on && p.active}
-        />
+        <LiveLoader seed={template.key} dark={p.dark} animate={spin} />
       )}
       <HeroBody {...p} onLive={onLive} />
       <AnimatedBlur
         pointerEvents="none"
         tint={p.dark ? 'dark' : 'light'}
         animatedProps={st.blur}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, st.blurOn]}
       />
       <Animated.View
         pointerEvents="none"

@@ -29,7 +29,8 @@ panels' frame only. The geometry is fixed in `geometry.ts`.
   (`router.dismissTo('/home')`). The category goes back from this page and
   pushes its category screen (`openCategory`), so one back from there
   returns to where the page was opened from, never into a loop. The name is
-  plain text. A segment that changes as you swipe fades in (160ms).
+  a solid chip in the panel colour with its edge, bold ink text (plain muted
+  text vanished on light blurred backdrops). A segment that changes as you swipe fades in (160ms).
 - **Template panel (top).** From under the breadcrumbs, 8pt in from both
   edges. The details box starts at 72% of the screen height + 52pt; the
   panel takes everything above it except the gaps below.
@@ -46,7 +47,13 @@ panels' frame only. The geometry is fixed in `geometry.ts`.
   34pt of the site (a site's own top-left hamburger can sit under it).
 - **Pills row** (websites only). One centred capsule: the **LIVE** status
   (grey dot while the site loads, then a pulsing green one) and the
-  **Mobile | Tablet | Desktop** switch; Mobile is the default.
+  **Mobile | Tablet | Desktop** switch; Desktop is the default (user
+  request, Oct 2026). Mobile lays out at the panel's own width with no
+  transform (native scrolling); Tablet / Desktop render at 820 / 1280 CSS px
+  and are scaled down with an RN transform. A viewport-meta approach
+  (`width=1280` injected before content, letting WebKit zoom natively) was
+  tried and REJECTED: this WKWebView ignores the meta (innerWidth stayed
+  371), and `contentMode="desktop"` didn't change that.
 - **Details box (bottom).** Down to the home indicator, at least 188pt tall
   (on short phones the panel shrinks instead). It never
   scrolls. It shows:
@@ -191,8 +198,25 @@ How the pager works (`use-pager.ts`):
   fixed 380ms (`SETTLE_MS`), not the spring callback.
 - **Hint.** Once per app session, 600ms after the open finishes, the page
   nudges 24pt toward the next template and springs back.
-- **Haptics.** `select` fires once when a new page settles. It is the only
-  haptic on the page.
+- **Haptics.** Picker-style, following the finger: one `select` tick the
+  moment a drag crosses halfway to another template (and back), one on
+  release if a fling lands on a page not ticked yet, and one `soft` bump per
+  drag at either end of the list.
+- **Claiming the swipe over a live site.** The hero's pan uses manual
+  activation from raw touches: ≥7pt mostly-sideways claims it, ≥8pt
+  vertical gives it to the site. It must decide before WKWebView's own
+  scroll pan starts (~10pt); with `activeOffsetX(18)` the site won every
+  drag and sideways swipes only nudged the page.
+- **Smooth landing.** WebViews never mount or unmount while the spring runs:
+  the rendered window spans both the old and new page until `settled`,
+  neighbours warm around the settled page, and a page that had no WebView
+  gets one only after it settles. The hero's motion blur starts at 12% off
+  centre, peaks at intensity 26, and is at opacity 0 when centred (a blur
+  view at intensity 0 still composited the live site every scrolled
+  frame). The loader under a site stops animating once the site is live.
+- **Recovery.** A killed web process (`onContentProcessDidTerminate`,
+  Android `onRenderProcessGone` — the classic blank white WebView) remounts
+  the layer; a 4xx/5xx or network error shows "Preview unavailable" + Retry.
 - Taps on the template panel go to the site (or scroll the screenshot);
   they no longer run the primary CTA.
 - A pull down on the details box closes the page.

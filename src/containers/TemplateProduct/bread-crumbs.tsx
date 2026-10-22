@@ -11,7 +11,8 @@ import type { ProductMotion } from './use-product-transition';
 
 /**
  * `Templates › Category › Name` in the strip under the status bar, one
- * line: the name truncates, the category never does. "Templates" goes back
+ * line: the name (a solid chip, the current page) truncates, the category
+ * never does. "Templates" goes back
  * to Home, the category opens its screen, the name is plain text. A segment
  * that changes as you swipe into another category (or template) fades in.
  */
@@ -76,14 +77,15 @@ export const BreadCrumbs = React.memo(function BreadCrumbs(p: Props) {
         </>
       ) : null}
       <Sep color={t.muted} />
-      <Animated.Text
+      <Animated.View
         key={p.name}
         entering={FADE}
-        numberOfLines={1}
-        style={[s.text, s.name, { color: t.muted }]}
+        style={[s.chip, { backgroundColor: t.panel, borderColor: t.panelEdge }]}
       >
-        {p.name}
-      </Animated.Text>
+        <Text numberOfLines={1} style={[s.text, s.name, { color: t.ink }]}>
+          {p.name}
+        </Text>
+      </Animated.View>
     </Animated.View>
   );
 });
@@ -98,5 +100,15 @@ const s = StyleSheet.create({
   fixed: { flexShrink: 0 },
   text: { fontSize: 12.5 },
   link: { fontFamily: F.sans600 },
-  name: { flexShrink: 1, fontFamily: F.sans500 },
+  // The current page: a solid chip in the panel colour, so it reads on any
+  // template's blurred backdrop (plain muted text vanished on light ones).
+  chip: {
+    flexShrink: 1,
+    height: 24,
+    paddingHorizontal: 9,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+  },
+  name: { fontFamily: F.sans700 },
 });

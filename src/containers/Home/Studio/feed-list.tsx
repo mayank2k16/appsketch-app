@@ -121,7 +121,7 @@ const renderItem = ({ item, index }: { item: FeedItem; index: number }) =>
   item.kind === 'row' ? (
     <RowView item={item} index={index} />
   ) : (
-    <Showcase rows={item.rows} h={item.h} />
+    <Showcase blocks={item.blocks} h={item.h} />
   );
 
 const keyOf = (item: FeedItem) => item.key;

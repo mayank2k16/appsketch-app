@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -8,6 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+
+import { F } from '@/lib/fonts';
 
 import {
   autoScrollScript,
@@ -32,8 +34,14 @@ import { type Device, VIEWPORT } from './live-url';
  * auto-scroll stops for good on the first touch. The scale transform maps
  * touches back to the right element at Tablet / Desktop widths too.
  *
- * The WebView renders at the device's real CSS width (390 / 820 / 1280) and
- * is scaled to the hero's width with a transform, so the site lays itself
+ * Recovery: if iOS kills the page's web process (memory pressure — the
+ * classic blank white WebView) or Android's renderer goes, the layer
+ * remounts and loads again by itself. A 4xx/5xx or a network failure shows
+ * "Preview unavailable" with Retry instead of a blank panel.
+ *
+ * Mobile lays out at the panel's own width (a phone width) with no
+ * transform, so it scrolls natively. Tablet / Desktop render at their real
+ * CSS width (820 / 1280) and are scaled to the hero's width with a transform, so the site lays itself
  * out exactly as on that device, fitted to the panel's inside (its border
  * excluded) so a 1280px Desktop page is never clipped. Switching device
  * mounts the new width on top at once; until it has painted, the old one
@@ -58,6 +66,7 @@ type LayerProps = {
   active: boolean;
   /** Takes touches (the centred page). */
   interactive: boolean;
+  dark: boolean;
   onReady: (device: Device) => void;
 };
 
@@ -78,13 +87,64 @@ function useReveal(device: Device, onReady: (d: Device) => void) {
   return { style, reveal };
 }
 
+/** Remounts the WebView after its process died; `failed` after an HTTP or
+ *  network error (until Retry). */
+function useRecovery() {
+  const [gen, setGen] = React.useState(0);
+  const [failed, setFailed] = React.useState(false);
+  const remount = React.useCallback(() => {
+    setFailed(false);
+    setGen((g) => g + 1);
+  }, []);
+  const fail = React.useCallback(() => setFailed(true), []);
+  return { gen, failed, remount, fail };
+}
+
+function Unavailable({
+  onRetry,
+  dark,
+}: {
+  onRetry: () => void;
+  dark: boolean;
+}) {
+  return (
+    <View style={[s.down, dark && s.downDark]}>
+      <Text style={[s.downTitle, dark && s.inkDark]}>Preview unavailable</Text>
+      <Text style={[s.downSub, dark && s.subDark]}>
+        The live site didn’t load.
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onRetry}
+        hitSlop={8}
+        style={[s.retry, dark && s.retryDark]}
+      >
+        <Text style={[s.retryText, dark && s.retryTextDark]}>Retry</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const LiveLayer = React.memo(function LiveLayer(p: LayerProps) {
+  const rec = useRecovery();
+  if (rec.failed) return <Unavailable onRetry={rec.remount} dark={p.dark} />;
+  return (
+    <LiveWeb key={rec.gen} {...p} onGone={rec.remount} onFail={rec.fail} />
+  );
+});
+
+const LiveWeb = React.memo(function LiveWeb(
+  p: LayerProps & { onGone: () => void; onFail: () => void }
+) {
   const ref = React.useRef<WebView>(null);
   const { style, reveal } = useReveal(p.device, p.onReady);
   React.useEffect(() => {
     ref.current?.injectJavaScript(pauseAutoScroll(p.active));
   }, [p.active]);
-  const vw = VIEWPORT[p.device];
+  // Mobile lays out at the panel's own width (a phone width already), so it
+  // needs no transform and scrolls natively; Tablet / Desktop render at
+  // their real width and are scaled down.
+  const vw = p.device === 'mobile' ? p.size.width : VIEWPORT[p.device];
   const scale = p.size.width / vw;
   const frame = { width: vw, height: p.size.height / scale };
   const onMessage = (e: WebViewMessageEvent) => {
@@ -95,7 +155,9 @@ const LiveLayer = React.memo(function LiveLayer(p: LayerProps) {
       pointerEvents={p.interactive ? 'auto' : 'none'}
       style={[StyleSheet.absoluteFill, style]}
     >
-      <View style={[s.scaled, frame, { transform: [{ scale }] }]}>
+      <View
+        style={[s.scaled, frame, scale !== 1 && { transform: [{ scale }] }]}
+      >
         <WebView
           ref={ref}
           source={{ uri: p.url }}
@@ -105,6 +167,12 @@ const LiveLayer = React.memo(function LiveLayer(p: LayerProps) {
           // load; both scripts install once per document.
           onLoad={() => ref.current?.injectJavaScript(SCRIPT)}
           onMessage={onMessage}
+          onContentProcessDidTerminate={p.onGone}
+          onRenderProcessGone={p.onGone}
+          onHttpError={(e) => {
+            if (e.nativeEvent.statusCode >= 400) p.onFail();
+          }}
+          onError={p.onFail}
           scrollEnabled={p.interactive}
           bounces={false}
           overScrollMode="never"
@@ -189,6 +257,7 @@ export const LivePreview = React.memo(function LivePreview(p: Props) {
             device={d}
             active={p.active}
             interactive={p.interactive && d === device}
+            dark={p.dark}
             onReady={onReady}
           />
         </React.Fragment>
@@ -205,4 +274,31 @@ const s = StyleSheet.create({
     transformOrigin: 'top left',
   },
   web: { flex: 1, backgroundColor: '#FFFFFF' },
+  down: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FAFAF9',
+  },
+  downTitle: { fontFamily: F.sans700, fontSize: 16, color: '#0B0B0C' },
+  downSub: { fontFamily: F.sans500, fontSize: 13, color: '#5C5D63' },
+  retry: {
+    marginTop: 10,
+    height: 36,
+    paddingHorizontal: 20,
+    borderRadius: 18,
+    justifyContent: 'center',
+    backgroundColor: '#0B0B0C',
+  },
+  retryText: { fontFamily: F.sans600, fontSize: 14, color: '#FFFFFF' },
+  downDark: { backgroundColor: '#141416' },
+  inkDark: { color: '#F4F4F5' },
+  subDark: { color: 'rgba(244,244,245,0.6)' },
+  retryDark: { backgroundColor: '#F4F4F5' },
+  retryTextDark: { color: '#0B0B0C' },
 });

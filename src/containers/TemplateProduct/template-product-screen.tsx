@@ -132,10 +132,10 @@ function useWarmNeighbours(
   return warmFor === index;
 }
 
-/** Page-wide choices: the device the live sites render at (Mobile first)
+/** Page-wide choices: the device the live sites render at (Desktop first)
  *  and the template whose "More" card is open. */
 function useChoices() {
-  const [device, setDevice] = React.useState<Device>('mobile');
+  const [device, setDevice] = React.useState<Device>('desktop');
   const [more, setMore] = React.useState<MarketTemplate | null>(null);
   const closeMore = React.useCallback(() => setMore(null), []);
   return { device, setDevice, more, setMore, closeMore };
@@ -166,10 +166,13 @@ function usePageState(p: PageProps) {
   keyRef.current = list[pager.index].key;
   const choices = useChoices();
   const lives = useLiveKeys();
+  // Neighbours warm around the SETTLED page: nothing mounts or unmounts a
+  // WebView while a swipe's spring is still running (a WebView's creation
+  // blocks the main thread for a frame or two).
   const warm = useWarmNeighbours(
     list,
-    pager.index,
-    lives.live.has(keyRef.current)
+    pager.settled,
+    lives.live.has(list[pager.settled].key)
   );
   const nav = useCrumbNav(p.templateKey);
   return {
@@ -219,11 +222,17 @@ function groupOf(groups: readonly Group[], i: number): Group {
   return { name: null, start: 0, size: 1 };
 }
 
-function windowOf(list: readonly MarketTemplate[], index: number) {
+/** The pages around the centred one — and, while a swipe is still
+ *  landing, around the page it left too, so nothing unmounts mid-spring. */
+function windowOf(
+  list: readonly MarketTemplate[],
+  index: number,
+  settled = index
+) {
   const out: { template: MarketTemplate; i: number }[] = [];
   for (
-    let i = Math.max(0, index - 1);
-    i <= Math.min(list.length - 1, index + 1);
+    let i = Math.max(0, Math.min(index, settled) - 1);
+    i <= Math.min(list.length - 1, Math.max(index, settled) + 1);
     i++
   ) {
     out.push({ template: list[i], i });
@@ -231,12 +240,17 @@ function windowOf(list: readonly MarketTemplate[], index: number) {
   return out;
 }
 
-/** The centred page is live; a neighbour preloads once the centred one is
- *  up (`warm`), or stays loaded if it already rendered (swiping back). At
- *  most the ±1 window — three WebViews — ever exists. */
+/** The centred page is live; a neighbour of the settled page preloads once
+ *  that one is up (`warm`), or stays loaded if it already rendered
+ *  (swiping back). While a swipe lands, only WebViews that already exist
+ *  stay; a page that had none gets its own once the swipe has settled. */
 function loadOf(st: State, key: string, i: number) {
-  if (i === st.index) return 'on' as const;
-  return st.warm || st.live.has(key) ? ('warm' as const) : ('off' as const);
+  const mounted =
+    st.live.has(key) || (st.warm && Math.abs(i - st.settled) <= 1);
+  if (i === st.index) {
+    return st.settled === i || mounted ? ('on' as const) : ('off' as const);
+  }
+  return mounted ? ('warm' as const) : ('off' as const);
 }
 
 /** The hero band as a whole: rises / fades on cold opens and when closing
@@ -257,7 +271,7 @@ function useZoneStyle(m: ProductMotion, g: Geometry) {
 }
 
 function Heroes({ s: st, origin }: { s: State; origin: string | null }) {
-  const pages = windowOf(st.list, st.index);
+  const pages = windowOf(st.list, st.index, st.settled);
   const zone = useZoneStyle(st.m, st.g);
   return (
     <GestureDetector gesture={st.gestures.hero}>

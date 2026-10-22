@@ -26,7 +26,12 @@ import type { ProductMotion } from './use-product-transition';
  * ±1 window re-renders and the new page's live site mounts at once) and
  * once more as the page lands (`settled`, ~SETTLE_MS after the release —
  * not the spring's own "finished", which only fires once its energy has
- * died out, seconds later), which fires the one `select` haptic.
+ * died out, seconds later).
+ *
+ * Haptics follow the finger, like a picker: one `select` tick the moment a
+ * drag crosses halfway to the next template (and back), one on release if
+ * a fling lands on a page the finger had not ticked yet, and a `soft` bump
+ * once per drag when it runs into either end of the list.
  *
  * The hero takes only clear HORIZONTAL swipes (vertical drags and taps go
  * to the live site, which scrolls and works natively). A swipe moves at
@@ -35,9 +40,13 @@ import type { ProductMotion } from './use-product-transition';
 
 const SETTLE_MS = 380;
 /** Horizontal travel before the pager claims a drag; vertical travel that
- *  fails it on the hero (so the site keeps it). */
+ *  fails it on the hero (so the site keeps it). The hero decides within
+ *  the first ~8pt, BEFORE the live site's own scroll view starts (≈10pt):
+ *  once WebKit's pan has begun it owns the drag, and a sideways swipe
+ *  would only nudge the page. */
 const CLAIM_X = 18;
-const YIELD_Y = 10;
+const HERO_CLAIM = 7;
+const YIELD_Y = 8;
 const DISMISS_PAST = 110;
 const FLING = 900;
 /** The one-time hint: how far (pt) the page nudges toward the next. */
@@ -52,15 +61,10 @@ export type Pager = {
 function useSettle(start: number) {
   const [index, setIndex] = React.useState(start);
   const [settled, setSettled] = React.useState(start);
-  const last = React.useRef(start);
   const timer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
   const onSettle = React.useCallback((i: number) => {
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      setSettled(i);
-      if (i !== last.current) haptic.select();
-      last.current = i;
-    }, SETTLE_MS);
+    timer.current = setTimeout(() => setSettled(i), SETTLE_MS);
   }, []);
   React.useEffect(() => () => clearTimeout(timer.current), []);
   return { index, setIndex, settled, onSettle };
@@ -90,15 +94,70 @@ function rubber(v: number, count: number) {
   return v;
 }
 
+const tick = () => haptic.select();
+const bump = () => haptic.soft();
+
+/** The page under the finger changed (halfway crossed): one tick. */
+function tickAt(page: number, ticked: SharedValue<number>) {
+  'worklet';
+  if (page === ticked.value) return;
+  ticked.value = page;
+  runOnJS(tick)();
+}
+
+/** The hero's pan decides by hand from the raw touches: clearly sideways
+ *  (≥ HERO_CLAIM, mostly horizontal) claims the swipe, any real vertical
+ *  travel first gives it to the site. */
+function heroClaim(
+  p: ReturnType<typeof Gesture.Pan>,
+  start: SharedValue<{ x: number; y: number }>
+) {
+  return p
+    .manualActivation(true)
+    .onTouchesDown((e) => {
+      'worklet';
+      const t = e.allTouches[0];
+      if (t) start.value = { x: t.absoluteX, y: t.absoluteY };
+    })
+    .onTouchesMove((e, mgr) => {
+      'worklet';
+      const t = e.allTouches[0];
+      if (!t) return;
+      const dx = Math.abs(t.absoluteX - start.value.x);
+      const dy = Math.abs(t.absoluteY - start.value.y);
+      if (dx >= HERO_CLAIM && dx > dy * 1.3) mgr.activate();
+      else if (dy >= YIELD_Y) mgr.fail();
+    });
+}
+
+/** Mid-drag haptics: a tick as the finger crosses to another page, one
+ *  bump per drag at either end of the list. */
+function feel(
+  v: number,
+  {
+    count,
+    ticked,
+    bumped,
+  }: { count: number; ticked: SharedValue<number>; bumped: SharedValue<number> }
+) {
+  'worklet';
+  tickAt(Math.min(count - 1, Math.max(0, Math.round(v))), ticked);
+  if (!bumped.value && (v < -0.04 || v > count - 0.96)) {
+    bumped.value = 1;
+    runOnJS(bump)();
+  }
+}
+
 /** The finger lifted: settle on the projected page (one at most). */
 function release(
   x: SharedValue<number>,
   base: SharedValue<number>,
-  { vx, o }: { vx: number; o: GestureOpts }
+  { vx, o, ticked }: { vx: number; o: GestureOpts; ticked: SharedValue<number> }
 ) {
   'worklet';
   const projected = x.value - (vx / o.g.stride) * 0.18;
   const to = clampPage(Math.round(projected), base.value, o.count);
+  tickAt(to, ticked);
   base.value = to;
   runOnJS(o.onRelease)(to);
   runOnJS(o.onSettle)(to);
@@ -110,6 +169,11 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
   const base = useSharedValue(Math.round(x.value));
   const from = useSharedValue(0);
   const axis = useSharedValue(0);
+  /** The page the last tick was for, and whether this drag has bumped an
+   *  end of the list yet. */
+  const ticked = useSharedValue(Math.round(x.value));
+  const start = useSharedValue({ x: 0, y: 0 });
+  const bumped = useSharedValue(0);
   return React.useMemo(() => {
     const onStart = (tx: number, ty: number) => {
       'worklet';
@@ -120,6 +184,7 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
       if (axis.value !== 1) return;
       cancelAnimation(x);
       from.value = x.value;
+      bumped.value = 0;
     };
     const onUpdate = (tx: number, ty: number) => {
       'worklet';
@@ -132,6 +197,7 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
       const v = from.value - tx / g.stride;
       const b = base.value;
       x.value = rubber(Math.min(b + 1, Math.max(b - 1, v)), count);
+      feel(x.value, { count, ticked, bumped });
     };
     const onEnd = (vx: number, vy: number) => {
       'worklet';
@@ -141,7 +207,7 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
         else m.drag.value = withSpring(0, PAGE_SPRING);
         return;
       }
-      release(x, base, { vx, o });
+      release(x, base, { vx, o, ticked });
       axis.value = 0;
     };
     // Safety net: a drag that ends any other way (cancelled by the
@@ -150,6 +216,7 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
       'worklet';
       if (axis.value === 1 && !m.closing.value) {
         x.value = withSpring(base.value, PAGE_SPRING);
+        ticked.value = base.value;
       }
       axis.value = 0;
     };
@@ -160,12 +227,10 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
         .onUpdate((e) => onUpdate(e.translationX, e.translationY))
         .onEnd((e) => onEnd(e.velocityX, e.velocityY))
         .onFinalize(onFinalize);
-      return pullDown
-        ? p.activeOffsetY(14)
-        : p.failOffsetY([-YIELD_Y, YIELD_Y]);
+      return pullDown ? p.activeOffsetY(14) : heroClaim(p, start);
     };
     return { hero: pan(false), details: pan(true) };
-  }, [x, base, from, axis, o, count, g, m]);
+  }, [x, base, from, axis, ticked, bumped, start, o, count, g, m]);
 }
 
 /** Once per app session: right after the page opens, it nudges toward the

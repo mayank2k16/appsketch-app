@@ -18,17 +18,14 @@ colours change, plus the press feedback that every CTA now has.
 - Native shell:
   - The icon is `assets/icon.png`: an opaque warm-white canvas with the logo
     glyph. Android's adaptive icon uses `assets/adaptive-icon.png` on `#FAFAF8`.
-  - The launch screen is the warm canvas `#FAFAF8` with the logo's orange
-    dot (`assets/splash-dot.png`, 16pt) at the centre, in both themes.
-    `scripts/make-splash-logo.py` writes that PNG, the prebuilt iOS imageset
-    and Android drawables, and the Lottie. The iOS storyboard image size,
-    colorset and Android `splashscreen_background` were set by hand to match
-    `app.config.ts` (no `prebuild --clean`: ios/ has hand changes).
+  - The launch screen is solid brand orange `#FA8F32` (no logo), in both
+    themes; the in-app splash sweeps it clockwise to the warm canvas, gathers
+    the orange into the logo's dot and draws the logo from it. Full details,
+    timings and native files: `docs/splash.md`.
   - The in-app splash (`src/app/splash.tsx`,
-    `src/components/splash/logo-splash.tsx`) is the same in both themes. It
-    opens on the launch screen's exact picture, then plays
-    `assets/lottie/splash-logo.json` (480pt comp drawn 1:1 at the screen
-    centre, 60fps, 2.8s, shape layers only): the dot glides into its place
+    `src/components/splash/logo-splash.tsx`) is the same in both themes. After
+    the 1s opening it plays the original logo sequence (60fps, 2.8s, shape
+    layers only): the dot glides into its place
     as the pencil flies in; the graphite tip draws the outer frame (gradient
     stroke revealed by a trim path, the tip keyed to the trim head every
     frame, a faint highlight trailing it); it sketches the inner square and
@@ -37,9 +34,9 @@ colours change, plus the press feedback that every CTA now has.
     matte). The final frame matches `assets/splash-mark.png` (no vector
     source exists: geometry and gradients were fitted to the PNG, IoU 0.96).
     Then (Reanimated) the mark lifts 44pt, `appsketch.ai` (accent dot) and
-    the tagline rise out of clipped slots, sink back at 3.4s, and the canvas
-    irises shut into the mark (3.5–4.0s) onto the theme's canvas. One soft
-    haptic as the pencil lands (2.43s). Tap to skip.
+    the tagline rise out of clipped slots, sink back at 4.4s, and the canvas
+    irises shut into the mark (4.5–5.0s) onto the theme's canvas. One soft
+    haptic as the pencil lands (3.43s). Tap to skip.
   - Signed out (or guest), the splash goes to `/welcome`
     (`src/containers/Welcome/`), which starts on that bare canvas: the tilted
     collage of 12 template screens (`src/components/splash/white-collage.tsx`,
@@ -146,6 +143,46 @@ works, FAQ, Footer…) are no longer mounted. Their components remain in
       rail chips still filter in place on Home;
     - `action`: "Create yours". It scrolls Home to the top and focuses the
       prompt (`AgentV2`'s `inputRef`).
+  - **Tile footer: chips and likes** (`Studio/tile-meta.tsx`, `tags.ts`,
+    `template-social.ts`). Under every phone / small / wide tile (and at the
+    top of a site strip): the name with a heart and like count on its right,
+    then colour-coded chips. `LABEL_H` grew from 22 to 62 (name row 16 +
+    two chip lines, `CHIPS_H`), so every recipe height follows and rows
+    still fill exactly. A large tile shows title + heart, then the chips
+    (the category chip replaced its old category eyebrow).
+    - **Chips** = the category in FULL ("Restaurants & Cafes"), then the
+      API `tags`, cleaned for reading (`ecommerce` → "E-commerce", `hotel`
+      → "Hotels", `saas` → "SaaS"). Gallery tags (mobile, new, featured,
+      trending) and tags repeating the category are skipped. Never cut:
+      chips wrap onto a second line; a chip that does not fit whole is left
+      out (`chipsOf` estimates widths at ~6pt a character, erring wide);
+      the category always shows (at most 3 chips), and if it alone is
+      wider than a one-column tile it becomes a two-line chip, split at
+      the most balanced word gap (`splitLabel`: "Construction &" /
+      "Industrial"). Each line is its own one-line `Text`: iOS drew only
+      the first line of a wrapped (or `\n`-broken) label in these chips.
+    - **Colours** (`TemplateReel/pills.ts`, `pillTone`, shared with the
+      product page's pills, so a label is one colour everywhere): first
+      matching rule wins. Restaurants red, grocery / food green, real
+      estate blue, hotels / resorts / travel teal, bookings and health sky,
+      rides / cabs / mobility indigo, fashion fuchsia, jewellery / luxury /
+      furniture / home amber, beauty / salon pink, events / media rose,
+      agency / SaaS / AI violet, finance / consulting slate, e-commerce /
+      electronics / gifts orange. White: soft tint, darker text, hairline
+      in the hue. Black showcase and dark mode: the hue at ~18% with light
+      text.
+    - **Likes** come from the web gallery's endpoints: one
+      `GET builder/gallery/social/` for every count (`{code: {id: {likes,
+      comments, liked}}}`), `POST builder/gallery/<kind>/<id>/like/` with
+      `{liked, visitor}` to like / take back. Anyone may like, as on the
+      web: a signed-in account owns its likes, otherwise a random device id
+      (MMKV `gallery-visitor`, sent in the body). The server reports
+      `liked` for accounts only, so the device keeps the ids it liked
+      (`gallery-liked`). Optimistic: heart and count flip at once, the
+      server's answer sets the real count, a failure puts them back; a
+      late answer to an older tap is ignored. One `toggle(true)` haptic on
+      a like (none on un-like). If the counts cannot load, no heart is
+      shown at all (never a dead heart).
   - **Card edges.** White tiles (the action tile, small tiles' media, browser
     sheets on the page) carry a 1.5px `#CFCFCA` border, a subtle
     `rgba(255,255,255,0.16)` in dark (`cardEdge()` / `CARD_EDGE_W` in
@@ -160,7 +197,49 @@ works, FAQ, Footer…) are no longer mounted. Their components remain in
     height). Rows the remaining templates cannot fill are dropped (at least
     2 are kept). Sites sit on a graphite stage in silver browser frames and
     can play live like the feed's (same budget). Then the "Create yours →"
-    pill. Its height comes from `showcaseHeight(rows)`, and `feed.showcase`
+    pill. **Three story cards** sit between its rows (after the first two
+    rows, about 60% down, and after the last row; `interleave` in
+    `recipes.ts`), App Store "Today" style (`story-card.tsx`,
+    `story-art.tsx`, data in `stories.ts`):
+    - Built to the App Store's "Happening now" card, measured off a
+      screenshot and compared side by side: as wide as the masonry (its
+      border lines up with the tiles' 8pt gutters); the layout is the
+      App Store's at 350pt, scaled by `su()` (geometry.ts) — card 432,
+      4.5pt border in the vivid tint, 20pt continuous corners, no shadow.
+    - Tab inside the top-left corner (white caps, system font / SF Pro
+      semibold, normal tracking) joined to the border, with two concave
+      SVG fillets where it meets the art and a rounded bottom-right.
+    - Art (`story-art.tsx`), the same for all three cards: a near-black
+      top deepening into the vivid tint; three template screenshots
+      (top-left crop) on off-white paper sheets, tilted +9° / −7° / +10°
+      and overlapping (lead in the middle, right sheet in front); their
+      lower part melts into the tint; white dots plus coral, mint and pink
+      sparkles top-right. Static images only. One motion: the sheets float
+      ±2pt (3.6s, UI thread, only while Home is focused).
+    - Text on the flat vivid tint: eyebrow (light tint, caps), a two-line
+      bold title, a one-line subtitle; then a band a shade darker: 48pt
+      icon (thumbnail top-left), name (up to 2 lines), category line, a
+      74×32 "View" pill (white 22%) with a caption ("Live preview" /
+      "iOS & Android"). All in the system font, like the App Store.
+    - Tints, in card order: violet (`#6C00CF`, the App Store's), copper
+      (`#95571E`), crimson (`#B8123A`); each has a deep top, a band shade
+      and a light text colour (`TINTS` in `stories.ts`).
+    - Picking (`pickStories`): the fan is the biggest category with 3+
+      templates (featured first), the phone card a featured app, the
+      browser card a website tagged new — each from a category with 3
+      templates for the sheets, and different categories where possible.
+      Tabs are true to the data: "EDITOR'S PICK" only for an API-featured
+      template, "NEW ARRIVAL" only for one tagged new (the website card
+      says this first), "TRENDING NOW" only for a collection with a
+      trending tag (else "COLLECTION" / "SPOTLIGHT"). Copy per category
+      (generic fallback); subtitles are the template's own first sentence
+      or a count.
+    - Taps: the fan card opens the category screen (`openCategory`), the
+      others the template's product page; the pill always opens the
+      template, with its category as the swipe `list`. Press-scale on both.
+    - The category screen flattens only the showcase's rows, so it shows no
+      story cards.
+    Its height comes from `showcaseHeight(blocks)` (rows and stories), and `feed.showcase`
     `{y, h}` drives the chrome tone. Taps open the product page with the
     category's full display order as `list`. While it passes, the header and the tab bar turn black with it. One
     UI-thread value, `chromeTone` (`src/lib/chrome-tone.ts`, 0 = page theme,

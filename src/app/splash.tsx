@@ -53,17 +53,32 @@ function useNativeSplashGone() {
   return shown;
 }
 
+/** Light content over the launch orange; dark once the sweep has passed the
+ *  status bar's right side (the clock side is still orange then, where dark
+ *  content reads fine). */
+function useSplashBarStyle(shown: boolean) {
+  const [dark, setDark] = React.useState(false);
+  React.useEffect(() => {
+    if (!shown) return undefined;
+    const t = setTimeout(() => setDark(true), SPLASH_T.statusDark);
+    return () => clearTimeout(t);
+  }, [shown]);
+  return dark ? 'dark-content' : 'light-content';
+}
+
 /**
  * The in-app splash, the same in both themes: it picks up the native launch
- * screen's exact picture (the warm canvas, the logo's orange dot centred),
- * the logo's pencil draws the logo, then it irises into the theme's canvas,
- * where /welcome (signed out) or /home begins. Tap anywhere to skip.
+ * screen's exact picture (solid orange), the warm canvas sweeps in clockwise
+ * while the orange gathers into the logo's dot, the logo's pencil draws the
+ * logo from it, then it irises into the theme's canvas, where /welcome
+ * (signed out) or /home begins. Tap anywhere to skip.
  */
 export default function BrandSplashScreen() {
   const { colorScheme } = useColorScheme();
   const canvas = appTheme[colorScheme === 'dark' ? 'dark' : 'light'].bg;
   const doExit = useSplashExit();
   const shown = useNativeSplashGone();
+  const barStyle = useSplashBarStyle(shown);
 
   React.useEffect(() => {
     if (!shown) return undefined;
@@ -81,7 +96,8 @@ export default function BrandSplashScreen() {
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle="dark-content"
+        barStyle={barStyle}
+        animated
       />
       <LogoSplash shown={shown} />
     </Pressable>

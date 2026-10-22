@@ -17,8 +17,14 @@ export const COL_W = (W - PAD * 2 - GAP * 2) / 3;
 export const SPAN2 = COL_W * 2 + GAP;
 export const SPAN3 = W - PAD * 2;
 
-/** The name row under a phone / small tile. */
-export const LABEL_H = 22;
+/** Colour-coded chips (tile-meta.tsx): one line's height, and up to two
+ *  lines so a label never has to be cut. */
+export const CHIP_LINE = 17;
+export const CHIP_LINES = 2;
+export const CHIPS_H = CHIP_LINE * CHIP_LINES + 3;
+/** Under a phone / small / wide tile: the name with the heart and like
+ *  count, then the chips — tile-meta.tsx. */
+export const LABEL_H = 5 + 16 + 4 + CHIPS_H;
 export const PHONE_W = COL_W;
 export const PHONE_H = (PHONE_W * 812) / 390;
 
@@ -46,8 +52,22 @@ export const SHOWCASE_HEAD = 132;
 export const SHOWCASE_BODY_Y = SHOWCASE_TOP + SHOWCASE_HEAD;
 /** The pill and the space around it, under the last row. */
 export const SHOWCASE_FOOT = 96;
-export function showcaseHeight(rows: number[]) {
-  const body = rows.reduce((a, h) => a + h, 0) + GAP * (rows.length - 1);
+/** A story card (story-card.tsx), App Store "Today" style: as wide as the
+ *  masonry (its border lines up with the tiles' edges). Its layout was
+ *  measured off the App Store card at 350pt wide and is scaled to this
+ *  width by `su`, so it keeps the same proportions. */
+export const STORY_W = SPAN3;
+const STORY_K = STORY_W / 350;
+export const su = (n: number) => Math.round(n * STORY_K * 2) / 2;
+export const STORY_CARD_H = su(432);
+/** Black above and below a story, between the bento rows. */
+export const STORY_PAD_Y = 16;
+/** A story's whole block in the showcase. */
+export const STORY_H = STORY_PAD_Y * 2 + STORY_CARD_H;
+
+/** Rows and stories stacked with GAP between them. */
+export function showcaseHeight(blocks: number[]) {
+  const body = blocks.reduce((a, h) => a + h, 0) + GAP * (blocks.length - 1);
   return SHOWCASE_BODY_Y + body + SHOWCASE_FOOT;
 }
 

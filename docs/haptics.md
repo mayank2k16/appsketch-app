@@ -26,6 +26,9 @@ through `src/lib/haptics.ts`. Never call `expo-haptics` directly.
 | Segmented toggles: Web App / Mobile App, Pricing monthly / yearly | `select` |
 | Switches (Appearance, Haptics, CMS switches, collection toggles) | `toggle(on)`, always light |
 | Opening an app or template (Use template, Open app, guest app launch) | `tap` |
+| Swiping templates on the product page: crossing halfway to another template | `select` (one per page crossed) |
+| Running into either end of the product page's template list | `soft`, once per drag |
+| Liking a template (the heart on a Home tile; none on un-like) | `toggle(true)` |
 | A build or template finishing | `magic()`, a single `success` |
 | A build or socket failing, a payment gateway error | `error` |
 | Error and warning toasts | `error` / `warning`, fired by `toast.*` |
@@ -57,7 +60,7 @@ setting.
 ## The splash
 
 The splash (both themes) fires one `soft` haptic as the pencil snaps into
-the logo, 2.43s in (`SPLASH_T.haptic` in
+the logo, 3.43s in (`SPLASH_T.haptic` in
 `src/components/splash/logo-splash.tsx`). Do not add more steps.
 
 ## Off switch

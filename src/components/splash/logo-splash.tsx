@@ -1,6 +1,6 @@
 import LottieView from 'lottie-react-native';
 import * as React from 'react';
-import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import ReAnimated, {
   Easing,
   useAnimatedStyle,
@@ -14,32 +14,38 @@ import { haptic } from '@/lib/haptics';
 
 const { width: W, height: H } = Dimensions.get('window');
 
-/** The native launch screen's colour (app.config.ts): the warm canvas. */
+/** The splash field the orange is swept away to: the warm canvas. */
 export const SPLASH_CANVAS = '#FAFAF8';
+/** The native launch screen's colour (app.config.ts), solid edge to edge;
+ *  the Lottie's frame 0 and the logo's dot are the same orange. */
+export const SPLASH_ORANGE = '#FA8F32';
 const ACCENT = '#F2600C';
 /** assets/lottie/splash-logo.json, made by scripts/make-splash-logo.py: a
- *  480pt comp drawn 1:1 around the screen centre; the finished logo is
- *  168pt; frame 0 is the 16pt launch dot at the centre. 168 frames @60fps. */
+ *  1120x1440pt comp drawn 1:1 around the screen centre (it covers any
+ *  portrait phone or iPad). Frames 0-60: solid orange, swept clockwise to the
+ *  canvas, gathered into the 16pt dot; then the logo is drawn from that dot
+ *  (the finished logo is 168pt). 228 frames @60fps, 3.8s. */
 const LOTTIE = require('../../../assets/lottie/splash-logo.json');
-/** The native launch image, shown until the Lottie has drawn frame 0. */
-const SEED = require('../../../assets/splash-dot.png');
-const COMP = 480;
+const COMP_W = 1120;
+const COMP_H = 1440;
 const MARK = 168;
-const SEED_PT = 16;
 const IRIS = Math.ceil(Math.hypot(W, H)) + 8;
 const WORD_H = 40;
 const TAG_H = 22;
 /** The mark rises this far as the wordmark comes up beneath it. */
 const LIFT = 44;
 
-/** Milliseconds from the moment the native launch screen is gone. */
+/** Milliseconds from the moment the native launch screen is gone. The
+ *  opening (orange -> clockwise sweep -> dot) is the first 1000ms. */
 export const SPLASH_T = {
-  /** The pencil snaps into the logo (frame ~146): one soft haptic. */
-  haptic: 2430,
-  rise: 2380,
-  wordOut: 3420,
-  iris: 3500,
-  exit: 4040,
+  /** The sweep has passed the status bar's right side: dark content. */
+  statusDark: 300,
+  /** The pencil snaps into the logo (frame ~206): one soft haptic. */
+  haptic: 3430,
+  rise: 3380,
+  wordOut: 4420,
+  iris: 4500,
+  exit: 5040,
 } as const;
 
 const out = (duration: number) => ({
@@ -108,8 +114,8 @@ function useSplashStyles(v: ReturnType<typeof useSplashTimeline>) {
 
 type Styles = ReturnType<typeof useSplashStyles>;
 
-/** The launch dot until the Lottie has loaded, then the Lottie, which
- *  starts on that same picture. */
+/** Solid orange (the native launch screen) until the Lottie has loaded,
+ *  then the Lottie, which starts on that same picture. */
 function SplashMark({ shown }: { shown: boolean }) {
   const [drawn, setDrawn] = React.useState(false);
   React.useEffect(() => {
@@ -134,7 +140,7 @@ function SplashMark({ shown }: { shown: boolean }) {
           style={styles.comp}
         />
       )}
-      {!drawn && <Image source={SEED} style={styles.seed} />}
+      {!drawn && <View style={styles.cover} />}
     </View>
   );
 }
@@ -160,8 +166,8 @@ function Words({ s }: { s: Styles }) {
 
 /**
  * The in-app splash, in both themes. It opens on the native launch screen's
- * exact picture (the warm canvas, the orange dot at the centre); the Lottie
- * draws the logo with its own pencil; the wordmark and tagline rise; then the
+ * exact picture (solid orange); the canvas sweeps in clockwise and the orange
+ * gathers into the logo's dot; the Lottie draws the logo with its own pencil; the wordmark and tagline rise; then the
  * canvas irises shut into the mark, leaving the theme's own canvas, where the
  * welcome screen (or Home) begins.
  */
@@ -190,18 +196,21 @@ const styles = StyleSheet.create({
   },
   markWrap: {
     position: 'absolute',
-    left: (W - COMP) / 2,
-    top: (H - COMP) / 2,
-    width: COMP,
-    height: COMP,
+    left: (W - COMP_W) / 2,
+    top: (H - COMP_H) / 2,
+    width: COMP_W,
+    height: COMP_H,
   },
-  comp: { width: COMP, height: COMP },
-  seed: {
+  comp: { width: COMP_W, height: COMP_H },
+  // The comp is centred on the screen and bigger than it, so this covers
+  // the screen edge to edge.
+  cover: {
     position: 'absolute',
-    left: (COMP - SEED_PT) / 2,
-    top: (COMP - SEED_PT) / 2,
-    width: SEED_PT,
-    height: SEED_PT,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: SPLASH_ORANGE,
   },
   words: {
     position: 'absolute',

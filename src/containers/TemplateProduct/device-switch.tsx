@@ -15,7 +15,7 @@ import type { PageTheme } from './theme';
  * Mobile | Tablet | Desktop in the slim row under a website's hero: a capsule
  * in the panel colour with the panels' edge, and an ink thumb (white in
  * dark) that springs to the chosen device. The live site re-renders at
- * that device's width (live-preview.tsx). Mobile first.
+ * that device's width (live-preview.tsx). Desktop is the default.
  */
 
 const SEG_W = 66;

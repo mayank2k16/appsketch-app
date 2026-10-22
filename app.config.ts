@@ -102,7 +102,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       requireFullScreen: true,
       bundleIdentifier: Env.BUNDLE_ID,
       // TestFlight build number: bump before every upload (last: 50).
-      buildNumber: '51',
+      buildNumber: '52',
       // App Store / TestFlight builds are signed with the production push
       // profile; a 'development' value fails the archive's manual signing.
       entitlements:
@@ -117,15 +117,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSPrivacyCollectedDataTypes: [],
         NSPrivacyAccessedAPITypes: [
           {
-            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryFileTimestamp',
+            NSPrivacyAccessedAPIType:
+              'NSPrivacyAccessedAPICategoryFileTimestamp',
             NSPrivacyAccessedAPITypeReasons: ['C617.1', '0A2A.1', '3B52.1'],
           },
           {
-            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryUserDefaults',
+            NSPrivacyAccessedAPIType:
+              'NSPrivacyAccessedAPICategoryUserDefaults',
             NSPrivacyAccessedAPITypeReasons: ['CA92.1', '1C8F.1', 'C56D.1'],
           },
           {
-            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategorySystemBootTime',
+            NSPrivacyAccessedAPIType:
+              'NSPrivacyAccessedAPICategorySystemBootTime',
             NSPrivacyAccessedAPITypeReasons: ['35F9.1'],
           },
           {
@@ -136,6 +139,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        // Light content over the orange launch screen (docs/splash.md); the
+        // in-app splash sets the bar itself from then on.
+        UIStatusBarStyle: 'UIStatusBarStyleLightContent',
         NSLocationWhenInUseUsageDescription:
           'We need your location to show nearby stores and delivery options.',
         NSLocationAlwaysAndWhenInUseUsageDescription:
@@ -207,16 +213,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       ['expo-video'],
+      // Before expo-splash-screen: mods on one file run last-registered
+      // first, so this edits the splash theme after that plugin writes it.
+      './plugins/with-splash-light-status-bar',
       [
         'expo-splash-screen',
         {
-          // The warm canvas with the logo's orange dot at the centre, in
-          // both themes. The in-app splash (src/app/splash.tsx) starts on
-          // this exact picture: the dot glides into place while the pencil
-          // draws the logo around it. Assets: scripts/make-splash-logo.py,
-          // which also writes the prebuilt ios/ and android/ copies.
-          backgroundColor: '#FAFAF8',
-          image: './assets/splash-dot.png',
+          // Solid brand orange edge to edge, no logo (the image is fully
+          // transparent), in both themes. The in-app splash
+          // (src/app/splash.tsx) starts on this exact picture: the canvas
+          // sweeps in clockwise, the orange gathers into the logo's dot and
+          // the pencil draws the logo from it (docs/splash.md). Assets:
+          // scripts/make-splash-logo.py, which also writes the prebuilt ios/
+          // and android/ copies. Light status bar: ios.infoPlist
+          // UIStatusBarStyle + plugins/with-splash-light-status-bar.
+          backgroundColor: '#FA8F32',
+          image: './assets/splash-blank.png',
           imageWidth: 16,
         },
       ],
@@ -243,8 +255,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         'expo-speech-recognition',
         {
-          microphonePermission:
-            'Speak your prompt instead of typing it.',
+          microphonePermission: 'Speak your prompt instead of typing it.',
           speechRecognitionPermission:
             'Turn what you say into the text of your prompt.',
         },

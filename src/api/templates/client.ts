@@ -150,3 +150,38 @@ export async function cloneCodeTemplate(
   });
   return data;
 }
+
+/** Which table a gallery template is a row of — an id alone names one of
+ *  each (`builder/gallery/`, backend docs/TEMPLATE_LIKES_COMMENTS.md). */
+export type TemplateKind = 'layout' | 'code';
+
+export type TemplateCounts = {
+  likes: number;
+  comments: number;
+  liked: boolean;
+};
+
+/** Every gallery template's likes, keyed by kind then id. Public; `liked`
+ *  is filled in for a signed-in account only. */
+export async function fetchTemplateSocial(): Promise<
+  Record<TemplateKind, Record<string, TemplateCounts>>
+> {
+  const { data } = await accountClient.get('builder/gallery/social/');
+  return { layout: data?.layout ?? {}, code: data?.code ?? {} };
+}
+
+/** Like or un-like (`liked` is where to end up, not a flip). Anyone may
+ *  like: a signed-in account is the owner, otherwise the device's random
+ *  `visitor` id (sent in the body, never a URL). */
+export async function setTemplateLike(p: {
+  kind: TemplateKind;
+  id: number;
+  liked: boolean;
+  visitor: string;
+}): Promise<{ liked: boolean; likes: number }> {
+  const { data } = await accountClient.post<{ liked: boolean; likes: number }>(
+    `builder/gallery/${p.kind}/${p.id}/like/`,
+    { liked: p.liked, visitor: p.visitor }
+  );
+  return data;
+}

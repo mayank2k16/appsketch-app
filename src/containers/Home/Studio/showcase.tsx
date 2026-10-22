@@ -7,8 +7,9 @@ import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 
 import { GAP, SHOWCASE_FOOT, SHOWCASE_HEAD, SHOWCASE_TOP, W } from './geometry';
-import type { Row } from './recipes';
+import type { ShowcaseBlock } from './recipes';
 import { ShowcaseRow } from './rows';
+import { StoryCard } from './story-card';
 import { useStudioActions } from './studio-context';
 
 /**
@@ -18,7 +19,8 @@ import { useStudioActions } from './studio-context';
  * yours" pill at the foot. It is the only black in the feed; as it scrolls
  * through the viewport, Home turns the header and the tab bar black with it
  * (see `chromeTone`). Faint neutral spotlights (static SVG) give the black
- * some depth.
+ * some depth. Three App Store-style story cards (story-card.tsx) sit
+ * between its rows: after the first group, about 60% down, and at the end.
  */
 
 const Spotlight = React.memo(function Spotlight({ h }: { h: number }) {
@@ -53,10 +55,10 @@ function Head() {
 }
 
 export const Showcase = React.memo(function Showcase({
-  rows,
+  blocks,
   h,
 }: {
-  rows: Row[];
+  blocks: ShowcaseBlock[];
   h: number;
 }) {
   const { create } = useStudioActions();
@@ -65,9 +67,13 @@ export const Showcase = React.memo(function Showcase({
       <Spotlight h={h} />
       <Head />
       <View style={s.rows}>
-        {rows.map((row, i) => (
-          <ShowcaseRow key={i} row={row} />
-        ))}
+        {blocks.map((b, i) =>
+          b.kind === 'row' ? (
+            <ShowcaseRow key={i} row={b.row} />
+          ) : (
+            <StoryCard key={b.story.key} story={b.story} />
+          )
+        )}
       </View>
       <View style={s.foot}>
         <PressableScale

@@ -6,7 +6,7 @@ import type { MarketTemplate } from '@/api/templates';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 
-import { categoryOf, thumbOf, titleOf } from '../TemplateReel/layout';
+import { thumbOf, titleOf } from '../TemplateReel/layout';
 import { PhoneFrame } from '../TemplateReel/phone-frame';
 import { Shot } from '../TemplateReel/shot';
 import { BrowserFrame } from './browser-frame';
@@ -14,6 +14,7 @@ import {
   BAR_H,
   CARD_EDGE_W,
   cardEdge,
+  COL_W,
   LABEL_H,
   PHONE_W,
   RADIUS,
@@ -22,6 +23,7 @@ import {
   WEB_RATIO,
 } from './geometry';
 import { stageOf, useOpenTemplate, useStudioActions } from './studio-context';
+import { Chips, Heart, metaTone, TileFoot } from './tile-meta';
 
 /**
  * The studio's template tiles. Phones fill their column in the silver frame
@@ -32,21 +34,6 @@ import { stageOf, useOpenTemplate, useStudioActions } from './studio-context';
  */
 
 const ink = (dark: boolean) => (dark ? '#F4F4F5' : '#0B0B0C');
-const sub = (dark: boolean) => (dark ? 'rgba(244,244,245,0.6)' : '#5C5D63');
-
-export const Label = React.memo(function Label({
-  text,
-  color,
-}: {
-  text: string;
-  color: string;
-}) {
-  return (
-    <Text numberOfLines={1} style={[s.label, { color }]}>
-      {text}
-    </Text>
-  );
-});
 
 type TileProps = { template: MarketTemplate };
 
@@ -76,7 +63,11 @@ export const PhoneTile = React.memo(function PhoneTile({
           dark={dark && !onBlack}
         />
       </View>
-      <Label text={titleOf(template)} color={onBlack ? '#F4F4F5' : ink(dark)} />
+      <TileFoot
+        template={template}
+        tone={metaTone(dark || onBlack)}
+        width={PHONE_W}
+      />
     </PressableScale>
   );
 });
@@ -104,6 +95,7 @@ function Stage({
 }
 
 const LARGE_SHEET_W = SPAN2 - 20;
+const STRIP_W = SPAN2 - 16;
 const LARGE_PAGE_H = LARGE_SHEET_W / WEB_RATIO;
 
 /** 2 columns × a tall row: title on a pastel stage, the live site below. */
@@ -129,12 +121,13 @@ export const LargeSiteTile = React.memo(function LargeSiteTile({
     >
       <Stage seed={template.key} dark={dark} onBlack={onBlack} />
       <View style={s.largeHead}>
-        <Text numberOfLines={1} style={[s.eyebrow, { color: sub(dark) }]}>
-          {categoryOf(template) ?? 'Website'}
-        </Text>
-        <Text numberOfLines={2} style={[s.largeTitle, { color: ink(dark) }]}>
-          {titleOf(template)}
-        </Text>
+        <View style={s.largeTop}>
+          <Text numberOfLines={2} style={[s.largeTitle, { color: ink(dark) }]}>
+            {titleOf(template)}
+          </Text>
+          <Heart template={template} tone={metaTone(dark)} />
+        </View>
+        <Chips template={template} width={SPAN2 - 24} dark={dark} />
       </View>
       <View ref={ref} collapsable={false} style={s.largeSheet}>
         <BrowserFrame
@@ -172,7 +165,7 @@ export const SiteTile = React.memo(function SiteTile({
     >
       <Stage seed={template.key} dark={dark} />
       <View style={s.stripHead}>
-        <Label text={titleOf(template)} color={ink(dark)} />
+        <TileFoot template={template} tone={metaTone(dark)} width={STRIP_W} />
       </View>
       <View ref={ref} collapsable={false} style={s.stripSheet}>
         <BrowserFrame
@@ -211,7 +204,7 @@ export const SmallTile = React.memo(function SmallTile({
       >
         <Shot uri={thumbOf(template)} />
       </View>
-      <Label text={titleOf(template)} color={ink(dark)} />
+      <TileFoot template={template} tone={metaTone(dark)} width={COL_W} />
     </PressableScale>
   );
 });
@@ -244,12 +237,7 @@ export const WideTile = React.memo(function WideTile({
           silver={onBlack}
         />
       </View>
-      <View style={s.wideFoot}>
-        <Label text={titleOf(template)} color={ink(dark)} />
-        <Text style={[s.wideKind, { color: sub(dark) }]} numberOfLines={1}>
-          {categoryOf(template) ?? 'Website'}
-        </Text>
-      </View>
+      <TileFoot template={template} tone={metaTone(dark)} width={SPAN3} />
     </PressableScale>
   );
 });
@@ -262,24 +250,17 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.14)',
   },
   phone: { width: PHONE_W },
-  label: {
-    height: LABEL_H,
-    lineHeight: LABEL_H,
-    paddingHorizontal: 2,
-    fontFamily: F.sans600,
-    fontSize: 11.5,
-    letterSpacing: -0.1,
-  },
-  largeHead: { flex: 1, paddingHorizontal: 12, paddingTop: 12, gap: 3 },
-  eyebrow: { fontFamily: F.sans500, fontSize: 10.5, letterSpacing: 0.1 },
+  largeHead: { flex: 1, paddingHorizontal: 12, paddingTop: 12, gap: 8 },
+  largeTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   largeTitle: {
+    flex: 1,
     fontFamily: F.sans800,
     fontSize: 19,
     lineHeight: 22,
     letterSpacing: -0.5,
   },
   largeSheet: { marginHorizontal: 10, marginBottom: 10 },
-  stripHead: { paddingHorizontal: 8, paddingTop: 1 },
+  stripHead: { paddingHorizontal: 8 },
   stripSheet: { position: 'absolute', left: 10, right: 10, bottom: -6 },
   smallMedia: {
     borderRadius: RADIUS,
@@ -287,11 +268,4 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: CARD_EDGE_W,
   },
-  wideFoot: {
-    height: LABEL_H,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  wideKind: { fontFamily: F.sans500, fontSize: 11 },
 });
