@@ -1,12 +1,12 @@
 import { type AudioPlayer, createAudioPlayer } from 'expo-audio';
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { OrderListItem as OrderListItemType } from '@/api/orders';
 import { useAcceptOrder, useDeleteOrder, useOrderDetail, useOrders, useRejectOrder } from '@/api/orders';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsConfirmModal } from '../components';
@@ -151,7 +151,8 @@ export function OrdersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =>
   return (
     <View style={[st.root, { backgroundColor: colors.background }]}>
       <View style={[st.header, { paddingTop: 12 }]}>
-        <Pressable
+        <PressableScale
+          haptic="rigid"
           onPress={() => setNotifications((v) => !v)}
           style={[st.iconBtn, { backgroundColor: colors.sidebarActiveBg }]}
           hitSlop={8}
@@ -161,14 +162,14 @@ export function OrdersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =>
             size={18}
             color={notifications ? colors.success : colors.textPrimary}
           />
-        </Pressable>
-        <Pressable
+        </PressableScale>
+        <PressableScale
           onPress={openCreate}
           style={[st.createBtn, { backgroundColor: colors.accent }]}
         >
           <Ionicons name="add" size={16} color={colors.accentText} />
           <Text style={[st.createBtnText, { color: colors.accentText }]}>Create</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       <View style={{ paddingTop: 12 }}>

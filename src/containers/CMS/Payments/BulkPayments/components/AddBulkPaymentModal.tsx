@@ -1,11 +1,13 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { PaymentTransactionType } from '@/api/payments';
 import { searchEntities, useCreateBulkPayment, usePendingPaymentsForEntity } from '@/api/payments';
+import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../../components';
@@ -91,10 +93,12 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
   function handleSubmit() {
     setError('');
     if (!form.entity || !form.amount.trim() || !form.date.trim() || !form.type) {
+      haptic.error();
       setError('Enter all required details.');
       return;
     }
     if (markManually && selectedAmount < Number(form.amount)) {
+      haptic.error();
       setError('Invoices marked sums less than the payment received.');
       return;
     }
@@ -179,10 +183,10 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
                   </Text>
                 </View>
               ))}
-              <Pressable onPress={handlePickAttachment} style={[st.addAttachmentBtn, { borderColor: colors.border }]}>
+              <PressableScale onPress={handlePickAttachment} style={[st.addAttachmentBtn, { borderColor: colors.border }]}>
                 <Ionicons name="attach" size={15} color={colors.accent} />
                 <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '700' }}>Add</Text>
-              </Pressable>
+              </PressableScale>
             </View>
           </View>
 
@@ -208,7 +212,9 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
                 {pendingPayments.map((p) => {
                   const checked = selectedIds.includes(p.id);
                   return (
-                    <Pressable
+                    <PressableScale
+                      haptic="rigid"
+                      scaleTo={0.98}
                       key={p.id}
                       onPress={() => toggleMark(p.id, p.amount)}
                       style={[st.pendingRow, { borderColor: colors.border }]}
@@ -226,7 +232,7 @@ export const AddBulkPaymentModal = React.forwardRef<BottomSheetModal, Props>(({ 
                         size={20}
                         color={checked ? colors.accent : colors.textSecondary}
                       />
-                    </Pressable>
+                    </PressableScale>
                   );
                 })}
                 <Text style={[st.hint, { color: colors.textSecondary, marginTop: 8 }]}>

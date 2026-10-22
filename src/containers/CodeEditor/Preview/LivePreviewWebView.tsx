@@ -1,15 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import type WebViewType from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
 
+import { PressableScale } from '@/components/ui';
 import type { AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -231,12 +226,12 @@ export function LivePreviewWebView({
           >
             Check your connection and try again.
           </Text>
-          <TouchableOpacity
+          <PressableScale
             onPress={() => setReloadKey((k) => k + 1)}
             style={[st.retryBtn, { backgroundColor: colors.accent }]}
           >
             <Text style={st.retryText}>Retry</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       )}
 
@@ -261,12 +256,12 @@ export function LivePreviewWebView({
           >
             {previewError}
           </Text>
-          <TouchableOpacity
+          <PressableScale
             onPress={handleAskAiToFix}
             style={[st.fixBtn, { backgroundColor: colors.accent }]}
           >
             <Text style={st.fixBtnText}>Ask AI to fix</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       ) : null}
     </View>

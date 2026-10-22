@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { BookingFilters, BookingListItem } from '@/api/bookings';
 import { useBookings, useDoctors } from '@/api/bookings';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsSelect } from '../components';
@@ -110,7 +110,7 @@ export function BookingsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
           value={search}
           onChangeText={setSearch}
           placeholder="Search patient, phone or doctor…"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={colors.textMuted}
           style={[st.searchInput, { color: colors.textPrimary }]}
         />
       </View>
@@ -119,7 +119,8 @@ export function BookingsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
         {TIME_FILTERS.map((f) => {
           const active = timeFilter === f.value;
           return (
-            <Pressable
+            <PressableScale
+              haptic={active ? true : 'select'}
               key={f.value}
               onPress={() => setTimeFilter(f.value)}
               style={[
@@ -131,15 +132,16 @@ export function BookingsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
               <Text style={{ color: active ? colors.accentText : colors.textPrimary, fontSize: 12.5, fontWeight: '700' }}>
                 {f.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
-        <Pressable
+        <PressableScale
+          haptic="rigid"
           onPress={() => setView(view === 'list' ? 'calendar' : 'list')}
           style={[st.viewToggleBtn, { borderColor: colors.border }]}
         >
           <Ionicons name={view === 'list' ? 'calendar-outline' : 'list-outline'} size={16} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       <View style={st.selectRow}>

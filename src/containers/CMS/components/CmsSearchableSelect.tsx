@@ -3,13 +3,12 @@ import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import type { CmsThemeColors } from '../theme';
@@ -67,13 +66,15 @@ export function CmsSearchableSelect({
         {label}
         {required ? <Text style={{ color: colors.danger }}> *</Text> : null}
       </Text>
-      <Pressable
+      <PressableScale
+        scaleTo={0.98}
         onPress={modal.present}
         disabled={disabled}
+        disabledOpacity={0.6}
         style={[
           st.field,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.inputBg,
             borderColor: error ? colors.danger : colors.border,
             opacity: disabled ? 0.6 : 1,
           },
@@ -82,14 +83,14 @@ export function CmsSearchableSelect({
         <Text
           style={[
             st.value,
-            { color: displayLabel ? colors.textPrimary : colors.textSecondary },
+            { color: displayLabel ? colors.textPrimary : colors.textMuted },
           ]}
           numberOfLines={1}
         >
           {displayLabel ?? placeholder}
         </Text>
         <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
-      </Pressable>
+      </PressableScale>
       {error ? (
         <Text style={[st.error, { color: colors.danger }]}>{error}</Text>
       ) : null}
@@ -177,7 +178,8 @@ const CmsSearchableSelectSheet = React.forwardRef<
             keyExtractor={(item) => `cms-search-select-${item.value}`}
             keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
-              <Pressable
+              <PressableScale
+                scaleTo={0.98}
                 onPress={() => choose(item)}
                 style={[st.option, { borderColor: colors.border }]}
               >
@@ -187,7 +189,7 @@ const CmsSearchableSelectSheet = React.forwardRef<
                 {item.value === value ? (
                   <Ionicons name="checkmark" size={18} color={colors.accent} />
                 ) : null}
-              </Pressable>
+              </PressableScale>
             )}
             ListEmptyComponent={
               <Text style={[st.empty, { color: colors.textSecondary }]}>

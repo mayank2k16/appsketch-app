@@ -1,11 +1,11 @@
-import * as Haptics from 'expo-haptics';
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { Conversation, ConversationStatus, InboxEvent } from '@/api/support';
 import { fetchConversations, supportInboxSocketUrl } from '@/api/support';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsModal } from '../../components';
@@ -75,7 +75,7 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
         const isCustomerMsg = evt.event === 'message' && evt.sender_type === 'CUSTOMER';
         const isNewConvo = evt.event === 'new_conversation';
         if ((isCustomerMsg && evt.conversation_id !== activeIdRef.current) || isNewConvo) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          haptic.success();
         }
         loadConversations();
       };
@@ -140,13 +140,13 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
             value={search}
             onChangeText={setSearch}
             placeholder="Search name / phone / order…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
           />
         </View>
-        <Pressable onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
+        <PressableScale onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
           <Ionicons name="filter-outline" size={18} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       {listLoading ? (
@@ -164,7 +164,8 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
           {STATUS_OPTIONS.map((opt) => {
             const checked = statusFilter === opt.value;
             return (
-              <Pressable
+              <PressableScale
+                haptic={checked ? true : 'select'}
                 key={opt.value}
                 onPress={() => {
                   setStatusFilter(opt.value);
@@ -174,7 +175,7 @@ export function ConversationsList({ colors, activeId, onSelect }: Props) {
               >
                 <Text style={{ color: colors.textPrimary, fontSize: 14, flex: 1 }}>{opt.label}</Text>
                 {checked ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>

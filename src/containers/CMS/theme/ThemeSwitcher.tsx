@@ -1,9 +1,10 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetSectionList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import { useModal } from '@/components/ui/modal';
 
 import { CmsModal } from '../components';
@@ -21,14 +22,14 @@ export function ThemeSwitcherButton() {
 
   return (
     <>
-      <Pressable
+      <PressableScale
         onPress={modal.present}
         style={[st.trigger, { backgroundColor: colors.sidebarActiveBg }]}
         hitSlop={8}
         accessibilityLabel="Change CMS theme"
       >
         <Ionicons name="color-palette-outline" size={18} color={colors.sidebarText} />
-      </Pressable>
+      </PressableScale>
       <ThemeSwitcherSheet ref={modal.ref} onSelect={modal.dismiss} />
     </>
   );
@@ -72,7 +73,13 @@ const ThemeSwitcherSheet = React.forwardRef<BottomSheetModal, { onSelect: () => 
           keyExtractor={(name) => name}
           contentContainerStyle={st.sheet}
           renderSectionHeader={({ section }) => (
-            <Text style={[st.sectionHeader, { color: colors.textSecondary, backgroundColor: colors.background }]}>
+            <Text
+              style={[
+                st.sectionHeader,
+                // Sticky header matches the sheet: raised white in light (see CmsModal).
+                { color: colors.textSecondary, backgroundColor: colors.kind === 'light' ? colors.surface : colors.background },
+              ]}
+            >
               {section.title}
             </Text>
           )}
@@ -83,7 +90,9 @@ const ThemeSwitcherSheet = React.forwardRef<BottomSheetModal, { onSelect: () => 
             const preview = colors.kind === 'dark' ? meta.dark : meta.light;
             const selected = name === themeName;
             return (
-              <Pressable
+              <PressableScale
+                haptic={selected ? true : 'select'}
+                scaleTo={0.98}
                 onPress={() => choose(name)}
                 style={[st.row, { borderColor: colors.border }]}
               >
@@ -91,12 +100,12 @@ const ThemeSwitcherSheet = React.forwardRef<BottomSheetModal, { onSelect: () => 
                   <View style={[st.swatch, { backgroundColor: preview.sidebarBg }]} />
                   <View style={[st.swatch, { backgroundColor: preview.accent }]} />
                   <View
-                    style={[st.swatch, { backgroundColor: preview.surface, borderWidth: 1, borderColor: '#00000022' }]}
+                    style={[st.swatch, { backgroundColor: preview.surface, borderWidth: 1, borderColor: colors.kind === 'light' ? colors.border : '#00000022' }]}
                   />
                 </View>
                 <Text style={[st.label, { color: colors.textPrimary }]}>{meta.label}</Text>
                 {selected && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
-              </Pressable>
+              </PressableScale>
             );
           }}
         />

@@ -9,7 +9,7 @@ import { cmsType } from '../../../theme/cms-typography';
 /** Read-only — system variables are platform-provided, not editable here. */
 export function SystemVariableChip({ variable, colors }: { variable: SystemVariable; colors: CmsThemeColors }) {
   return (
-    <View style={[st.chip, { backgroundColor: colors.background, borderColor: colors.border }]}>
+    <View style={[st.chip, { backgroundColor: colors.inset, borderColor: colors.border }]}>
       <Text style={[st.name, { color: colors.accent }]}>{`{{${variable.name}}}`}</Text>
       <Text style={[st.label, { color: colors.textSecondary }]} numberOfLines={1}>
         {variable.label}

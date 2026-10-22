@@ -4,13 +4,13 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Image,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import type { TenantSummary } from '@/api/studio';
+import { PressableScale } from '@/components/ui';
 import { useCoderTheme } from '@/lib/theme';
 
 import { STUDIO_ACCENT } from '../../StudioScreen';
@@ -54,6 +54,9 @@ export function StoreCard({
 }) {
   const { colorScheme } = useColorScheme();
   const t = useCoderTheme(colorScheme);
+  // White: no brand tint on the card — the store glyph is ink and the link
+  // line is secondary ink. Dark keeps the ramp accent.
+  const accent = colorScheme === 'dark' ? STUDIO_ACCENT : t.textSub;
 
   const handlers = {
     store: onViewStore,
@@ -89,7 +92,7 @@ export function StoreCard({
               resizeMode="cover"
             />
           ) : (
-            <Ionicons name="storefront-outline" size={22} color={STUDIO_ACCENT} />
+            <Ionicons name="storefront-outline" size={22} color={accent} />
           )}
         </View>
 
@@ -99,7 +102,7 @@ export function StoreCard({
           </Text>
           {!!tenant.website_url && (
             <Text
-              style={[st.subtitle, { color: STUDIO_ACCENT }]}
+              style={[st.subtitle, { color: accent }]}
               numberOfLines={1}
             >
               {tenant.website_url}
@@ -121,11 +124,12 @@ export function StoreCard({
           const busy = loading && busyKeys.has(action.key);
           const linkColor = t.text;
           return (
-            <Pressable
+            <PressableScale
               key={action.key}
               style={st.actionSlot}
               onPress={handlers[action.key]}
               disabled={busyKeys.has(action.key) && loading}
+              disabledOpacity={1}
             >
               <View style={[st.actionBtn, { borderColor: t.studioCardBorder }]}>
                 {busy ? (
@@ -144,7 +148,7 @@ export function StoreCard({
                   </>
                 )}
               </View>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>

@@ -4,7 +4,6 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StatusBar,
   StyleSheet,
   Text,
@@ -15,9 +14,19 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useConversations, useStartConversation } from '@/api/support';
 import type { Conversation } from '@/api/support';
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { useAppTheme, type AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
+
+/** White: icon wells are INSET and unread badges are ink, so orange stays on
+ *  the one key action (New Conversation). Dark returns its original values. */
+function supportMarks(t: AppColors) {
+  const dark = t.statusBar === 'light-content';
+  return dark
+    ? { wellBg: t.accentSoft, mark: t.accent, badge: t.accent }
+    : { wellBg: '#F4F4F2', mark: t.text, badge: t.text };
+}
 
 function timeAgo(iso?: string | null): string {
   if (!iso) return '';
@@ -41,16 +50,18 @@ function ConversationRow({
 }) {
   const unread = conv.customer_unread ?? 0;
   const closed = conv.status === 'CLOSED';
+  const m = supportMarks(t);
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      scaleTo={0.98}
       style={[st.row, { backgroundColor: t.surface, borderColor: t.border }]}
     >
-      <View style={[st.rowIcon, { backgroundColor: t.accentSoft }]}>
+      <View style={[st.rowIcon, { backgroundColor: m.wellBg }]}>
         <Ionicons
           name={closed ? 'checkmark-done' : 'chatbubble-ellipses'}
           size={19}
-          color={closed ? t.textMuted : t.accent}
+          color={closed ? t.textMuted : m.mark}
         />
       </View>
       <View style={{ flex: 1 }}>
@@ -65,14 +76,14 @@ function ConversationRow({
             {conv.last_message_preview || (closed ? 'Conversation closed' : 'Tap to chat')}
           </Text>
           {unread > 0 ? (
-            <View style={[st.badge, { backgroundColor: t.accent }]}>
+            <View style={[st.badge, { backgroundColor: m.badge }]}>
               <Text style={st.badgeTxt}>{unread > 9 ? '9+' : unread}</Text>
             </View>
           ) : null}
         </View>
       </View>
       <Ionicons name="chevron-forward" size={16} color={t.textMuted} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -84,6 +95,7 @@ export function SupportListScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const marks = supportMarks(t);
 
   const { data: conversations, isLoading, refetch } = useConversations();
   const startMut = useStartConversation();
@@ -117,12 +129,12 @@ export function SupportListScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.headerBtn} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </Pressable>
+        </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>Help &amp; Support</Text>
         {totalUnread > 0 ? (
-          <View style={[st.headerBadge, { backgroundColor: t.accent }]}>
+          <View style={[st.headerBadge, { backgroundColor: marks.badge }]}>
             <Text style={st.headerBadgeTxt}>{totalUnread > 99 ? '99+' : totalUnread}</Text>
           </View>
         ) : (
@@ -152,10 +164,11 @@ export function SupportListScreen() {
         />
       )}
 
-      <Pressable
+      <PressableScale
         onPress={handleNewConversation}
         disabled={startMut.isPending}
-        style={[st.fab, { bottom: insets.bottom + 20, backgroundColor: t.accent, opacity: startMut.isPending ? 0.7 : 1 }]}
+        disabledOpacity={0.7}
+        style={[st.fab, { bottom: insets.bottom + 20, backgroundColor: t.accent }]}
       >
         {startMut.isPending ? (
           <ActivityIndicator color="#FFFFFF" size="small" />
@@ -163,7 +176,7 @@ export function SupportListScreen() {
           <Ionicons name="add" size={20} color="#FFFFFF" />
         )}
         <Text style={st.fabTxt}>New Conversation</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

@@ -16,7 +16,10 @@ export type ConfirmModalProps = {
   onConfirm: () => void;
 };
 
-export const ConfirmModal = React.forwardRef<BottomSheetModal, ConfirmModalProps>(
+export const ConfirmModal = React.forwardRef<
+  BottomSheetModal,
+  ConfirmModalProps
+>(
   (
     {
       title,
@@ -37,7 +40,7 @@ export const ConfirmModal = React.forwardRef<BottomSheetModal, ConfirmModalProps
       <Modal ref={ref} snapPoints={['35%']} title={title}>
         <View className="gap-4 px-4 pb-6">
           {description ? (
-            <Text className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <Text className="text-center text-sm text-[#5C5D63] dark:text-neutral-400">
               {description}
             </Text>
           ) : null}

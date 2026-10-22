@@ -1,8 +1,16 @@
 import { useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import * as React from 'react';
+import LottieView from 'lottie-react-native';
 import { useColorScheme } from 'nativewind';
-import { Dimensions, Pressable, StatusBar, StyleSheet } from 'react-native';
+import * as React from 'react';
+import {
+  Dimensions,
+  Image,
+  Platform,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+} from 'react-native';
 import ReAnimated, {
   Easing,
   useAnimatedStyle,
@@ -10,17 +18,61 @@ import ReAnimated, {
   withDelay,
   withRepeat,
   withSequence,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Polygon } from 'react-native-svg';
 
-import { hydrateAuth, useAuth } from '@/hooks/useAuth';
 import { GradientText } from '@/components/ui/GradientText';
+import { hydrateAuth, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { haptic, type HapticKind } from '@/lib/haptics';
 
 const { width, height } = Dimensions.get('window');
 
 const HOLD_MS = 2600;
+
+// White splash: assets/lottie/splash-white.json (made by
+// scripts/make-splash-lottie.py, 100 frames at 30fps). The app moves on when
+// it finishes; the timer is only a safety net if it never reports.
+const WHITE_SPLASH = require('../../assets/lottie/splash-white.json');
+/** The app's own gradient icon, which the orange drop resolves into. */
+const SPLASH_ICON = require('../../assets/splash-mark.png');
+const WHITE_FALLBACK_MS = 4600;
+/** Haptics on the beats (30fps Lottie): the drop lands (f10), the flood
+ *  starts (f17) and fills (f34), the flood collapses to a point (f52), the
+ *  icon springs in, and the wordmark rises. */
+const SPLASH_HAPTICS = [
+  [333, 'press'],
+  [560, 'soft'],
+  [1130, 'soft'],
+  [1720, 'rigid'],
+  [1900, 'tap'],
+  [2450, 'success'],
+] as const;
+/** Dark: a soft touch as the wordmark surfaces, a crisp one as it lands. */
+const DARK_HAPTICS = [
+  [120, 'soft'],
+  [1000, 'success'],
+] as const;
+
+/** Plays a haptic sequence once `active` turns true; cancelled on unmount. */
+function useHapticSequence(
+  steps: readonly (readonly [number, HapticKind])[],
+  active: boolean
+) {
+  React.useEffect(
+    () => (active ? haptic.sequence(steps) : undefined),
+    [steps, active]
+  );
+}
+// The Lottie is 360x640 and drawn with resizeMode="cover", so it scales by
+// height; its tile centre sits at y=300 of 640.
+const LOTTIE_SCALE = Math.max(width / 360, height / 640);
+const TILE_CENTRE_Y = height / 2 + (300 - 320) * LOTTIE_SCALE;
+const ICON = Math.round(112 * LOTTIE_SCALE);
+/** The icon appears the frame the orange point vanishes (f52 ≈ 1.73s). */
+const ICON_DELAY = 1720;
 
 // Dark is the original splash, unchanged. White is the default theme: the
 // same honeycomb as a hairline on the warm canvas, the wordmark in ink.
@@ -146,11 +198,165 @@ function InitLoader({ color }: { color: string }) {
 // ─────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────
-export default function BrandSplashScreen() {
+/** Leaves the splash once: to /home when signed in, else /login. */
+function useSplashExit() {
   const router = useRouter();
   const navigated = React.useRef(false);
+  return React.useCallback(() => {
+    if (navigated.current) return;
+    navigated.current = true;
+    const authStatus = useAuth.getState().status;
+    const isLoggedOut = authStatus === 'guest' || authStatus === 'signOut';
+    router.replace(isLoggedOut ? '/login' : '/home');
+  }, [router]);
+}
+
+/**
+ * Hides the native launch screen and reports when it is gone. The Lottie
+ * mounts only after that: the launch screen covers the first seconds of a
+ * cold start, and an animation (and its timers) started underneath it played
+ * unseen, then exited the moment it showed.
+ */
+function useNativeSplashGone() {
+  const [shown, setShown] = React.useState(false);
+
+  React.useEffect(() => {
+    hydrateAuth();
+    let alive = true;
+    const reveal = () => {
+      if (alive) setShown(true);
+    };
+    // A hide asked for before the native root view has attached its launch
+    // screen is lost, so ask again shortly after; extra calls are no-ops.
+    const hide = () => SplashScreen.hideAsync().catch(() => {});
+    hide().then(reveal);
+    const retries = [120, 400, 900].map((ms) => setTimeout(hide, ms));
+    // Never wait on the native splash for longer than this.
+    const safety = setTimeout(reveal, 1500);
+    return () => {
+      alive = false;
+      clearTimeout(safety);
+      retries.forEach(clearTimeout);
+    };
+  }, []);
+
+  return shown;
+}
+
+/** The white splash's timeline once it is visible: the wordmark rises as the
+ *  logo finishes, the haptics follow the Lottie, and a fallback exit. */
+function useWhiteIntro(shown: boolean, doExit: () => void) {
+  const wordOp = useSharedValue(0);
+  const wordY = useSharedValue(14);
+  const icon = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (!shown) return;
+    // The icon blooms out of the point the flood collapsed into.
+    icon.value = withDelay(
+      ICON_DELAY,
+      withSpring(1, { damping: 14, stiffness: 170, mass: 0.8 })
+    );
+    // The wordmark rises once the icon has landed.
+    const ease = { duration: 700, easing: Easing.out(Easing.cubic) };
+    wordOp.value = withDelay(2100, withTiming(1, ease));
+    wordY.value = withDelay(2100, withTiming(0, ease));
+    // Started synchronously, so it can never read a zero start time.
+    const t = setTimeout(doExit, WHITE_FALLBACK_MS);
+    return () => clearTimeout(t);
+  }, [shown, doExit, wordOp, wordY, icon]);
+  useHapticSequence(SPLASH_HAPTICS, shown);
+
+  const wordStyle = useAnimatedStyle(() => ({
+    opacity: wordOp.value,
+    transform: [{ translateY: wordY.value }],
+  }));
+  const iconStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(1, icon.value * 2),
+    transform: [{ scale: 0.4 + 0.6 * icon.value }],
+  }));
+
+  return { wordStyle, iconStyle };
+}
+
+/**
+ * White theme (the default): the orange Lottie — a dot drops, floods the
+ * screen, springs back into the AppSketch tile and the logo draws itself —
+ * then the wordmark rises beneath the tile.
+ */
+function WhiteSplash() {
+  const doExit = useSplashExit();
+  const shown = useNativeSplashGone();
+  const { wordStyle, iconStyle } = useWhiteIntro(shown, doExit);
+
+  return (
+    <Pressable
+      style={[styles.screen, { backgroundColor: SPLASH.light.bg }]}
+      onPress={doExit}
+      accessibilityLabel="Skip intro"
+    >
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content"
+      />
+      {shown && (
+        <LottieView
+          source={WHITE_SPLASH}
+          autoPlay
+          loop={false}
+          resizeMode="cover"
+          // The main-thread engine draws the size-morphing tile reliably;
+          // Core Animation can drop huge animated shapes on device.
+          renderMode={Platform.OS === 'ios' ? 'SOFTWARE' : 'AUTOMATIC'}
+          // iOS reports a cancelled finish when autoPlay restarts the
+          // animation as props settle; only a real finish leaves.
+          onAnimationFinish={(cancelled) => {
+            if (!cancelled) setTimeout(doExit, 450);
+          }}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
+      <ReAnimated.View
+        pointerEvents="none"
+        style={[
+          styles.whiteIcon,
+          { top: TILE_CENTRE_Y - ICON / 2, left: (width - ICON) / 2 },
+          iconStyle,
+        ]}
+      >
+        <Image source={SPLASH_ICON} style={styles.whiteIconImg} />
+      </ReAnimated.View>
+      <ReAnimated.View
+        pointerEvents="none"
+        style={[
+          styles.whiteWord,
+          { top: TILE_CENTRE_Y + ICON / 2 + 22 },
+          wordStyle,
+        ]}
+      >
+        <GradientText
+          style={styles.wordmark}
+          colors={[...SPLASH.light.word]}
+          locations={[0, 0.52, 1]}
+        >
+          appsketch.ai
+        </GradientText>
+      </ReAnimated.View>
+    </Pressable>
+  );
+}
+
+export default function BrandSplashScreen() {
   const { colorScheme } = useColorScheme();
-  const c: SplashColors = SPLASH[colorScheme === 'dark' ? 'dark' : 'light'];
+  return colorScheme === 'dark' ? <DarkSplash /> : <WhiteSplash />;
+}
+
+/** The original splash, unchanged: honeycomb and the white wordmark. */
+function DarkSplash() {
+  const router = useRouter();
+  const navigated = React.useRef(false);
+  const c: SplashColors = SPLASH.dark;
 
   // Wordmark rises out of the screen: starts slightly back (scaled down,
   // invisible) and drifts forward into full size/opacity, as if the honeycomb
@@ -162,12 +368,19 @@ export default function BrandSplashScreen() {
     hydrateAuth();
     SplashScreen.hideAsync().catch(() => {});
 
-    wordOp.value = withTiming(1, { duration: 1100, easing: Easing.out(Easing.cubic) });
-    wordScale.value = withTiming(1, { duration: 1100, easing: Easing.out(Easing.exp) });
+    wordOp.value = withTiming(1, {
+      duration: 1100,
+      easing: Easing.out(Easing.cubic),
+    });
+    wordScale.value = withTiming(1, {
+      duration: 1100,
+      easing: Easing.out(Easing.exp),
+    });
 
     const t = setTimeout(doExit, HOLD_MS);
     return () => clearTimeout(t);
   }, []);
+  useHapticSequence(DARK_HAPTICS, true);
 
   const wordStyle = useAnimatedStyle(() => ({
     opacity: wordOp.value,
@@ -188,15 +401,14 @@ export default function BrandSplashScreen() {
       style={[styles.screen, { backgroundColor: c.bg }]}
       onPress={doExit}
     >
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle={c.bar}
-      />
+      <StatusBar translucent backgroundColor="transparent" barStyle={c.bar} />
 
       <HoneycombField stroke={c.hex} />
 
-      <ReAnimated.View style={[styles.brandBlock, wordStyle]} pointerEvents="none">
+      <ReAnimated.View
+        style={[styles.brandBlock, wordStyle]}
+        pointerEvents="none"
+      >
         <GradientText
           style={styles.wordmark}
           colors={[...c.word]}
@@ -214,6 +426,15 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     overflow: 'hidden',
+  },
+
+  whiteIcon: { position: 'absolute', width: ICON, height: ICON },
+  whiteIconImg: { width: '100%', height: '100%', resizeMode: 'contain' },
+  whiteWord: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
 
   brandBlock: {

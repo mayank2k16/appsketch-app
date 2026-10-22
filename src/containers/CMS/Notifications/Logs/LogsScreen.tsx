@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { NotificationLog, NotificationLogStatus } from '@/api/notifications';
 import { useNotificationLogs } from '@/api/notifications';
 
@@ -34,7 +35,8 @@ export function LogsScreen() {
         renderItem={({ item }) => {
           const active = item.value === statusFilter;
           return (
-            <Pressable
+            <PressableScale
+              haptic={active ? true : 'select'}
               onPress={() => setStatusFilter(item.value)}
               style={[
                 st.chip,
@@ -45,7 +47,7 @@ export function LogsScreen() {
               <Text style={[st.chipLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
                 {item.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         }}
       />

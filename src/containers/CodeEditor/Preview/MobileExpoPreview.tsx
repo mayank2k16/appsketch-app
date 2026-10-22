@@ -10,13 +10,14 @@ import {
   Share,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { previewUrlForTenant } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import { useOpenGuestApp } from '@/lib/guest-app';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -57,23 +58,29 @@ function ShareActions({ link, colors }: { link: string; colors: AppColors }) {
   }
   return (
     <View style={st.row}>
-      <TouchableOpacity
+      <PressableScale
         onPress={share}
         style={[st.btn, { backgroundColor: '#f2600c' }]}
       >
         <Ionicons name="share-social-outline" size={15} color="#FFFFFF" />
         <Text style={st.btnLabel}>Share</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+      </PressableScale>
+      <PressableScale
         onPress={copy}
         style={[st.btn, st.btnGhost, { borderColor: colors.codeEditorBorder }]}
       >
         <Ionicons name="copy-outline" size={15} color={colors.text} />
         <Text style={[st.btnLabel, { color: colors.text }]}>Copy link</Text>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }
+
+/** Dark keeps its scrim; white dims lightly, ink-tinted rather than black. */
+const scrimFor = (colors: AppColors) =>
+  colors.statusBar === 'light-content'
+    ? 'rgba(0,0,0,0.55)'
+    : 'rgba(11,11,12,0.28)';
 
 /** The small share button's sheet: QR for another phone + the system share. */
 function ShareSheet({
@@ -89,12 +96,17 @@ function ShareSheet({
 }) {
   return (
     <Modal
+      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={st.scrim} onPress={onClose}>
+      <Pressable
+        onPressIn={haptic.tap}
+        style={[st.scrim, { backgroundColor: scrimFor(colors) }]}
+        onPress={onClose}
+      >
         <Pressable
           style={[
             st.sheet,
@@ -107,7 +119,7 @@ function ShareSheet({
           <Text style={[st.sheetTitle, { color: colors.text }]}>
             Share your app
           </Text>
-          <View style={st.qrBox}>
+          <View style={[st.qrBox, { borderColor: colors.codeEditorBorder }]}>
             <QRCode
               value={link}
               size={176}
@@ -135,13 +147,13 @@ function ShareIcon({
   colors: AppColors;
 }) {
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
       accessibilityLabel="Share app"
       style={[st.shareIcon, { borderColor: colors.codeEditorBorder }]}
     >
       <Ionicons name="qr-code-outline" size={18} color={colors.text} />
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -232,21 +244,17 @@ export function MobileExpoPreview({
         colors={colors}
       />
 
-      <TouchableOpacity
+      <PressableScale
+        haptic="press"
         onPress={handleOpen}
         disabled={!runLink || guest.opening}
-        style={[
-          st.btn,
-          st.btnWide,
-          { backgroundColor: '#f2600c' },
-          (!runLink || guest.opening) && st.disabled,
-        ]}
+        style={[st.btn, st.btnWide, { backgroundColor: '#f2600c' }]}
       >
         <Ionicons name="play" size={15} color="#FFFFFF" />
         <Text style={st.btnLabel}>
           {guest.supported ? 'Open app' : 'Open in Expo Go'}
         </Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       {shareLink ? (
         <ShareSheet
@@ -308,10 +316,8 @@ const st = StyleSheet.create({
   btnWide: { minWidth: 180 },
   btnGhost: { borderWidth: 1 },
   btnLabel: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  disabled: { opacity: 0.5 },
   scrim: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -325,7 +331,12 @@ const st = StyleSheet.create({
     alignItems: 'center',
   },
   sheetTitle: { fontSize: 16, fontWeight: '700', marginBottom: 14 },
-  qrBox: { padding: 12, borderRadius: 14, backgroundColor: '#FFFFFF' },
+  qrBox: {
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
+  },
   sheetHint: {
     fontSize: 12.5,
     textAlign: 'center',

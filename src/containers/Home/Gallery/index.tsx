@@ -133,6 +133,10 @@ function MarqueeColumn({
                 borderRadius: IMG_RADIUS,
                 overflow: 'hidden',
                 backgroundColor: t.agentTabBg,
+                // White: images get the hairline instead of depth.
+                ...(t.statusBar === 'dark-content'
+                  ? { borderWidth: 1, borderColor: t.border }
+                  : null),
               }}
             >
               <ExpoImage
@@ -178,10 +182,26 @@ function CenterContent({ t }: { t: HomeColors }) {
   );
 }
 
+/** The "Trusted by" row. Exported because Home now ends its template reel
+ *  with it — the reel replaced this section's own masonry on Home. */
+export function TrustedBand({ t }: { t: HomeColors }) {
+  return (
+    <View style={[s.trustedBand, { borderTopColor: t.border }]}>
+      <Text style={[s.trustedLabel, { color: t.textMuted }]}>Trusted by</Text>
+      {TRUSTED_BY.map((name) => (
+        <Text key={name} style={[s.trustedName, { color: t.textSub }]}>
+          {name}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 // ─── GallerySection ─────────────────────────────────────────────────────────────
 export function GallerySection() {
   const { colorScheme } = useColorScheme();
-  const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const t = homeTheme[isDark ? 'dark' : 'light'];
 
   // 40:58 — full-bleed width, height derived from it (1.45× the width). Was
   // `min(H * 0.7, 560)`, which tracked screen height; deriving from width
@@ -221,12 +241,21 @@ export function GallerySection() {
             so it spans roughly 27–73%. The scrim is solid across 26–74% to
             cover exactly that, ramps out either side, and is fully clear by
             10% / 90%, leaving the top and bottom of the masonry undimmed. */}
-        <LinearGradient
-          colors={t.galleryOverlayGradient as [string, string, ...string[]]}
-          locations={[0, 0.1, 0.26, 0.74, 0.9, 1]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
+        {/* White: no fades — the text band is a solid paper strip with hard
+            edges over 26–74%, the masonry above and below it undimmed. */}
+        {isDark ? (
+          <LinearGradient
+            colors={t.galleryOverlayGradient as [string, string, ...string[]]}
+            locations={[0, 0.1, 0.26, 0.74, 0.9, 1]}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+        ) : (
+          <View
+            pointerEvents="none"
+            style={[s.paperBand, { backgroundColor: t.galleryOverlay }]}
+          />
+        )}
 
         <View style={[StyleSheet.absoluteFill, s.centerWrap, { pointerEvents: 'box-none' }]}>
           <CenterContent t={t} />
@@ -234,20 +263,20 @@ export function GallerySection() {
       </View>
 
       {/* ── Trusted-by band (separate, below the grid, with a divider) ── */}
-      <View style={[s.trustedBand, { borderTopColor: t.border }]}>
-        <Text style={[s.trustedLabel, { color: t.textMuted }]}>Trusted by</Text>
-        {TRUSTED_BY.map((name) => (
-          <Text key={name} style={[s.trustedName, { color: t.textSub }]}>
-            {name}
-          </Text>
-        ))}
-      </View>
+      <TrustedBand t={t} />
     </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
+  paperBand: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '26%',
+    bottom: '26%',
+  },
   section: {
     width: W,
   },

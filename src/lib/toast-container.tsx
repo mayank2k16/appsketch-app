@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { haptic } from '@/lib/haptics';
 import { type AppColors, brandGradient, useAppTheme } from '@/lib/theme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -31,6 +32,10 @@ export interface ToastOptions {
 // Toasts fly in from just off the top-right corner, which is where the eye
 // already is after a tap in the header — and, unlike the old bottom slide, it
 // never collides with the composer or the floating tab bar.
+// Swiping a toast away lands softly (the toast's own haptic fired from
+// `toast.*` when it appeared).
+const swipedAway = () => haptic.soft();
+
 const ENTER_X = 56;
 const ENTER_Y = -28;
 
@@ -90,10 +95,12 @@ interface ToastItem extends ToastOptions {
 function ToastCard({
   item,
   t,
+  dark,
   onDone,
 }: {
   item: ToastItem;
   t: AppColors;
+  dark: boolean;
   onDone: (id: number) => void;
 }) {
   const duration = item.duration ?? 3500;
@@ -157,6 +164,7 @@ function ToastCard({
         Math.abs(e.translationX) > SWIPE_DISMISS_THRESHOLD ||
         Math.abs(e.velocityX) > 800;
       if (past) {
+        runOnJS(swipedAway)();
         runOnJS(dismiss)(e.translationX >= 0 ? 1 : -1);
       } else {
         translateX.value = withSpring(0, { damping: 20, stiffness: 260 });
@@ -177,17 +185,25 @@ function ToastCard({
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={[styles.shadow, animatedStyle]}>
-        <View style={styles.ring}>
-          {/* The brand ramp as a 1px border: gradient behind, OPAQUE card on top.
-            `toastBg` is a solid hex on both schemes — a translucent fill here
-            would let the ramp through and turn the whole toast into a slab. */}
-          <LinearGradient
-            colors={brandGradient()}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
+      <Animated.View
+        style={[styles.shadow, !dark && styles.flat, animatedStyle]}
+      >
+        <View
+          style={[styles.ring, !dark && { backgroundColor: t.toastBorder }]}
+        >
+          {/* Dark: the brand ramp as a 1px border — gradient behind, OPAQUE
+            card on top. `toastBg` is a solid hex on both schemes, a translucent
+            fill here would let the ramp through and turn the toast into a slab.
+            White: an ink pill on paper, flat — no ramp, no shadow
+            (docs/white-theme.md). */}
+          {dark ? (
+            <LinearGradient
+              colors={brandGradient()}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          ) : null}
           <View style={[styles.card, { backgroundColor: t.toastBg }]}>
             <Ionicons name={iconFor(item.type)} size={20} color={accent} />
             <View style={styles.textWrap}>
@@ -245,7 +261,13 @@ export function ToastContainer() {
       pointerEvents="box-none"
     >
       {items.map((item) => (
-        <ToastCard key={item.id} item={item} t={t} onDone={remove} />
+        <ToastCard
+          key={item.id}
+          item={item}
+          t={t}
+          dark={colorScheme === 'dark'}
+          onDone={remove}
+        />
       ))}
     </View>
   );
@@ -274,6 +296,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 14,
     elevation: 10,
+  },
+  // White: no shadows (docs/white-theme.md).
+  flat: {
+    shadowOpacity: 0,
+    elevation: 0,
   },
   ring: {
     borderRadius: 12,

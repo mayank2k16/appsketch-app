@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { CustomVariable } from '@/api/notifications';
 
 import { CmsStatusBadge } from '../../../components';
@@ -52,12 +53,12 @@ export const CustomVariableRow = React.memo(function CustomVariableRow({
       </View>
 
       <View style={st.actions}>
-        <Pressable onPress={onEdit} style={st.actionBtn} hitSlop={8}>
+        <PressableScale onPress={onEdit} style={st.actionBtn} hitSlop={8}>
           <Ionicons name="create-outline" size={16} color={colors.textSecondary} />
-        </Pressable>
-        <Pressable onPress={onDelete} style={st.actionBtn} hitSlop={8}>
+        </PressableScale>
+        <PressableScale onPress={onDelete} style={st.actionBtn} hitSlop={8}>
           <Ionicons name="trash-outline" size={16} color={colors.danger} />
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );

@@ -1,9 +1,9 @@
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -34,12 +34,12 @@ export function GroupsPermissionsMultiSelect({ colors, label, items, value, onCh
   return (
     <View style={st.group}>
       <Text style={[st.label, { color: colors.textSecondary }]}>{label}</Text>
-      <Pressable onPress={modal.present} style={[st.field, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[st.value, { color: selectedLabels.length ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
+      <PressableScale scaleTo={0.98} onPress={modal.present} style={[st.field, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+        <Text style={[st.value, { color: selectedLabels.length ? colors.textPrimary : colors.textMuted }]} numberOfLines={1}>
           {selectedLabels.length ? selectedLabels.join(', ') : `Select ${label.toLowerCase()}…`}
         </Text>
         <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
-      </Pressable>
+      </PressableScale>
 
       <CmsModal ref={modal.ref} colors={colors} title={label} snapPoints={['70%']}>
         <BottomSheetFlatList
@@ -48,10 +48,15 @@ export function GroupsPermissionsMultiSelect({ colors, label, items, value, onCh
           renderItem={({ item }) => {
             const checked = value.includes(item.id);
             return (
-              <Pressable onPress={() => toggle(item.id)} style={[st.option, { borderColor: colors.border }]}>
+              <PressableScale
+                haptic="rigid"
+                scaleTo={0.98}
+                onPress={() => toggle(item.id)}
+                style={[st.option, { borderColor: colors.border }]}
+              >
                 <Text style={[st.optionLabel, { color: colors.textPrimary }]}>{item.label}</Text>
                 <Ionicons name={checked ? 'checkbox' : 'square-outline'} size={20} color={checked ? colors.accent : colors.textSecondary} />
-              </Pressable>
+              </PressableScale>
             );
           }}
           ListEmptyComponent={<Text style={{ color: colors.textSecondary, padding: 16 }}>None defined.</Text>}

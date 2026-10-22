@@ -3,9 +3,10 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 
+import { PressableScale } from '@/components/ui';
 import type { CategoryNode } from '@/api/categories';
 import { useDeleteProductFromCategory, useReorderCategoryProducts } from '@/api/categories';
 import { useProducts } from '@/api/products';
@@ -199,7 +200,7 @@ export const CategoryDetailSheet = React.forwardRef<BottomSheetModal, Props>(
                     >
                       {product.product_name}
                     </Text>
-                    <Pressable
+                    <PressableScale
                       onPress={() =>
                         unlinkProduct.mutate({
                           category_id: category.id,
@@ -213,7 +214,7 @@ export const CategoryDetailSheet = React.forwardRef<BottomSheetModal, Props>(
                         size={20}
                         color={colors.danger}
                       />
-                    </Pressable>
+                    </PressableScale>
                   </View>
                 </DraggableRow>
               ))

@@ -136,7 +136,8 @@ export function previewPathOf(url: string): string | null {
 
 /** How long to wait for a sleeping workspace to boot its dev server. */
 const BOOT_WAIT_MS = 120_000;
-const BOOT_POLL_MS = 3_000;
+// Short: a workspace is usually seconds from ready, and each poll is cheap.
+const BOOT_POLL_MS = 1_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -312,4 +313,57 @@ export async function resolveGuestApp(
   return data.bundles
     ? fromPublished(data, manifestUrl, platform)
     : fromMetro(data, manifestUrl);
+}
+
+/** How long a prewarm counts as fresh for the same link. */
+const PREWARM_TTL_MS = 60_000;
+const prewarmed = new Map<string, number>();
+
+/**
+ * Starts the expensive part of opening a live workspace before the user
+ * asks: wakes it (manifest boot wait), then requests its bundle so Metro
+ * builds it, and hangs up as soon as headers arrive (Metro answers a plain
+ * bundle request only once the build is done). The real open then gets a
+ * cached build. Best effort: never throws.
+ */
+export async function prewarmGuestApp(input: string): Promise<void> {
+  let key: string;
+  try {
+    key = manifestUrlFrom(input);
+  } catch {
+    return;
+  }
+  const last = prewarmed.get(key);
+  if (last && Date.now() - last < PREWARM_TTL_MS) return;
+  prewarmed.set(key, Date.now());
+  try {
+    const app = await resolveGuestApp(input);
+    if (app.source !== 'live') return;
+    await new Promise<void>((resolve) => {
+      const xhr = new XMLHttpRequest();
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      xhr.open('GET', app.bundleUrl);
+      xhr.setRequestHeader(
+        'expo-platform',
+        Platform.OS === 'ios' ? 'ios' : 'android'
+      );
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState >= 2 && !settled) {
+          finish();
+          xhr.abort();
+        }
+      };
+      xhr.onerror = finish;
+      xhr.ontimeout = finish;
+      xhr.timeout = 180_000;
+      xhr.send();
+    });
+  } catch {
+    prewarmed.delete(key);
+  }
 }

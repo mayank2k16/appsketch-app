@@ -5,14 +5,13 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Animated,
-  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import type { MarketTemplate } from '@/api/templates';
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 
 import type { Shape } from './masonry';
@@ -155,8 +154,9 @@ export const GalleryCard = React.memo(function GalleryCard({
 
   return (
     <Animated.View style={[cardStyle(g, width, shape), enter]}>
-      <Pressable
+      <PressableScale
         onPress={onPreview}
+        scaleTo={0.98}
         accessibilityRole="button"
         accessibilityLabel={`Preview ${d.title}`}
         style={[
@@ -186,7 +186,7 @@ export const GalleryCard = React.memo(function GalleryCard({
           </View>
         )}
         <Flags g={g} d={d} />
-      </Pressable>
+      </PressableScale>
       <Caption g={g} d={d} wide={shape === 'wide'} />
       <Actions
         g={g}
@@ -207,7 +207,7 @@ function Flags({ g, d }: { g: GalleryTheme; d: Described }) {
   return (
     <View style={s.flags} pointerEvents="none">
       {d.featured && (
-        <View style={s.featured}>
+        <View style={[s.featured, !g.flat && s.featuredShadow]}>
           <Text style={s.featuredText}>Featured</Text>
         </View>
       )}
@@ -295,14 +295,13 @@ function Actions({
   const tall = shape === 'tall';
   return (
     <View style={[s.actions, tall && s.actionsTall]}>
-      <TouchableOpacity
+      <PressableScale
         onPress={onPreview}
-        activeOpacity={0.7}
         style={[
           s.btn,
           wide && s.btnWide,
           tall && s.btnTall,
-          { borderColor: g.orange },
+          { borderColor: g.previewBorder },
         ]}
       >
         <Text
@@ -312,12 +311,14 @@ function Actions({
         >
           {d.previewLabel}
         </Text>
-      </TouchableOpacity>
+      </PressableScale>
       {d.isCode && (
-        <TouchableOpacity
+        <PressableScale
+          haptic="press"
           onPress={onUse}
           disabled={using}
-          activeOpacity={0.8}
+          // Black never dimmed the busy button; white shows it at 50%.
+          disabledOpacity={g.flat ? 0.5 : 1}
           style={[
             s.btn,
             wide && s.btnWide,
@@ -336,7 +337,7 @@ function Actions({
               {d.useLabel}
             </Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
       )}
     </View>
   );
@@ -374,19 +375,25 @@ function PhoneStage({ g, uri }: { g: GalleryTheme; uri?: string | null }) {
         })
       }
     >
-      <LinearGradient
-        colors={[g.stageTop, 'transparent']}
-        style={[StyleSheet.absoluteFill, { bottom: '45%' }]}
-      />
-      <LinearGradient
-        colors={['transparent', g.stageBottom]}
-        style={[StyleSheet.absoluteFill, { top: '55%' }]}
-      />
+      {/* White (flat) has no fades: the stage is plain paper. */}
+      {!g.flat && (
+        <>
+          <LinearGradient
+            colors={[g.stageTop, 'transparent']}
+            style={[StyleSheet.absoluteFill, { bottom: '45%' }]}
+          />
+          <LinearGradient
+            colors={['transparent', g.stageBottom]}
+            style={[StyleSheet.absoluteFill, { top: '55%' }]}
+          />
+        </>
+      )}
       {box.h > 0 && (
         <View style={s.phoneWrap}>
           <Phone
             width={Math.min(box.h * 0.88 * (390 / 874), box.w * 0.86)}
             uri={uri}
+            flat={g.flat}
           />
         </View>
       )}
@@ -405,8 +412,22 @@ const TITANIUM = [
 ] as const;
 
 /** A titanium phone: the band round the edge, the black bezel, the island.
- * Every size is a share of its width, so it is the same phone at any size. */
-function Phone({ width, uri }: { width: number; uri?: string | null }) {
+ * Every size is a share of its width, so it is the same phone at any size.
+ * Exported for Home's template reel, which frames mobile apps the same way. */
+export function Phone({
+  width,
+  uri,
+  flat,
+  screenBg,
+  transition = 180,
+}: {
+  width: number;
+  uri?: string | null;
+  flat?: boolean;
+  /** The screen's fill while its image loads (black by default). */
+  screenBg?: string;
+  transition?: number;
+}) {
   const band = Math.max(3, width * 0.035);
   const radius = width * 0.16;
   return (
@@ -420,18 +441,27 @@ function Phone({ width, uri }: { width: number; uri?: string | null }) {
         height: width * (874 / 390),
         borderRadius: radius,
         padding: band,
-        boxShadow: '0px 18px 30px -14px rgba(22, 16, 44, 0.5)',
+        boxShadow: flat
+          ? undefined
+          : '0px 18px 30px -14px rgba(22, 16, 44, 0.5)',
       }}
     >
-      <View style={[s.phoneScreen, { borderRadius: radius - band }]}>
+      <View
+        style={[
+          s.phoneScreen,
+          { borderRadius: radius - band },
+          screenBg ? { backgroundColor: screenBg } : null,
+        ]}
+      >
         {uri ? (
           <Image
             source={{ uri }}
+            recyclingKey={uri}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             contentPosition="top"
             cachePolicy="memory-disk"
-            transition={180}
+            transition={transition}
           />
         ) : null}
         <View
@@ -511,8 +541,8 @@ const s = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#dc2626',
     justifyContent: 'center',
-    boxShadow: '0px 4px 10px -4px rgba(220, 38, 38, 0.6)',
   },
+  featuredShadow: { boxShadow: '0px 4px 10px -4px rgba(220, 38, 38, 0.6)' },
   featuredText: {
     color: '#fff',
     fontFamily: MONO,

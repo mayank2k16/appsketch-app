@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { NotificationRule } from '@/api/notifications';
 import { useDeleteNotificationRule, useEmailTemplates, useNotificationEvents, useNotificationRules, useSMSTemplates } from '@/api/notifications';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
@@ -55,10 +55,10 @@ export function RulesScreen() {
   return (
     <View style={{ flex: 1 }}>
       <View style={st.actionsRow}>
-        <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
           <Ionicons name="add" size={16} color={colors.accentText} />
           <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Rule</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       {rulesQuery.isLoading ? (

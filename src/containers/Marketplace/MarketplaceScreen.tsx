@@ -14,7 +14,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -27,9 +26,9 @@ import {
   useTemplateCategories,
 } from '@/api/templates';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
+import { PressableScale } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { useOpenGuestApp } from '@/lib/guest-app';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { toast } from '@/lib/toast';
 
@@ -37,6 +36,7 @@ import { TwinkleStars } from './components/TwinkleStars';
 import { GalleryCard, GallerySkeleton } from './gallery/gallery-card';
 import { type Block, type Placed, toBlocks } from './gallery/masonry';
 import { type GalleryTheme, galleryTheme, MONO } from './gallery/theme';
+import { useTemplatePreview } from './use-template-preview';
 
 const ALL = 'all';
 const KINDS: { kind: MarketKind; label: string }[] = [
@@ -46,10 +46,6 @@ const KINDS: { kind: MarketKind; label: string }[] = [
   { kind: 'ecosystems', label: 'Ecosystems' },
 ];
 
-/** A published mobile app's JS bundles, exported for this host by the
- * backend (docs/in-app-host.md, "Published templates"). */
-const nativeManifestUrl = (uuid: string) =>
-  `https://appsketch.ai/api/builder/coder/native/${uuid}/manifest.json`;
 /** The grid runs almost to the screen's edges, as on the web. */
 const OUTER = 10;
 const COL_GAP = 8;
@@ -171,37 +167,10 @@ export function MarketplaceScreen() {
     }
   }, [templatesQuery.isLoading, contentOpacity]);
 
-  const guest = useOpenGuestApp();
+  // Shared with Home's template carousel, so both open a template the same way.
+  const handlePreview = useTemplatePreview();
   const clone = useCloneTemplate();
   const [usingKey, setUsingKey] = React.useState<string | null>(null);
-
-  function handlePreview(template: MarketTemplate) {
-    if (template.kind === 'layout') {
-      // Navigate immediately — the create-tenant-from-template call (~4-7s)
-      // runs on the destination screen instead of blocking this tap on a
-      // spinner. See AppPreviewScreen's "creating" phase.
-      router.push({
-        pathname: '/app-preview',
-        params: { templateId: String(template.id), name: template.name },
-      } as never);
-      return;
-    }
-    if (template.app_type === 'mobile') {
-      // A mobile app runs natively here, the way a workspace QR does.
-      guest.open(
-        template.native_manifest_url || nativeManifestUrl(template.uuid)
-      );
-      return;
-    }
-    if (!template.preview_url) {
-      toast.info('This template has no live preview yet.');
-      return;
-    }
-    router.push({
-      pathname: '/app-preview',
-      params: { url: template.preview_url, name: template.title },
-    } as never);
-  }
 
   /** "Use app", as on the web gallery: copy the template into the user's
    * account (an ecosystem copies every app in it), then open the builder on
@@ -289,14 +258,14 @@ export function MarketplaceScreen() {
             yours.
           </Text>
         </View>
-        <TouchableOpacity
+        <PressableScale
           onPress={() => router.push('/scan')}
           hitSlop={8}
           accessibilityLabel="Scan an app QR code"
           style={[s.scanBtn, { borderColor: g.line, backgroundColor: g.panel }]}
         >
           <Ionicons name="qr-code-outline" size={18} color={g.ink} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
       <View style={{ height: stickyGroupHeight + 5 }} />
     </>
@@ -329,6 +298,7 @@ export function MarketplaceScreen() {
         height={winH}
         color={g.faint}
         count={isDark ? 110 : 50}
+        halos={isDark}
       />
 
       {/* Headings scroll away; search/pills/result-row are the sticky overlay below. */}
@@ -410,7 +380,9 @@ export function MarketplaceScreen() {
             top: HEADER_TOP,
             backgroundColor: g.bg,
             borderBottomColor: g.line,
-            shadowOpacity: isDark ? 0.3 : 0.08,
+            // White is flat: the hairline under the bar is the only edge.
+            shadowOpacity: isDark ? 0.3 : 0,
+            elevation: isDark ? 6 : 0,
             transform: [{ translateY: stickyTranslateY }],
           },
         ]}
@@ -436,16 +408,16 @@ export function MarketplaceScreen() {
           {KINDS.map((k) => {
             const active = kind === k.kind;
             return (
-              <TouchableOpacity
+              <PressableScale
+                haptic={active ? true : 'select'}
                 key={k.kind}
                 onPress={() => setKind(k.kind)}
-                activeOpacity={0.8}
                 style={[
                   s.kindTab,
                   { backgroundColor: g.panel, borderColor: g.line },
                   active && {
-                    backgroundColor: g.orange,
-                    borderColor: g.orange,
+                    backgroundColor: g.activeFill,
+                    borderColor: g.activeFill,
                   },
                 ]}
                 accessibilityRole="tab"
@@ -454,7 +426,7 @@ export function MarketplaceScreen() {
                 <Text style={[s.kindLabel, { color: active ? '#fff' : g.ink }]}>
                   {k.label}
                 </Text>
-              </TouchableOpacity>
+              </PressableScale>
             );
           })}
         </View>
@@ -518,22 +490,22 @@ function CategoryChip({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <PressableScale
+      haptic={active ? true : 'select'}
       onPress={onPress}
-      activeOpacity={0.8}
       style={[
         s.chip,
         {
           backgroundColor: g.panel,
           borderColor: g.line,
         },
-        active && { backgroundColor: g.orange, borderColor: g.orange },
+        active && { backgroundColor: g.activeFill, borderColor: g.activeFill },
       ]}
     >
       <Text style={[s.chipLabel, { color: active ? '#fff' : g.ink }]}>
         {label}
       </Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 

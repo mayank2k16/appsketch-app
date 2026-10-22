@@ -7,11 +7,13 @@ import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { DrawerMenu } from '@/components/drawer-menu';
 import { LazySection } from './components/LazySection';
 import { useAppStartup } from '@/lib';
+import { AmbientBackground } from '@/components/ui/ambient-background';
 import { homeTheme } from './theme/HomeTheme';
 import { HomeHeader } from './Header';
 import { HeroBanner } from './Hero';
 import { TwinkleDots } from './Hero/TwinkleDots';
-import { GallerySection } from './Gallery';
+import { TrustedBand } from './Gallery';
+import { TemplateReel } from './TemplateReel';
 import { AgentV2 } from './AgentV2';
 import { Showcase } from './Showcase';
 import { HowItWorksSection } from './HowItWorks';
@@ -41,6 +43,8 @@ export function HomeScreen() {
   const isDark = colorScheme === 'dark';
 
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+  /** The prompt card block's position, which places the hero's colour band. */
+  const [card, setCard] = React.useState<{ y: number; h: number } | null>(null);
 
   // The tab bar floats over the scene now, so the scroll has to end above it
   // rather than behind it — see useTabBarHeight.
@@ -63,15 +67,17 @@ export function HomeScreen() {
           CipherField) previously each ran their own separate animated dot
           grid simultaneously; consolidated into one fixed, non-scrolling
           full-screen layer so there's only ever one running, not several. */}
-      <TwinkleDots
-        width={W}
-        height={H}
-        color={t.dotColor}
-        spacing={31}
-        radius={1.1}
-        baseOpacity={isDark ? 0.16 : 0.08}
-        peakOpacity={isDark ? 0.42 : 0.24}
-      />
+      {isDark && (
+        <TwinkleDots
+          width={W}
+          height={H}
+          color={t.dotColor}
+          spacing={31}
+          radius={1.1}
+          baseOpacity={isDark ? 0.16 : 0.08}
+          peakOpacity={isDark ? 0.42 : 0.24}
+        />
+      )}
 
       {/* Header absolutely overlays the hero — rendered after scroll for z-order */}
       <HomeHeader onMenuPress={() => setDrawerOpen(true)} />
@@ -88,6 +94,29 @@ export function HomeScreen() {
         // handful of sections actually near the viewport.
         removeClippedSubviews
       >
+        {/* The hero's colour band (white only): scrolls with the hero, clean
+            canvas on top, pastel colour rising from the prompt card's middle
+            and melting back into the page just below it. */}
+        <AmbientBackground
+          startY={card ? card.y + card.h * 0.5 : 0}
+          height={card ? card.y + card.h + 150 : 0}
+        >
+          {/* White: the hero's dot field, in the brand orange, on the band so
+              it scrolls with the hero and melts out with the colour. */}
+          {card && (
+            <TwinkleDots
+              width={W}
+              height={card.y + card.h + 150}
+              // Same grid as dark (spacing 31, radius 1.1), in a light orange.
+              color="#FFB37F"
+              spacing={31}
+              radius={1.1}
+              baseOpacity={0.5}
+              peakOpacity={0.95}
+            />
+          )}
+        </AmbientBackground>
+
         {/* ── Full-screen hero ── */}
         <HeroBanner />
 
@@ -95,9 +124,22 @@ export function HomeScreen() {
             preview (no orbit clocks, no per-glyph animation). The original
             is untouched at ./Agent and still used standalone at
             (tabs)/agent.tsx; swap this import back to restore it here. */}
-        <AgentV2 />
+        <View
+          onLayout={(e) => {
+            const { y, height } = e.nativeEvent.layout;
+            setCard((c) =>
+              c && c.y === y && c.h === height ? c : { y, h: height }
+            );
+          }}
+        >
+          <AgentV2 />
+        </View>
 
-        <GallerySection />
+        {/* The template reel, straight under the suggestion prompts. It
+            replaced the Gallery section's masonry (same idea, but static CDN
+            shots behind a scrim); the section's "Trusted by" row stays. */}
+        <TemplateReel />
+        <TrustedBand t={t} />
 
         {/* Everything below the fold mounts after first paint, in order, each
             reserving its height so the scroll content never resizes under the
@@ -116,7 +158,10 @@ export function HomeScreen() {
           <WhatsInsideSection />
         </LazySection>
 
-        <LazySection minHeight={Math.round((Dimensions.get('window').width * 70) / 40)} order={3}>
+        <LazySection
+          minHeight={Math.round((Dimensions.get('window').width * 70) / 40)}
+          order={3}
+        >
           <IntegrationsCatalogSection />
         </LazySection>
 
@@ -136,7 +181,10 @@ export function HomeScreen() {
           <ClosingCTASection />
         </LazySection>
 
-        <LazySection minHeight={Math.round((Dimensions.get('window').width * 6) / 16)} order={8}>
+        <LazySection
+          minHeight={Math.round((Dimensions.get('window').width * 6) / 16)}
+          order={8}
+        >
           <FooterSection />
         </LazySection>
 
@@ -144,10 +192,7 @@ export function HomeScreen() {
       </KeyboardAwareScrollView>
 
       {/* Sliding drawer */}
-      <DrawerMenu
-        visible={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
+      <DrawerMenu visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </View>
   );
 }

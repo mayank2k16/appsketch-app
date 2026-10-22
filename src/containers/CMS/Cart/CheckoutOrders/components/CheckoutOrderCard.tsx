@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { CheckoutOrderItem } from '@/api/cart';
 
 import { CmsField, CmsStatusBadge } from '../../../components';
@@ -33,9 +34,9 @@ export const CheckoutOrderCard = React.memo(function CheckoutOrderCard({ order, 
         <CmsField label="Total" value={`Rs.${parseFloat(String(order.total_price || 0)).toFixed(2)}`} colors={colors} />
       </View>
       {mapUrl ? (
-        <Pressable onPress={() => Linking.openURL(mapUrl)}>
+        <PressableScale onPress={() => Linking.openURL(mapUrl)}>
           <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12.5 }}>View On Map</Text>
-        </Pressable>
+        </PressableScale>
       ) : null}
     </View>
   );

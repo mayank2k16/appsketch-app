@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { InventoryLocation } from '@/api/inventory';
 import { useInventoryLocations } from '@/api/inventory';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { useCmsTheme } from '../theme';
 import { InventoryCard } from './components/InventoryCard';
@@ -44,10 +44,10 @@ export function InventoryScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
   return (
     <View style={[st.root, { backgroundColor: colors.background }]}>
       <View style={st.actionsRow}>
-        <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
           <Ionicons name="add" size={16} color={colors.accentText} />
           <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Location</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       {locationsQuery.isLoading ? (

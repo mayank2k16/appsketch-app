@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { NewsletterCampaign } from '@/api/newsletter';
 
 import { CmsStatusBadge } from '../../components';
@@ -33,7 +34,8 @@ export const CampaignRow = React.memo(function CampaignRow({ campaign, colors, s
         <Text style={[st.metaText, { color: colors.textSecondary }]}>Sent {fmtDate(campaign.sent_on)}</Text>
       </View>
 
-      <Pressable
+      <PressableScale
+        haptic="press"
         onPress={onSend}
         disabled={!canSend}
         style={[st.sendBtn, { borderColor: colors.border, backgroundColor: colors.background }, !canSend && st.sendBtnDisabled]}
@@ -43,7 +45,7 @@ export const CampaignRow = React.memo(function CampaignRow({ campaign, colors, s
         ) : (
           <Text style={[st.sendLabel, { color: canSend ? colors.accent : colors.textSecondary }]}>Send</Text>
         )}
-      </Pressable>
+      </PressableScale>
     </View>
   );
 });

@@ -5,9 +5,10 @@
  * rather than silently dropped — plain manual entry for every field).
  */
 import * as React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { DomainContact } from '@/api/domains';
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
 
@@ -87,21 +88,17 @@ export function DomainContactForm({
       ))}
 
       <View style={st.actions}>
-        <TouchableOpacity onPress={onBack} activeOpacity={0.8} style={[st.secondaryBtn, { borderColor: t.border }]}>
+        <PressableScale onPress={onBack} style={[st.secondaryBtn, { borderColor: t.border }]}>
           <Text style={[st.secondaryBtnText, { color: t.textSub }]}>Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </PressableScale>
+        <PressableScale
+          haptic="press"
           onPress={handleSubmit}
-          activeOpacity={0.85}
           disabled={submitting || !isValid}
-          style={[
-            st.primaryBtn,
-            { backgroundColor: t.accent },
-            (submitting || !isValid) && { opacity: 0.5 },
-          ]}
+          style={[st.primaryBtn, { backgroundColor: t.accent }]}
         >
           <Text style={st.primaryBtnText}>{submitting ? 'Processing…' : 'Proceed to payment'}</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </View>
   );

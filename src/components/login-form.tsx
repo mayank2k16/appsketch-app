@@ -76,6 +76,7 @@ export const LoginForm = ({ onSubmit = () => {} }: LoginFormProps) => {
         <Button
           testID="login-button"
           label="Login"
+          haptic="press"
           onPress={handleSubmit(onSubmit)}
         />
       </View>

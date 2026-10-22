@@ -1,9 +1,11 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import { useIsFocused, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import { useStudio } from '@/lib/store/studio-store';
 import { useCmsTabIntent } from '@/lib/store/cms-tab-intent';
 
@@ -24,6 +26,8 @@ export function CmsShell() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useCmsTheme();
+  const isFocused = useIsFocused();
+  const isLight = colors.kind === 'light';
 
   const tenantType = useStudio.use.attachedTenant()?.tenant_type;
   const visibleTabs = React.useMemo(() => getVisibleCmsTabs(tenantType), [tenantType]);
@@ -74,14 +78,26 @@ export function CmsShell() {
 
   return (
     <View style={[st.root, { backgroundColor: colors.background }]}>
-      <View style={[st.topBar, { backgroundColor: colors.sidebarBg, paddingTop: insets.top + 12 }]}>
-        <Pressable
+      {/* White: the status bar sits on the top bar, so its content follows the
+          bar's own luminance (white default chrome → dark-content; a dark
+          sidebar palette → light-content). Dark mode is left untouched. */}
+      {isLight && isFocused && Platform.OS !== 'web' ? (
+        <StatusBar style={isDarkColor(colors.sidebarBg) ? 'light' : 'dark'} />
+      ) : null}
+      <View
+        style={[
+          st.topBar,
+          { backgroundColor: colors.sidebarBg, paddingTop: insets.top + 12 },
+          isLight && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+        ]}
+      >
+        <PressableScale
           onPress={handleBack}
           style={[st.iconBtn, { backgroundColor: colors.sidebarActiveBg }]}
           hitSlop={8}
         >
           <Ionicons name="chevron-back" size={20} color={colors.sidebarText} />
-        </Pressable>
+        </PressableScale>
         <Text style={[st.title, { color: colors.sidebarText }]} numberOfLines={1}>
           {activeMeta?.label}
         </Text>
@@ -89,13 +105,13 @@ export function CmsShell() {
         <View style={st.sideGroup}>
           {tenantType === 'marketplace' && <VendorFilterButton />}
           <ThemeSwitcherButton />
-          <Pressable
+          <PressableScale
             onPress={() => setDrawerOpen(true)}
             style={[st.iconBtn, { backgroundColor: colors.sidebarActiveBg }]}
             hitSlop={8}
           >
             <Ionicons name="menu" size={20} color={colors.sidebarText} />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
 
@@ -117,6 +133,18 @@ export function CmsShell() {
       />
     </View>
   );
+}
+
+/** True for a dark hex colour (#RGB / #RRGGBB), by perceived luminance. */
+function isDarkColor(hex: string) {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h.slice(0, 6);
+  const n = parseInt(full, 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b < 150;
 }
 
 const st = StyleSheet.create({

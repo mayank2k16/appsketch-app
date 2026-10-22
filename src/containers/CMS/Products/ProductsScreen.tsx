@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { ProductListItem } from '@/api/products';
 import { useDeleteProduct, useProducts } from '@/api/products';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { useStudio } from '@/lib/store/studio-store';
 import { useVendorFilter } from '@/lib/store/vendor-filter-store';
@@ -93,16 +93,16 @@ export function ProductsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
           value={query}
           onChangeText={setQuery}
           placeholder="Type at least 3 characters to search…"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={colors.textMuted}
           style={[st.searchInput, { color: colors.textPrimary }]}
           returnKeyType="search"
         />
       </View>
       <View style={st.header}>
-        <Pressable onPress={openCreate} style={[st.createBtn, { backgroundColor: colors.accent }]}>
+        <PressableScale onPress={openCreate} style={[st.createBtn, { backgroundColor: colors.accent }]}>
           <Ionicons name="add" size={16} color={colors.accentText} />
           <Text style={[st.createBtnText, { color: colors.accentText }]}>Add Product</Text>
-        </Pressable>
+        </PressableScale>
       </View>
       {productsQuery.isLoading ? (
         <ProductsSkeleton colors={colors} />

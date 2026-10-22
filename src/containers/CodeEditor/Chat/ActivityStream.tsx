@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Animated,
@@ -12,18 +13,27 @@ import {
   StyleSheet,
   Text,
   type TextStyle,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import type { ActivityStep } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import { AnimatedGradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 import { PulsingDot } from './PulsingDot';
 
 const MONO_FONT = Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace';
+
+/** `st.actText` hardcodes a pale dark-theme ink (#dbe1f2) that vanishes on
+ * paper; white swaps in the editor text token. Dark keeps the literal. */
+function actTextFor(colors: AppColors): TextStyle {
+  return colors.statusBar === 'light-content'
+    ? st.actText
+    : { ...st.actText, color: colors.codeEditorText };
+}
 
 /** Small branded avatar shared by every agent-side card header (message
  * bubble, activity card, clarify card) so the whole chat reads as one
@@ -168,8 +178,12 @@ export function Lightbox({
   uri: string | null;
   onClose: () => void;
 }) {
+  // White: the viewer is paper with an inset close chip, not a black scrim.
+  const { colorScheme } = useColorScheme();
+  const light = colorScheme !== 'dark';
   return (
     <Modal
+      onShow={haptic.soft}
       visible={!!uri}
       transparent
       animationType="fade"
@@ -177,12 +191,20 @@ export function Lightbox({
       // Android: without this the status bar stays lit over a black overlay.
       statusBarTranslucent
     >
-      <Pressable style={st.lbBackdrop} onPress={onClose}>
+      <Pressable
+        onPressIn={haptic.tap}
+        style={[st.lbBackdrop, light && st.lbBackdropLight]}
+        onPress={onClose}
+      >
         {uri ? (
           <Image source={{ uri }} style={st.lbImage} contentFit="contain" />
         ) : null}
-        <View style={st.lbClose}>
-          <Ionicons name="close" size={22} color="#EAEAEA" />
+        <View style={[st.lbClose, light && st.lbCloseLight]}>
+          <Ionicons
+            name="close"
+            size={22}
+            color={light ? '#0B0B0C' : '#EAEAEA'}
+          />
         </View>
       </Pressable>
     </Modal>
@@ -196,8 +218,8 @@ function StepShot({ uri, colors }: { uri: string; colors: AppColors }) {
   const [zoomed, setZoomed] = React.useState(false);
   return (
     <>
-      <TouchableOpacity
-        activeOpacity={0.85}
+      <PressableScale
+        scaleTo={0.98}
         onPress={() => setZoomed(true)}
         style={[st.shot, { borderColor: colors.codeEditorBorder }]}
       >
@@ -208,7 +230,7 @@ function StepShot({ uri, colors }: { uri: string; colors: AppColors }) {
           contentPosition="top center"
           transition={160}
         />
-      </TouchableOpacity>
+      </PressableScale>
       <Lightbox uri={zoomed ? uri : null} onClose={() => setZoomed(false)} />
     </>
   );
@@ -296,9 +318,9 @@ function StepRow({
   return (
     <View style={st.rowInlineBody}>
       {hasResult ? (
-        <TouchableOpacity
+        <PressableScale
+          scaleTo={0.98}
           style={st.resultHead}
-          activeOpacity={0.7}
           onPress={() => setOpen((o) => !o)}
         >
           <View style={st.actTextWrap}>{label}</View>
@@ -307,7 +329,7 @@ function StepRow({
             size={12}
             color={colors.textMuted}
           />
-        </TouchableOpacity>
+        </PressableScale>
       ) : (
         label
       )}
@@ -383,11 +405,14 @@ function PlanRow({
 
   return (
     <View>
-      <TouchableOpacity
+      <PressableScale
+        scaleTo={0.98}
+        haptic={hasBody}
         style={st.actRow}
-        activeOpacity={0.7}
-        disabled={!hasBody}
-        onPress={() => setOpen((o) => !o)}
+        // Guarded, not `disabled`: a plan with no body is a plain row, not a
+        // dimmed one.
+        onPress={hasBody ? () => setOpen((o) => !o) : undefined}
+        accessibilityRole={hasBody ? 'button' : 'text'}
       >
         <Badge
           label="PLAN"
@@ -399,7 +424,7 @@ function PlanRow({
             text={step.summary || step.text}
             active={active}
             colors={colors}
-            style={st.actText}
+            style={actTextFor(colors)}
           />
         </View>
         {hasBody ? (
@@ -409,7 +434,7 @@ function PlanRow({
             color={colors.textMuted}
           />
         ) : null}
-      </TouchableOpacity>
+      </PressableScale>
       {open ? <PlanBody step={step} colors={colors} /> : null}
     </View>
   );
@@ -442,7 +467,7 @@ function TodosRow({
             text="Build checklist"
             active={active}
             colors={colors}
-            style={st.actText}
+            style={actTextFor(colors)}
           />
         </View>
       </View>
@@ -502,11 +527,12 @@ function ReviewRow({
 
   return (
     <View>
-      <TouchableOpacity
+      <PressableScale
+        scaleTo={0.98}
+        haptic={hasGaps}
         style={st.actRow}
-        activeOpacity={0.7}
-        disabled={!hasGaps}
-        onPress={() => setOpen((o) => !o)}
+        onPress={hasGaps ? () => setOpen((o) => !o) : undefined}
+        accessibilityRole={hasGaps ? 'button' : 'text'}
       >
         <Badge
           label={step.ok ? 'REVIEW ✓' : 'REVIEW'}
@@ -526,7 +552,7 @@ function ReviewRow({
             text={step.text}
             active={active}
             colors={colors}
-            style={st.actText}
+            style={actTextFor(colors)}
           />
         </View>
         {hasGaps ? (
@@ -536,7 +562,7 @@ function ReviewRow({
             color={colors.textMuted}
           />
         ) : null}
-      </TouchableOpacity>
+      </PressableScale>
       {open && hasGaps ? (
         <View style={st.body}>
           {(step.gaps ?? []).map((g, i) => (
@@ -676,11 +702,7 @@ function ActivityHeader({
   colors: AppColors;
 }) {
   return (
-    <TouchableOpacity
-      onPress={onToggle}
-      style={[st.header]}
-      activeOpacity={0.7}
-    >
+    <PressableScale scaleTo={0.98} onPress={onToggle} style={[st.header]}>
       <AgentAvatar colors={colors} />
       <Text
         style={[st.headerText, { color: colors.text, fontFamily: F.sans600 }]}
@@ -694,7 +716,7 @@ function ActivityHeader({
         size={13}
         color={colors.codeEditorActivityText}
       />
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -917,6 +939,12 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(1,2,3,0.94)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  lbBackdropLight: { backgroundColor: '#FAFAF8' }, // white: solid, no veil
+  lbCloseLight: {
+    backgroundColor: '#F4F4F2',
+    borderWidth: 1,
+    borderColor: '#E7E7E4',
   },
   lbImage: {
     width: '100%',

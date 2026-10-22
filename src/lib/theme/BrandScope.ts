@@ -89,13 +89,36 @@ export function scopeBrand(base: AppColors): AppColors {
   };
 }
 
+/** White theme (docs/white-theme.md): no ramp washes on paper. The tapped
+ *  thing is ink, the composer's Send is the screen's one orange action, and
+ *  the identity marks go flat ink on the inset grey. Dark keeps `scopeBrand`. */
+export function scopeBrandWhite(base: AppColors): AppColors {
+  const INK = '#0B0B0C';
+  return {
+    ...base,
+    accent: INK,
+    accentOn: '#FFFFFF',
+    accentSoft: 'rgba(11,11,12,0.06)',
+    tagText: base.textSub,
+    tagBorder: base.border,
+    agentSendGradient: [ORANGE, ORANGE],
+    agentTabActiveBg: INK,
+    agentTabActiveText: '#FFFFFF',
+    codeEditorUserBubbleFrom: INK,
+    codeEditorUserBubbleTo: INK,
+    codeEditorToolChipActiveBg: '#F4F4F2',
+    codeEditorToolChipActiveBorder: base.border,
+    codeEditorToolChipActiveText: INK,
+  };
+}
+
 // Precomputed per scheme, exactly as `useCoderTheme` does — `scope` and
 // `scopeBrand` are both pure lookups over a frozen palette, so building the
 // two schemes once at module load keeps this a plain object read rather than
 // a new object every render.
 const brandedCoderTheme = {
   dark: scopeBrand(coderPaletteFor('dark')),
-  light: scopeBrand(coderPaletteFor('light')),
+  light: scopeBrandWhite(coderPaletteFor('light')),
 };
 
 /** Drop-in replacement for `useCoderTheme` on the three tab screens that keep

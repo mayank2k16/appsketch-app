@@ -11,7 +11,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,10 +18,11 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
 import { useCreateContactTicket } from '@/api/contact';
+import { PressableScale } from '@/components/ui';
 import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { BRAND_RAMP, useAppTheme, type AppColors } from '@/lib/theme';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -58,6 +58,34 @@ const SUPPORT_OPTIONS: { icon: IoniconName; title: string; description: string; 
 
 const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
 
+/** Screen-local roles. Dark returns exactly what this page always drew. White
+ *  (docs/white-theme.md): RAISED white cards with a hairline, INSET icon
+ *  wells with ink glyphs, the brand ramp on the hero word (the pastel ramp
+ *  disappears on paper), and orange only on Send Message. */
+function contactPalette(t: AppColors) {
+  return t.statusBar === 'light-content'
+    ? {
+        cardBg: t.agentTabBg,
+        cardBorder: t.agentTabBorder,
+        wellBg: t.accentSoft,
+        mark: t.accent,
+        titleColors: GRADIENT_TITLE_COLORS,
+        okDot: '#10B981',
+        sendBg: t.heroCtaBg,
+        sendText: t.heroCtaText,
+      }
+    : {
+        cardBg: t.card,
+        cardBorder: t.border,
+        wellBg: '#F4F4F2',
+        mark: t.text,
+        titleColors: [...BRAND_RAMP] as string[],
+        okDot: '#12A150',
+        sendBg: t.accent,
+        sendText: t.accentOn,
+      };
+}
+
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
@@ -67,6 +95,7 @@ export function ContactUsScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const p = contactPalette(t);
 
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
@@ -115,9 +144,9 @@ export function ContactUsScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>Contact Us</Text>
         <View style={st.backBtn} />
       </View>
@@ -131,7 +160,7 @@ export function ContactUsScreen() {
         >
           {/* ── Hero ── */}
           <View style={st.section}>
-            <GradientText style={st.heroTitle} colors={GRADIENT_TITLE_COLORS}>
+            <GradientText style={st.heroTitle} colors={p.titleColors}>
               Contact Us
             </GradientText>
             <Text style={[st.heroSubtitle, { color: t.textSub }]}>
@@ -143,8 +172,8 @@ export function ContactUsScreen() {
           <View style={st.section}>
             <GlassCard t={t} contentStyle={st.mainCard}>
               <View style={st.mainCardHeader}>
-                <View style={[st.iconWrap, { backgroundColor: t.accentSoft }]}>
-                  <Ionicons name="construct-outline" size={22} color={t.accent} />
+                <View style={[st.iconWrap, { backgroundColor: p.wellBg }]}>
+                  <Ionicons name="construct-outline" size={22} color={p.mark} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[st.mainCardTitle, { color: t.text }]}>Product support</Text>
@@ -153,16 +182,15 @@ export function ContactUsScreen() {
               </View>
 
               <View style={st.mainCardFooter}>
-                <TouchableOpacity
+                <PressableScale
                   onPress={handleWhatsApp}
-                  activeOpacity={0.85}
                   style={[st.ctaBtn, { backgroundColor: t.heroCtaBg }]}
                 >
                   <Text style={[st.ctaBtnText, { color: t.heroCtaText }]}>Start chat</Text>
-                </TouchableOpacity>
+                </PressableScale>
 
                 <View style={st.statusRow}>
-                  <View style={st.statusDot} />
+                  <View style={[st.statusDot, { backgroundColor: p.okDot }]} />
                   <Text style={[st.statusText, { color: t.textSub }]}>All systems operational</Text>
                 </View>
               </View>
@@ -173,18 +201,17 @@ export function ContactUsScreen() {
           <View style={[st.section, { gap: 15 }]}>
             {SUPPORT_OPTIONS.map((opt) => (
               <GlassCard key={opt.title} t={t} contentStyle={st.optionCard}>
-                <View style={[st.iconWrap, { backgroundColor: t.accentSoft, marginBottom: 12 }]}>
-                  <Ionicons name={opt.icon} size={18} color={t.accent} />
+                <View style={[st.iconWrap, { backgroundColor: p.wellBg, marginBottom: 12 }]}>
+                  <Ionicons name={opt.icon} size={18} color={p.mark} />
                 </View>
                 <Text style={[st.optionTitle, { color: t.text }]}>{opt.title}</Text>
                 <Text style={[st.optionDesc, { color: t.textSub }]}>{opt.description}</Text>
-                <TouchableOpacity
+                <PressableScale
                   onPress={handleWhatsApp}
-                  activeOpacity={0.85}
                   style={[st.outlineBtn, { borderColor: t.agentTabBorder }]}
                 >
                   <Text style={[st.outlineBtnText, { color: t.text }]}>{opt.cta}</Text>
-                </TouchableOpacity>
+                </PressableScale>
               </GlassCard>
             ))}
           </View>
@@ -199,10 +226,10 @@ export function ContactUsScreen() {
 
           <View style={[st.section, { gap: 12 }]}>
             {contactCards.map((card) => (
-              <TouchableOpacity key={card.title} onPress={card.onPress} activeOpacity={0.85}>
+              <PressableScale key={card.title} onPress={card.onPress} scaleTo={0.98}>
                 <GlassCard t={t} contentStyle={st.contactInfoCard}>
-                  <View style={[st.iconWrap, { backgroundColor: t.accentSoft }]}>
-                    <Ionicons name={card.icon} size={18} color={t.accent} />
+                  <View style={[st.iconWrap, { backgroundColor: p.wellBg }]}>
+                    <Ionicons name={card.icon} size={18} color={p.mark} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[st.contactCardTitle, { color: t.text }]}>{card.title}</Text>
@@ -212,7 +239,7 @@ export function ContactUsScreen() {
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={t.textMuted} />
                 </GlassCard>
-              </TouchableOpacity>
+              </PressableScale>
             ))}
           </View>
 
@@ -251,18 +278,19 @@ export function ContactUsScreen() {
                 />
               </View>
 
-              <TouchableOpacity
+              <PressableScale
+                haptic="press"
                 onPress={handleSubmit}
-                activeOpacity={0.85}
                 disabled={createTicket.isPending}
-                style={[st.ctaBtn, { backgroundColor: t.heroCtaBg, alignSelf: 'stretch', justifyContent: 'center', opacity: createTicket.isPending ? 0.7 : 1 }]}
+                disabledOpacity={0.7}
+                style={[st.ctaBtn, { backgroundColor: p.sendBg, alignSelf: 'stretch', justifyContent: 'center' }]}
               >
                 {createTicket.isPending ? (
-                  <ActivityIndicator size="small" color={t.heroCtaText} />
+                  <ActivityIndicator size="small" color={p.sendText} />
                 ) : (
-                  <Text style={[st.ctaBtnText, { color: t.heroCtaText }]}>Send Message</Text>
+                  <Text style={[st.ctaBtnText, { color: p.sendText }]}>Send Message</Text>
                 )}
-              </TouchableOpacity>
+              </PressableScale>
             </GlassCard>
           </View>
         </ScrollView>
@@ -286,11 +314,12 @@ function GlassCard({
   contentStyle?: object;
   children: React.ReactNode;
 }) {
+  const p = contactPalette(t);
   return (
     <View
       style={[
         st.glassCard,
-        { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
+        { backgroundColor: p.cardBg, borderColor: p.cardBorder },
         style,
       ]}
     >
@@ -329,7 +358,7 @@ const st = StyleSheet.create({
   ctaBtnText: { fontFamily: F.sans700, fontSize: 13.5 },
 
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontFamily: F.sans500, fontSize: 12.5 },
 
   optionCard: { padding: 18 },

@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { DiscountCodeItem } from '@/api/discounts';
 import { useDeleteDiscount, useDiscountCodes } from '@/api/discounts';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
@@ -77,16 +77,16 @@ export function DiscountsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: ()
             value={query}
             onChangeText={setQuery}
             placeholder="Search by code or description…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
             returnKeyType="search"
           />
         </View>
       </View>
-      <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+      <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accentText} />
         <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Discount Code</Text>
-      </Pressable>
+      </PressableScale>
 
       {discountsQuery.isLoading ? (
         <DiscountsSkeleton colors={colors} />

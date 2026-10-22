@@ -73,7 +73,7 @@ export function VendorSettlementsScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder="Search vendor settlements…"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={colors.textMuted}
           style={[st.searchInput, { color: colors.textPrimary }]}
           returnKeyType="search"
         />

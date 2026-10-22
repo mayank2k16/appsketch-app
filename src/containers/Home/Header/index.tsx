@@ -4,13 +4,13 @@ import * as React from 'react';
 import {
   Platform,
   StyleSheet,
-  TouchableOpacity,
   View,
   Text
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getUserSubscription, useAuth } from '@/hooks/useAuth';
+import { PressableScale } from '@/components/ui';
 import { PlanBadge } from '@/components/ui/PlanBadge';
 import { F } from '@/lib/fonts';
 import { homeTheme } from '../theme/HomeTheme';
@@ -59,16 +59,17 @@ export function HomeHeader({ onMenuPress }: Props) {
       </View>
 
       {/* ── Right: menu button — avatar-with-settings badge, still opens the drawer ── */}
-      <TouchableOpacity
+      <PressableScale
         onPress={onMenuPress}
+        accessibilityLabel="Open menu"
         style={[s.menuBtn, { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder }]}
-        activeOpacity={0.75}
       >
         <Ionicons name="person" size={16} color={t.text} />
-        <View style={[s.menuBadge, { backgroundColor: t.accent, borderColor: t.bg }]}>
+        {/* White: an ink badge — orange is kept for the screen's one key action. */}
+        <View style={[s.menuBadge, { backgroundColor: isDark ? t.accent : t.text, borderColor: t.bg }]}>
           <Ionicons name="settings-sharp" size={9} color="#FFFFFF" />
         </View>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }

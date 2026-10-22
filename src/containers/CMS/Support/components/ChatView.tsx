@@ -1,8 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { Conversation, PresenceState, RoomEvent, SupportMessage } from '@/api/support';
 import {
   closeConversation,
@@ -286,9 +287,9 @@ export function ChatView({ colors, conversationId, onBack }: Props) {
   return (
     <View style={{ flex: 1 }}>
       <View style={[st.header, { borderColor: colors.border }]}>
-        <Pressable onPress={onBack} hitSlop={8} style={st.backBtn}>
+        <PressableScale onPress={onBack} hitSlop={8} style={st.backBtn}>
           <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
         <View style={{ flex: 1 }}>
           <Text style={[st.name, { color: colors.textPrimary }]} numberOfLines={1}>
             {customerLabel}
@@ -302,9 +303,9 @@ export function ChatView({ colors, conversationId, onBack }: Props) {
           </View>
         </View>
         {!isClosed ? (
-          <Pressable onPress={handleClose} style={[st.closeBtn, { borderColor: colors.border }]}>
+          <PressableScale onPress={handleClose} style={[st.closeBtn, { borderColor: colors.border }]}>
             <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: '600' }}>Close</Text>
-          </Pressable>
+          </PressableScale>
         ) : null}
       </View>
 
@@ -326,24 +327,25 @@ export function ChatView({ colors, conversationId, onBack }: Props) {
         </ScrollView>
 
         <View style={[st.composer, { borderColor: colors.border, backgroundColor: colors.background }]}>
-          <Pressable onPress={handleAttach} style={st.attachBtn} hitSlop={6}>
+          <PressableScale onPress={handleAttach} style={st.attachBtn} hitSlop={6}>
             <Ionicons name="attach" size={20} color={colors.textSecondary} />
-          </Pressable>
+          </PressableScale>
           <TextInput
             value={draft}
             onChangeText={onDraftChange}
             placeholder={isClosed ? 'Reply to reopen this conversation…' : 'Type a reply…'}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             multiline
             style={[st.input, { color: colors.textPrimary, borderColor: colors.border }]}
           />
-          <Pressable
+          <PressableScale
+            haptic="press"
             onPress={handleSend}
             disabled={!draft.trim()}
             style={[st.sendBtn, { backgroundColor: colors.accent }, !draft.trim() && st.sendBtnDisabled]}
           >
             <Ionicons name="send" size={16} color={colors.accentText} />
-          </Pressable>
+          </PressableScale>
         </View>
       </KeyboardAvoidingView>
     </View>

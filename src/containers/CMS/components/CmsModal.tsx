@@ -14,8 +14,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
+
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
+
+/** A sheet landing: a soft cushion as it starts to rise from closed. */
+const softOnOpen =
+  (onAnimate?: BottomSheetModalProps['onAnimate']) =>
+  (...args: Parameters<NonNullable<BottomSheetModalProps['onAnimate']>>) => {
+    const [from, to] = args;
+    if (from === -1 && to >= 0) haptic.soft();
+    onAnimate?.(...args);
+  };
 
 type CmsModalProps = Omit<BottomSheetModalProps, 'children'> & {
   title?: string;
@@ -58,18 +70,22 @@ export const CmsModal = React.forwardRef<BottomSheetModal, CmsModalProps>(
       keyboardBlurBehavior = 'restore',
       android_keyboardInputMode = 'adjustResize',
       stackBehavior = 'push',
+      onAnimate,
       ...props
     },
     ref
   ) => {
     const snapPoints = React.useMemo(() => snapPointsProp, [snapPointsProp]);
+    // White: sheets are raised (#FFFFFF). Dark keeps the content background.
+    const sheetBg = colors.kind === 'light' ? colors.surface : colors.background;
     const insets = useSafeAreaInsets();
 
+    const scrim = colors.kind === 'light' ? colors.scrim : 'rgba(0,0,0,0.4)';
     const renderBackdrop = React.useCallback(
       (backdropProps: BottomSheetBackdropProps) => (
-        <CmsBackdrop {...backdropProps} />
+        <CmsBackdrop {...backdropProps} scrim={scrim} />
       ),
-      []
+      [scrim]
     );
 
     const renderHandleComponent = React.useCallback(
@@ -84,7 +100,7 @@ export const CmsModal = React.forwardRef<BottomSheetModal, CmsModalProps>(
             style={[
               st.footer,
               {
-                backgroundColor: colors.background,
+                backgroundColor: sheetBg,
                 borderTopColor: colors.border,
                 paddingBottom: Math.max(insets.bottom, 12),
               },
@@ -94,7 +110,7 @@ export const CmsModal = React.forwardRef<BottomSheetModal, CmsModalProps>(
           </View>
         </BottomSheetFooter>
       ),
-      [footer, colors, insets.bottom]
+      [footer, colors, sheetBg, insets.bottom]
     );
 
     return (
@@ -102,12 +118,13 @@ export const CmsModal = React.forwardRef<BottomSheetModal, CmsModalProps>(
         {...props}
         ref={ref}
         index={0}
+        onAnimate={softOnOpen(onAnimate)}
         snapPoints={snapPoints}
         backdropComponent={backdropComponent || renderBackdrop}
         enableDynamicSizing={false}
         handleComponent={renderHandleComponent}
         footerComponent={footer ? renderFooter : undefined}
-        backgroundStyle={{ backgroundColor: colors.background }}
+        backgroundStyle={{ backgroundColor: sheetBg }}
         keyboardBehavior={keyboardBehavior}
         keyboardBlurBehavior={keyboardBlurBehavior}
         android_keyboardInputMode={android_keyboardInputMode}
@@ -139,23 +156,24 @@ function CmsModalHeader({
         >
           {title}
         </Text>
-        <Pressable onPress={() => close()} hitSlop={12} style={st.closeBtn}>
+        <PressableScale onPress={() => close()} hitSlop={12} style={st.closeBtn}>
           <Ionicons name="close" size={20} color={colors.textSecondary} />
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-function CmsBackdrop({ style }: BottomSheetBackdropProps) {
+function CmsBackdrop({ style, scrim }: BottomSheetBackdropProps & { scrim: string }) {
   const { close } = useBottomSheet();
   return (
     <AnimatedPressable
+      onPressIn={haptic.tap}
       onPress={() => close()}
       entering={FadeIn.duration(50)}
       exiting={FadeOut.duration(20)}
-      style={[style, { backgroundColor: 'rgba(0,0,0,0.4)' }]}
+      style={[style, { backgroundColor: scrim }]}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import * as Haptics from 'expo-haptics';
 import { authenticatedClient } from '@/api/common/client';
+import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
 export type DeliveryLocation = {
@@ -184,11 +184,9 @@ export const useCart = create<CartState>((set, get) => ({
     set({ cartItems: nextItems, ...calculateCartTotals(nextItems, prevShipping, prevDiscount) });
 
     // Haptic feedback — fires on the same frame as the UI update
-    Haptics.impactAsync(
-      quantity <= 0
-        ? Haptics.ImpactFeedbackStyle.Light   // remove: soft tap
-        : Haptics.ImpactFeedbackStyle.Medium, // add/update: satisfying bump
-    ).catch(() => {}); // silently ignore if haptics unavailable
+    // (remove: a light tap; add/update: a satisfying bump).
+    if (quantity <= 0) haptic.tap();
+    else haptic.press();
 
     // ── background API call ─────────────────────────────────────────────────
     try {

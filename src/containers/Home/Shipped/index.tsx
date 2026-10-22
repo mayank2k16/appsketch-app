@@ -201,8 +201,9 @@ function Honeycomb({ t }: { t: HomeColors }) {
                 <Polygon
                   points={HEX_POINTS}
                   fill="none"
-                  stroke="#FFFFFF"
-                  strokeOpacity={0.3}
+                  // White: each comb gets the one hairline as its frame.
+                  stroke={t.statusBar === 'light-content' ? '#FFFFFF' : t.border}
+                  strokeOpacity={t.statusBar === 'light-content' ? 0.3 : 1}
                   strokeWidth={1}
                   strokeLinejoin="round"
                 />
@@ -216,20 +217,25 @@ function Honeycomb({ t }: { t: HomeColors }) {
             expo-linear-gradient's default angle is diagonal, which is what
             made this read as a slant instead of a flat band parallel to the
             device edge. */}
-        <LinearGradient
-          colors={[t.bg, fade(t.bg, 0)]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={[s.fade, { top: 0, height: FADE_H }]}
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={[fade(t.bg, 0), t.bg]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={[s.fade, { bottom: 0, height: FADE_H }]}
-          pointerEvents="none"
-        />
+        {/* Dark only: white has no fades or overlays over the combs. */}
+        {t.statusBar === 'light-content' && (
+          <>
+            <LinearGradient
+              colors={[t.bg, fade(t.bg, 0)]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={[s.fade, { top: 0, height: FADE_H }]}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={[fade(t.bg, 0), t.bg]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={[s.fade, { bottom: 0, height: FADE_H }]}
+              pointerEvents="none"
+            />
+          </>
+        )}
       </View>
     </GestureDetector>
   );
@@ -248,7 +254,8 @@ const LLM_CHIPS: { name: string; gradient: [string, string]; core?: boolean }[] 
 
 export function ShippedSection() {
   const { colorScheme } = useColorScheme();
-  const t: HomeColors = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const t: HomeColors = homeTheme[isDark ? 'dark' : 'light'];
 
   return (
     // No section backgroundColor — same as the other new sections, so the
@@ -276,10 +283,17 @@ export function ShippedSection() {
         {LLM_CHIPS.map((chip) => (
           <View
             key={chip.name}
-            style={[s.chip, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}
+            style={[
+              s.chip,
+              {
+                // White: raised chips with an ink mark, not ramp slices.
+                backgroundColor: isDark ? t.agentTabBg : t.card,
+                borderColor: isDark ? t.agentTabBorder : t.border,
+              },
+            ]}
           >
             <LinearGradient
-              colors={chip.gradient}
+              colors={isDark ? chip.gradient : [t.text, t.text]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.chipIcon}

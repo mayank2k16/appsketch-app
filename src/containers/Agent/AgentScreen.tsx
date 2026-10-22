@@ -3,14 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import {
   KeyboardAvoidingView,
   useKeyboardState,
@@ -20,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type AppTypeKey, createCoderTenant } from '@/api/coder';
 import { AuthGateModal } from '@/components/AuthForm/AuthGateModal';
 import { useTabBarClearance } from '@/components/bottom-tabs/useTabBarHeight';
+import { PressableScale } from '@/components/ui';
 import { AppTypePills } from '@/components/ui/AppTypePills';
 import {
   PromptComposer,
@@ -38,13 +32,18 @@ import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
+import { whiteBrand } from './white-brand';
+
 export function AgentScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   // The grey ladder, with the ramp put back on the things a user taps — the
   // send button, the Web/App pill, the sparkle avatars, the AI Agent badge.
   // See BrandScope.ts for why the split exists.
-  const t = useBrandedCoderTheme(colorScheme);
+  // White moves those taps off the ramp onto ink + the one orange (see
+  // white-brand.ts); dark is the branded palette unchanged.
+  const isDark = colorScheme === 'dark';
+  const t = whiteBrand(useBrandedCoderTheme(colorScheme), isDark);
   // The tab bar floats over the scene, so the composer has to sit above it
   // rather than behind it. Clearance, not the bare height: the composer ENDS
   // here, and at exactly the bar's height its lit border and the bar's touch
@@ -196,10 +195,10 @@ export function AgentScreen() {
 
         <View style={s.suggestionRow}>
           {activeTab.suggestions.map((suggestion) => (
-            <TouchableOpacity
+            <PressableScale
               key={suggestion}
               onPress={() => setPrompt(suggestion)}
-              activeOpacity={0.7}
+              scaleTo={0.98}
               style={[
                 s.suggestionChip,
                 {
@@ -215,7 +214,7 @@ export function AgentScreen() {
                 // achromatic surface, and a single tinted glyph is enough to
                 // mark them as the suggested way in without turning four cards
                 // into four coloured blocks.
-                color={BRAND_MID}
+                color={isDark ? BRAND_MID : t.textSub}
                 style={s.suggestionIcon}
               />
               <Text
@@ -224,7 +223,7 @@ export function AgentScreen() {
               >
                 {suggestion}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           ))}
         </View>
       </ScrollView>

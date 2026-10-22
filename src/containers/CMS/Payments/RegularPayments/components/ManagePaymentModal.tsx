@@ -2,9 +2,10 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { PaymentListItem } from '@/api/payments';
 import {
   useCreatePaymentComment,
@@ -217,18 +218,19 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
             {(attachmentsQuery.data ?? []).map((file) => (
               <View key={file.id} style={[st.attachmentTile, { borderColor: colors.border }]}>
                 <Image source={{ uri: file.url }} style={st.attachmentImg} contentFit="cover" />
-                <Pressable
+                <PressableScale
                   onPress={() => deleteAttachment.mutate({ attachmentId: file.id, paymentId })}
                   style={[st.removeBtn, { backgroundColor: colors.danger }]}
                   hitSlop={6}
                 >
                   <Ionicons name="close" size={11} color="#FFFFFF" />
-                </Pressable>
+                </PressableScale>
               </View>
             ))}
-            <Pressable
+            <PressableScale
               onPress={handleAddAttachment}
               disabled={uploadAttachment.isPending}
+              disabledOpacity={1}
               style={[st.attachmentTile, st.addTile, { borderColor: colors.border }]}
             >
               {uploadAttachment.isPending ? (
@@ -236,7 +238,7 @@ export const ManagePaymentModal = React.forwardRef<BottomSheetModal, Props>(({ c
               ) : (
                 <Ionicons name="add" size={20} color={colors.accent} />
               )}
-            </Pressable>
+            </PressableScale>
           </View>
         </CmsCard>
 

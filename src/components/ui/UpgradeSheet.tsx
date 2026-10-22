@@ -1,9 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Linking, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Linking,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
+
+import { PressableScale } from './pressable-scale';
 
 type Props = {
   visible: boolean;
@@ -21,35 +32,77 @@ const UPGRADE_URL = 'https://appsketch.ai/pricing';
 // web (appsketch.ai/pricing) and the app picks up the new plan/tokens the
 // next time the same phone number signs in. This sheet just hands off to a
 // browser instead of a checkout screen.
+// White (docs/white-theme.md): ink scrim, raised sheet on the hairline, an
+// inset lock badge in ink, and orange for the one action — Upgrade.
+const WHITE = {
+  scrim: 'rgba(11,11,12,0.32)',
+  border: '#E7E7E4',
+  badgeBg: '#F4F4F2',
+  badgeIcon: '#0B0B0C',
+  cta: '#F2600C',
+};
+
 export function UpgradeSheet({ visible, onClose, t, modelLabel, body }: Props) {
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
   const message =
-    body ?? (modelLabel ? `${modelLabel} is available on paid plans. Upgrade to unlock every AI model.` : 'Upgrade your plan to continue.');
+    body ??
+    (modelLabel
+      ? `${modelLabel} is available on paid plans. Upgrade to unlock every AI model.`
+      : 'Upgrade your plan to continue.');
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={s.backdrop} onPress={onClose}>
-        <Pressable style={[s.sheet, { backgroundColor: t.sheetBg, borderColor: t.agentInputBorder }]}>
-          <View style={[s.iconWrap, { backgroundColor: `${t.accent}1A` }]}>
-            <Ionicons name="lock-closed" size={22} color={t.accent} />
+    <Modal
+      onShow={haptic.soft}
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        onPressIn={haptic.tap}
+        style={[s.backdrop, !dark && { backgroundColor: WHITE.scrim }]}
+        onPress={onClose}
+      >
+        <Pressable
+          style={[
+            s.sheet,
+            {
+              backgroundColor: t.sheetBg,
+              borderColor: dark ? t.agentInputBorder : WHITE.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              s.iconWrap,
+              { backgroundColor: dark ? `${t.accent}1A` : WHITE.badgeBg },
+            ]}
+          >
+            <Ionicons
+              name="lock-closed"
+              size={22}
+              color={dark ? t.accent : WHITE.badgeIcon}
+            />
           </View>
           <Text style={[s.title, { color: t.text }]}>Upgrade your plan</Text>
           <Text style={[s.body, { color: t.textSub }]}>{message}</Text>
           <Text style={[s.hint, { color: t.textSub }]}>
-            Upgrade from a browser, then sign in here with the same phone number — it unlocks instantly.
+            Upgrade from a browser, then sign in here with the same phone number
+            — it unlocks instantly.
           </Text>
-          <TouchableOpacity
-            activeOpacity={0.85}
+          <PressableScale
             onPress={() => {
               onClose();
-              Linking.openURL(UPGRADE_URL);
+              Linking.openURL(UPGRADE_URL).catch(() => {});
             }}
-            style={[s.cta, { backgroundColor: t.accent }]}
+            style={[s.cta, { backgroundColor: dark ? t.accent : WHITE.cta }]}
           >
             <Text style={s.ctaText}>Upgrade in Browser</Text>
-          </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} onPress={onClose} style={s.dismiss}>
+          </PressableScale>
+          <PressableScale onPress={onClose} style={s.dismiss}>
             <Text style={[s.dismissText, { color: t.textSub }]}>Not now</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </Pressable>
       </Pressable>
     </Modal>

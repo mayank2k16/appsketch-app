@@ -1,14 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
+import { useRouter } from 'expo-router';
 import * as React from 'react';
-import {
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 
 import { HOME_BRAND_RAMP, type HomeColors } from '../theme/HomeTheme';
@@ -55,7 +51,31 @@ const TOOLS: { icon: keyof typeof Ionicons.glyphMap; active?: boolean }[] = [
   { icon: 'color-palette-outline' },
 ];
 
+/** White's flat stand-ins for the mockup's tinted bits (docs/white-theme.md:
+ *  no tinted surfaces, ink for primary actions, images framed by a hairline). */
+function mockupColors(t: HomeColors) {
+  const isDark = t.statusBar === 'light-content';
+  return {
+    isDark,
+    softBg: isDark ? t.accentSoft : t.agentBtnBg,
+    softFg: isDark ? t.accent : t.text,
+    buildBg: isDark ? HOME_BRAND_RAMP[1] : t.heroCtaBg,
+    buildFg: isDark ? '#FFFFFF' : t.heroCtaText,
+    tileBadgeBg: isDark ? 'rgba(0,0,0,0.55)' : '#FFFFFF',
+    tileBadgeFg: isDark ? '#FFFFFF' : t.text,
+    tile: isDark
+      ? null
+      : {
+          backgroundColor: t.agentBtnBg,
+          borderWidth: 1,
+          borderColor: t.border,
+        },
+  };
+}
+
 export function MockupCard({ t }: { t: HomeColors }) {
+  const router = useRouter();
+  const c = mockupColors(t);
   return (
     <View style={[s.card, { backgroundColor: t.card, borderColor: t.border }]}>
       {/* ── Browser chrome ── */}
@@ -83,14 +103,14 @@ export function MockupCard({ t }: { t: HomeColors }) {
               style={[
                 s.toolBtn,
                 tool.active
-                  ? { backgroundColor: t.accentSoft }
+                  ? { backgroundColor: c.softBg }
                   : { backgroundColor: 'transparent' },
               ]}
             >
               <Ionicons
                 name={tool.icon}
                 size={14}
-                color={tool.active ? t.accent : t.textMuted}
+                color={tool.active ? c.softFg : t.textMuted}
               />
             </View>
           ))}
@@ -110,10 +130,18 @@ export function MockupCard({ t }: { t: HomeColors }) {
             >
               A skincare store with product pages, cart and checkout
             </Text>
-            <TouchableOpacity style={s.generateBtn} activeOpacity={0.85}>
-              <Text style={s.generateBtnTxt}>Build</Text>
-              <Ionicons name="arrow-forward" size={11} color="#FFFFFF" />
-            </TouchableOpacity>
+            {/* Was a dead button. "Build" in a picture of the builder goes
+                to the real one: the Agent tab's composer. */}
+            <PressableScale
+              onPress={() => router.push('/agent')}
+              accessibilityLabel="Build with the agent"
+              style={[s.generateBtn, { backgroundColor: c.buildBg }]}
+            >
+              <Text style={[s.generateBtnTxt, { color: c.buildFg }]}>
+                Build
+              </Text>
+              <Ionicons name="arrow-forward" size={11} color={c.buildFg} />
+            </PressableScale>
           </View>
 
           {/* Image grid */}
@@ -121,7 +149,7 @@ export function MockupCard({ t }: { t: HomeColors }) {
             {GRID_IMAGES.map((uri, i) => (
               <View
                 key={uri}
-                style={[s.tile, { width: TILE_SIZE, height: TILE_H }]}
+                style={[s.tile, { width: TILE_SIZE, height: TILE_H }, c.tile]}
               >
                 <ExpoImage
                   source={uri}
@@ -132,25 +160,23 @@ export function MockupCard({ t }: { t: HomeColors }) {
                 />
                 {i === 1 ? (
                   <View
-                    style={[
-                      s.tileBadge,
-                      { backgroundColor: 'rgba(0,0,0,0.55)' },
-                    ]}
+                    style={[s.tileBadge, { backgroundColor: c.tileBadgeBg }]}
                   >
-                    <Ionicons name="expand-outline" size={11} color="#FFFFFF" />
+                    <Ionicons
+                      name="expand-outline"
+                      size={11}
+                      color={c.tileBadgeFg}
+                    />
                   </View>
                 ) : null}
                 {i === 3 ? (
                   <View
-                    style={[
-                      s.tileBadge,
-                      { backgroundColor: 'rgba(0,0,0,0.55)' },
-                    ]}
+                    style={[s.tileBadge, { backgroundColor: c.tileBadgeBg }]}
                   >
                     <Ionicons
                       name="sparkles-outline"
                       size={11}
-                      color="#FFFFFF"
+                      color={c.tileBadgeFg}
                     />
                   </View>
                 ) : null}
@@ -165,13 +191,13 @@ export function MockupCard({ t }: { t: HomeColors }) {
               style={[
                 s.avatar,
                 {
-                  backgroundColor: t.accentSoft,
+                  backgroundColor: c.softBg,
                   alignItems: 'center',
                   justifyContent: 'center',
                 },
               ]}
             >
-              <Text style={[s.avatarInitials, { color: t.accent }]}>JC</Text>
+              <Text style={[s.avatarInitials, { color: c.softFg }]}>JC</Text>
             </View>
             <View>
               <Text style={[s.authorName, { color: t.text }]}>John Carter</Text>

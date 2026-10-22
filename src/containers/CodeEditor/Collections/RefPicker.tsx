@@ -7,12 +7,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import type { CollectionOption } from '@/api/coder';
 import { getCollectionOptions } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 /**
@@ -124,9 +125,11 @@ export function RefPicker({
   return (
     <>
       <View style={st.row}>
-        <TouchableOpacity
-          disabled={disabled}
-          onPress={() => setOpen(true)}
+        <PressableScale
+          scaleTo={0.98}
+          // Guarded, not `disabled`, so dark keeps its undimmed look.
+          onPress={disabled ? undefined : () => setOpen(true)}
+          accessibilityState={{ disabled: !!disabled }}
           style={[
             st.trigger,
             {
@@ -150,25 +153,37 @@ export function RefPicker({
             size={14}
             color={colors.codeEditorTextMuted}
           />
-        </TouchableOpacity>
+        </PressableScale>
         {value ? (
-          <TouchableOpacity onPress={() => pick(null)} style={st.clearBtn}>
+          <PressableScale
+            onPress={() => pick(null)}
+            style={st.clearBtn}
+            accessibilityLabel="Clear selection"
+          >
             <Ionicons
               name="close-circle"
               size={18}
               color={colors.codeEditorTextMuted}
             />
-          </TouchableOpacity>
+          </PressableScale>
         ) : null}
       </View>
 
       <Modal
+        onShow={haptic.soft}
         visible={open}
         animationType="slide"
         transparent
         onRequestClose={() => setOpen(false)}
       >
-        <View style={st.backdrop}>
+        <View
+          style={[
+            st.backdrop,
+            colors.statusBar !== 'light-content' && {
+              backgroundColor: colors.sheetOverlay,
+            },
+          ]}
+        >
           <View
             style={[
               st.sheet,
@@ -182,9 +197,13 @@ export function RefPicker({
               <Text style={[st.headTitle, { color: colors.text }]}>
                 {target}
               </Text>
-              <TouchableOpacity onPress={() => setOpen(false)} hitSlop={10}>
+              <PressableScale
+                onPress={() => setOpen(false)}
+                hitSlop={10}
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={20} color={colors.textSub} />
-              </TouchableOpacity>
+              </PressableScale>
             </View>
 
             <View style={st.searchWrap}>
@@ -233,7 +252,8 @@ export function RefPicker({
               renderItem={({ item }) => {
                 const isSel = String(item.id) === String(value);
                 return (
-                  <TouchableOpacity
+                  <PressableScale
+                    scaleTo={0.98}
                     onPress={() => pick(item)}
                     style={[
                       st.opt,
@@ -261,20 +281,20 @@ export function RefPicker({
                     >
                       #{item.id}
                     </Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 );
               }}
             />
 
             {value ? (
-              <TouchableOpacity
+              <PressableScale
                 onPress={() => pick(null)}
                 style={[st.clearAll, { borderColor: colors.codeEditorBorder }]}
               >
                 <Text style={{ color: colors.textSub, fontWeight: '600' }}>
                   Clear selection
                 </Text>
-              </TouchableOpacity>
+              </PressableScale>
             ) : null}
           </View>
         </View>

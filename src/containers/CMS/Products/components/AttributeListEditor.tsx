@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsInput, CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -84,6 +85,7 @@ export function AttributeListEditor({
       }
     });
     if (Object.keys(nextErrors).length > 0) {
+      haptic.error();
       setErrors(nextErrors);
       return;
     }
@@ -113,22 +115,22 @@ export function AttributeListEditor({
                 </Text>
               ) : null}
             </View>
-            <Pressable onPress={() => openEdit(idx)} hitSlop={8} style={{ padding: 4 }}>
+            <PressableScale onPress={() => openEdit(idx)} hitSlop={8} style={{ padding: 4 }}>
               <Ionicons name="create-outline" size={17} color={colors.textSecondary} />
-            </Pressable>
-            <Pressable onPress={() => handleDelete(idx)} hitSlop={8} style={{ padding: 4 }}>
+            </PressableScale>
+            <PressableScale onPress={() => handleDelete(idx)} hitSlop={8} style={{ padding: 4 }}>
               <Ionicons name="trash-outline" size={17} color={colors.danger} />
-            </Pressable>
+            </PressableScale>
           </View>
         ))
       ) : (
         <Text style={{ color: colors.textSecondary, fontSize: 12.5 }}>{emptyLabel}</Text>
       )}
 
-      <Pressable onPress={openAdd} style={[st.addBtn, { borderColor: colors.accent }]}>
+      <PressableScale onPress={openAdd} style={[st.addBtn, { borderColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accent} />
         <Text style={[st.addLabel, { color: colors.accent }]}>{addLabel}</Text>
-      </Pressable>
+      </PressableScale>
 
       <CmsModal ref={modal.ref} colors={colors} snapPoints={['75%']} title={editIndex !== null ? `Edit ${modalTitle}` : `Add ${modalTitle}`}>
         <View style={st.popupBody}>

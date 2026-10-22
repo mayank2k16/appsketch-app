@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { WalletActiveFilter, WalletListItem } from '@/api/wallets';
 import { useWallets } from '@/api/wallets';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { useCmsTheme } from '../theme';
@@ -103,7 +103,8 @@ export function WalletsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
         renderItem={({ item }) => {
           const active = item.value === activeFilter;
           return (
-            <Pressable
+            <PressableScale
+              haptic={active ? true : 'select'}
               onPress={() => setActiveFilter(item.value)}
               style={[
                 st.chip,
@@ -114,7 +115,7 @@ export function WalletsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
               <Text style={[st.chipLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
                 {item.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         }}
       />

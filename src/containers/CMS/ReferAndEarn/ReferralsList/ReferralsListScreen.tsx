@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { ReferralListItem, ReferralStatus } from '@/api/referrals';
 import { useReferralsAnalytics, useReferralsList } from '@/api/referrals';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsCard, CmsModal, CmsStatusBadge } from '../../components';
 import { useCmsTheme } from '../../theme';
@@ -121,19 +121,19 @@ export function ReferralsListScreen() {
                   value={search}
                   onChangeText={setSearch}
                   placeholder="Search by referrer/referee name, phone or ID…"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={colors.textMuted}
                   style={[st.searchInput, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
                 />
-                <Pressable onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
+                <PressableScale onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
                   <Ionicons name="filter-outline" size={18} color={colors.textPrimary} />
-                </Pressable>
+                </PressableScale>
               </View>
               {statusFilter !== 'ALL' ? (
                 <View style={[st.activeFilterChip, { backgroundColor: colors.accent }]}>
                   <Text style={[st.activeFilterLabel, { color: colors.accentText }]}>{statusFilterLabel(statusFilter)}</Text>
-                  <Pressable onPress={() => setStatusFilter('ALL')} hitSlop={8}>
+                  <PressableScale onPress={() => setStatusFilter('ALL')} hitSlop={8}>
                     <Ionicons name="close" size={13} color={colors.accentText} />
-                  </Pressable>
+                  </PressableScale>
                 </View>
               ) : null}
             </View>
@@ -160,7 +160,8 @@ export function ReferralsListScreen() {
           {STATUS_FILTERS.map((f) => {
             const checked = statusFilter === f;
             return (
-              <Pressable
+              <PressableScale
+                haptic="rigid"
                 key={f}
                 onPress={() => {
                   setStatusFilter(f);
@@ -170,7 +171,7 @@ export function ReferralsListScreen() {
               >
                 <Text style={{ color: colors.textPrimary, fontSize: 14, flex: 1 }}>{statusFilterLabel(f)}</Text>
                 {checked ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
@@ -185,7 +186,8 @@ function StatTile({ colors, label, value, accent }: { colors: ReturnType<typeof 
       <Text style={[st.statLabel, { color: colors.textSecondary }]} numberOfLines={1}>
         {label}
       </Text>
-      <Text style={[st.statValue, { color: accent }]} numberOfLines={1}>
+      {/* White: values read in ink; the left stripe alone carries the hue. */}
+      <Text style={[st.statValue, { color: colors.kind === 'light' ? colors.textPrimary : accent }]} numberOfLines={1}>
         {value}
       </Text>
     </View>

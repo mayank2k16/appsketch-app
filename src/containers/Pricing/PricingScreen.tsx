@@ -9,7 +9,6 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,16 +23,61 @@ import {
   useSubscriptionPlans,
   type TransformedPlan,
 } from '@/api';
+import { PressableScale } from '@/components/ui';
 import { GradientText } from '@/components/ui/GradientText';
 import { Skeleton } from '@/containers/Marketplace/components/Skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { BRAND_RAMP, useAppTheme, type AppColors } from '@/lib/theme';
 
 const SKELETON_CARD_COUNT = 3;
 
 const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
+
+/** Screen-local roles. Dark returns exactly the values this screen always
+ *  used; white follows docs/white-theme.md — RAISED white cards on paper, an
+ *  INSET price well, ink for selection/ticks/secondary CTAs, and orange only
+ *  on the primary plan's Upgrade button. The pastel title ramp is unreadable
+ *  on white, so the hero word takes the brand ramp there. */
+function pricingPalette(t: AppColors) {
+  const dark = t.statusBar === 'light-content';
+  return dark
+    ? {
+        eyebrow: t.accent,
+        titleColors: GRADIENT_TITLE_COLORS,
+        cardBg: t.agentTabBg,
+        cardBorder: t.agentTabBorder,
+        popularBorder: t.accent,
+        popularBadgeBg: t.accent,
+        priceBg: t.card,
+        mark: t.accent,
+        thumb: t.accent,
+        saveBg: t.accent,
+        saveText: '#FFFFFF',
+        primaryBg: t.accent,
+        ghostBorder: t.accent,
+        ghostText: t.accent,
+        error: '#E0392B',
+      }
+    : {
+        eyebrow: t.textSub,
+        titleColors: [...BRAND_RAMP] as string[],
+        cardBg: t.card,
+        cardBorder: t.border,
+        popularBorder: t.text,
+        popularBadgeBg: t.text,
+        priceBg: '#F4F4F2',
+        mark: t.text,
+        thumb: t.text,
+        saveBg: 'rgba(18,161,80,0.08)',
+        saveText: '#12A150',
+        primaryBg: t.accent,
+        ghostBorder: '#D9D9D5',
+        ghostText: t.text,
+        error: '#E5484D',
+      };
+}
 
 type BillingCycle = 'monthly' | 'yearly';
 
@@ -42,6 +86,7 @@ export function PricingScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const p = pricingPalette(t);
   const [billingCycle, setBillingCycle] = React.useState<BillingCycle>('monthly');
   const { data, isLoading, isError } = useSubscriptionPlans();
 
@@ -65,9 +110,9 @@ export function PricingScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>Pricing & Plans</Text>
         <View style={st.backBtn} />
       </View>
@@ -79,8 +124,8 @@ export function PricingScreen() {
       >
         {/* ── Hero — subtitle + title only, matches the web header block ── */}
         <View style={st.section}>
-          <Text style={[st.subtitle, { color: t.accent }]}>Our Pricing Plans</Text>
-          <GradientText style={st.heroTitle} colors={GRADIENT_TITLE_COLORS}>
+          <Text style={[st.subtitle, { color: p.eyebrow }]}>Our Pricing Plans</Text>
+          <GradientText style={st.heroTitle} colors={p.titleColors}>
             Pricing and Plans
           </GradientText>
         </View>
@@ -93,8 +138,8 @@ export function PricingScreen() {
           </View>
         ) : isError ? (
           <View style={st.section}>
-            <View style={[st.errorBox, { backgroundColor: '#E0392B14', borderColor: '#E0392B40' }]}>
-              <Text style={st.errorText}>Failed to load pricing data.</Text>
+            <View style={[st.errorBox, { backgroundColor: `${p.error}14`, borderColor: `${p.error}40` }]}>
+              <Text style={[st.errorText, { color: p.error }]}>Failed to load pricing data.</Text>
             </View>
           </View>
         ) : (
@@ -145,27 +190,38 @@ function BillingToggle({
     }).start();
   }, [value, anim]);
 
+  const p = pricingPalette(t);
   const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [3, 110] });
 
   return (
     <View style={st.toggleRow}>
       <View style={[st.toggleTrack, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
         <Animated.View
-          style={[st.toggleThumb, { backgroundColor: t.accent, transform: [{ translateX: thumbX }] }]}
+          style={[st.toggleThumb, { backgroundColor: p.thumb, transform: [{ translateX: thumbX }] }]}
         />
-        <TouchableOpacity style={st.toggleOption} activeOpacity={0.8} onPress={() => onChange('monthly')}>
+        <PressableScale
+          style={st.toggleOption}
+          haptic={value === 'monthly' ? true : 'select'}
+          accessibilityState={{ selected: value === 'monthly' }}
+          onPress={() => onChange('monthly')}
+        >
           <Text style={[st.toggleOptionText, { color: value === 'monthly' ? '#FFFFFF' : t.textSub }]}>
             Monthly
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={st.toggleOption} activeOpacity={0.8} onPress={() => onChange('yearly')}>
+        </PressableScale>
+        <PressableScale
+          style={st.toggleOption}
+          haptic={value === 'yearly' ? true : 'select'}
+          accessibilityState={{ selected: value === 'yearly' }}
+          onPress={() => onChange('yearly')}
+        >
           <Text style={[st.toggleOptionText, { color: value === 'yearly' ? '#FFFFFF' : t.textSub }]}>
             Yearly
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
-      <View style={[st.saveBadge, { backgroundColor: t.accent }]}>
-        <Text style={st.saveBadgeText}>Save 16.66%</Text>
+      <View style={[st.saveBadge, { backgroundColor: p.saveBg }]}>
+        <Text style={[st.saveBadgeText, { color: p.saveText }]}>Save 16.66%</Text>
       </View>
     </View>
   );
@@ -187,13 +243,14 @@ function PlanCard({
 }) {
   const priceOption = billingCycle === 'monthly' ? plan.monthly : plan.yearly;
   const isFree = !priceOption || Number(priceOption.price) === 0;
+  const p = pricingPalette(t);
 
   return (
     <View
-      style={[st.card, { backgroundColor: t.agentTabBg, borderColor: popular ? t.accent : t.agentTabBorder }]}
+      style={[st.card, { backgroundColor: p.cardBg, borderColor: popular ? p.popularBorder : p.cardBorder }]}
     >
       {popular && (
-        <View style={[st.popularBadge, { backgroundColor: t.accent }]}>
+        <View style={[st.popularBadge, { backgroundColor: p.popularBadgeBg }]}>
           <Text style={st.popularBadgeText}>Most Popular</Text>
         </View>
       )}
@@ -201,12 +258,12 @@ function PlanCard({
       <Text style={[st.planName, { color: t.text }]}>{plan.name}</Text>
       {!!plan.description && <Text style={[st.planDesc, { color: t.textSub }]}>{plan.description}</Text>}
 
-      <View style={[st.priceBox, { backgroundColor: t.card, borderColor: t.border }]}>
+      <View style={[st.priceBox, { backgroundColor: p.priceBg, borderColor: t.border }]}>
         {isFree ? (
           <Text style={[st.priceFree, { color: t.text }]}>Free</Text>
         ) : (
           <View style={st.priceRow}>
-            <Text style={[st.dollar, { color: t.accent }]}>{priceOption?.currency?.symbol ?? '$'}</Text>
+            <Text style={[st.dollar, { color: p.mark }]}>{priceOption?.currency?.symbol ?? '$'}</Text>
             <Text style={[st.price, { color: t.text }]}>{formatCurrency(Number(priceOption?.price))}</Text>
             <Text style={[st.perPeriod, { color: t.textSub }]}>
               /{billingCycle === 'monthly' ? 'month' : 'year'}
@@ -218,7 +275,7 @@ function PlanCard({
       <View style={st.featureList}>
         {plan.features.map((feat) => (
           <View key={feat} style={st.featureRow}>
-            <Ionicons name="checkmark-circle" size={16} color={t.accent} />
+            <Ionicons name="checkmark-circle" size={16} color={p.mark} />
             <Text style={[st.featureText, { color: t.textSub }]}>{feat}</Text>
           </View>
         ))}
@@ -226,20 +283,20 @@ function PlanCard({
 
       {/* Free tier has no CTA button, same as the web reference */}
       {!isPlanFree(plan) && (
-        <TouchableOpacity
+        <PressableScale
+          haptic="press"
           onPress={onPress}
-          activeOpacity={0.85}
           style={[
             st.ctaButton,
             plan.isPrimary
-              ? { backgroundColor: t.accent, borderColor: t.accent }
-              : { backgroundColor: 'transparent', borderColor: t.accent },
+              ? { backgroundColor: p.primaryBg, borderColor: p.primaryBg }
+              : { backgroundColor: 'transparent', borderColor: p.ghostBorder },
           ]}
         >
-          <Text style={[st.ctaButtonText, { color: plan.isPrimary ? '#FFFFFF' : t.accent }]}>
+          <Text style={[st.ctaButtonText, { color: plan.isPrimary ? '#FFFFFF' : p.ghostText }]}>
             {plan.buttonText}
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
       )}
     </View>
   );
@@ -248,12 +305,13 @@ function PlanCard({
 // ─── Plan card skeleton — mirrors PlanCard's layout so the grid doesn't
 // reflow once real cards swap in. ──
 function PlanCardSkeleton({ t }: { t: AppColors }) {
+  const p = pricingPalette(t);
   return (
-    <View style={[st.card, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
+    <View style={[st.card, { backgroundColor: p.cardBg, borderColor: p.cardBorder }]}>
       <Skeleton t={t} height={19} width="45%" borderRadius={4} style={{ marginBottom: 8 }} />
       <Skeleton t={t} height={13} width="80%" borderRadius={4} style={{ marginBottom: 16 }} />
 
-      <View style={[st.priceBox, { backgroundColor: t.card, borderColor: t.border }]}>
+      <View style={[st.priceBox, { backgroundColor: p.priceBg, borderColor: t.border }]}>
         <Skeleton t={t} height={26} width={90} borderRadius={4} />
       </View>
 
@@ -294,7 +352,7 @@ const st = StyleSheet.create({
   heroTitle: { fontFamily: F.display900, fontSize: 32, lineHeight: 38, letterSpacing: -0.5 },
 
   errorBox: { borderRadius: 12, borderWidth: 1, padding: 14 },
-  errorText: { fontFamily: F.sans600, fontSize: 13.5, color: '#E0392B', textAlign: 'center' },
+  errorText: { fontFamily: F.sans600, fontSize: 13.5, textAlign: 'center' },
 
   toggleSection: { paddingHorizontal: 8, paddingTop: 24, alignItems: 'center' },
   toggleRow: { flexDirection: 'column-reverse', alignItems: 'center', gap: 10 },
@@ -321,7 +379,7 @@ const st = StyleSheet.create({
   },
   toggleOptionText: { fontFamily: F.sans600, fontSize: 13 },
   saveBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
-  saveBadgeText: { fontFamily: F.sans700, fontSize: 10.5, color: '#FFFFFF', letterSpacing: 0.3 },
+  saveBadgeText: { fontFamily: F.sans700, fontSize: 10.5, letterSpacing: 0.3 },
 
   plansWrap: { paddingHorizontal: 8, paddingTop: 28, gap: 16 },
 

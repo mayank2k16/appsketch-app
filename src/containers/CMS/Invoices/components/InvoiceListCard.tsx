@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { InvoiceListItem } from '@/api/invoices';
 
 import { CmsStatusBadge } from '../../components';
@@ -31,12 +32,12 @@ export const InvoiceListCard = React.memo(function InvoiceListCard({ invoice, co
         <Field label="Amount" value={`Rs. ${money(invoice.final_price)}`} colors={colors} />
         <Field label="Type" value={invoice.type || 'N/A'} colors={colors} />
         {invoice.invoice_url ? (
-          <Pressable onPress={() => Linking.openURL(invoice.invoice_url as string)} style={st.field}>
+          <PressableScale scaleTo={0.98} onPress={() => Linking.openURL(invoice.invoice_url as string)} style={st.field}>
             <Text style={[st.fieldLabel, { color: colors.textSecondary }]}>Invoice URL</Text>
             <Text style={[st.fieldValue, { color: colors.accent }]} numberOfLines={1}>
               View Invoice
             </Text>
-          </Pressable>
+          </PressableScale>
         ) : (
           <Field label="Invoice URL" value="N/A" colors={colors} />
         )}
@@ -45,12 +46,12 @@ export const InvoiceListCard = React.memo(function InvoiceListCard({ invoice, co
       <View style={st.footerRow}>
         <CmsStatusBadge meta={getInvoiceStatusMeta(invoice.status)} />
         <View style={st.actions}>
-          <Pressable onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          <PressableScale onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="create-outline" size={15} color={colors.textPrimary} />
-          </Pressable>
-          <Pressable onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          </PressableScale>
+          <PressableScale onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="trash-outline" size={15} color={colors.danger} />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </View>

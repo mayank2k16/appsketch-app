@@ -2,6 +2,7 @@ package ai.appsketch.host
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -14,7 +15,6 @@ import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -23,6 +23,7 @@ import com.facebook.react.ReactRootView
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Full-screen home of the running guest app. A small draggable bubble floats
@@ -50,6 +51,7 @@ class GuestActivity : ReactActivity() {
     }
     super.onCreate(null)
     GuestSession.onError = { showError(it) }
+    GuestSession.onProgress = { status, done, total -> onBundleProgress(status, done, total) }
     showLoading()
     addBubble()
   }
@@ -61,33 +63,76 @@ class GuestActivity : ReactActivity() {
     return null
   }
 
+  private val dark: Boolean
+    get() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+      Configuration.UI_MODE_NIGHT_YES
+  private val canvas get() = if (dark) Color.BLACK else Color.parseColor("#FAFAF8")
+  private val ink get() = if (dark) Color.WHITE else Color.parseColor("#0B0B0C")
+  private val sub get() = if (dark) Color.parseColor("#A1A1A6") else Color.parseColor("#5C5D63")
+
+  private var percentText: TextView? = null
+  private var stageText: TextView? = null
+  private var fill: View? = null
+  private var shown = 0f
+  private var sawBuild = false
+
   /**
-   * The bundle downloads and runs before anything paints; until the guest's
-   * first views mount, say so instead of showing a blank screen.
+   * The bundle builds, downloads and runs before anything paints; until the
+   * guest's first views mount, show how far along it is: a thin bar with a
+   * percentage, fed by GuestSession.onProgress.
    */
   private fun showLoading() {
     loadingView?.let { root.removeView(it) }
+    shown = 0f
+    sawBuild = false
     val panel = LinearLayout(this).apply {
       orientation = LinearLayout.VERTICAL
       gravity = Gravity.CENTER
-      setBackgroundColor(Color.WHITE)
+      setBackgroundColor(canvas)
       isClickable = true
     }
-    panel.addView(ProgressBar(this))
     panel.addView(TextView(this).apply {
-      text = "Starting ${GuestSession.current?.title ?: "your app"}…"
-      textSize = 17f
-      setTextColor(Color.parseColor("#111111"))
+      text = "Starting ${GuestSession.current?.title ?: "your app"}"
+      textSize = 20f
+      setTextColor(ink)
       typeface = android.graphics.Typeface.DEFAULT_BOLD
       gravity = Gravity.CENTER
-      setPadding(0, dp(14f), 0, dp(4f))
     })
-    panel.addView(TextView(this).apply {
-      text = "Downloading the latest version of your app"
-      textSize = 13f
-      setTextColor(Color.parseColor("#666666"))
+    val percent = TextView(this).apply {
+      text = "0%"
+      textSize = 40f
+      setTextColor(ink)
+      typeface = android.graphics.Typeface.create("sans-serif-black", android.graphics.Typeface.NORMAL)
+      fontFeatureSettings = "tnum"
       gravity = Gravity.CENTER
-    })
+      setPadding(0, dp(4f), 0, dp(12f))
+    }
+    panel.addView(percent)
+    val track = FrameLayout(this).apply {
+      background = GradientDrawable().apply {
+        cornerRadius = dp(3f).toFloat()
+        setColor(if (dark) Color.parseColor("#1FFFFFFF") else Color.parseColor("#F4F4F2"))
+      }
+    }
+    val bar = View(this).apply {
+      background = GradientDrawable().apply {
+        cornerRadius = dp(3f).toFloat()
+        setColor(Color.parseColor("#F2600C"))
+      }
+    }
+    track.addView(bar, FrameLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT))
+    panel.addView(track, LinearLayout.LayoutParams(dp(220f), dp(6f)))
+    val stage = TextView(this).apply {
+      text = "Connecting to your app…"
+      textSize = 13f
+      setTextColor(sub)
+      gravity = Gravity.CENTER
+      setPadding(0, dp(14f), 0, 0)
+    }
+    panel.addView(stage)
+    percentText = percent
+    stageText = stage
+    fill = bar
     loadingView = panel
     root.addView(
       panel,
@@ -103,6 +148,41 @@ class GuestActivity : ReactActivity() {
     }
   }
 
+  /**
+   * Build fills the first half (when Metro has to build), the download the
+   * rest; with a cached build the download is the whole bar. Never goes
+   * backwards and holds at 99% until the first frame.
+   */
+  private fun onBundleProgress(status: String, done: Int, total: Int) {
+    if (loadingView == null) return
+    val ratio = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
+    val value: Float
+    if (status == "Downloading") {
+      value = if (sawBuild) 0.5f + 0.49f * ratio else 0.99f * ratio
+      stageText?.text = when {
+        ratio >= 1f -> "Opening…"
+        total > 0 -> String.format("Downloading %.1f of %.1f MB", done / 1024f, total / 1024f)
+        else -> "Downloading your app…"
+      }
+    } else {
+      sawBuild = true
+      value = 0.5f * ratio
+      stageText?.text = "Building your app…"
+    }
+    setProgress(value)
+  }
+
+  private fun setProgress(value: Float) {
+    if (value <= shown) return
+    shown = value.coerceAtMost(0.99f)
+    percentText?.text = "${(shown * 100).roundToInt()}%"
+    fill?.let { v ->
+      val lp = v.layoutParams
+      lp.width = (dp(220f) * shown).toInt()
+      v.layoutParams = lp
+    }
+  }
+
   private fun hideLoading() {
     loadingView?.let { root.removeView(it) }
     loadingView = null
@@ -114,6 +194,7 @@ class GuestActivity : ReactActivity() {
     super.onDestroy()
     if (isFinishing) {
       GuestSession.onError = null
+      GuestSession.onProgress = null
       GuestSession.close()
     }
   }
@@ -206,20 +287,20 @@ class GuestActivity : ReactActivity() {
       orientation = LinearLayout.VERTICAL
       gravity = Gravity.CENTER
       setPadding(pad, pad, pad, pad)
-      setBackgroundColor(Color.WHITE)
+      setBackgroundColor(canvas)
       isClickable = true
     }
     panel.addView(TextView(this).apply {
       text = "This app couldn't start"
       textSize = 20f
-      setTextColor(Color.parseColor("#111111"))
+      setTextColor(ink)
       typeface = android.graphics.Typeface.DEFAULT_BOLD
       gravity = Gravity.CENTER
     })
     panel.addView(TextView(this).apply {
       text = error.message ?: error.toString()
       textSize = 14f
-      setTextColor(Color.parseColor("#555555"))
+      setTextColor(sub)
       gravity = Gravity.CENTER
       setPadding(0, dp(12f), 0, dp(20f))
     })

@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+import { PressableScale } from '@/components/ui';
 
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
@@ -36,18 +38,18 @@ export function TagListInput({ colors, label, placeholder, values, onChange }: P
             value={value}
             onChangeText={(t) => setAt(i, t)}
             placeholder={placeholder}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
           />
-          <Pressable onPress={() => removeAt(i)} hitSlop={8} style={st.iconBtn}>
+          <PressableScale onPress={() => removeAt(i)} hitSlop={8} style={st.iconBtn}>
             <Ionicons name="trash-outline" size={16} color={colors.danger} />
-          </Pressable>
+          </PressableScale>
         </View>
       ))}
-      <Pressable onPress={add} style={st.addRow} hitSlop={4}>
+      <PressableScale onPress={add} style={st.addRow} hitSlop={4}>
         <Ionicons name="add-circle-outline" size={16} color={colors.accent} />
         <Text style={[st.addLabel, { color: colors.accent }]}>Add {label}</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

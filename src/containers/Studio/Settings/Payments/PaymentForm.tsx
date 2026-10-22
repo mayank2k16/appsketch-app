@@ -6,12 +6,13 @@
  * hand-drawing brand SVGs.
  */
 import * as React from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { AddPaymentMerchantPayload, PaymentProvider } from '@/api/payment-merchants';
 import { useAddPaymentMerchant } from '@/api/payment-merchants';
 import type { TenantSummary } from '@/api/studio';
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { toast } from '@/lib/toast';
 import type { AppColors } from '@/lib/theme';
@@ -101,17 +102,18 @@ export function PaymentForm({
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <TouchableOpacity onPress={onCancel} style={st.backRow}>
+      <PressableScale onPress={onCancel} style={st.backRow}>
         <Ionicons name="arrow-back" size={16} color={t.textSub} />
         <Text style={[st.backText, { color: t.textSub }]}>Back</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       <Text style={[st.label, { color: t.textMuted }]}>App</Text>
       <View style={st.tenantRow}>
         {tenants.map((tenant) => {
           const active = selectedTenant?.id === tenant.id;
           return (
-            <TouchableOpacity
+            <PressableScale
+              haptic={active ? true : 'select'}
               key={String(tenant.id)}
               onPress={() => setSelectedTenant(tenant)}
               style={[
@@ -123,7 +125,7 @@ export function PaymentForm({
               <Text style={[st.tenantChipText, { color: active ? t.accent : t.text }]} numberOfLines={1}>
                 {tenant.title}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           );
         })}
       </View>
@@ -133,7 +135,8 @@ export function PaymentForm({
         {PROVIDERS.map((p) => {
           const active = form.provider === p.key;
           return (
-            <TouchableOpacity
+            <PressableScale
+              haptic={active ? true : 'select'}
               key={p.key}
               onPress={() => setField('provider', p.key)}
               style={[
@@ -144,7 +147,7 @@ export function PaymentForm({
             >
               <Ionicons name="card-outline" size={20} color={active ? p.color : t.textMuted} />
               <Text style={[st.providerLabel, { color: active ? p.color : t.text }]}>{p.label}</Text>
-            </TouchableOpacity>
+            </PressableScale>
           );
         })}
       </View>
@@ -170,14 +173,15 @@ export function PaymentForm({
         onToggleSecure={() => setShowSecretKey((s) => !s)}
       />
 
-      <TouchableOpacity
+      <PressableScale
+        haptic="press"
         onPress={handleSubmit}
-        activeOpacity={0.85}
         disabled={addMerchant.isPending}
-        style={[st.submitBtn, { backgroundColor: t.accent }, addMerchant.isPending && { opacity: 0.6 }]}
+        disabledOpacity={0.6}
+        style={[st.submitBtn, { backgroundColor: t.accent }]}
       >
         <Text style={[st.submitBtnText, { color: t.accentOn }]}>{addMerchant.isPending ? 'Connecting…' : 'Connect'}</Text>
-      </TouchableOpacity>
+      </PressableScale>
     </ScrollView>
   );
 }
@@ -213,9 +217,14 @@ function FormField({
           style={[st.input, { color: t.text, borderColor: t.border }]}
         />
         {onToggleSecure && (
-          <TouchableOpacity onPress={onToggleSecure} style={st.eyeBtn} hitSlop={8}>
+          <PressableScale
+            onPress={onToggleSecure}
+            style={st.eyeBtn}
+            hitSlop={8}
+            haptic="rigid"
+          >
             <Ionicons name={secure ? 'eye-off-outline' : 'eye-outline'} size={16} color={t.textMuted} />
-          </TouchableOpacity>
+          </PressableScale>
         )}
       </View>
     </View>

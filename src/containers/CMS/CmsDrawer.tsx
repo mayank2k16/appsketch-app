@@ -13,6 +13,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
+
 import { useCmsTheme } from './theme';
 import type { CmsTab, CmsTabKey } from './tabs';
 
@@ -38,6 +41,7 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
 
   React.useEffect(() => {
     if (visible) {
+      haptic.soft();
       setModalVisible(true);
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
@@ -62,18 +66,25 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
 
   return (
     <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)', opacity: overlayOpacity }]} pointerEvents="none" />
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.kind === 'light' ? colors.scrim : 'rgba(0,0,0,0.55)', opacity: overlayOpacity }]} pointerEvents="none" />
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPressIn={haptic.tap}
+        onPress={onClose}
+      />
 
       <Animated.View
         style={[
           st.drawer,
           { backgroundColor: colors.sidebarBg, paddingTop: insets.top + 16, transform: [{ translateX }] },
+          colors.kind === 'light' && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border },
         ]}
       >
         <View style={st.header}>
           <Text style={[st.brand, { color: colors.sidebarText }]}>CMS</Text>
-          <Ionicons name="close" size={24} color={colors.sidebarText} onPress={onClose} />
+          <PressableScale onPress={onClose} hitSlop={8} accessibilityLabel="Close menu">
+            <Ionicons name="close" size={24} color={colors.sidebarText} />
+          </PressableScale>
         </View>
 
         <ScrollView
@@ -92,7 +103,9 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
                   transform: [{ translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
                 }}
               >
-                <Pressable
+                <PressableScale
+                  scaleTo={0.98}
+                  haptic={active ? true : 'select'}
                   onPress={() => onSelectTab(tab.key)}
                   style={[st.row, active && { backgroundColor: colors.sidebarActiveBg }]}
                 >
@@ -100,7 +113,7 @@ export function CmsDrawer({ visible, onClose, tabs, activeTab, onSelectTab }: Cm
                   <Text style={[st.rowLabel, { color: active ? colors.accent : colors.sidebarText }]}>
                     {tab.label}
                   </Text>
-                </Pressable>
+                </PressableScale>
               </Animated.View>
             );
           })}

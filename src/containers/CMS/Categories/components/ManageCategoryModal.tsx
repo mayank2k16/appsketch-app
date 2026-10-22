@@ -3,8 +3,9 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { CategoryNode, PickedCategoryAsset } from '@/api/categories';
 import {
   useAddSubCategory,
@@ -302,7 +303,7 @@ function ImagePickerTile({
 }) {
   const uri = localAsset?.uri ?? resolveMediaUrl(existingUrl);
   return (
-    <Pressable onPress={onPick} style={st.tileWrap}>
+    <PressableScale scaleTo={0.98} onPress={onPick} style={st.tileWrap}>
       <View
         style={[
           st.tile,
@@ -322,7 +323,7 @@ function ImagePickerTile({
       <Text style={[st.tileLabel, { color: colors.textSecondary }]}>
         {label}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

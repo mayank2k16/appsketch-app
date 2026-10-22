@@ -9,16 +9,16 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
+import { PressableScale } from '@/components/ui';
 import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
-import { BRAND_MID, useAppTheme, type AppColors } from '@/lib/theme';
+import { BRAND_MID, BRAND_RAMP, useAppTheme, type AppColors } from '@/lib/theme';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -112,11 +112,44 @@ const MILESTONES: { year: string; title: string; description: string }[] = [
 
 const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
 
+const isDarkPalette = (t: AppColors) => t.statusBar === 'light-content';
+
+/** Screen-local roles. Dark returns exactly what this page always drew. White
+ *  (docs/white-theme.md): RAISED white cards with one hairline, INSET wells
+ *  and pills, ink marks, no pastel tints — the pastel ramps vanish on paper,
+ *  so the hero word and the milestone years take the brand ramp instead. */
+function aboutPalette(t: AppColors) {
+  return isDarkPalette(t)
+    ? {
+        cardBg: t.agentTabBg,
+        cardBorder: t.agentTabBorder,
+        pillBg: t.accentSoft,
+        pillBorder: `${t.accent}40`,
+        mark: t.accent,
+        titleColors: GRADIENT_TITLE_COLORS,
+        yearColors: ['#C084FC', '#60A5FA'],
+        liveDot: '#10B981',
+        decoDot: BRAND_MID as string,
+      }
+    : {
+        cardBg: t.card,
+        cardBorder: t.border,
+        pillBg: '#F4F4F2',
+        pillBorder: t.border,
+        mark: t.text,
+        titleColors: [...BRAND_RAMP] as string[],
+        yearColors: [BRAND_RAMP[0], BRAND_RAMP[2]] as string[],
+        liveDot: '#12A150',
+        decoDot: t.text,
+      };
+}
+
 export function AboutUsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const p = aboutPalette(t);
 
   function handleSchedule() {
     Linking.openURL('https://calendly.com/care-appsketch/30min').catch(() => { });
@@ -127,9 +160,9 @@ export function AboutUsScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>About Us</Text>
         <View style={st.backBtn} />
       </View>
@@ -141,15 +174,15 @@ export function AboutUsScreen() {
       >
         {/* ── Hero ── */}
         <View style={st.section}>
-          <View style={[st.badge, { backgroundColor: t.accentSoft, borderColor: `${t.accent}40` }]}>
-            <Ionicons name="sparkles-outline" size={13} color={t.accent} />
-            <Text style={[st.badgeText, { color: t.accent }]}>About AppSketch</Text>
+          <View style={[st.badge, { backgroundColor: p.pillBg, borderColor: p.pillBorder }]}>
+            <Ionicons name="sparkles-outline" size={13} color={p.mark} />
+            <Text style={[st.badgeText, { color: p.mark }]}>About AppSketch</Text>
           </View>
 
           <Text style={[st.heroTitle, { color: t.text }]}>Empowering Businesses</Text>
           <GradientText
             style={st.heroTitle}
-            colors={GRADIENT_TITLE_COLORS}
+            colors={p.titleColors}
           >
             to Build and Scale Online
           </GradientText>
@@ -159,14 +192,13 @@ export function AboutUsScreen() {
             businesses design, launch, and scale websites with no limits.
           </Text>
 
-          <TouchableOpacity
+          <PressableScale
             onPress={() => router.push('/home')}
-            activeOpacity={0.85}
             style={[st.ctaBtn, { backgroundColor: t.heroCtaBg }]}
           >
             <Text style={[st.ctaBtnText, { color: t.heroCtaText }]}>Explore Appsketch</Text>
             <Ionicons name="arrow-forward" size={15} color={t.heroCtaText} />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
 
         {/* ── Stats ── */}
@@ -207,13 +239,13 @@ export function AboutUsScreen() {
 
           <View style={st.missionBadges}>
             <View style={[st.infoBadge, { backgroundColor: t.card, borderColor: t.border }]}>
-              <View style={[st.badgeDot, { backgroundColor: '#10B981' }]} />
+              <View style={[st.badgeDot, { backgroundColor: p.liveDot }]} />
               <Text style={[st.infoBadgeText, { color: t.text }]}>50K+ Websites Generated</Text>
             </View>
             <View style={[st.infoBadge, { backgroundColor: t.card, borderColor: t.border }]}>
               {/* Ramp, not the old blue. The dot beside it is the green
                   "live" marker and stays semantic; this one is decoration. */}
-              <View style={[st.badgeDot, { backgroundColor: BRAND_MID }]} />
+              <View style={[st.badgeDot, { backgroundColor: p.decoDot }]} />
               <Text style={[st.infoBadgeText, { color: t.text }]}>550K+ AI-Generated Pages & Sections</Text>
             </View>
           </View>
@@ -231,8 +263,8 @@ export function AboutUsScreen() {
           <View style={{ gap: 12, marginTop: 24 }}>
             {VALUES.map((value) => (
               <GlassCard key={value.title} t={t} contentStyle={st.valueCard}>
-                <View style={[st.valueIconWrap, { backgroundColor: t.accentSoft }]}>
-                  <Ionicons name={value.icon} size={20} color={t.accent} />
+                <View style={[st.valueIconWrap, { backgroundColor: p.pillBg }]}>
+                  <Ionicons name={value.icon} size={20} color={p.mark} />
                 </View>
                 <Text style={[st.valueTitle, { color: t.text }]}>{value.title}</Text>
                 <Text style={[st.valueDesc, { color: t.textSub }]}>{value.description}</Text>
@@ -249,7 +281,7 @@ export function AboutUsScreen() {
           <View style={{ gap: 12, marginTop: 24 }}>
             {MILESTONES.map((m) => (
               <GlassCard key={m.year} t={t} contentStyle={st.milestoneCard}>
-                <GradientText style={st.milestoneYear} colors={['#C084FC', '#60A5FA']}>
+                <GradientText style={st.milestoneYear} colors={p.yearColors}>
                   {m.year}
                 </GradientText>
                 <Text style={[st.milestoneTitle, { color: t.text }]}>{m.title}</Text>
@@ -268,24 +300,22 @@ export function AboutUsScreen() {
                 Join thousands of creators who are already using AppSketch.ai to bring their ideas to life.
               </Text>
               <View style={{ gap: 15, marginTop: 22 }}>
-                <TouchableOpacity
+                <PressableScale
                   onPress={() => router.push('/home')}
-                  activeOpacity={0.85}
                   style={[st.ctaBtn, { backgroundColor: t.heroCtaBg, alignSelf: 'stretch', justifyContent: 'center' }]}
                 >
                   <Text style={[st.ctaBtnText, { color: t.heroCtaText }]}>Start Your Free Trial</Text>
                   <Ionicons name="arrow-forward" size={15} color={t.heroCtaText} />
-                </TouchableOpacity>
-                <TouchableOpacity
+                </PressableScale>
+                <PressableScale
                   onPress={handleSchedule}
-                  activeOpacity={0.85}
                   style={[
                     st.ctaBtnSecondary,
                     { backgroundColor: t.heroSecondaryBg, borderColor: t.heroSecondaryBorder },
                   ]}
                 >
                   <Text style={[st.ctaBtnText, { color: t.heroSecondaryText }]}>Schedule a Demo</Text>
-                </TouchableOpacity>
+                </PressableScale>
               </View>
             </GlassCard>
           </View>
@@ -310,11 +340,12 @@ function GlassCard({
   contentStyle?: object;
   children: React.ReactNode;
 }) {
+  const p = aboutPalette(t);
   return (
     <View
       style={[
         st.glassCard,
-        { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
+        { backgroundColor: p.cardBg, borderColor: p.cardBorder },
         style,
       ]}
     >
@@ -324,9 +355,14 @@ function GlassCard({
 }
 
 function SectionBadge({ label, color, t }: { label: string; color: string; t: AppColors }) {
+  // White: a neutral INSET pill — the pastel washes read as tinted surfaces.
+  const dark = isDarkPalette(t);
+  const bg = dark ? `${color}1A` : '#F4F4F2';
+  const border = dark ? `${color}40` : t.border;
+  const text = dark ? color : t.textSub;
   return (
-    <View style={[st.sectionBadge, { backgroundColor: `${color}1A`, borderColor: `${color}40` }]}>
-      <Text style={[st.sectionBadgeText, { color }]}>{label}</Text>
+    <View style={[st.sectionBadge, { backgroundColor: bg, borderColor: border }]}>
+      <Text style={[st.sectionBadgeText, { color: text }]}>{label}</Text>
     </View>
   );
 }

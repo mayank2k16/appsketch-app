@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { CategoryNode } from '@/api/categories';
 import { resolveMediaUrl } from '@/lib/media-url';
 
@@ -105,7 +106,8 @@ export function CategoryTreeRow({
         </View>
       )}
 
-      <Pressable
+      <PressableScale
+        scaleTo={0.98}
         onPress={() => onSelect(category)}
         style={[
           st.row,
@@ -120,7 +122,7 @@ export function CategoryTreeRow({
         ]}
       >
         {hasChildren && (
-          <Pressable
+          <PressableScale
             onPress={() => onToggle(category.id)}
             hitSlop={8}
             style={st.chevron}
@@ -130,7 +132,7 @@ export function CategoryTreeRow({
               size={16}
               color={colors.textSecondary}
             />
-          </Pressable>
+          </PressableScale>
         )}
 
         {imageUri ? (
@@ -182,7 +184,7 @@ export function CategoryTreeRow({
           size={18}
           color={colors.textSecondary}
         />
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

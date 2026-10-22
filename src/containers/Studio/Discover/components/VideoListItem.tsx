@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { AppColors } from '@/lib/theme';
 
 export function VideoListItem({
@@ -18,8 +19,11 @@ export function VideoListItem({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <PressableScale
+      haptic={active ? true : 'select'}
       onPress={onPress}
+      scaleTo={0.98}
+      accessibilityState={{ selected: active }}
       style={[
         st.row,
         { backgroundColor: t.card, borderColor: active ? t.accent : t.border },
@@ -41,7 +45,7 @@ export function VideoListItem({
           <Text style={[st.playText, { color: t.accent }]}>Play video</Text>
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 

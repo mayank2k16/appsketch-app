@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { VendorListItem } from '@/api/vendors';
 
 import { CmsButton, CmsStatusBadge } from '../../components';
@@ -61,9 +62,9 @@ export const VendorListCard = React.memo(function VendorListCard({
           </View>
         </View>
 
-        <Pressable onPress={onView} hitSlop={8} style={[st.viewBtn, { borderColor: colors.border }]}>
+        <PressableScale onPress={onView} hitSlop={8} style={[st.viewBtn, { borderColor: colors.border }]}>
           <Ionicons name="eye-outline" size={16} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       {!isApproved ? (

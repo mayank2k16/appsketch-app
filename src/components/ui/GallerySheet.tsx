@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as MediaLibrary from 'expo-media-library/legacy';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -16,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 const COLUMNS = 3;
@@ -51,6 +53,12 @@ export function GallerySheet({
   max?: number;
 }) {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  // White (docs/white-theme.md): orange marks the one action (✓ / spinner),
+  // the picked tiles are framed and numbered in ink. Dark keeps `t.accent`.
+  const dark = colorScheme === 'dark';
+  const actionColor = dark ? t.accent : '#F2600C';
+  const pickColor = dark ? t.accent : '#0B0B0C';
   const [perm, setPerm] = React.useState<'unknown' | 'granted' | 'denied'>(
     'unknown'
   );
@@ -146,6 +154,7 @@ export function GallerySheet({
 
   return (
     <Modal
+      onShow={haptic.soft}
       visible={visible}
       animationType="slide"
       onRequestClose={onClose}
@@ -153,7 +162,12 @@ export function GallerySheet({
     >
       <View style={[s.root, { backgroundColor: t.bg, paddingTop: insets.top }]}>
         <View style={[s.header, { borderColor: t.border }]}>
-          <TouchableOpacity onPress={onClose} hitSlop={12} style={s.headerBtn}>
+          <TouchableOpacity
+            onPressIn={haptic.tap}
+            onPress={onClose}
+            hitSlop={12}
+            style={s.headerBtn}
+          >
             <Ionicons name="close" size={24} color={t.text} />
           </TouchableOpacity>
           <View style={s.headerCenter}>
@@ -165,15 +179,16 @@ export function GallerySheet({
             </Text>
           </View>
           <TouchableOpacity
+            onPressIn={haptic.press}
             onPress={confirm}
             hitSlop={12}
             disabled={picked.length === 0 || resolving}
             style={[s.headerBtn, (picked.length === 0 || resolving) && s.dim]}
           >
             {resolving ? (
-              <ActivityIndicator size="small" color={t.accent} />
+              <ActivityIndicator size="small" color={actionColor} />
             ) : (
-              <Ionicons name="checkmark" size={26} color={t.accent} />
+              <Ionicons name="checkmark" size={26} color={actionColor} />
             )}
           </TouchableOpacity>
         </View>
@@ -188,7 +203,7 @@ export function GallerySheet({
           </View>
         ) : perm === 'unknown' || (loading && assets.length === 0) ? (
           <View style={s.center}>
-            <ActivityIndicator color={t.accent} />
+            <ActivityIndicator color={actionColor} />
           </View>
         ) : assets.length === 0 ? (
           <View style={s.center}>
@@ -218,6 +233,7 @@ export function GallerySheet({
               const selected = order >= 0;
               return (
                 <Pressable
+                  onPressIn={haptic.select}
                   onPress={() => toggle(item.id)}
                   style={{ width: tile, height: tile }}
                 >
@@ -229,7 +245,7 @@ export function GallerySheet({
                   />
                   {selected ? (
                     <View
-                      style={[s.tileSelected, { borderColor: t.accent }]}
+                      style={[s.tileSelected, { borderColor: pickColor }]}
                       pointerEvents="none"
                     />
                   ) : null}
@@ -237,7 +253,7 @@ export function GallerySheet({
                     style={[
                       s.badge,
                       selected
-                        ? { backgroundColor: t.accent, borderColor: t.accent }
+                        ? { backgroundColor: pickColor, borderColor: pickColor }
                         : { borderColor: '#FFFFFF' },
                     ]}
                     pointerEvents="none"

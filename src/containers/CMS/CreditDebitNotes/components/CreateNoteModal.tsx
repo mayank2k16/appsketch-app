@@ -1,14 +1,16 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { CreateNoteInvoiceItem, CreateNoteProductItem, NoteType, SellableInstance } from '@/api/credit-debit-notes';
 import { fetchSellableInstances, useCreateNote } from '@/api/credit-debit-notes';
 import { useCompanyDetails } from '@/api/invoices';
 import { searchEntities, searchInvoices } from '@/api/payments';
 import type { EntityOption } from '@/api/payments';
 import { useProductInventories, useProducts } from '@/api/products';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsField, CmsInput, CmsModal, CmsSearchableSelect, CmsSelect, CmsSheetScrollView, CmsSwitch } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -222,6 +224,7 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     if (!entity) next.entity = 'Select an entity';
     if (!refNo.trim()) next.refNo = 'Enter a reference number';
     setErrors(next);
+    if (Object.keys(next).length > 0) haptic.error();
     return Object.keys(next).length === 0;
   }
 
@@ -383,16 +386,16 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
                   />
                 </View>
                 {index > 0 ? (
-                  <Pressable onPress={() => removeInvoiceRow(index)} style={st.removeBtn} hitSlop={8}>
+                  <PressableScale onPress={() => removeInvoiceRow(index)} style={st.removeBtn} hitSlop={8}>
                     <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                  </Pressable>
+                  </PressableScale>
                 ) : null}
               </View>
             ))}
-            <Pressable onPress={addInvoiceRow} style={[st.addBtn, { borderColor: colors.accent }]}>
+            <PressableScale onPress={addInvoiceRow} style={[st.addBtn, { borderColor: colors.accent }]}>
               <Ionicons name="add" size={16} color={colors.accent} />
               <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13 }}>Add Invoice</Text>
-            </Pressable>
+            </PressableScale>
           </CmsCard>
         ) : (
           <CmsCard colors={colors} title="Products">
@@ -414,9 +417,9 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
                   <View style={st.productCardHeader}>
                     <Text style={[st.productCardTitle, { color: colors.textSecondary }]}>Product {index + 1}</Text>
                     {index > 0 ? (
-                      <Pressable onPress={() => removeProductRow(index)} hitSlop={8}>
+                      <PressableScale onPress={() => removeProductRow(index)} hitSlop={8}>
                         <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                      </Pressable>
+                      </PressableScale>
                     ) : null}
                   </View>
 
@@ -508,10 +511,10 @@ export const CreateNoteModal = React.forwardRef<BottomSheetModal, Props>(({ colo
                 </View>
               );
             })}
-            <Pressable onPress={addProductRow} style={[st.addBtn, { borderColor: colors.accent }]}>
+            <PressableScale onPress={addProductRow} style={[st.addBtn, { borderColor: colors.accent }]}>
               <Ionicons name="add" size={16} color={colors.accent} />
               <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13 }}>Add Product</Text>
-            </Pressable>
+            </PressableScale>
           </CmsCard>
         )}
 

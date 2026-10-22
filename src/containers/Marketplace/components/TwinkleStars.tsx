@@ -102,11 +102,15 @@ export function TwinkleStars({
   height,
   color,
   count = 90,
+  halos = true,
 }: {
   width: number;
   height: number;
   color: string;
   count?: number;
+  /** The soft halo behind the brightest stars. Off in white, which has no
+   *  glows (docs/white-theme.md). */
+  halos?: boolean;
 }) {
   const isFocused = useIsFocused();
   const stars = React.useMemo(
@@ -130,7 +134,7 @@ export function TwinkleStars({
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-        {haloStars.map((s, i) => (
+        {(halos ? haloStars : []).map((s, i) => (
           <Circle
             key={`halo-${i}`}
             cx={s.x}

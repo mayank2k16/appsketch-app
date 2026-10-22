@@ -23,11 +23,12 @@ final class GuestViewController: UIViewController {
 
   deinit {
     if let appearObserver { NotificationCenter.default.removeObserver(appearObserver) }
+    if let progressObserver { NotificationCenter.default.removeObserver(progressObserver) }
   }
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = Self.canvas
     setUpBubble()
   }
 
@@ -43,29 +44,75 @@ final class GuestViewController: UIViewController {
     showLoading()
   }
 
-  /// The bundle downloads and runs before anything paints; until the guest's
-  /// first frame, say so instead of showing a blank screen.
+  /// The bundle builds, downloads and runs before anything paints; until the
+  /// guest's first frame, show how far along it is: a thin bar with a
+  /// percentage, fed by GuestBundleProgress.m (Metro's build progress, then
+  /// the download's bytes). White canvas by default, black in dark mode.
+  private let progressTrack = UIView()
+  private let progressFill = UIView()
+  private let percentLabel = UILabel()
+  private let stageLabel = UILabel()
+  private var progressObserver: NSObjectProtocol?
+  private var fillWidth: NSLayoutConstraint?
+  private var shown: CGFloat = 0
+  private var sawBuild = false
+
+  private static let canvas = UIColor { $0.userInterfaceStyle == .dark
+    ? .black : UIColor(red: 0.98, green: 0.98, blue: 0.973, alpha: 1) }
+  private static let ink = UIColor { $0.userInterfaceStyle == .dark
+    ? .white : UIColor(red: 0.043, green: 0.043, blue: 0.047, alpha: 1) }
+  private static let inset = UIColor { $0.userInterfaceStyle == .dark
+    ? UIColor(white: 1, alpha: 0.12) : UIColor(red: 0.957, green: 0.957, blue: 0.949, alpha: 1) }
+  private static let orange = UIColor(red: 0.949, green: 0.376, blue: 0.047, alpha: 1)
+
   private func showLoading() {
     loadingView?.removeFromSuperview()
+    shown = 0
+    sawBuild = false
     let panel = UIView(frame: view.bounds)
     panel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    panel.backgroundColor = .systemBackground
+    panel.backgroundColor = Self.canvas
 
-    let spinner = UIActivityIndicatorView(style: .large)
-    spinner.startAnimating()
     let label = UILabel()
-    label.text = "Starting \(appTitle)…"
-    label.font = .boldSystemFont(ofSize: 17)
+    label.text = "Starting \(appTitle)"
+    label.font = .systemFont(ofSize: 20, weight: .bold)
+    label.textColor = Self.ink
     label.textAlignment = .center
-    let hint = UILabel()
-    hint.text = "Downloading the latest version of your app"
-    hint.font = .systemFont(ofSize: 13)
-    hint.textColor = .secondaryLabel
-    hint.textAlignment = .center
 
-    let stack = UIStackView(arrangedSubviews: [spinner, label, hint])
+    percentLabel.text = "0%"
+    percentLabel.font = .monospacedDigitSystemFont(ofSize: 40, weight: .heavy)
+    percentLabel.textColor = Self.ink
+    percentLabel.textAlignment = .center
+
+    progressTrack.backgroundColor = Self.inset
+    progressTrack.layer.cornerRadius = 3
+    progressTrack.clipsToBounds = true
+    progressTrack.translatesAutoresizingMaskIntoConstraints = false
+    progressFill.backgroundColor = Self.orange
+    progressFill.layer.cornerRadius = 3
+    progressFill.translatesAutoresizingMaskIntoConstraints = false
+    progressFill.removeFromSuperview()
+    progressTrack.addSubview(progressFill)
+    let width = progressFill.widthAnchor.constraint(equalToConstant: 0)
+    fillWidth = width
+    NSLayoutConstraint.activate([
+      progressTrack.heightAnchor.constraint(equalToConstant: 6),
+      progressTrack.widthAnchor.constraint(equalToConstant: 220),
+      progressFill.leadingAnchor.constraint(equalTo: progressTrack.leadingAnchor),
+      progressFill.topAnchor.constraint(equalTo: progressTrack.topAnchor),
+      progressFill.bottomAnchor.constraint(equalTo: progressTrack.bottomAnchor),
+      width,
+    ])
+
+    stageLabel.text = "Connecting to your app…"
+    stageLabel.font = .systemFont(ofSize: 13)
+    stageLabel.textColor = .secondaryLabel
+    stageLabel.textAlignment = .center
+
+    let stack = UIStackView(arrangedSubviews: [label, percentLabel, progressTrack, stageLabel])
     stack.axis = .vertical
-    stack.spacing = 12
+    stack.spacing = 14
+    stack.setCustomSpacing(6, after: label)
     stack.alignment = .center
     stack.translatesAutoresizingMaskIntoConstraints = false
     panel.addSubview(stack)
@@ -77,6 +124,11 @@ final class GuestViewController: UIViewController {
     view.insertSubview(panel, belowSubview: bubble)
     loadingView = panel
 
+    if progressObserver == nil {
+      progressObserver = NotificationCenter.default.addObserver(
+        forName: NSNotification.Name(rawValue: "AppSketchGuestBundleProgress"), object: nil, queue: .main
+      ) { [weak self] note in self?.onBundleProgress(note.userInfo ?? [:]) }
+    }
     if appearObserver == nil {
       appearObserver = NotificationCenter.default.addObserver(
         forName: NSNotification.Name(rawValue: "RCTContentDidAppearNotification"), object: nil, queue: .main
@@ -88,10 +140,49 @@ final class GuestViewController: UIViewController {
     }
   }
 
+  /// Build progress fills the first half (when Metro has to build), the
+  /// download the rest; with a cached build the download is the whole bar.
+  /// Never goes backwards, and holds at 99% until the first frame.
+  private func onBundleProgress(_ info: [AnyHashable: Any]) {
+    guard loadingView != nil else { return }
+    let status = info["status"] as? String ?? ""
+    let done = (info["done"] as? NSNumber)?.doubleValue ?? 0
+    let total = (info["total"] as? NSNumber)?.doubleValue ?? 0
+    let ratio = total > 0 ? min(max(done / total, 0), 1) : 0
+    let downloading = status == "Downloading"
+    var value: CGFloat
+    if downloading {
+      value = sawBuild ? 0.5 + 0.49 * ratio : 0.99 * ratio
+      stageLabel.text = total > 0
+        ? String(format: "Downloading %.1f of %.1f MB", done / 1_048_576, total / 1_048_576)
+        : "Downloading your app…"
+    } else {
+      sawBuild = true
+      value = 0.5 * ratio
+      stageLabel.text = total > 0 ? "Building your app…" : (status.isEmpty ? "Building your app…" : status)
+    }
+    if ratio >= 1 && downloading { stageLabel.text = "Opening…" }
+    setProgress(value)
+  }
+
+  private func setProgress(_ value: CGFloat) {
+    guard value > shown else { return }
+    shown = min(value, 0.99)
+    percentLabel.text = "\(Int((shown * 100).rounded()))%"
+    fillWidth?.constant = 220 * shown
+    UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
+      self.progressTrack.layoutIfNeeded()
+    }
+  }
+
   private func hideLoading() {
     guard let panel = loadingView else { return }
     loadingView = nil
-    UIView.animate(withDuration: 0.2, animations: { panel.alpha = 0 }) { _ in panel.removeFromSuperview() }
+    percentLabel.text = "100%"
+    fillWidth?.constant = 220
+    UIView.animate(withDuration: 0.15, animations: { self.progressTrack.layoutIfNeeded() }) { _ in
+      UIView.animate(withDuration: 0.22, animations: { panel.alpha = 0 }) { _ in panel.removeFromSuperview() }
+    }
   }
 
   func showError(_ message: String) {
@@ -100,7 +191,7 @@ final class GuestViewController: UIViewController {
     loadingView = nil
     let panel = UIView(frame: view.bounds)
     panel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    panel.backgroundColor = .systemBackground
+    panel.backgroundColor = Self.canvas
 
     let title = UILabel()
     title.text = "This app couldn't start"

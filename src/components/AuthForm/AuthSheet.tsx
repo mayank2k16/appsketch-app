@@ -5,16 +5,18 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/ui';
 import { useContinueAuthFlow } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 
 import { sheetTheme } from './AuthTheme';
 import { CtaButton, GhostButton, OtpInput, StepInput } from './FormControls';
@@ -32,7 +34,8 @@ export function AuthSheet({
 }) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const c = sheetTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const c = sheetTheme[isDark ? 'dark' : 'light'];
 
   const {
     step, setStep, stepAnim, reset,
@@ -65,14 +68,22 @@ export function AuthSheet({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={close} statusBarTranslucent>
+    <Modal
+      onShow={haptic.soft}
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={close}
+      statusBarTranslucent
+    >
       <KeyboardAvoidingView
         style={{ flex: 1, justifyContent: 'flex-end' }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        <TouchableOpacity
-          activeOpacity={1}
+        <Pressable
+          onPressIn={haptic.tap}
+          accessibilityLabel="Close"
           onPress={close}
           style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]}
         />
@@ -80,6 +91,8 @@ export function AuthSheet({
         <Animated.View
           style={[
             as.sheet,
+            // Lift shadow is dark-only; white is flat (docs/white-theme.md).
+            isDark && as.sheetShadow,
             { backgroundColor: c.bg, borderTopColor: c.topBorder, transform: [{ translateY: sheetTY }], paddingBottom: sheetBottomPad },
           ]}
         >
@@ -87,13 +100,13 @@ export function AuthSheet({
 
           <View style={as.topRow}>
             {step !== 'contact' ? (
-              <TouchableOpacity onPress={() => setStep('contact')} style={as.backBtn}>
+              <PressableScale onPress={() => setStep('contact')} style={as.backBtn}>
                 <Text style={[as.backText, { color: c.closeIcon }]}>← Back</Text>
-              </TouchableOpacity>
+              </PressableScale>
             ) : <View />}
-            <TouchableOpacity onPress={close} style={as.closeBtn}>
+            <PressableScale onPress={close} style={as.closeBtn} accessibilityLabel="Close">
               <Text style={[as.closeText, { color: c.closeIcon }]}>✕</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
 
           <Text style={[as.brand, { color: c.brand }]}>{BRAND_NAME}</Text>
@@ -193,6 +206,8 @@ const as = StyleSheet.create({
     borderTopRightRadius: 28,
     paddingTop: 12,
     borderTopWidth: 1,
+  },
+  sheetShadow: {
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.25, shadowRadius: 20 },
       android: { elevation: 20 },

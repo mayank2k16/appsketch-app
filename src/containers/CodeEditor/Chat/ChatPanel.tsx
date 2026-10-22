@@ -15,22 +15,25 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ActivityStep, ChatMessage, ClarifyBlock } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import { GallerySheet } from '@/components/ui/GallerySheet';
 import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
 import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
 import { DEFAULT_MODEL, fmtContext, MODELS } from '@/containers/Home/AgentV2';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
 import {
+  type AppColors,
+  appTheme,
   brandGradient,
   type useAppTheme,
   useBrandedCoderTheme,
@@ -48,6 +51,40 @@ import { TokenMeter } from './TokenMeter';
 
 const MAX_IMAGES = 3;
 type Model = (typeof MODELS)[number];
+
+/** True for the white palette — every branch below keys off this so the dark
+ * look stays byte-for-byte what it was. */
+const isLight = (c: AppColors) => c.statusBar !== 'light-content';
+
+/** The panel's palette. Dark: the branded coder scope, unchanged. White
+ * (docs/white-theme.md): the magenta brand tokens fall back to the plain
+ * achromatic ones — ink primary, neutral chips, flat hairline ring — because
+ * white allows ONE accent, and that is the orange Send. The sparkle avatar
+ * (which reads `codeEditorUserBubble*`) becomes a solid ink mark. */
+function useChatTheme(colorScheme: string | null | undefined): AppColors {
+  const branded = useBrandedCoderTheme(colorScheme);
+  const plain = useCoderTheme(colorScheme);
+  return React.useMemo(() => {
+    if (colorScheme === 'dark') return branded;
+    return {
+      ...branded,
+      accent: plain.accent,
+      accentOn: plain.accentOn,
+      accentSoft: plain.accentSoft,
+      tagText: plain.tagText,
+      tagBorder: plain.tagBorder,
+      agentSendGradient: plain.agentSendGradient,
+      agentBorderGradient: plain.agentBorderGradient,
+      agentTabActiveBg: plain.agentTabActiveBg,
+      agentTabActiveText: plain.agentTabActiveText,
+      codeEditorUserBubbleFrom: plain.text,
+      codeEditorUserBubbleTo: plain.text,
+      codeEditorToolChipActiveBg: plain.codeEditorToolChipActiveBg,
+      codeEditorToolChipActiveBorder: plain.codeEditorToolChipActiveBorder,
+      codeEditorToolChipActiveText: plain.codeEditorToolChipActiveText,
+    } as AppColors;
+  }, [colorScheme, branded, plain]);
+}
 
 function AgentAvatar({
   size,
@@ -100,12 +137,20 @@ function RenameModal({
 
   return (
     <Modal
+      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={st.backdrop} onPress={onClose}>
+      <Pressable
+        onPressIn={haptic.tap}
+        style={[
+          st.backdrop,
+          isLight(colors) && { backgroundColor: colors.sheetOverlay },
+        ]}
+        onPress={onClose}
+      >
         <Pressable
           style={[
             st.sheet,
@@ -137,25 +182,46 @@ function RenameModal({
             onSubmitEditing={() => trimmed && onSubmit(trimmed)}
           />
           <View style={st.sheetActions}>
-            <TouchableOpacity onPress={onClose} style={st.sheetBtn} hitSlop={6}>
+            <PressableScale onPress={onClose} style={st.sheetBtn} hitSlop={6}>
               <Text style={[st.sheetBtnText, { color: colors.textSub }]}>
                 Cancel
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => trimmed && onSubmit(trimmed)}
-              disabled={!trimmed}
+            </PressableScale>
+            <PressableScale
+              haptic={trimmed ? 'press' : false}
+              // Guarded, not `disabled`, so the empty state keeps its own 0.4.
+              onPress={trimmed ? () => onSubmit(trimmed) : undefined}
+              accessibilityState={{ disabled: !trimmed }}
               style={[st.sheetBtn, !trimmed && { opacity: 0.4 }]}
               hitSlop={6}
             >
               <Text style={[st.sheetBtnText, { color: colors.accent }]}>
                 Save
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+function MenuRow({
+  icon,
+  label,
+  color,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  color: string;
+  onPress: () => void;
+}) {
+  return (
+    <PressableScale scaleTo={0.98} style={st.menuRow} onPress={onPress}>
+      <Ionicons name={icon} size={16} color={color} />
+      <Text style={[st.menuText, { color }]}>{label}</Text>
+    </PressableScale>
   );
 }
 
@@ -175,12 +241,20 @@ function WorkMenu({
 }) {
   return (
     <Modal
+      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={st.menuBackdrop} onPress={onClose}>
+      <Pressable
+        onPressIn={haptic.tap}
+        style={[
+          st.menuBackdrop,
+          isLight(colors) && { backgroundColor: colors.sheetOverlay },
+        ]}
+        onPress={onClose}
+      >
         <View
           style={[
             st.menu,
@@ -190,38 +264,30 @@ function WorkMenu({
             },
           ]}
         >
-          <TouchableOpacity
-            style={st.menuRow}
+          <MenuRow
+            icon="pencil-outline"
+            label="Rename"
+            color={colors.text}
             onPress={() => {
               onClose();
               onRename();
             }}
-          >
-            <Ionicons name="pencil-outline" size={16} color={colors.text} />
-            <Text style={[st.menuText, { color: colors.text }]}>Rename</Text>
-          </TouchableOpacity>
+          />
           <View
             style={[
               st.menuDivider,
               { backgroundColor: colors.codeEditorBorder },
             ]}
           />
-          <TouchableOpacity
-            style={st.menuRow}
+          <MenuRow
+            icon="trash-outline"
+            label="Delete"
+            color={colors.codeEditorDanger}
             onPress={() => {
               onClose();
               onDelete();
             }}
-          >
-            <Ionicons
-              name="trash-outline"
-              size={16}
-              color={colors.codeEditorDanger}
-            />
-            <Text style={[st.menuText, { color: colors.codeEditorDanger }]}>
-              Delete
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </Pressable>
     </Modal>
@@ -285,9 +351,10 @@ function ChatHeader({
           {statusLabel}
         </Text>
       </View>
-      <TouchableOpacity
+      <PressableScale
         onPress={onMenu}
         hitSlop={8}
+        accessibilityLabel="Project options"
         style={[
           st.closeBtn,
           {
@@ -297,10 +364,11 @@ function ChatHeader({
         ]}
       >
         <Ionicons name="ellipsis-vertical" size={15} color={colors.textSub} />
-      </TouchableOpacity>
-      <TouchableOpacity
+      </PressableScale>
+      <PressableScale
         onPress={onClose}
         hitSlop={8}
+        accessibilityLabel="Close"
         style={[
           st.closeBtn,
           {
@@ -310,7 +378,7 @@ function ChatHeader({
         ]}
       >
         <Ionicons name="close" size={15} color={colors.textSub} />
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }
@@ -342,9 +410,9 @@ function MessageBubble({
           {shots.length > 0 ? (
             <View style={st.attachRow}>
               {shots.map((uri, i) => (
-                <TouchableOpacity
+                <PressableScale
                   key={i}
-                  activeOpacity={0.85}
+                  scaleTo={0.98}
                   onPress={() => setZoom(uri)}
                   style={[st.attach, { borderColor: colors.codeEditorBorder }]}
                 >
@@ -353,7 +421,7 @@ function MessageBubble({
                     style={st.attachImage}
                     contentFit="cover"
                   />
-                </TouchableOpacity>
+                </PressableScale>
               ))}
             </View>
           ) : null}
@@ -371,7 +439,15 @@ function MessageBubble({
                 { backgroundColor: plain.codeEditorUserBubbleFrom },
               ]}
             >
-              <Text style={st.userText}>{text}</Text>
+              <Text
+                style={[
+                  st.userText,
+                  // White: the bubble is the inset step, so its type is ink.
+                  isLight(colors) && { color: colors.text },
+                ]}
+              >
+                {text}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -512,6 +588,8 @@ function Composer({
   }, [focusSignal]);
   const [modelPickerOpen, setModelPickerOpen] = React.useState(false);
   const selectedModel = MODELS.find((m) => m.value === model) ?? MODELS[0];
+  const light = isLight(colors);
+  const atMax = images.length >= MAX_IMAGES;
 
   // Mic pulses while listening — same affordance as the Home/Agent composer.
   const micPulse = React.useRef(new Animated.Value(1)).current;
@@ -546,13 +624,22 @@ function Composer({
     // inner card on top, so all that shows of the ramp is the edge. This box
     // was a flat 1px grey outline, which made the one composer a user meets
     // mid-build look unrelated to the two that got them there.
-    <View style={[st.ringWrap, { marginBottom: 10 + bottomInset }]}>
-      <LinearGradient
-        colors={brandGradient()}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+    // White: no ramp edge — the ring is the one flat hairline.
+    <View
+      style={[
+        st.ringWrap,
+        { marginBottom: 10 + bottomInset },
+        light && { backgroundColor: colors.border },
+      ]}
+    >
+      {light ? null : (
+        <LinearGradient
+          colors={brandGradient()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
       {/* OPAQUE. `codeEditorActivityBg` is rgba(255,255,255,0.04) — at 4%
           the ramp behind it showed straight through and filled the whole
           box instead of showing as a 1px edge. `card` is the same opaque
@@ -582,8 +669,9 @@ function Composer({
                   style={st.thumbImg}
                   contentFit="cover"
                 />
-                <Pressable
+                <PressableScale
                   onPress={() => onRemoveImage(i)}
+                  accessibilityLabel="Remove image"
                   style={[
                     st.thumbRemove,
                     { backgroundColor: colors.codeEditorTabBg },
@@ -591,7 +679,7 @@ function Composer({
                   hitSlop={6}
                 >
                   <Ionicons name="close" size={11} color={colors.textSub} />
-                </Pressable>
+                </PressableScale>
               </View>
             ))}
           </View>
@@ -601,9 +689,8 @@ function Composer({
           {/* Follow-ups were stuck on whatever model started the thread — the
            * workspace chat is where most of a project's turns happen, so the
            * picker has to exist here too, not only on the launch composer. */}
-          <TouchableOpacity
+          <PressableScale
             onPress={() => setModelPickerOpen(true)}
-            activeOpacity={0.7}
             style={[
               st.modelChip,
               {
@@ -625,18 +712,21 @@ function Composer({
               {selectedModel?.label}
             </Text>
             <Ionicons name="chevron-down" size={12} color={colors.textSub} />
-          </TouchableOpacity>
+          </PressableScale>
 
-          <TouchableOpacity
-            onPress={onAttach}
-            activeOpacity={0.7}
-            disabled={images.length >= MAX_IMAGES}
+          <PressableScale
+            // Guarded rather than `disabled` (which forces 50% in both
+            // themes); white dims the full state itself, dark never did.
+            onPress={atMax ? undefined : onAttach}
+            accessibilityState={{ disabled: atMax }}
+            accessibilityLabel="Attach images"
             style={[
               st.attachBtn,
               {
                 backgroundColor: colors.codeEditorTabBg,
                 borderColor: colors.codeEditorBorder,
               },
+              light && atMax && st.dimmed,
             ]}
           >
             <Ionicons name="add" size={20} color={colors.textSub} />
@@ -645,27 +735,30 @@ function Composer({
                 <Text style={st.countBadgeText}>{images.length}</Text>
               </View>
             ) : null}
-          </TouchableOpacity>
+          </PressableScale>
 
-          <TouchableOpacity
-            onPress={onCamera}
-            activeOpacity={0.7}
-            disabled={images.length >= MAX_IMAGES}
+          <PressableScale
+            onPress={atMax ? undefined : onCamera}
+            accessibilityState={{ disabled: atMax }}
+            accessibilityLabel="Take a photo"
             style={[
               st.attachBtn,
               {
                 backgroundColor: colors.codeEditorTabBg,
                 borderColor: colors.codeEditorBorder,
               },
+              light && atMax && st.dimmed,
             ]}
           >
             <Ionicons name="camera-outline" size={17} color={colors.textSub} />
-          </TouchableOpacity>
+          </PressableScale>
 
           {voice.supported ? (
-            <TouchableOpacity
+            <PressableScale
               onPress={voice.toggle}
-              activeOpacity={0.7}
+              accessibilityLabel={
+                voice.listening ? 'Stop dictation' : 'Dictate'
+              }
               style={[
                 st.attachBtn,
                 {
@@ -687,15 +780,15 @@ function Composer({
                   }
                 />
               </Animated.View>
-            </TouchableOpacity>
+            </PressableScale>
           ) : null}
 
           <View style={{ flex: 1 }} />
 
           {busy ? (
-            <TouchableOpacity
-              onPress={onStop}
-              disabled={stopping}
+            <PressableScale
+              onPress={stopping ? undefined : onStop}
+              accessibilityState={{ disabled: stopping }}
               style={stopping && st.sendBtnDisabled}
               accessibilityLabel={
                 stopping
@@ -715,20 +808,39 @@ function Composer({
                   <View style={st.stopSquare} />
                 )}
               </View>
-            </TouchableOpacity>
+            </PressableScale>
           ) : (
-            <TouchableOpacity onPress={onSend} disabled={disabled}>
-              {/* Full hero ramp, undimmed in every state — same as the Home
-                and Agent composers. `disabled` still blocks the tap. */}
-              <LinearGradient
-                colors={brandGradient()}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={st.sendBtn}
-              >
-                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-              </LinearGradient>
-            </TouchableOpacity>
+            <PressableScale
+              haptic={disabled ? false : 'press'}
+              onPress={disabled ? undefined : onSend}
+              accessibilityState={{ disabled }}
+              accessibilityLabel="Send"
+              // White dims a blocked Send to 50%; dark keeps it undimmed.
+              style={light && disabled ? st.dimmed : undefined}
+            >
+              {/* Dark: the full hero ramp, undimmed in every state — same as
+                the Home and Agent composers. White: Send is the screen's one
+                orange action, flat. The guard still blocks the tap. */}
+              {light ? (
+                <View
+                  style={[
+                    st.sendBtn,
+                    { backgroundColor: appTheme.light.accent },
+                  ]}
+                >
+                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                </View>
+              ) : (
+                <LinearGradient
+                  colors={brandGradient()}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={st.sendBtn}
+                >
+                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                </LinearGradient>
+              )}
+            </PressableScale>
           )}
         </View>
       </View>
@@ -812,7 +924,7 @@ export function ChatPanel() {
   // not code — nothing here fights syntax highlighting, and it carries the
   // same agent, composer and primary actions the user just used on Home.
   // The grey LADDER is unchanged; only what a user taps takes the ramp.
-  const t = useBrandedCoderTheme(colorScheme);
+  const t = useChatTheme(colorScheme);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isVisible: keyboardVisible, height: keyboardHeight } =
@@ -938,6 +1050,7 @@ export function ChatPanel() {
   function handleDelete() {
     // Deleting the conversation is not reversible from the app, so it asks
     // once. It does NOT delete the built site — see the backend endpoint.
+    haptic.warning();
     Alert.alert(
       'Delete this project?',
       'The chat and its history are removed. Your generated files stay on the server.',
@@ -1391,6 +1504,7 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
+  dimmed: { opacity: 0.5 },
   stopSquare: {
     width: 12,
     height: 12,

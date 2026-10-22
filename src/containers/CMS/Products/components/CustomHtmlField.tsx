@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import { PressableScale } from '@/components/ui';
 
 import { CmsInput } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -28,7 +30,8 @@ export function CustomHtmlField({ colors, value, onChange }: Props) {
         {(['edit', 'preview'] as const).map((m) => {
           const active = mode === m;
           return (
-            <Pressable
+            <PressableScale
+              haptic={active ? true : 'select'}
               key={m}
               onPress={() => setMode(m)}
               style={[st.modeTab, active && { backgroundColor: colors.accent }]}
@@ -36,7 +39,7 @@ export function CustomHtmlField({ colors, value, onChange }: Props) {
               <Text style={{ color: active ? colors.accentText : colors.textSecondary, fontSize: 12.5, fontWeight: '700' }}>
                 {m === 'edit' ? 'Edit Code' : 'Preview'}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>

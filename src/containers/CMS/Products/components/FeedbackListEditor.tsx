@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTenantUsersSearch } from '@/api/orders';
 import type { FeedbackItem } from '@/api/products';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsInput, CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -80,6 +81,7 @@ export function FeedbackListEditor({ colors, items, onChange }: Props) {
     if (!draft.title.trim()) nextErrors.title = 'Title is required';
     if (!draft.content.trim()) nextErrors.content = 'Review content is required';
     if (Object.keys(nextErrors).length > 0) {
+      haptic.error();
       setErrors(nextErrors);
       return;
     }
@@ -99,22 +101,22 @@ export function FeedbackListEditor({ colors, items, onChange }: Props) {
               </Text>
               <StarRatingInput colors={colors} rating={fb.rating} readonly size={13} />
             </View>
-            <Pressable onPress={() => openEdit(idx)} hitSlop={8} style={{ padding: 4 }}>
+            <PressableScale onPress={() => openEdit(idx)} hitSlop={8} style={{ padding: 4 }}>
               <Ionicons name="create-outline" size={17} color={colors.textSecondary} />
-            </Pressable>
-            <Pressable onPress={() => removeAt(idx)} hitSlop={8} style={{ padding: 4 }}>
+            </PressableScale>
+            <PressableScale onPress={() => removeAt(idx)} hitSlop={8} style={{ padding: 4 }}>
               <Ionicons name="trash-outline" size={17} color={colors.danger} />
-            </Pressable>
+            </PressableScale>
           </View>
         ))
       ) : (
         <Text style={{ color: colors.textSecondary, fontSize: 12.5 }}>No reviews added yet</Text>
       )}
 
-      <Pressable onPress={openAdd} style={[st.addBtn, { borderColor: colors.accent }]}>
+      <PressableScale onPress={openAdd} style={[st.addBtn, { borderColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accent} />
         <Text style={[st.addLabel, { color: colors.accent }]}>Add Review</Text>
-      </Pressable>
+      </PressableScale>
 
       <CmsModal ref={modal.ref} colors={colors} snapPoints={['90%']} title={editIndex !== null ? 'Edit Review' : 'Add Review'}>
         <View style={st.popupBody}>

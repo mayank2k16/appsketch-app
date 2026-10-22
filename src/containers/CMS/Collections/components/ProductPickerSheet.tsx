@@ -1,9 +1,10 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { ProductListItem } from '@/api/products';
 import { useProducts } from '@/api/products';
 
@@ -59,7 +60,7 @@ export const ProductPickerSheet = React.forwardRef<BottomSheetModal, Props>(
               value={query}
               onChangeText={setQuery}
               placeholder="Search products…"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textMuted}
               style={[st.searchInput, { color: colors.textPrimary }]}
             />
           </View>
@@ -72,8 +73,11 @@ export const ProductPickerSheet = React.forwardRef<BottomSheetModal, Props>(
               const alreadyLinked = alreadySelectedIds.includes(item.id);
               const checked = selectedIds.includes(item.id);
               return (
-                <Pressable
-                  onPress={() => !alreadyLinked && toggle(item.id)}
+                <PressableScale
+                  haptic="rigid"
+                  scaleTo={0.98}
+                  onPress={() => toggle(item.id)}
+                  disabled={alreadyLinked}
                   style={[st.row, { borderColor: colors.border }, alreadyLinked && st.rowDisabled]}
                 >
                   <View style={{ flex: 1 }}>
@@ -89,7 +93,7 @@ export const ProductPickerSheet = React.forwardRef<BottomSheetModal, Props>(
                     size={20}
                     color={checked || alreadyLinked ? colors.accent : colors.textSecondary}
                   />
-                </Pressable>
+                </PressableScale>
               );
             }}
             ListEmptyComponent={<Text style={{ color: colors.textSecondary, padding: 16 }}>No products found.</Text>}

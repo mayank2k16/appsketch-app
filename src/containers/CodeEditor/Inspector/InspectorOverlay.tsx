@@ -16,7 +16,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -29,8 +28,9 @@ import {
   visualEditStyle,
   visualEditText,
 } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
-import { useBrandedCoderTheme } from '@/lib/theme';
+import { useBrandedCoderTheme, useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import type { PreviewEditMode } from '../CodeEditorProvider';
@@ -142,7 +142,13 @@ export function InspectorOverlay({
   bridgeMessage: BridgeMessage;
 }) {
   const { colorScheme } = useColorScheme();
-  const t = useBrandedCoderTheme(colorScheme);
+  // Dark: the branded scope (magenta selections, ramp-edged toolbar), as
+  // before. White: the plain achromatic palette — ink selections and a flat
+  // hairline ring, since white keeps colour for the single orange action.
+  const branded = useBrandedCoderTheme(colorScheme);
+  const plain = useCoderTheme(colorScheme);
+  const light = colorScheme !== 'dark';
+  const t = light ? plain : branded;
   const router = useRouter();
   const {
     send,
@@ -522,22 +528,26 @@ export function InspectorOverlay({
               >
                 Edit element
               </Text>
-              <TouchableOpacity onPress={closePanel} hitSlop={8}>
+              <PressableScale
+                onPress={closePanel}
+                hitSlop={8}
+                accessibilityLabel="Close editor"
+              >
                 <Ionicons name="close" size={18} color={t.textSub} />
-              </TouchableOpacity>
+              </PressableScale>
             </View>
 
             {isAsset && (
               <View style={st.assetRow}>
-                <TouchableOpacity
+                <PressableScale
                   onPress={pickReplacementAsset}
                   style={[st.smallBtn, { backgroundColor: t.accent }]}
                 >
                   <Text style={st.smallBtnPrimaryText}>
                     Upload {selection.tag === 'video' ? 'video' : 'image'}
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                </PressableScale>
+                <PressableScale
                   onPress={askAiForAsset}
                   style={[
                     st.smallBtn,
@@ -553,7 +563,7 @@ export function InspectorOverlay({
                   >
                     ✦ Ask AI
                   </Text>
-                </TouchableOpacity>
+                </PressableScale>
               </View>
             )}
 
@@ -565,7 +575,8 @@ export function InspectorOverlay({
                 left for a follow-up rather than half-built. */}
             <View style={[st.panelTabRow, { borderColor: t.codeEditorBorder }]}>
               {PANEL_TABS.map((tab) => (
-                <TouchableOpacity
+                <PressableScale
+                  haptic={panelTab === tab.key ? true : 'select'}
                   key={tab.key}
                   onPress={() => setPanelTab(tab.key)}
                   style={[
@@ -583,7 +594,7 @@ export function InspectorOverlay({
                   >
                     {tab.label}
                   </Text>
-                </TouchableOpacity>
+                </PressableScale>
               ))}
             </View>
 
@@ -637,7 +648,7 @@ export function InspectorOverlay({
                                 },
                               ]}
                             />
-                            <TouchableOpacity
+                            <PressableScale
                               onPress={() =>
                                 setStyle('background-color', 'transparent', {
                                   bg: '',
@@ -649,7 +660,7 @@ export function InspectorOverlay({
                               ]}
                             >
                               <Text style={{ color: t.textSub }}>⌀</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                           </View>
                         </View>
                         <View style={st.gridCell}>
@@ -675,7 +686,8 @@ export function InspectorOverlay({
                       <View style={st.gridRow}>
                         <View style={st.gridCell}>
                           <Text style={st.gridLabel}>Weight</Text>
-                          <TouchableOpacity
+                          <PressableScale
+                            haptic="rigid"
                             onPress={() => {
                               const idx = WEIGHTS.indexOf(selection.fontWeight);
                               const next = WEIGHTS[(idx + 1) % WEIGHTS.length];
@@ -698,7 +710,7 @@ export function InspectorOverlay({
                             >
                               {selection.fontWeight}
                             </Text>
-                          </TouchableOpacity>
+                          </PressableScale>
                         </View>
                         <View style={st.gridCell}>
                           <Text style={st.gridLabel}>Opacity %</Text>
@@ -729,7 +741,7 @@ export function InspectorOverlay({
 
                     <View style={st.alignRow}>
                       {(['left', 'center', 'right'] as const).map((a) => (
-                        <TouchableOpacity
+                        <PressableScale
                           key={a}
                           onPress={() =>
                             setStyle('text-align', a, { textAlign: a })
@@ -756,7 +768,7 @@ export function InspectorOverlay({
                               selection.textAlign === a ? '#FFFFFF' : t.text
                             }
                           />
-                        </TouchableOpacity>
+                        </PressableScale>
                       ))}
                     </View>
                   </>
@@ -853,7 +865,8 @@ export function InspectorOverlay({
                   <View style={st.gridRow}>
                     <View style={st.gridCell}>
                       <Text style={st.gridLabel}>Display</Text>
-                      <TouchableOpacity
+                      <PressableScale
+                        haptic="rigid"
                         onPress={() => {
                           const opts = [
                             'block',
@@ -880,7 +893,7 @@ export function InspectorOverlay({
                         >
                           {selection.display}
                         </Text>
-                      </TouchableOpacity>
+                      </PressableScale>
                     </View>
                     <View style={st.gridCell} />
                     <View style={st.gridCell} />
@@ -943,7 +956,8 @@ export function InspectorOverlay({
                   <Text style={[st.gridLabel, st.groupLabel]}>Shadow</Text>
                   <View style={st.shadowRow}>
                     {SHADOW_PRESETS.map((preset) => (
-                      <TouchableOpacity
+                      <PressableScale
+                        haptic="rigid"
                         key={preset.key}
                         onPress={() => setStyle('box-shadow', preset.value, {})}
                         style={[
@@ -960,7 +974,7 @@ export function InspectorOverlay({
                         >
                           {preset.label}
                         </Text>
-                      </TouchableOpacity>
+                      </PressableScale>
                     ))}
                   </View>
                 </View>
@@ -990,9 +1004,12 @@ export function InspectorOverlay({
                     ]}
                   />
                   <View style={st.cssActions}>
-                    <TouchableOpacity
-                      onPress={() => setCustomCss('')}
-                      disabled={!customCss.trim()}
+                    <PressableScale
+                      // Guarded, not `disabled`: keeps the 0.4 dim it had.
+                      onPress={
+                        customCss.trim() ? () => setCustomCss('') : undefined
+                      }
+                      accessibilityState={{ disabled: !customCss.trim() }}
                       style={[
                         st.cssBtn,
                         {
@@ -1011,15 +1028,16 @@ export function InspectorOverlay({
                       >
                         Clear
                       </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </PressableScale>
+                    <PressableScale
                       onPress={() => {
+                        if (!customCss.trim()) return;
                         const styles = parseCss(customCss);
                         if (Object.keys(styles).length === 0) return;
                         applyRawStyles(styles);
                         flash('CSS applied ✓');
                       }}
-                      disabled={!customCss.trim()}
+                      accessibilityState={{ disabled: !customCss.trim() }}
                       style={[
                         st.cssBtn,
                         st.cssBtnPrimary,
@@ -1028,7 +1046,7 @@ export function InspectorOverlay({
                       ]}
                     >
                       <Text style={st.smallBtnPrimaryText}>Apply CSS</Text>
-                    </TouchableOpacity>
+                    </PressableScale>
                   </View>
 
                   <View
@@ -1075,7 +1093,7 @@ export function InspectorOverlay({
                   </View>
 
                   <Text style={[st.gridLabel, st.groupLabel]}>Danger zone</Text>
-                  <TouchableOpacity
+                  <PressableScale
                     onPress={resetElement}
                     style={[st.dangerBtn, { borderColor: t.codeEditorDanger }]}
                   >
@@ -1088,7 +1106,7 @@ export function InspectorOverlay({
                     >
                       Remove all overrides
                     </Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 </View>
               )}
             </ScrollView>
@@ -1113,7 +1131,8 @@ export function InspectorOverlay({
             durationMs={BAR_SPIN_MS}
           />
           <View style={[st.barInner, { backgroundColor: t.codeEditorSurface }]}>
-            <TouchableOpacity
+            <PressableScale
+              haptic={mode === 'select' ? true : 'select'}
               onPress={() => setInspectorMode('select')}
               style={[
                 st.modeBtn,
@@ -1125,8 +1144,9 @@ export function InspectorOverlay({
                 size={16}
                 color={mode === 'select' ? t.accentOn : t.text}
               />
-            </TouchableOpacity>
-            <TouchableOpacity
+            </PressableScale>
+            <PressableScale
+              haptic={mode === 'text' ? true : 'select'}
               onPress={() => setInspectorMode('text')}
               style={[
                 st.modeBtn,
@@ -1138,8 +1158,9 @@ export function InspectorOverlay({
                 size={16}
                 color={mode === 'text' ? t.accentOn : t.text}
               />
-            </TouchableOpacity>
-            <TouchableOpacity
+            </PressableScale>
+            <PressableScale
+              haptic={mode === 'annotate' ? true : 'select'}
               onPress={() => setInspectorMode('annotate')}
               style={[
                 st.modeBtn,
@@ -1151,11 +1172,11 @@ export function InspectorOverlay({
                 size={16}
                 color={mode === 'annotate' ? t.accentOn : t.text}
               />
-            </TouchableOpacity>
+            </PressableScale>
 
             {mode === 'annotate' && (
               <>
-                <TouchableOpacity onPress={clearStrokes} style={st.textBtn}>
+                <PressableScale onPress={clearStrokes} style={st.textBtn}>
                   <Text
                     style={{
                       color: t.textSub,
@@ -1165,18 +1186,29 @@ export function InspectorOverlay({
                   >
                     Clear
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={sendAnnotation}
-                  disabled={capturing || strokes.length === 0}
-                  style={st.textBtn}
+                </PressableScale>
+                <PressableScale
+                  onPress={
+                    capturing || strokes.length === 0
+                      ? undefined
+                      : sendAnnotation
+                  }
+                  accessibilityState={{
+                    disabled: capturing || strokes.length === 0,
+                  }}
+                  style={[
+                    st.textBtn,
+                    // White shows the blocked state at 50%; dark never dimmed.
+                    light &&
+                      (capturing || strokes.length === 0) && { opacity: 0.5 },
+                  ]}
                 >
                   <Text
                     style={{ color: t.accent, fontSize: 12, fontWeight: '700' }}
                   >
                     {capturing ? 'Sending…' : 'Add to chat'}
                   </Text>
-                </TouchableOpacity>
+                </PressableScale>
               </>
             )}
           </View>

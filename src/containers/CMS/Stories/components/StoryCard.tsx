@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { StoryItem } from '@/api/stories';
 
 import { CmsStatusBadge } from '../../components';
@@ -53,14 +54,14 @@ export const StoryCard = React.memo(function StoryCard({ story, colors, onEdit, 
         ) : null}
 
         <View style={st.actions}>
-          <Pressable onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          <PressableScale onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="create-outline" size={15} color={colors.textPrimary} />
             <Text style={[st.actionLabel, { color: colors.textPrimary }]}>Edit</Text>
-          </Pressable>
-          <Pressable onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          </PressableScale>
+          <PressableScale onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="trash-outline" size={15} color={colors.danger} />
             <Text style={[st.actionLabel, { color: colors.danger }]}>Delete</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </View>

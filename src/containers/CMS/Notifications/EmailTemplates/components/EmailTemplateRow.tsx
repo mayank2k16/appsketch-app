@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { EmailTemplate } from '@/api/notifications';
 
 import type { CmsThemeColors } from '../../../theme';
@@ -21,7 +22,7 @@ export const EmailTemplateRow = React.memo(function EmailTemplateRow({
   const isDefault = template.tenant === null;
 
   return (
-    <Pressable onPress={onEdit} style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <PressableScale scaleTo={0.98} onPress={onEdit} style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={st.headerRow}>
         <Text style={[st.name, { color: colors.textPrimary }]} numberOfLines={1}>
           {template.name}
@@ -29,15 +30,15 @@ export const EmailTemplateRow = React.memo(function EmailTemplateRow({
         {isDefault ? (
           <Text style={[st.defaultBadge, { color: colors.textSecondary, borderColor: colors.border }]}>Default</Text>
         ) : (
-          <Pressable onPress={onDelete} hitSlop={8}>
+          <PressableScale onPress={onDelete} hitSlop={8}>
             <Ionicons name="trash-outline" size={16} color={colors.danger} />
-          </Pressable>
+          </PressableScale>
         )}
       </View>
       <Text style={[st.subject, { color: colors.textSecondary }]} numberOfLines={1}>
         {template.subject}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 });
 

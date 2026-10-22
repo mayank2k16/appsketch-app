@@ -11,6 +11,7 @@ import {
   useCustomVariables,
   useUpsertNotificationRule,
 } from '@/api/notifications';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsModal, CmsSelect, CmsSwitch, CmsVariableInput } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
@@ -102,6 +103,7 @@ export const ManageRuleModal = React.forwardRef<BottomSheetModal, Props>(
       if (form.channel === 'SMS' && !form.sms_template) next.sms_template = 'SMS template is required';
       if (form.channel === 'FCM' && !form.fcm_title_template.trim()) next.fcm_title_template = 'Title is required';
       setErrors(next);
+      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

@@ -11,7 +11,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,13 +18,44 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { updateOwnProfile, useSubscriptionPlans } from '@/api';
 import { accountClient } from '@/api/common/client';
+import { PressableScale } from '@/components/ui';
 import { PlanBadge } from '@/components/ui/PlanBadge';
 import { getUserSubscription, signOut, updateUserFields, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 import { useAppTheme, type AppColors } from '@/lib/theme';
 
 type FieldKey = 'name' | 'email' | 'phone';
+
+/** Screen-local roles. Dark returns exactly what this screen always drew;
+ *  white (docs/white-theme.md) uses RAISED white cards, INSET icon wells,
+ *  ink for marks and the ordinary primary buttons, and keeps orange for the
+ *  one key action (Upgrade Plan). */
+function profilePalette(t: AppColors) {
+  const dark = t.statusBar === 'light-content';
+  return dark
+    ? {
+        cardBg: t.agentTabBg,
+        cardBorder: t.agentTabBorder,
+        mark: t.accent,
+        wellBg: t.accentSoft,
+        avatarBorder: `${t.accent}40`,
+        primary: t.accent,
+        keyAction: t.accent,
+        danger: '#EF4444',
+      }
+    : {
+        cardBg: t.card,
+        cardBorder: t.border,
+        mark: t.text,
+        wellBg: '#F4F4F2',
+        avatarBorder: t.border,
+        primary: t.text,
+        keyAction: t.accent,
+        danger: '#E5484D',
+      };
+}
 
 function readUserField(user: Record<string, unknown> | null, key: FieldKey): string {
   if (!user) return '';
@@ -40,6 +70,7 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const p = profilePalette(t);
   const status = useAuth.use.status();
   const user = useAuth.use.user();
   const isGuest = status === 'guest';
@@ -119,6 +150,7 @@ export function ProfileScreen() {
   const [deletingAccount, setDeletingAccount] = React.useState(false);
 
   function handleDeleteAccount() {
+    haptic.warning();
     Alert.alert(
       'Delete Account',
       'This will permanently delete your account and all associated data. This action cannot be undone.',
@@ -155,14 +187,14 @@ export function ProfileScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>My Account</Text>
         {!isGuest && !editing ? (
-          <TouchableOpacity onPress={startEdit} hitSlop={10} style={st.headerBtn}>
-            <Ionicons name="create-outline" size={20} color={t.accent} />
-          </TouchableOpacity>
+          <PressableScale onPress={startEdit} hitSlop={10} style={st.headerBtn}>
+            <Ionicons name="create-outline" size={20} color={p.mark} />
+          </PressableScale>
         ) : (
           <View style={st.headerBtn} />
         )}
@@ -177,8 +209,8 @@ export function ProfileScreen() {
         >
           {/* ── Avatar ── */}
           <View style={st.avatarSection}>
-            <View style={[st.avatar, { backgroundColor: t.accentSoft, borderColor: `${t.accent}40` }]}>
-              <Text style={[st.avatarInitial, { color: t.accent }]}>{initial}</Text>
+            <View style={[st.avatar, { backgroundColor: p.wellBg, borderColor: p.avatarBorder }]}>
+              <Text style={[st.avatarInitial, { color: p.mark }]}>{initial}</Text>
             </View>
             <Text style={[st.avatarName, { color: t.text }]}>{original.name}</Text>
             {!!original.email && <Text style={[st.avatarSub, { color: t.textSub }]}>{original.email}</Text>}
@@ -191,13 +223,13 @@ export function ProfileScreen() {
                 <Text style={[st.bodyText, { color: t.textSub, marginTop: 8 }]}>
                   Sign in to see and manage your account details.
                 </Text>
-                <TouchableOpacity
+                <PressableScale
+                  haptic="press"
                   onPress={() => router.replace('/login')}
-                  activeOpacity={0.85}
-                  style={[st.primaryBtn, { backgroundColor: t.accent, marginTop: 16 }]}
+                  style={[st.primaryBtn, { backgroundColor: p.primary, marginTop: 16 }]}
                 >
                   <Text style={st.primaryBtnText}>Sign In / Register</Text>
-                </TouchableOpacity>
+                </PressableScale>
               </GlassCard>
             </View>
           ) : (
@@ -239,21 +271,20 @@ export function ProfileScreen() {
 
               {editing && (
                 <View style={[st.section, st.editActions]}>
-                  <TouchableOpacity
+                  <PressableScale
                     onPress={cancelEdit}
-                    activeOpacity={0.8}
                     style={[st.secondaryBtn, { borderColor: t.border }]}
                   >
                     <Text style={[st.secondaryBtnText, { color: t.textSub }]}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </PressableScale>
+                  <PressableScale
                     onPress={handleSave}
-                    activeOpacity={0.85}
                     disabled={saving}
-                    style={[st.primaryBtn, { backgroundColor: t.accent, flex: 1, opacity: saving ? 0.6 : 1 }]}
+                    disabledOpacity={0.6}
+                    style={[st.primaryBtn, { backgroundColor: p.primary, flex: 1 }]}
                   >
                     <Text style={st.primaryBtnText}>{saving ? 'Saving…' : 'Save Changes'}</Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 </View>
               )}
 
@@ -274,15 +305,14 @@ export function ProfileScreen() {
                       </Text>
                     )}
 
-                    <TouchableOpacity
+                    <PressableScale
                       onPress={() => router.push('/pricing')}
-                      activeOpacity={0.85}
-                      style={[st.primaryBtn, { backgroundColor: t.accent, marginTop: 16 }]}
+                      style={[st.primaryBtn, { backgroundColor: p.keyAction, marginTop: 16 }]}
                     >
                       <Text style={st.primaryBtnText}>
                         {'Upgrade Plan'}
                       </Text>
-                    </TouchableOpacity>
+                    </PressableScale>
                   </GlassCard>
                 </View>
               )}
@@ -303,30 +333,29 @@ export function ProfileScreen() {
 
               {!editing && (
                 <View style={[st.section, { gap: 10 }]}>
-                  <TouchableOpacity
+                  <PressableScale
                     onPress={handleLogout}
-                    activeOpacity={0.8}
-                    style={[st.secondaryBtn, { borderColor: '#EF444440' }]}
+                    style={[st.secondaryBtn, { borderColor: `${p.danger}40` }]}
                   >
-                    <Ionicons name="log-out-outline" size={16} color="#EF4444" />
-                    <Text style={[st.secondaryBtnText, { color: '#EF4444', marginLeft: 6 }]}>Log Out</Text>
-                  </TouchableOpacity>
+                    <Ionicons name="log-out-outline" size={16} color={p.danger} />
+                    <Text style={[st.secondaryBtnText, { color: p.danger, marginLeft: 6 }]}>Log Out</Text>
+                  </PressableScale>
 
-                  <TouchableOpacity
+                  <PressableScale
                     onPress={handleDeleteAccount}
-                    activeOpacity={0.8}
                     disabled={deletingAccount}
-                    style={[st.secondaryBtn, { borderColor: '#EF444440', opacity: deletingAccount ? 0.6 : 1 }]}
+                    disabledOpacity={0.6}
+                    style={[st.secondaryBtn, { borderColor: `${p.danger}40` }]}
                   >
                     {deletingAccount ? (
-                      <ActivityIndicator size="small" color="#EF4444" />
+                      <ActivityIndicator size="small" color={p.danger} />
                     ) : (
-                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                      <Ionicons name="trash-outline" size={16} color={p.danger} />
                     )}
-                    <Text style={[st.secondaryBtnText, { color: '#EF4444', marginLeft: 6 }]}>
+                    <Text style={[st.secondaryBtnText, { color: p.danger, marginLeft: 6 }]}>
                       {deletingAccount ? 'Deleting…' : 'Delete Account'}
                     </Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 </View>
               )}
             </>
@@ -347,8 +376,9 @@ function GlassCard({
   contentStyle?: object;
   children: React.ReactNode;
 }) {
+  const p = profilePalette(t);
   return (
-    <View style={[st.glassCard, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
+    <View style={[st.glassCard, { backgroundColor: p.cardBg, borderColor: p.cardBorder }]}>
       <View style={[st.glassContent, contentStyle]}>{children}</View>
     </View>
   );
@@ -373,10 +403,11 @@ function ProfileField({
   keyboardType?: 'default' | 'email-address' | 'phone-pad';
   isLast?: boolean;
 }) {
+  const p = profilePalette(t);
   return (
     <View style={[st.fieldRow, !isLast && { borderBottomWidth: 1, borderBottomColor: t.border }]}>
-      <View style={[st.fieldIconWrap, { backgroundColor: t.accentSoft }]}>
-        <Ionicons name={icon} size={15} color={t.accent} />
+      <View style={[st.fieldIconWrap, { backgroundColor: p.wellBg }]}>
+        <Ionicons name={icon} size={15} color={p.mark} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[st.fieldLabel, { color: t.textMuted }]}>{label}</Text>
@@ -409,18 +440,19 @@ function MenuRow({
   onPress: () => void;
   isLast?: boolean;
 }) {
+  const p = profilePalette(t);
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
-      activeOpacity={0.7}
+      scaleTo={0.98}
       style={[st.fieldRow, !isLast && { borderBottomWidth: 1, borderBottomColor: t.border }]}
     >
-      <View style={[st.fieldIconWrap, { backgroundColor: t.accentSoft }]}>
-        <Ionicons name={icon} size={15} color={t.accent} />
+      <View style={[st.fieldIconWrap, { backgroundColor: p.wellBg }]}>
+        <Ionicons name={icon} size={15} color={p.mark} />
       </View>
       <Text style={[st.fieldValue, { color: t.text, flex: 1 }]}>{label}</Text>
       <Ionicons name="chevron-forward" size={16} color={t.textMuted} />
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 

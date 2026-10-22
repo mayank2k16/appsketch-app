@@ -1,9 +1,9 @@
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
@@ -37,15 +37,16 @@ export function CmsSelect({ colors, label, value, options, onSelect, placeholder
         {label}
         {required ? <Text style={{ color: colors.danger }}> *</Text> : null}
       </Text>
-      <Pressable
+      <PressableScale
+        scaleTo={0.98}
         onPress={modal.present}
-        style={[st.field, { backgroundColor: colors.background, borderColor: error ? colors.danger : colors.border }]}
+        style={[st.field, { backgroundColor: colors.inputBg, borderColor: error ? colors.danger : colors.border }]}
       >
-        <Text style={[st.value, { color: selectedLabel ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
+        <Text style={[st.value, { color: selectedLabel ? colors.textPrimary : colors.textMuted }]} numberOfLines={1}>
           {selectedLabel ?? placeholder}
         </Text>
         <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
-      </Pressable>
+      </PressableScale>
       {error ? <Text style={[st.error, { color: colors.danger }]}>{error}</Text> : null}
 
       <CmsModal ref={modal.ref} colors={colors} title={label} snapPoints={[height]}>
@@ -53,7 +54,8 @@ export function CmsSelect({ colors, label, value, options, onSelect, placeholder
           data={options}
           keyExtractor={(item) => `cms-select-${item.value}`}
           renderItem={({ item }) => (
-            <Pressable
+            <PressableScale
+              scaleTo={0.98}
               onPress={() => {
                 onSelect(item.value);
                 modal.dismiss();
@@ -62,7 +64,7 @@ export function CmsSelect({ colors, label, value, options, onSelect, placeholder
             >
               <Text style={[st.optionLabel, { color: colors.textPrimary }]}>{item.label}</Text>
               {item.value === value ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
-            </Pressable>
+            </PressableScale>
           )}
         />
       </CmsModal>

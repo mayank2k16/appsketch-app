@@ -77,7 +77,7 @@ export function VendorsScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
           value={query}
           onChangeText={setQuery}
           placeholder="Search by title or tenant type…"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={colors.textMuted}
           style={[st.searchInput, { color: colors.textPrimary }]}
         />
       </View>

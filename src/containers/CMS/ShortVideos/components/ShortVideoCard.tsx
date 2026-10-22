@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { ShortVideoItem } from '@/api/short-videos';
 
 import { CmsStatusBadge } from '../../components';
@@ -72,14 +73,14 @@ export const ShortVideoCard = React.memo(function ShortVideoCard({ video, colors
         ) : null}
 
         <View style={st.actions}>
-          <Pressable onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          <PressableScale onPress={onEdit} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="create-outline" size={14} color={colors.textPrimary} />
             <Text style={[st.actionLabel, { color: colors.textPrimary }]}>Edit</Text>
-          </Pressable>
-          <Pressable onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          </PressableScale>
+          <PressableScale onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="trash-outline" size={14} color={colors.danger} />
             <Text style={[st.actionLabel, { color: colors.danger }]}>Delete</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </View>

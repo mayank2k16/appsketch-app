@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { Conversation } from '@/api/support';
 
 import type { CmsThemeColors } from '../../theme';
@@ -20,7 +21,9 @@ export const ConversationRow = React.memo(function ConversationRow({ colors, con
   const preview = `${c.order?.id ? `[Order #${c.order.id}] ` : ''}${c.last_message_preview || '—'}`;
 
   return (
-    <Pressable
+    <PressableScale
+      haptic={active ? true : 'select'}
+      scaleTo={0.98}
       onPress={onPress}
       style={[
         st.row,
@@ -49,7 +52,7 @@ export const ConversationRow = React.memo(function ConversationRow({ colors, con
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 });
 

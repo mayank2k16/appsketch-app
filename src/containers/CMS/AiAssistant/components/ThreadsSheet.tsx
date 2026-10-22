@@ -1,9 +1,10 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { ChatThread } from '@/api/ai-assistant';
 
 import { CmsButton, CmsModal } from '../../components';
@@ -34,7 +35,9 @@ export const ThreadsSheet = React.forwardRef<BottomSheetModal, Props>(
           renderItem={({ item }) => {
             const active = item.thread_id === activeThreadId;
             return (
-              <Pressable
+              <PressableScale
+                haptic={active ? true : 'select'}
+                scaleTo={0.98}
                 onPress={() => onSelect(item.thread_id)}
                 style={[
                   st.row,
@@ -46,7 +49,7 @@ export const ThreadsSheet = React.forwardRef<BottomSheetModal, Props>(
                 <Text style={[st.rowLabel, { color: active ? colors.accent : colors.textPrimary }]} numberOfLines={1}>
                   {item.title || 'Chat'}
                 </Text>
-              </Pressable>
+              </PressableScale>
             );
           }}
           ListEmptyComponent={<Text style={{ color: colors.textSecondary, padding: 16 }}>No chats yet.</Text>}

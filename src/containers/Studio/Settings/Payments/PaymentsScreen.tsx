@@ -11,11 +11,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import {
   usePaymentMerchants,
   type PaymentMerchant,
@@ -43,8 +43,11 @@ function providerColor(provider?: string): string {
   }
 }
 
-function statusColor(status?: string): string {
-  return status === 'completed' ? '#22C55E' : '#FBBF24';
+function statusColor(status: string | undefined, dark: boolean): string {
+  // White uses the spec's darker status inks — the dark-theme yellow is
+  // unreadable on a white card.
+  if (status === 'completed') return dark ? '#22C55E' : '#12A150';
+  return dark ? '#FBBF24' : '#D97706';
 }
 
 export function PaymentsScreen() {
@@ -130,7 +133,8 @@ export function PaymentsScreen() {
           showsHorizontalScrollIndicator={false}
           style={{ flex: 1 }}
         >
-          <TouchableOpacity
+          <PressableScale
+            haptic={!filterTenant ? true : 'select'}
             onPress={() => setFilterTenant(null)}
             style={[
               st.tenantChip,
@@ -149,11 +153,12 @@ export function PaymentsScreen() {
             >
               All apps
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
           {(tenants ?? []).map((tenant) => {
             const active = filterTenant?.id === tenant.id;
             return (
-              <TouchableOpacity
+              <PressableScale
+                haptic={active ? true : 'select'}
                 key={String(tenant.id)}
                 onPress={() => setFilterTenant(tenant)}
                 style={[
@@ -174,16 +179,16 @@ export function PaymentsScreen() {
                 >
                   {tenant.title}
                 </Text>
-              </TouchableOpacity>
+              </PressableScale>
             );
           })}
         </ScrollView>
 
       </View>
-      <TouchableOpacity onPress={openAddForm} style={[st.addBtn, { backgroundColor: t.accent }]}>
+      <PressableScale onPress={openAddForm} style={[st.addBtn, { backgroundColor: t.accent }]}>
         <Ionicons name="add" size={16} color="#FFFFFF" />
         <Text style={[st.addBtnText, { color: t.accentOn }]}>Add Payment</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       {isLoading ? (
         <ActivityIndicator color={t.accent} style={{ marginTop: 40 }} />
@@ -204,13 +209,13 @@ export function PaymentsScreen() {
               { backgroundColor: t.card, borderColor: t.border },
             ]}
           >
-            <TouchableOpacity
+            <PressableScale
               onPress={() => openEditForm(merchant)}
               style={st.editBtn}
               hitSlop={8}
             >
               <Ionicons name="create-outline" size={16} color={t.textMuted} />
-            </TouchableOpacity>
+            </PressableScale>
 
             <MerchantRow t={t} label="Email" value={merchant.email ?? '—'} />
             <MerchantRow
@@ -223,7 +228,7 @@ export function PaymentsScreen() {
               t={t}
               label="Status"
               value={merchant.status ?? '—'}
-              valueColor={statusColor(merchant.status)}
+              valueColor={statusColor(merchant.status, colorScheme === 'dark')}
             />
             <MerchantRow
               t={t}

@@ -3,8 +3,10 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import * as React from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+import { PressableScale } from '@/components/ui';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
@@ -131,23 +133,25 @@ export function CmsDateTimeInput({ colors, label, value, onChange, error, requir
         {label}
         {required ? <Text style={{ color: colors.danger }}> *</Text> : null}
       </Text>
-      <Pressable
+      <PressableScale
+        scaleTo={0.98}
         onPress={open}
         disabled={disabled}
+        disabledOpacity={0.6}
         style={[
           st.field,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.inputBg,
             borderColor: error ? colors.danger : colors.border,
             opacity: disabled ? 0.6 : 1,
           },
         ]}
       >
-        <Text style={[st.value, { color: parsed ? colors.textPrimary : colors.textSecondary }]} numberOfLines={1}>
+        <Text style={[st.value, { color: parsed ? colors.textPrimary : colors.textMuted }]} numberOfLines={1}>
           {parsed ? formatDisplay(parsed, mode) : mode === 'date' ? 'Select date' : 'Select date & time'}
         </Text>
         <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-      </Pressable>
+      </PressableScale>
       {error ? <Text style={[st.error, { color: colors.danger }]}>{error}</Text> : null}
 
       {Platform.OS === 'ios' && iosOpen ? (
@@ -160,9 +164,9 @@ export function CmsDateTimeInput({ colors, label, value, onChange, error, requir
             onChange={handleIosChange}
             themeVariant={colors.kind}
           />
-          <Pressable onPress={() => setIosOpen(false)} style={st.doneBtn}>
+          <PressableScale onPress={() => setIosOpen(false)} style={st.doneBtn}>
             <Text style={[st.doneLabel, { color: colors.accent }]}>Done</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       ) : null}
     </View>

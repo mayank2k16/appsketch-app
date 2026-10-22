@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -21,7 +20,8 @@ import {
   getRepoStatus,
   openPr,
 } from '@/api/coder';
-import { useAppTheme, useCoderTheme } from '@/lib/theme';
+import { PressableScale } from '@/components/ui';
+import { appTheme, type useAppTheme, useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { useCodeEditor } from '../CodeEditorProvider';
@@ -151,24 +151,37 @@ function ConnectRepoForm({ onConnected }: { onConnected: () => void }) {
         ]}
       />
 
-      <TouchableOpacity
-        onPress={handleConnect}
-        disabled={connecting}
+      <PressableScale
+        // Guarded, not `disabled`: the spinner is the busy state; no dim.
+        onPress={connecting ? undefined : handleConnect}
+        accessibilityState={{ disabled: connecting, busy: connecting }}
         style={[st.connectBtn, { backgroundColor: t.accent }]}
       >
         {connecting ? (
-          <ActivityIndicator size="small" />
+          <ActivityIndicator
+            size="small"
+            color={colorScheme === 'dark' ? undefined : t.accentOn}
+          />
         ) : (
-          <Text style={st.connectBtnText}>Connect repository</Text>
+          <Text
+            style={[
+              st.connectBtnText,
+              // The label had no colour (default black) — invisible on the ink
+              // fill in white. Dark keeps the default.
+              colorScheme !== 'dark' && { color: t.accentOn },
+            ]}
+          >
+            Connect repository
+          </Text>
         )}
-      </TouchableOpacity>
+      </PressableScale>
 
       <Text style={[st.orText, { color: t.codeEditorTextMuted }]}>
         or connect via browser
       </Text>
       <View style={st.oauthRow}>
         {['github', 'gitlab', 'bitbucket'].map((p) => (
-          <TouchableOpacity
+          <PressableScale
             key={p}
             onPress={() => openProviderConsent(p)}
             style={[
@@ -189,7 +202,7 @@ function ConnectRepoForm({ onConnected }: { onConnected: () => void }) {
             >
               {p}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         ))}
       </View>
       <Text style={[st.oauthHint, { color: t.codeEditorTextMuted }]}>
@@ -291,14 +304,14 @@ export function ChangesScreen() {
         <Text style={{ color: t.textSub, marginTop: 10 }}>
           Cloning your repository…
         </Text>
-        <TouchableOpacity
+        <PressableScale
           onPress={checkStatus}
           style={[st.refreshBtn, { backgroundColor: t.accent }]}
         >
           <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12.5 }}>
             Check again
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     );
   }
@@ -326,9 +339,13 @@ export function ChangesScreen() {
             </Text>
           ) : null}
         </View>
-        <TouchableOpacity onPress={loadDiff} hitSlop={8}>
+        <PressableScale
+          onPress={loadDiff}
+          hitSlop={8}
+          accessibilityLabel="Refresh changes"
+        >
           <Ionicons name="refresh" size={18} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       {loadingDiff ? (
@@ -406,7 +423,7 @@ export function ChangesScreen() {
 
       <View style={[st.foot, { borderColor: t.codeEditorBorder }]}>
         {prUrl ? (
-          <TouchableOpacity
+          <PressableScale
             onPress={() => Linking.openURL(prUrl)}
             style={st.prOpenedRow}
           >
@@ -424,7 +441,7 @@ export function ChangesScreen() {
             >
               Pull request opened — view it ↗
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         ) : (
           <>
             <TextInput
@@ -437,12 +454,16 @@ export function ChangesScreen() {
                 { color: t.text, borderColor: t.codeEditorBorder },
               ]}
             />
-            <TouchableOpacity
+            <PressableScale
               onPress={handleOpenPr}
               disabled={clean || prBusy}
               style={[
                 st.prBtn,
-                { backgroundColor: t.accent },
+                {
+                  // White: opening the PR is this screen's one orange action.
+                  backgroundColor:
+                    colorScheme === 'dark' ? t.accent : appTheme.light.accent,
+                },
                 (clean || prBusy) && { opacity: 0.5 },
               ]}
             >
@@ -451,7 +472,7 @@ export function ChangesScreen() {
               ) : (
                 <Text style={st.prBtnText}>Open Pull Request</Text>
               )}
-            </TouchableOpacity>
+            </PressableScale>
           </>
         )}
         {error ? (
@@ -474,7 +495,13 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  connectWrap: { padding: 24, alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' },
+  connectWrap: {
+    padding: 24,
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    justifyContent: 'center',
+  },
   connectTitle: { fontSize: 16, fontWeight: '700', marginTop: 4 },
   connectSub: {
     fontSize: 12.5,

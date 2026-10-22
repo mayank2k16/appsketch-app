@@ -20,7 +20,7 @@ export function OrderSearchBar({
         value={value}
         onChangeText={onChangeText}
         placeholder="Type at least 3 characters to search..."
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={colors.textMuted}
         style={[st.input, { color: colors.textPrimary }]}
         returnKeyType="search"
       />

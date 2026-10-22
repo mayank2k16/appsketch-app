@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Animated,
@@ -15,17 +16,27 @@ import {
   Share,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
+import {
+  AppearanceSwitch,
+  HapticsSwitch,
+} from '@/components/appearance-switch';
 import { Text } from '@/components/ui';
+import {
+  PressableScale,
+  type PressableScaleProps,
+} from '@/components/ui/pressable-scale';
 import {
   type DrawerColors,
   drawerTheme,
 } from '@/containers/Home/theme/HomeTheme';
 import { signOut, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
+import { useHapticsEnabled } from '@/lib/hooks/use-haptics-enabled';
+import { useSelectedTheme } from '@/lib/hooks/use-selected-theme';
 import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 
 const HEADER_LOGO = require('../../assets/logo.png');
@@ -122,44 +133,6 @@ const AUTH_MENU_ITEMS: MenuItem[] = [
 
 const GUEST_MENU_ITEMS: MenuItem[] = AUTH_MENU_ITEMS;
 
-// ─── Pulsing orange dot ────────────────────────────────────────────────────────
-function LiveDot() {
-  const pulse = React.useRef(new Animated.Value(1)).current;
-  React.useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.7,
-          duration: 700,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 700,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
-  return (
-    <View
-      style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 12,
-        height: 12,
-      }}
-    >
-      <Animated.View style={[st.dotRing, { transform: [{ scale: pulse }] }]} />
-      <View
-        style={[st.dotCore, StyleSheet.absoluteFill, { margin: 'auto' }]}
-      />
-    </View>
-  );
-}
-
 // ─── Elegant card row ──────────────────────────────────────────────────────────
 // Every menu row shares this: a bordered card with a tinted circular icon
 // badge, replacing the previous flat icon-next-to-label list.
@@ -171,6 +144,7 @@ function DrawerRow({
   labelColor,
   onPress,
   right,
+  haptic: hapticKind,
 }: {
   dt: DrawerColors;
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -179,11 +153,13 @@ function DrawerRow({
   labelColor?: string;
   onPress: () => void;
   right?: React.ReactNode;
+  haptic?: PressableScaleProps['haptic'];
 }) {
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
-      activeOpacity={0.65}
+      haptic={hapticKind}
+      scaleTo={0.98}
       style={[st.row, { backgroundColor: dt.rowBg, borderColor: dt.rowBorder }]}
     >
       <View style={[st.iconWrap, { backgroundColor: dt.iconWrapBg }]}>
@@ -193,7 +169,79 @@ function DrawerRow({
         {label}
       </Text>
       {right}
-    </TouchableOpacity>
+    </PressableScale>
+  );
+}
+
+// ─── Preferences: Share + Appearance ──────────────────────────────────────────
+function handleShare() {
+  Share.share({
+    message:
+      'Check out Appsketch — write anything and it compiles your dream interface in real-time. https://appsketch.ai',
+    url: 'https://appsketch.ai',
+  }).catch(() => {});
+}
+
+function PreferencesSection({
+  dt,
+  scheme,
+}: {
+  dt: DrawerColors;
+  scheme: 'light' | 'dark';
+}) {
+  const { setSelectedTheme } = useSelectedTheme();
+  const [hapticsOn, setHapticsOn] = useHapticsEnabled();
+  const dark = scheme === 'dark';
+  return (
+    <>
+      <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Preferences</Text>
+
+      {/* ── Share ── */}
+      <DrawerRow
+        dt={dt}
+        icon="share-outline"
+        label="Share Appsketch"
+        onPress={handleShare}
+      />
+
+      {/* ── Appearance — the user-facing White / Dark setting. Tapping the
+          row flips it; the segments pick one directly. ── */}
+      <DrawerRow
+        dt={dt}
+        icon={dark ? 'moon-outline' : 'sunny-outline'}
+        label="Appearance"
+        haptic={false}
+        onPress={() => {
+          haptic.toggle(!dark);
+          setSelectedTheme(dark ? 'light' : 'dark');
+        }}
+        right={<AppearanceSwitch scheme={scheme} />}
+      />
+
+      {/* ── Haptics — on/off for the app's touch feedback (default on).
+          Tapping the row flips it; the segments pick one directly. ── */}
+      <DrawerRow
+        dt={dt}
+        icon="pulse-outline"
+        label="Haptics"
+        haptic={false}
+        onPress={() => {
+          if (hapticsOn) haptic.toggle(false);
+          setHapticsOn(!hapticsOn);
+        }}
+        right={<HapticsSwitch scheme={scheme} />}
+      />
+
+      {/* Divider — white uses the hairline, not an orange rule. */}
+      <View
+        style={[
+          st.divider,
+          dark
+            ? { backgroundColor: dt.accentLine, opacity: 0.25 }
+            : { backgroundColor: dt.rowBorder },
+        ]}
+      />
+    </>
   );
 }
 
@@ -207,8 +255,12 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const quickAccessItems = isSignedIn
     ? [...QUICK_ACCESS_ITEMS, SUPPORT_ITEM]
     : QUICK_ACCESS_ITEMS;
-  // Dark only — see use-selected-theme. No scheme lookup and no toggle.
-  const dt = drawerTheme.dark;
+  // Follows the selected theme (white by default, dark as a setting — the
+  // Appearance switch below). Dark renders exactly as it always has.
+  const { colorScheme } = useColorScheme();
+  const scheme = colorScheme === 'dark' ? 'dark' : 'light';
+  const dark = scheme === 'dark';
+  const dt = drawerTheme[scheme];
 
   // ── Animation values ────────────────────────────────────────────────────────
   const translateX = React.useRef(new Animated.Value(DRAWER_W)).current;
@@ -229,6 +281,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
   React.useEffect(() => {
     if (visible) {
+      haptic.soft();
       setModalVisible(true);
       translateX.setValue(DRAWER_W);
       overlayOpacity.setValue(0);
@@ -298,14 +351,6 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
     setTimeout(() => router.replace('/login'), 80);
   }
 
-  function handleShare() {
-    Share.share({
-      message:
-        'Check out Appsketch — write anything and it compiles your dream interface in real-time. https://appsketch.ai',
-      url: 'https://appsketch.ai',
-    }).catch(() => {});
-  }
-
   return (
     <Modal
       visible={modalVisible}
@@ -323,7 +368,11 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       </Animated.View>
 
       {/* Tap outside to close */}
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPressIn={haptic.tap}
+        onPress={onClose}
+      />
 
       {/* ── Drawer panel — full-panel glass: same BlurView-plus-tint-overlay
           recipe as AgentV2's prompt card / Marketplace's TemplateCard, just
@@ -332,19 +381,21 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       <Animated.View
         style={[
           st.drawer,
+          !dark && st.drawerFlat,
           { shadowColor: dt.shadow, transform: [{ translateX }] },
         ]}
       >
         <BlurView
           intensity={Platform.OS === 'android' ? 70 : 35}
-          tint="dark"
+          tint={dark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
+        {/* White is an opaque paper panel: no blur tint showing through. */}
         <View
           pointerEvents="none"
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: dt.panelBg, opacity: 0.94 },
+            { backgroundColor: dt.panelBg, opacity: dark ? 0.94 : 1 },
           ]}
         />
 
@@ -363,6 +414,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             </Text>
 
             <Pressable
+              onPressIn={haptic.tap}
               onPress={onClose}
               style={({ pressed }) => [
                 st.closeBtn,
@@ -447,25 +499,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             </>
           )}
 
-          <Text style={[st.sectionLabel, { color: dt.dimColor }]}>
-            Preferences
-          </Text>
-
-          {/* ── Share ── */}
-          <DrawerRow
-            dt={dt}
-            icon="share-outline"
-            label="Share Appsketch"
-            onPress={handleShare}
-          />
-
-          {/* Divider */}
-          <View
-            style={[
-              st.divider,
-              { backgroundColor: dt.accentLine, opacity: 0.25 },
-            ]}
-          />
+          <PreferencesSection dt={dt} scheme={scheme} />
 
           <Text style={[st.sectionLabel, { color: dt.dimColor }]}>Session</Text>
 
@@ -488,8 +522,8 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
                 dt={dt}
                 icon="log-out-outline"
                 label="Log Out"
-                iconColor="#EF4444"
-                labelColor="#EF4444"
+                iconColor={dark ? '#EF4444' : '#E5484D'}
+                labelColor={dark ? '#EF4444' : '#E5484D'}
                 onPress={handleLogout}
               />
             ) : (
@@ -512,6 +546,7 @@ export function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
             { borderColor: dt.bottomBorder },
             pressed && { opacity: 0.6 },
           ]}
+          onPressIn={haptic.tap}
           onPress={() => Linking.openURL('https://appsketch.ai')}
         >
           <TextInput
@@ -545,6 +580,11 @@ const st = StyleSheet.create({
     shadowRadius: 24,
     elevation: 28,
     overflow: 'hidden',
+  },
+  // White: no shadows (docs/white-theme.md).
+  drawerFlat: {
+    shadowOpacity: 0,
+    elevation: 0,
   },
 
   // Brand header — flat, one hairline border underneath, no animated glow

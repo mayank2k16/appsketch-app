@@ -1,12 +1,13 @@
-import * as Haptics from 'expo-haptics';
 import * as React from 'react';
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
-import { Platform, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+
+import { haptic as hapticFx, type HapticKind } from '@/lib/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -16,8 +17,12 @@ export type PressableScaleProps = Omit<PressableProps, 'style'> & {
   style?: StyleProp<ViewStyle>;
   /** Scale while held. 0.96 for buttons, ~0.98 for big cards. */
   scaleTo?: number;
-  /** Light tap on press-in. Off for rapid-fire controls (steppers, keys). */
-  haptic?: boolean;
+  /** Haptic on press-in: true = a light tap, or a kind from
+   *  `@/lib/haptics` ('press' for a screen's primary action). False for
+   *  rapid-fire controls (steppers, keys). */
+  haptic?: boolean | HapticKind;
+  /** Opacity while disabled; 1 keeps a read-only control looking as is. */
+  disabledOpacity?: number;
 };
 
 /**
@@ -29,6 +34,7 @@ export type PressableScaleProps = Omit<PressableProps, 'style'> & {
 export function PressableScale({
   scaleTo = 0.96,
   haptic = true,
+  disabledOpacity = 0.5,
   disabled,
   onPressIn,
   onPressOut,
@@ -48,18 +54,14 @@ export function PressableScale({
       accessibilityRole={rest.accessibilityRole ?? 'button'}
       onPressIn={(e) => {
         scale.value = withSpring(scaleTo, SPRING);
-        if (haptic && Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-            () => {}
-          );
-        }
+        if (haptic) hapticFx[haptic === true ? 'tap' : haptic]();
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
         scale.value = withSpring(1, SPRING);
         onPressOut?.(e);
       }}
-      style={[style, animated, disabled ? { opacity: 0.5 } : null]}
+      style={[style, animated, disabled ? { opacity: disabledOpacity } : null]}
     >
       {children}
     </AnimatedPressable>

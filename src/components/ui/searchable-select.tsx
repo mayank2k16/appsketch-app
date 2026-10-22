@@ -11,6 +11,7 @@ import * as React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { tv } from 'tailwind-variants';
 
+import { haptic } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CaretDown } from './icons';
@@ -21,10 +22,10 @@ import { Text } from './text';
 const selectTv = tv({
   slots: {
     container: 'mb-4',
-    label: 'text-grey-100 mb-1 text-lg dark:text-neutral-100',
+    label: 'mb-1 text-lg text-[#0B0B0C] dark:text-neutral-100',
     input:
-      'border-grey-50 mt-0 flex-row items-center justify-center rounded-xl border-[0.5px] p-3  dark:border-neutral-500 dark:bg-neutral-800',
-    inputValue: 'dark:text-neutral-100',
+      'mt-0 flex-row items-center justify-center rounded-xl border border-[#E7E7E4] bg-white p-3 dark:border-[0.5px] dark:border-neutral-500 dark:bg-neutral-800',
+    inputValue: 'text-[#0B0B0C] dark:text-neutral-100',
   },
   variants: {
     error: {
@@ -36,14 +37,18 @@ const selectTv = tv({
     },
     disabled: {
       true: {
-        input: 'bg-neutral-200',
+        input: 'bg-[#F4F4F2]',
       },
     },
   },
   defaultVariants: { error: false, disabled: false },
 });
 
-export type SearchOption = { label: string; value: string | number; [key: string]: unknown };
+export type SearchOption = {
+  label: string;
+  value: string | number;
+  [key: string]: unknown;
+};
 
 export type SearchableSelectProps = {
   label?: string;
@@ -77,18 +82,23 @@ export function SearchableSelect(props: SearchableSelectProps) {
     [error, disabled]
   );
 
-  const textValue = value !== undefined ? (displayValue ?? placeholder) : placeholder;
+  const textValue =
+    value !== undefined ? (displayValue ?? placeholder) : placeholder;
 
   return (
     <>
       <View className={styles.container()}>
         {label && (
-          <Text testID={testID ? `${testID}-label` : undefined} className={styles.label()}>
+          <Text
+            testID={testID ? `${testID}-label` : undefined}
+            className={styles.label()}
+          >
             {label}
             {required ? <Text className="text-danger-600"> *</Text> : null}
           </Text>
         )}
         <Pressable
+          onPressIn={haptic.tap}
           className={styles.input()}
           disabled={disabled}
           onPress={modal.present}
@@ -100,12 +110,19 @@ export function SearchableSelect(props: SearchableSelectProps) {
           <CaretDown />
         </Pressable>
         {error && (
-          <Text testID={`${testID}-error`} className="text-sm text-danger-300 dark:text-danger-600">
+          <Text
+            testID={`${testID}-error`}
+            className="text-sm text-danger-300 dark:text-danger-600"
+          >
             {error}
           </Text>
         )}
       </View>
-      <SearchableSelectSheet ref={modal.ref} {...props} onDismiss={modal.dismiss} />
+      <SearchableSelectSheet
+        ref={modal.ref}
+        {...props}
+        onDismiss={modal.dismiss}
+      />
     </>
   );
 }
@@ -113,7 +130,18 @@ export function SearchableSelect(props: SearchableSelectProps) {
 type SheetProps = SearchableSelectProps & { onDismiss: () => void };
 
 const SearchableSelectSheet = React.forwardRef<BottomSheetModal, SheetProps>(
-  ({ label, value, onSearch, onSelect, searchPlaceholder = 'Search...', onDismiss, testID }, ref) => {
+  (
+    {
+      label,
+      value,
+      onSearch,
+      onSelect,
+      searchPlaceholder = 'Search...',
+      onDismiss,
+      testID,
+    },
+    ref
+  ) => {
     const [query, setQuery] = React.useState('');
     const [options, setOptions] = React.useState<SearchOption[]>([]);
     const [loading, setLoading] = React.useState(false);
@@ -148,12 +176,13 @@ const SearchableSelectSheet = React.forwardRef<BottomSheetModal, SheetProps>(
     const renderItem = React.useCallback(
       ({ item }: { item: SearchOption }) => (
         <Pressable
-          className="flex-row items-center border-b border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800"
+          onPressIn={haptic.select}
+          className="flex-row items-center border-b border-[#EDEDEA] bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800"
           onPress={() => choose(item)}
         >
           <Text className="flex-1 dark:text-neutral-100">{item.label}</Text>
           {value === item.value && (
-            <Text className="text-primary-600 dark:text-primary-400">✓</Text>
+            <Text className="text-[#0B0B0C] dark:text-primary-400">✓</Text>
           )}
         </Pressable>
       ),
@@ -180,7 +209,9 @@ const SearchableSelectSheet = React.forwardRef<BottomSheetModal, SheetProps>(
             renderItem={renderItem}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
-              <Text className="mt-6 text-center text-neutral-400">No results</Text>
+              <Text className="mt-6 text-center text-[#9C9DA3] dark:text-neutral-400">
+                No results
+              </Text>
             }
           />
         )}

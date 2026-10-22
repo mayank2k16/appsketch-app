@@ -2,12 +2,24 @@ import * as React from 'react';
 
 import type { WebBuildStatusValue, WebBuildWsEvent } from '@/api/coder';
 import { buildWebBuildWsUrl, getLatestBuild, triggerBuild } from '@/api/coder';
+import { haptic } from '@/lib/haptics';
 
 const TERMINAL_STATUSES = new Set<WebBuildStatusValue>([
   'COMPLETED',
   'FAILED',
   'CANCELLED',
 ]);
+
+/** A deploy that actually finishes (not the replayed state of an old,
+ *  already-done build) lands with the magic flourish, or an error buzz. */
+function speakFinish(
+  prev: WebBuildStatusValue | null,
+  next: WebBuildStatusValue
+) {
+  if (!prev || TERMINAL_STATUSES.has(prev) || prev === next) return;
+  if (next === 'COMPLETED') haptic.magic();
+  else if (next === 'FAILED') haptic.error();
+}
 
 /**
  * Owns the `ws/webbuild/<build_id>/` build console — ported from Vite's
@@ -24,6 +36,8 @@ export function useBuildLog(tenantId: string) {
   const [deploying, setDeploying] = React.useState(false);
 
   const wsRef = React.useRef<WebSocket | null>(null);
+  // Last status seen, for `speakFinish`.
+  const statusRef = React.useRef<WebBuildStatusValue | null>(null);
 
   // Load the last known build on mount so reopening the screen shows
   // where a previous deploy left off, instead of a blank state.
@@ -34,6 +48,7 @@ export function useBuildLog(tenantId: string) {
         const latest = await getLatestBuild(tenantId);
         if (cancelled || !latest) return;
         setBuildId(latest.build_id);
+        statusRef.current = latest.status;
         setStatus(latest.status);
         setPreviewUrl(latest.preview_url ?? null);
         setErrors(latest.errors ?? []);
@@ -63,6 +78,8 @@ export function useBuildLog(tenantId: string) {
             setLog((prev) => `${prev}${msg.lines.join('\n')}\n`);
             break;
           case 'status':
+            speakFinish(statusRef.current, msg.status);
+            statusRef.current = msg.status;
             setStatus(msg.status);
             if (msg.preview_url) setPreviewUrl(msg.preview_url);
             if (TERMINAL_STATUSES.has(msg.status)) setDeploying(false);
@@ -91,6 +108,7 @@ export function useBuildLog(tenantId: string) {
     try {
       const res = await triggerBuild(tenantId, { threadId });
       setBuildId(res.build_id);
+      statusRef.current = 'QUEUED';
       setStatus('QUEUED');
     } catch {
       setDeploying(false);

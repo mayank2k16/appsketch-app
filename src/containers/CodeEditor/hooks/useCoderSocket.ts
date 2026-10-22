@@ -18,6 +18,7 @@ import {
   onboardCoder,
   renameThread as renameThreadApi,
 } from '@/api/coder';
+import { haptic } from '@/lib/haptics';
 import { getItem, setItem } from '@/lib/storage';
 
 function threadStorageKey(tenantId: string) {
@@ -517,13 +518,20 @@ export function useCoderSocket(params: CoderSocketParams) {
             msg.intent !== 'chat' &&
             msg.built !== false;
           if (worthPreviewing && verifyOkRef.current !== false) {
+            // The build landed and passed: the signature flourish.
+            haptic.magic();
             setPreviewReady((n) => n + 1);
+          } else if (worthPreviewing) {
+            haptic.warning();
+          } else if (msg.status !== 'cancelled') {
+            haptic.soft();
           }
           verifyOkRef.current = null;
           break;
         }
 
         case 'error':
+          haptic.error();
           setBusy(false);
           setEta(null);
           setBackgroundRun(false);

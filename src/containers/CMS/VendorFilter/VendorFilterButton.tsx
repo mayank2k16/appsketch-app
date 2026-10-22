@@ -1,9 +1,10 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import { useVendors } from '@/api/vendors';
 import type { VendorListItem } from '@/api/vendors';
 import { useModal } from '@/components/ui/modal';
@@ -22,7 +23,7 @@ export function VendorFilterButton() {
 
   return (
     <>
-      <Pressable
+      <PressableScale
         onPress={modal.present}
         style={[st.trigger, { backgroundColor: colors.sidebarActiveBg }]}
         hitSlop={8}
@@ -33,7 +34,7 @@ export function VendorFilterButton() {
           size={18}
           color={selectedVendor ? colors.accent : colors.sidebarText}
         />
-      </Pressable>
+      </PressableScale>
       <VendorFilterSheet ref={modal.ref} onSelect={modal.dismiss} />
     </>
   );
@@ -91,7 +92,7 @@ const VendorFilterSheet = React.forwardRef<BottomSheetModal, { onSelect: () => v
             value={query}
             onChangeText={setQuery}
             placeholder="Search vendors…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
           />
         </View>
@@ -102,20 +103,23 @@ const VendorFilterSheet = React.forwardRef<BottomSheetModal, { onSelect: () => v
           contentContainerStyle={st.sheet}
           ListHeaderComponent={
             !q ? (
-              <Pressable
+              <PressableScale
+                scaleTo={0.98}
                 onPress={() => choose(null)}
                 style={[st.row, { borderColor: colors.border }]}
               >
                 <Text style={[st.label, { color: colors.textPrimary }]}>All Vendors</Text>
                 {!selectedVendor && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
-              </Pressable>
+              </PressableScale>
             ) : null
           }
           renderItem={({ item }) => {
             const isSelected = selectedVendor?.id === item.id;
             const isSelf = item.id === selfVendor?.id;
             return (
-              <Pressable
+              <PressableScale
+                haptic={isSelected ? true : 'select'}
+                scaleTo={0.98}
                 onPress={() => choose(item)}
                 style={[st.row, { borderColor: colors.border }]}
               >
@@ -124,7 +128,7 @@ const VendorFilterSheet = React.forwardRef<BottomSheetModal, { onSelect: () => v
                   {isSelf ? ' (You)' : ''}
                 </Text>
                 {isSelected && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
-              </Pressable>
+              </PressableScale>
             );
           }}
           ListEmptyComponent={

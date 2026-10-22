@@ -3,9 +3,10 @@
  */
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import { useCoderTheme } from '@/lib/theme';
 
 import { DomainsScreen } from './Domains/DomainsScreen';
@@ -26,6 +27,12 @@ export function SettingsScreen() {
   const { colorScheme } = useColorScheme();
   const t = useCoderTheme(colorScheme);
   const [tab, setTab] = React.useState<SettingsSubTab>('domains');
+  // White: chips are INSET wells and the selected one is an ink pill (a white
+  // chip on paper does not read). Dark keeps the palette's own values.
+  const chip =
+    colorScheme === 'dark'
+      ? { idleBg: t.surface, activeBg: t.accentSoft, activeText: t.accent }
+      : { idleBg: '#F4F4F2', activeBg: '#0B0B0C', activeText: '#FFFFFF' };
 
   return (
     <View style={{ flex: 1 }}>
@@ -33,30 +40,32 @@ export function SettingsScreen() {
         {SUB_TABS.map((s) => {
           const active = s.key === tab;
           return (
-            <Pressable
+            <PressableScale
+              haptic={active ? true : 'select'}
               key={s.key}
               onPress={() => setTab(s.key)}
+              accessibilityState={{ selected: active }}
               style={[
                 st.tab,
-                { backgroundColor: t.surface },
-                active && { backgroundColor: t.accentSoft },
+                { backgroundColor: chip.idleBg },
+                active && { backgroundColor: chip.activeBg },
               ]}
             >
               <Ionicons
                 name={s.icon}
                 size={14}
-                color={active ? t.accent : t.textMuted}
+                color={active ? chip.activeText : t.textMuted}
               />
               <Text
                 style={[
                   st.tabText,
                   { color: t.textMuted },
-                  active && { color: t.accent },
+                  active && { color: chip.activeText },
                 ]}
               >
                 {s.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>

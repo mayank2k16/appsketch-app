@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { BulkPaymentDetail } from '@/api/payments';
 
 import { CmsStatusBadge } from '../../../components';
@@ -28,10 +29,10 @@ export const BulkPaymentListCard = React.memo(function BulkPaymentListCard({ pay
         <Field label="Date" value={payment.payment_date || 'NA'} colors={colors} />
       </View>
 
-      <Pressable onPress={onView} style={[st.viewBtn, { borderColor: colors.border }]} hitSlop={6}>
+      <PressableScale onPress={onView} style={[st.viewBtn, { borderColor: colors.border }]} hitSlop={6}>
         <Ionicons name="eye-outline" size={15} color={colors.textPrimary} />
         <Text style={[st.viewLabel, { color: colors.textPrimary }]}>View</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 });

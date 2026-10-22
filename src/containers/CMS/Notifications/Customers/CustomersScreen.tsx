@@ -33,7 +33,7 @@ export function CustomersScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="Search customers…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
           />
         </View>

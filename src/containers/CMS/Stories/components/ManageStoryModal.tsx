@@ -2,9 +2,10 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { PickedStoryAsset, StoryItem } from '@/api/stories';
 import { useCreateStory, useUpdateStory } from '@/api/stories';
 import { toast } from '@/lib/toast';
@@ -125,7 +126,7 @@ export const ManageStoryModal = React.forwardRef<BottomSheetModal, Props>(
           keyboardShouldPersistTaps="handled"
         >
           <CmsCard colors={colors} style={{ gap: 14 }}>
-            <Pressable onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <PressableScale scaleTo={0.98} onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={st.imagePreview} contentFit="cover" />
               ) : (
@@ -134,7 +135,7 @@ export const ManageStoryModal = React.forwardRef<BottomSheetModal, Props>(
                   <Text style={{ color: colors.textSecondary, fontSize: 12, width: '100%', textAlign: 'center' }}>Story Image</Text>
                 </>
               )}
-            </Pressable>
+            </PressableScale>
 
             <CmsInput
               colors={colors}

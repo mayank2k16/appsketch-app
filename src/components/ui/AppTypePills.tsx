@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { AppTypeKey } from '@/api/coder';
 import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
+
+import { PressableScale } from './pressable-scale';
 
 const TYPE_PILLS: {
   key: AppTypeKey;
@@ -25,37 +28,41 @@ type Props = {
 // build's target platform needs picking (the standalone Agent screen, and
 // now Home's ClosingCTA composer too).
 export function AppTypePills({ t, value, onChange }: Props) {
+  const { colorScheme } = useColorScheme();
+  // White: the selected pill is ink with white text — no brand-tinted fill
+  // (docs/white-theme.md). Dark keeps the palette's active pill.
+  const dark = colorScheme === 'dark';
+  const activeBg = dark ? t.agentTabActiveBg : '#0B0B0C';
+  const activeText = dark ? t.agentTabActiveText : '#FFFFFF';
   return (
     <View style={s.row}>
       {TYPE_PILLS.map((p) => {
         const active = p.key === value;
         return (
-          <TouchableOpacity
+          <PressableScale
+            haptic={active ? true : 'select'}
             key={p.key}
             onPress={() => onChange(p.key)}
-            activeOpacity={0.8}
+            accessibilityState={{ selected: active }}
             style={[
               s.pill,
               {
-                backgroundColor: active ? t.agentTabActiveBg : t.agentTabBg,
-                borderColor: active ? t.agentTabActiveBg : t.agentTabBorder,
+                backgroundColor: active ? activeBg : t.agentTabBg,
+                borderColor: active ? activeBg : t.agentTabBorder,
               },
             ]}
           >
             <Ionicons
               name={p.icon}
               size={14}
-              color={active ? t.agentTabActiveText : t.agentTabIcon}
+              color={active ? activeText : t.agentTabIcon}
             />
             <Text
-              style={[
-                s.label,
-                { color: active ? t.agentTabActiveText : t.agentTabText },
-              ]}
+              style={[s.label, { color: active ? activeText : t.agentTabText }]}
             >
               {p.label}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         );
       })}
     </View>

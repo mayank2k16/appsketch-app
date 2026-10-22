@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import { useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from './CodeEditorProvider';
@@ -32,13 +33,14 @@ export function CodeScreen() {
             },
           ]}
         >
-          <TouchableOpacity
+          <PressableScale
             onPress={() => setSelectedPath(null)}
             hitSlop={10}
             style={st.backBtn}
+            accessibilityLabel="Back to files"
           >
             <Ionicons name="chevron-back" size={20} color={t.text} />
-          </TouchableOpacity>
+          </PressableScale>
           <Text style={[st.fileName, { color: t.text }]} numberOfLines={1}>
             {selectedPath}
           </Text>

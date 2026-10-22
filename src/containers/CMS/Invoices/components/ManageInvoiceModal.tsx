@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { InvoiceType } from '@/api/invoices';
 import {
   searchChallans,
@@ -523,7 +524,6 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                     keyboardType="decimal-pad"
                     value={product.cgst}
                     editable={false}
-                    onChangeText={() => { }}
                     groupStyle={st.groupStyle}
                     inputStyle={st.inputStyle}
                   />
@@ -535,7 +535,6 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                     keyboardType="decimal-pad"
                     value={product.sgst}
                     editable={false}
-                    onChangeText={() => { }}
                     groupStyle={st.groupStyle}
                     inputStyle={st.inputStyle}
                   />
@@ -545,7 +544,6 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                     keyboardType="decimal-pad"
                     value={product.igst}
                     editable={false}
-                    onChangeText={() => { }}
                     groupStyle={st.groupStyle}
                     inputStyle={st.inputStyle}
                   />
@@ -554,13 +552,12 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                     label="Total"
                     value={product.finalPrice}
                     editable={false}
-                    onChangeText={() => { }}
                     groupStyle={st.groupStyle}
                     inputStyle={st.inputStyle}
                   />
                 </View>
                 {index > 0 ? (
-                  <Pressable
+                  <PressableScale
                     onPress={() => deleteProductRow(index)}
                     style={st.deleteRowBtn}
                     hitSlop={6}
@@ -579,7 +576,7 @@ export const ManageInvoiceModal = React.forwardRef<BottomSheetModal, Props>(
                     >
                       Remove
                     </Text>
-                  </Pressable>
+                  </PressableScale>
                 ) : null}
               </View>
             ))}

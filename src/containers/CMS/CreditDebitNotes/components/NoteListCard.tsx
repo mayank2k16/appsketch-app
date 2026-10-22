@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { NoteListItem } from '@/api/credit-debit-notes';
+import { PressableScale } from '@/components/ui';
 
 import { CmsStatusBadge } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -17,9 +18,13 @@ type Props = {
 export const NoteListCard = React.memo(function NoteListCard({ note, colors }: Props) {
   const hasUrl = Boolean(note.note_url);
 
+  // Only a note with a document is tappable; without one the card is a plain
+  // View so it doesn't animate a press that goes nowhere.
+  const Card = hasUrl ? PressableScale : View;
+
   return (
-    <Pressable
-      onPress={hasUrl ? () => Linking.openURL(note.note_url!) : undefined}
+    <Card
+      {...(hasUrl ? { onPress: () => Linking.openURL(note.note_url!), scaleTo: 0.98 } : {})}
       style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
       <View style={st.headerRow}>
@@ -42,7 +47,7 @@ export const NoteListCard = React.memo(function NoteListCard({ note, colors }: P
           </View>
         ) : null}
       </View>
-    </Pressable>
+    </Card>
   );
 });
 

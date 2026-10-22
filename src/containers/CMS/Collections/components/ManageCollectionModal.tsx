@@ -2,12 +2,12 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { CollectionItem, CollectionProduct, PickedCollectionAsset } from '@/api/collections';
 import { useCreateCollection, useUpdateCollection } from '@/api/collections';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { toast } from '@/lib/toast';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSheetScrollView, CmsSwitch } from '../../components';
@@ -120,7 +120,7 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
           keyboardShouldPersistTaps="handled"
         >
           <CmsCard colors={colors} style={{ ...st.cmsCard }}>
-            <Pressable onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <PressableScale scaleTo={0.98} onPress={pickImage} style={[st.imageTile, { borderColor: colors.border, backgroundColor: colors.background }]}>
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={st.imagePreview} contentFit="cover" />
               ) : (
@@ -129,7 +129,7 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
                   <Text style={{ color: colors.textSecondary, fontSize: 12, width: '100%', textAlign: 'center' }}>Collection Image</Text>
                 </>
               )}
-            </Pressable>
+            </PressableScale>
 
             <CmsInput
               colors={colors}
@@ -166,9 +166,9 @@ export const ManageCollectionModal = React.forwardRef<BottomSheetModal, Props>(
                 <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }} numberOfLines={1}>
                   {p.product_name}
                 </Text>
-                <Pressable onPress={() => removeProduct(p.id)} hitSlop={6}>
+                <PressableScale onPress={() => removeProduct(p.id)} hitSlop={6}>
                   <Text style={{ color: colors.danger, fontSize: 12.5, fontWeight: '700' }}>Remove</Text>
-                </Pressable>
+                </PressableScale>
               </View>
             ))}
           </CmsCard>

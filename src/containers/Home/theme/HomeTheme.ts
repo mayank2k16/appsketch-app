@@ -152,7 +152,9 @@ const buildDrawerTheme = (scheme: 'dark' | 'light') => {
     // reading as washed out. The ramp's midpoint clears that bar the same
     // way: vivid on the dark panel and still legible on the light one, so
     // it can be one value without going grey to get there.
-    iconColor: BRAND_MID,
+    // White: an ink glyph on the inset badge — the ramp is for the logo and
+    // the active tab only (docs/white-theme.md).
+    iconColor: dark ? BRAND_MID : t.text,
     labelColor: t.drawerLabel,
     dimColor: t.drawerDim,
     wordmarkColor: t.drawerWordmark,

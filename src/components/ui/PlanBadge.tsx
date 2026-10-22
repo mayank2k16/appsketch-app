@@ -12,10 +12,11 @@
  * `PulsingDot.tsx` and `GradientText.tsx`'s `AnimatedGradientText` —
  * no new animation library.
  */
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { F } from '@/lib/fonts';
 import { BRAND_RAMP } from '@/lib/theme';
@@ -48,9 +49,12 @@ export function PlanBadge({ tier }: { tier: string | null | undefined }) {
 
 // ─── Basic — lowest tier of the three: plain tinted outline, no gradient/motion ──
 function BasicPlanBadge({ label }: { label: string }) {
+  const { colorScheme } = useColorScheme();
+  // White: the accent at the ~8% pill wash the status pills use.
+  const white = colorScheme !== 'dark';
   return (
-    <View style={st.basicPill}>
-      <Text style={st.basicLabel}>{label}</Text>
+    <View style={[st.basicPill, white && st.basicPillWhite]}>
+      <Text style={[st.basicLabel, white && st.basicLabelWhite]}>{label}</Text>
     </View>
   );
 }
@@ -58,30 +62,50 @@ function BasicPlanBadge({ label }: { label: string }) {
 // ─── Growth (and every other non-Basic/100X paid tier) — static gradient pill ───
 function StandardPlanBadge({ label }: { label: string }) {
   return (
-    <LinearGradient colors={LOGO_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.pill}>
+    <LinearGradient
+      colors={LOGO_GRADIENT}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={st.pill}
+    >
       <Text style={st.label}>{label}</Text>
     </LinearGradient>
   );
 }
 
-// ─── 100X — same gradient, plus a sweeping shine band + pulsing glow halo ──
-function MaxPlanBadge({ label }: { label: string }) {
-  const [pillWidth, setPillWidth] = React.useState(0);
-  const sweep = React.useRef(new Animated.Value(0)).current;
-  const glow = React.useRef(new Animated.Value(0)).current;
-
+// The 100X badge's two loops: the shine sweep and the halo pulse.
+function useBadgeLoops(sweep: Animated.Value, glow: Animated.Value) {
   React.useEffect(() => {
     const sweepLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(sweep, { toValue: 1, duration: 1500, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(sweep, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
         Animated.delay(650),
-        Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
+        Animated.timing(sweep, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
       ])
     );
     const glowLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0, duration: 1100, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(glow, {
+          toValue: 1,
+          duration: 1100,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glow, {
+          toValue: 0,
+          duration: 1100,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
       ])
     );
     sweepLoop.start();
@@ -91,10 +115,21 @@ function MaxPlanBadge({ label }: { label: string }) {
       glowLoop.stop();
     };
   }, [sweep, glow]);
+}
+
+// ─── 100X — same gradient, plus a sweeping shine band + pulsing glow halo ──
+function MaxPlanBadge({ label }: { label: string }) {
+  const [pillWidth, setPillWidth] = React.useState(0);
+  const sweep = React.useRef(new Animated.Value(0)).current;
+  const glow = React.useRef(new Animated.Value(0)).current;
+
+  useBadgeLoops(sweep, glow);
 
   const bandWidth = Math.max(pillWidth * 0.55, 1);
-  const translateX = sweep.interpolate({ inputRange: [0, 1], outputRange: [-bandWidth, pillWidth] });
-
+  const translateX = sweep.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-bandWidth, pillWidth],
+  });
 
   return (
     <View style={st.maxWrap}>
@@ -107,7 +142,12 @@ function MaxPlanBadge({ label }: { label: string }) {
       >
         {pillWidth > 0 && (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <Animated.View style={[st.sweepBand, { width: bandWidth, transform: [{ translateX }] }]}>
+            <Animated.View
+              style={[
+                st.sweepBand,
+                { width: bandWidth, transform: [{ translateX }] },
+              ]}
+            >
               <LinearGradient
                 colors={['transparent', 'rgba(255,255,255,0.7)', 'transparent']}
                 start={{ x: 0, y: 0 }}
@@ -117,7 +157,12 @@ function MaxPlanBadge({ label }: { label: string }) {
             </Animated.View>
           </View>
         )}
-        <Ionicons name="sparkles" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
+        <Ionicons
+          name="sparkles"
+          size={10}
+          color="#FFFFFF"
+          style={{ marginRight: 3 }}
+        />
         <Text style={st.maxLabel}>{label}</Text>
       </LinearGradient>
     </View>
@@ -135,6 +180,13 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(249,115,22,0.12)',
     borderWidth: 1,
     borderColor: 'rgba(249,115,22,0.35)',
+  },
+  basicPillWhite: {
+    backgroundColor: 'rgba(242,96,12,0.08)',
+    borderColor: 'rgba(242,96,12,0.24)',
+  },
+  basicLabelWhite: {
+    color: '#F2600C',
   },
   basicLabel: {
     fontFamily: F.sans700,

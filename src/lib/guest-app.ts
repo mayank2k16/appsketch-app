@@ -9,6 +9,7 @@ import {
 } from 'appsketch-host';
 import * as React from 'react';
 
+import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
 export function useOpenGuestApp() {
@@ -23,6 +24,8 @@ export function useOpenGuestApp() {
     }
     busy.current = true;
     setOpening(true);
+    // A weighty thump as another app takes over the screen.
+    haptic.heavy();
     try {
       await openGuestApp(input);
       return true;

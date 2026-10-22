@@ -2,16 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { previewUrlForTenant } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import {
+  appTheme,
   BRAND_MID,
   brandGradient,
   type useAppTheme,
@@ -30,6 +26,13 @@ const IN_PROGRESS_STATUSES = new Set([
   'DEPLOYING',
 ]);
 
+function deployCopy(inProgress: boolean, done: boolean, failed: boolean) {
+  if (inProgress) return { icon: null, label: 'Deploying…' } as const;
+  if (done) return { icon: 'checkmark-circle', label: 'Deployed' } as const;
+  if (failed) return { icon: 'alert-circle', label: 'Retry deploy' } as const;
+  return { icon: 'rocket-outline', label: 'Deploy' } as const;
+}
+
 function DeployButton({
   deploying,
   status,
@@ -45,13 +48,21 @@ function DeployButton({
     deploying || (status ? IN_PROGRESS_STATUSES.has(status) : false);
   const failed = status === 'FAILED';
   const done = status === 'COMPLETED' && !inProgress;
+  // White: Deploy is this screen's one highlighted action, so it is the flat
+  // orange accent (the brand ramp is reserved for the logo there).
+  const light = colors.statusBar !== 'light-content';
+  const copy = deployCopy(inProgress, done, failed);
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={inProgress}
+    <PressableScale
+      haptic={inProgress ? false : 'press'}
+      // Not `disabled`: that would force 50% opacity; the in-progress pill
+      // keeps its own 0.7 dim while it ignores taps.
+      onPress={inProgress ? undefined : onPress}
+      accessibilityState={{ disabled: inProgress }}
       style={[
         st.deployBtn,
+        light && !failed && { backgroundColor: appTheme.light.accent },
         failed && { backgroundColor: colors.codeEditorDanger },
         inProgress && { opacity: 0.7 },
       ]}
@@ -60,7 +71,7 @@ function DeployButton({
           white pill — the brightest thing above the user's own rendered site.
           It takes the ramp, except when it has FAILED, where the danger
           colour has to win over the brand. */}
-      {!failed && (
+      {!failed && !light && (
         <LinearGradient
           colors={brandGradient()}
           start={{ x: 0, y: 0 }}
@@ -68,31 +79,13 @@ function DeployButton({
           style={StyleSheet.absoluteFill}
         />
       )}
-      {inProgress ? (
-        <ActivityIndicator size="small" />
+      {copy.icon === null ? (
+        <ActivityIndicator size="small" color={light ? '#FFFFFF' : undefined} />
       ) : (
-        <Ionicons
-          name={
-            done
-              ? 'checkmark-circle'
-              : failed
-                ? 'alert-circle'
-                : 'rocket-outline'
-          }
-          size={14}
-          color="#FFFFFF"
-        />
+        <Ionicons name={copy.icon} size={14} color="#FFFFFF" />
       )}
-      <Text style={st.deployLabel}>
-        {inProgress
-          ? 'Deploying…'
-          : done
-            ? 'Deployed'
-            : failed
-              ? 'Retry deploy'
-              : 'Deploy'}
-      </Text>
-    </TouchableOpacity>
+      <Text style={st.deployLabel}>{copy.label}</Text>
+    </PressableScale>
   );
 }
 
@@ -104,6 +97,11 @@ export function PreviewScreen() {
     useCodeEditor();
   const { status, deploying, startBuild } = buildLog;
   const editing = previewMode !== null;
+  // The edit state is magenta in dark; white keeps to ink + one orange (which
+  // Deploy owns), so "editing" reads as the inverted ink chip instead.
+  const light = colorScheme !== 'dark';
+  const editTint = light ? t.text : BRAND_MID;
+  const editWash = light ? t.accentSoft : `${BRAND_MID}1F`;
 
   const livePreviewUrl = params.tenantUid
     ? previewUrlForTenant(params.tenantUid)
@@ -112,14 +110,14 @@ export function PreviewScreen() {
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
       <View style={[st.header, { borderColor: t.border }]}>
-        <TouchableOpacity
+        <PressableScale
+          haptic="rigid"
           onPress={() => setPreviewMode(editing ? null : 'select')}
-          activeOpacity={0.75}
           style={[
             st.statusToggle,
             {
-              backgroundColor: editing ? `${BRAND_MID}1F` : t.codeEditorTabBg,
-              borderColor: editing ? BRAND_MID : t.codeEditorBorder,
+              backgroundColor: editing ? editWash : t.codeEditorTabBg,
+              borderColor: editing ? editTint : t.codeEditorBorder,
             },
           ]}
         >
@@ -127,19 +125,19 @@ export function PreviewScreen() {
             style={[
               st.statusDot,
               {
-                backgroundColor: editing ? BRAND_MID : t.codeEditorConnectedDot,
+                backgroundColor: editing ? editTint : t.codeEditorConnectedDot,
               },
             ]}
           />
-          <Text style={[st.title, { color: editing ? BRAND_MID : t.text }]}>
+          <Text style={[st.title, { color: editing ? editTint : t.text }]}>
             {editing ? 'Edit' : 'Preview'}
           </Text>
           <Ionicons
             name={editing ? 'checkmark-circle' : 'create-outline'}
             size={13}
-            color={editing ? BRAND_MID : t.textSub}
+            color={editing ? editTint : t.textSub}
           />
-        </TouchableOpacity>
+        </PressableScale>
         <DeployButton
           deploying={deploying}
           status={status}

@@ -1,12 +1,12 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { BookingListItem, BookingStatus } from '@/api/bookings';
 import { useDeleteBooking, useUpdateBooking } from '@/api/bookings';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsButton, CmsCard, CmsConfirmModal, CmsField, CmsInput, CmsModal, CmsSelect, CmsStatusBadge } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -203,10 +203,10 @@ function Row({
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} style={st.linkRow}>
+    <PressableScale scaleTo={0.98} onPress={onPress} style={st.linkRow}>
       <Ionicons name={icon} size={15} color={colors.textSecondary} />
       <Text style={{ color: colors.accent, fontSize: 13 }}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -8,12 +8,12 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import {
   confirmSubscriptionPaymentFailure,
   confirmSubscriptionPaymentSuccess,
@@ -66,6 +66,11 @@ export function CartScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const isDark = colorScheme === 'dark';
+  // White keeps orange for the ONE action (Continue → pay); secondary accents
+  // (feature ticks, "Change plan") are ink. Dark is unchanged.
+  const subAccent = isDark ? t.accent : t.text;
+  const danger = isDark ? '#E0392B' : '#E5484D';
   const { tier, billingCycle: billingCycleParam } = useLocalSearchParams<{ tier?: string; billingCycle?: string }>();
   const billingCycle = billingCycleParam === 'yearly' ? 'yearly' : 'monthly';
 
@@ -265,9 +270,9 @@ export function CartScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>Cart</Text>
         <View style={st.backBtn} />
       </View>
@@ -300,7 +305,7 @@ export function CartScreen() {
                     <View style={st.featureList}>
                       {plan.features.slice(0, MAX_VISIBLE_FEATURES).map((feat) => (
                         <View key={feat} style={st.featureRow}>
-                          <Ionicons name="checkmark-circle" size={13} color={t.accent} />
+                          <Ionicons name="checkmark-circle" size={13} color={subAccent} />
                           <Text style={[st.featureText, { color: t.textSub }]} numberOfLines={1}>
                             {feat}
                           </Text>
@@ -314,9 +319,9 @@ export function CartScreen() {
                     </View>
                   )}
 
-                  <TouchableOpacity onPress={() => router.push('/pricing' as never)} style={{ marginTop: 10 }}>
-                    <Text style={[st.linkText, { color: t.accent }]}>Change plan</Text>
-                  </TouchableOpacity>
+                  <PressableScale onPress={() => router.push('/pricing' as never)} style={{ marginTop: 10 }}>
+                    <Text style={[st.linkText, { color: subAccent }]}>Change plan</Text>
+                  </PressableScale>
                 </View>
               )}
 
@@ -371,9 +376,9 @@ export function CartScreen() {
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={[st.muted, { color: t.text }]}>{formatINR(domainAmount)}</Text>
-                          <TouchableOpacity onPress={removeDomain}>
-                            <Text style={[st.linkText, { color: '#E0392B', fontSize: 12 }]}>Remove</Text>
-                          </TouchableOpacity>
+                          <PressableScale onPress={removeDomain}>
+                            <Text style={[st.linkText, { color: danger, fontSize: 12 }]}>Remove</Text>
+                          </PressableScale>
                         </View>
                       </View>
                     )}
@@ -386,14 +391,15 @@ export function CartScreen() {
                     </View>
                   </View>
 
-                  <TouchableOpacity
+                  <PressableScale
+                    haptic="press"
                     onPress={handleContinue}
-                    activeOpacity={0.85}
                     disabled={checkingOut}
-                    style={[st.continueBtn, { backgroundColor: t.accent }, checkingOut && { opacity: 0.6 }]}
+                    disabledOpacity={0.6}
+                    style={[st.continueBtn, { backgroundColor: t.accent }]}
                   >
                     <Text style={st.continueBtnText}>{checkingOut ? 'Processing…' : 'Continue'}</Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 </>
               )}
             </>

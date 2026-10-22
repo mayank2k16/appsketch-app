@@ -2,8 +2,9 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { OrderDetail } from '@/api/orders';
 
 import { CmsCard, CmsField, CmsModal, CmsStatusBadge as StatusBadge, CmsSummaryRow } from '../../components';
@@ -62,9 +63,9 @@ export const OrderDetailModal = React.forwardRef<BottomSheetModal, Props>(({ col
             <CmsField label="Delivery Time" value={order.delivery_time} colors={colors} />
           </View>
           {order.invoice_url ? (
-            <Pressable onPress={() => Linking.openURL(order.invoice_url as string)}>
+            <PressableScale onPress={() => Linking.openURL(order.invoice_url as string)}>
               <Text style={{ color: colors.accent, marginTop: 8, fontWeight: '700' }}>View invoice</Text>
-            </Pressable>
+            </PressableScale>
           ) : null}
         </CmsCard>
 

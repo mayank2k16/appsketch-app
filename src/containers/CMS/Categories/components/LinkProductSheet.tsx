@@ -1,9 +1,10 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { CategoryNode } from '@/api/categories';
 import { useLinkProductToCategory } from '@/api/categories';
 import type { ProductListItem } from '@/api/products';
@@ -65,7 +66,7 @@ export const LinkProductSheet = React.forwardRef<BottomSheetModal, Props>(({ col
             value={query}
             onChangeText={setQuery}
             placeholder="Search products…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
           />
         </View>
@@ -77,7 +78,12 @@ export const LinkProductSheet = React.forwardRef<BottomSheetModal, Props>(({ col
           renderItem={({ item }) => {
             const checked = selectedIds.includes(item.id);
             return (
-              <Pressable onPress={() => toggle(item.id)} style={[st.row, { borderColor: colors.border }]}>
+              <PressableScale
+                haptic="rigid"
+                scaleTo={0.98}
+                onPress={() => toggle(item.id)}
+                style={[st.row, { borderColor: colors.border }]}
+              >
                 <View style={{ flex: 1 }}>
                   <Text style={[st.name, { color: colors.textPrimary }]} numberOfLines={1}>
                     {item.product_name}
@@ -103,7 +109,7 @@ export const LinkProductSheet = React.forwardRef<BottomSheetModal, Props>(({ col
                   size={20}
                   color={checked ? colors.accent : colors.textSecondary}
                 />
-              </Pressable>
+              </PressableScale>
             );
           }}
           ListEmptyComponent={<Text style={{ color: colors.textSecondary, padding: 16 }}>No products found.</Text>}

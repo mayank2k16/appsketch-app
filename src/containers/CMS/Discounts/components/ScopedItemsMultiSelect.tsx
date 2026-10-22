@@ -1,9 +1,9 @@
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -47,22 +47,24 @@ export function ScopedItemsMultiSelect<T>({
   return (
     <View style={st.group}>
       <Text style={[st.label, { color: colors.textSecondary }]}>{label}</Text>
-      <Pressable
-        onPress={disabled ? undefined : modal.present}
+      <PressableScale
+        scaleTo={0.98}
+        onPress={modal.present}
+        disabled={disabled}
         style={[
           st.field,
-          { backgroundColor: colors.background, borderColor: colors.border },
+          { backgroundColor: colors.inputBg, borderColor: colors.border },
           disabled && st.disabled,
         ]}
       >
         <Text
-          style={[st.value, { color: selectedLabels.length ? colors.textPrimary : colors.textSecondary }]}
+          style={[st.value, { color: selectedLabels.length ? colors.textPrimary : colors.textMuted }]}
           numberOfLines={1}
         >
           {disabled ? 'Applies to all' : selectedLabels.length ? selectedLabels.join(', ') : 'Select items…'}
         </Text>
         {!disabled ? <Ionicons name="chevron-down" size={16} color={colors.textSecondary} /> : null}
-      </Pressable>
+      </PressableScale>
 
       <CmsModal ref={modal.ref} colors={colors} title={label} snapPoints={['70%']}>
         {loading ? (
@@ -75,7 +77,12 @@ export function ScopedItemsMultiSelect<T>({
               const id = getId(item);
               const checked = value.includes(id);
               return (
-                <Pressable onPress={() => toggle(id)} style={[st.option, { borderColor: colors.border }]}>
+                <PressableScale
+                  haptic="rigid"
+                  scaleTo={0.98}
+                  onPress={() => toggle(id)}
+                  style={[st.option, { borderColor: colors.border }]}
+                >
                   <Text style={[st.optionLabel, { color: colors.textPrimary }]} numberOfLines={1}>
                     {getLabel(item)}
                   </Text>
@@ -84,7 +91,7 @@ export function ScopedItemsMultiSelect<T>({
                     size={20}
                     color={checked ? colors.accent : colors.textSecondary}
                   />
-                </Pressable>
+                </PressableScale>
               );
             }}
             ListEmptyComponent={

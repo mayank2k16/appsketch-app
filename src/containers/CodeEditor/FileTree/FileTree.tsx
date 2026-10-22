@@ -6,12 +6,50 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import type { FileTreeNode } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
+
+function PromptActions({
+  colors,
+  onCancel,
+  onDone,
+}: {
+  colors: AppColors;
+  onCancel: () => void;
+  onDone: () => void;
+}) {
+  const light = colors.statusBar !== 'light-content';
+  return (
+    <View style={pm.actions}>
+      <PressableScale onPress={onCancel} style={pm.actionBtn}>
+        <Text style={{ color: colors.textSub, fontWeight: '600' }}>Cancel</Text>
+      </PressableScale>
+      <PressableScale
+        onPress={onDone}
+        style={[
+          pm.actionBtn,
+          { backgroundColor: colors.accent, borderRadius: 8 },
+        ]}
+      >
+        {/* The label had no colour (default black): invisible on white's ink
+            fill. Dark keeps the default. */}
+        <Text
+          style={{
+            fontWeight: '700',
+            color: light ? colors.accentOn : undefined,
+          }}
+        >
+          Done
+        </Text>
+      </PressableScale>
+    </View>
+  );
+}
 
 /** Simple inline "enter a name" modal — replaces Vite's `window.prompt` (no
  * DOM equivalent in RN) for create/rename operations. */
@@ -31,18 +69,24 @@ function PromptModal({
   onCancel: () => void;
 }) {
   const [value, setValue] = React.useState(initialValue);
+  const light = colors.statusBar !== 'light-content';
   React.useEffect(() => {
     if (visible) setValue(initialValue);
   }, [visible, initialValue]);
 
   return (
     <Modal
+      onShow={haptic.soft}
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <Pressable style={pm.backdrop} onPress={onCancel}>
+      <Pressable
+        onPressIn={haptic.tap}
+        style={[pm.backdrop, light && { backgroundColor: colors.sheetOverlay }]}
+        onPress={onCancel}
+      >
         <Pressable
           style={[
             pm.card,
@@ -64,22 +108,11 @@ function PromptModal({
               { color: colors.text, borderColor: colors.codeEditorBorder },
             ]}
           />
-          <View style={pm.actions}>
-            <TouchableOpacity onPress={onCancel} style={pm.actionBtn}>
-              <Text style={{ color: colors.textSub, fontWeight: '600' }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => value.trim() && onSubmit(value.trim())}
-              style={[
-                pm.actionBtn,
-                { backgroundColor: colors.accent, borderRadius: 8 },
-              ]}
-            >
-              <Text style={{ fontWeight: '700' }}>Done</Text>
-            </TouchableOpacity>
-          </View>
+          <PromptActions
+            colors={colors}
+            onCancel={onCancel}
+            onDone={() => value.trim() && onSubmit(value.trim())}
+          />
         </Pressable>
       </Pressable>
     </Modal>
@@ -116,9 +149,13 @@ function Row({
 
   return (
     <>
-      <TouchableOpacity
+      <PressableScale
+        scaleTo={0.98}
         onPress={() => (isDir ? onToggle(node.path) : onSelectFile(node.path))}
-        onLongPress={() => onLongPress(node)}
+        onLongPress={() => {
+          haptic.longPress();
+          onLongPress(node);
+        }}
         style={[
           st.row,
           { paddingLeft: 12 + depth * 16 },
@@ -159,22 +196,22 @@ function Row({
         >
           {node.name}
         </Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       {isDir && isOpen
         ? (node.children ?? []).map((child) => (
-          <Row
-            key={child.path}
-            node={child}
-            depth={depth + 1}
-            colors={colors}
-            selectedPath={selectedPath}
-            expanded={expanded}
-            onToggle={onToggle}
-            onSelectFile={onSelectFile}
-            onLongPress={onLongPress}
-          />
-        ))
+            <Row
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              colors={colors}
+              selectedPath={selectedPath}
+              expanded={expanded}
+              onToggle={onToggle}
+              onSelectFile={onSelectFile}
+              onLongPress={onLongPress}
+            />
+          ))
         : null}
     </>
   );
@@ -202,6 +239,7 @@ export function FileTree({
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
   const [pending, setPending] = React.useState<PendingAction | null>(null);
   const [actionsFor, setActionsFor] = React.useState<FileTreeNode | null>(null);
+  const light = colors.statusBar !== 'light-content';
 
   function toggle(path: string) {
     setExpanded((prev) => {
@@ -220,7 +258,7 @@ export function FileTree({
     <View style={{ flex: 1 }}>
       <View style={[st.header, { borderColor: colors.codeEditorBorder }]}>
         <Text style={[st.headerLabel, { color: colors.textSub }]}>Files</Text>
-        <TouchableOpacity
+        <PressableScale
           onPress={() => setPending({ kind: 'createFile', parentPath: '' })}
           hitSlop={8}
         >
@@ -229,8 +267,8 @@ export function FileTree({
             size={16}
             color={colors.codeEditorText}
           />
-        </TouchableOpacity>
-        <TouchableOpacity
+        </PressableScale>
+        <PressableScale
           onPress={() => setPending({ kind: 'createFolder', parentPath: '' })}
           hitSlop={8}
         >
@@ -239,7 +277,7 @@ export function FileTree({
             size={16}
             color={colors.codeEditorText}
           />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       {nodes.map((node) => (
@@ -293,12 +331,20 @@ export function FileTree({
       />
 
       <Modal
+        onShow={haptic.soft}
         visible={!!actionsFor}
         transparent
         animationType="fade"
         onRequestClose={() => setActionsFor(null)}
       >
-        <Pressable style={pm.backdrop} onPress={() => setActionsFor(null)}>
+        <Pressable
+          onPressIn={haptic.tap}
+          style={[
+            pm.backdrop,
+            light && { backgroundColor: colors.sheetOverlay },
+          ]}
+          onPress={() => setActionsFor(null)}
+        >
           <Pressable
             style={[
               pm.card,
@@ -311,7 +357,7 @@ export function FileTree({
             <Text style={[pm.title, { color: colors.text }]} numberOfLines={1}>
               {actionsFor?.name}
             </Text>
-            <TouchableOpacity
+            <PressableScale
               style={st.sheetAction}
               onPress={() => {
                 if (actionsFor)
@@ -325,10 +371,10 @@ export function FileTree({
             >
               <Ionicons name="pencil-outline" size={16} color={colors.text} />
               <Text style={{ color: colors.text, fontSize: 13.5 }}>Rename</Text>
-            </TouchableOpacity>
+            </PressableScale>
             {actionsFor?.type === 'dir' ? (
               <>
-                <TouchableOpacity
+                <PressableScale
                   style={st.sheetAction}
                   onPress={() => {
                     if (actionsFor)
@@ -347,8 +393,8 @@ export function FileTree({
                   <Text style={{ color: colors.text, fontSize: 13.5 }}>
                     New file here
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                </PressableScale>
+                <PressableScale
                   style={st.sheetAction}
                   onPress={() => {
                     if (actionsFor)
@@ -367,10 +413,10 @@ export function FileTree({
                   <Text style={{ color: colors.text, fontSize: 13.5 }}>
                     New folder here
                   </Text>
-                </TouchableOpacity>
+                </PressableScale>
               </>
             ) : null}
-            <TouchableOpacity
+            <PressableScale
               style={st.sheetAction}
               onPress={() => {
                 if (actionsFor) onDelete(actionsFor.path);
@@ -385,7 +431,7 @@ export function FileTree({
               <Text style={{ color: colors.codeEditorDanger, fontSize: 13.5 }}>
                 Delete
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           </Pressable>
         </Pressable>
       </Modal>

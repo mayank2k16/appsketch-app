@@ -1,13 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type {
   ClarifyBlock as ClarifyBlockType,
@@ -15,6 +9,7 @@ import type {
   ClarifyPaletteOption,
   ClarifyQuestion,
 } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import { type AppColors, brandGradient } from '@/lib/theme';
 
 /** Small branded avatar shared by every agent-side card header (message
@@ -65,6 +60,7 @@ export function ClarifyBlockView({
   answers?: Record<string, string> | null;
 }) {
   const locked = !!answers;
+  const isLight = colors.statusBar !== 'light-content';
   const questions = block.questions ?? [];
 
   const [sel, setSel] = React.useState<Record<string, Selected>>({});
@@ -248,23 +244,35 @@ export function ClarifyBlockView({
         })}
 
         {!locked ? (
-          <TouchableOpacity onPress={submit} style={st.submitBtn}>
+          <PressableScale
+            haptic="press"
+            onPress={submit}
+            scaleTo={0.98}
+            style={[
+              st.submitBtn,
+              // White: a primary button is ink-filled (docs/white-theme.md);
+              // the ramp below is dark-only.
+              isLight && { backgroundColor: colors.text },
+            ]}
+          >
             {/* The hero ramp, not `colors.accent`. Under the achromatic scope
                 this button resolved to a flat white slab — the single most
                 prominent thing on the screen, and the one element that looked
                 like it came from a different app. It is the primary action of
                 the whole clarify step, so it takes the same fill the send
                 buttons and Home's CTAs do. */}
-            <LinearGradient
-              colors={brandGradient()}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
+            {isLight ? null : (
+              <LinearGradient
+                colors={brandGradient()}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
             <Text style={st.submitLabel}>
               {block.submitLabel ?? 'Continue'}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         ) : null}
       </View>
     </View>
@@ -297,10 +305,11 @@ function PaletteOptions({
           ? label === answer
           : isPaletteOption(sel) && sel.name === p.name;
         return (
-          <TouchableOpacity
+          <PressableScale
+            haptic={selected ? true : 'select'}
             key={p.name}
-            disabled={locked}
-            onPress={() => onPick(p)}
+            scaleTo={0.98}
+            onPress={locked ? undefined : () => onPick(p)}
             style={[
               st.paletteSwatch,
               {
@@ -324,7 +333,7 @@ function PaletteOptions({
               {p.name}
             </Text>
             {selected ? <CheckBadge colors={colors} /> : null}
-          </TouchableOpacity>
+          </PressableScale>
         );
       })}
       {locked && !anyMatch && answer ? (
@@ -360,10 +369,11 @@ function FontOptions({
           ? label === answer
           : isFontOption(sel) && sel.name === f.name;
         return (
-          <TouchableOpacity
+          <PressableScale
+            haptic={selected ? true : 'select'}
             key={f.name}
-            disabled={locked}
-            onPress={() => onPick(f)}
+            scaleTo={0.98}
+            onPress={locked ? undefined : () => onPick(f)}
             style={[
               st.fontCard,
               {
@@ -385,7 +395,7 @@ function FontOptions({
               {f.body}
             </Text>
             {selected ? <CheckBadge colors={colors} /> : null}
-          </TouchableOpacity>
+          </PressableScale>
         );
       })}
       {locked && !anyMatch && answer ? (
@@ -420,10 +430,10 @@ function ChecklistOptions({
       {options.map((opt) => {
         const on = locked ? lockedPicked.includes(opt) : checked.includes(opt);
         return (
-          <TouchableOpacity
+          <PressableScale
+            haptic="rigid"
             key={opt}
-            disabled={locked}
-            onPress={() => onToggle(opt)}
+            onPress={locked ? undefined : () => onToggle(opt)}
             style={[
               st.chip,
               {
@@ -447,7 +457,7 @@ function ChecklistOptions({
             >
               {opt}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         );
       })}
     </View>
@@ -477,10 +487,10 @@ function ChoiceOptions({
       {options.map((opt) => {
         const selected = locked ? opt === answer : sel === opt;
         return (
-          <TouchableOpacity
+          <PressableScale
+            haptic={selected ? true : 'select'}
             key={opt}
-            disabled={locked}
-            onPress={() => onPick(opt)}
+            onPress={locked ? undefined : () => onPick(opt)}
             style={[
               st.chip,
               {
@@ -500,7 +510,7 @@ function ChoiceOptions({
             >
               {opt}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         );
       })}
       {locked && !anyMatch && answer ? (

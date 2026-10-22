@@ -62,52 +62,58 @@ export const vsDarkSyntaxStyle: SyntaxStyleSheet = {
   'hljs-deletion': { background: '#600000' },
 };
 
+/** White theme: a GitHub-Light-style palette on the paper canvas rather than
+ * the saturated VS Code Light+ primaries (pure #0000FF / #A31515 / #008000
+ * shouted on #FAFAF8). Ink base text, muted grey comments, one restrained hue
+ * per token family so code stays readable without looking like a rainbow.
+ * The background matches `codeEditorBg` so the highlighter layer never shows
+ * as a white slab on the canvas. */
 export const vsLightSyntaxStyle: SyntaxStyleSheet = {
-  hljs: { background: '#FFFFFF', color: '#000000' },
+  hljs: { background: '#FAFAF8', color: '#0B0B0C' },
 
-  'hljs-keyword': { color: '#AF00DB' },
-  'hljs-literal': { color: '#0000FF' },
-  'hljs-meta-keyword': { color: '#0000FF' },
+  'hljs-keyword': { color: '#CF222E' },
+  'hljs-literal': { color: '#0550AE' },
+  'hljs-meta-keyword': { color: '#CF222E' },
 
-  'hljs-string': { color: '#A31515' },
-  'hljs-meta-string': { color: '#A31515' },
-  'hljs-regexp': { color: '#811F3F' },
+  'hljs-string': { color: '#0A3069' },
+  'hljs-meta-string': { color: '#0A3069' },
+  'hljs-regexp': { color: '#116329' },
 
-  'hljs-comment': { color: '#008000', fontStyle: 'italic' },
-  'hljs-quote': { color: '#008000', fontStyle: 'italic' },
-  'hljs-doctag': { color: '#008000' },
+  'hljs-comment': { color: '#8C8D93', fontStyle: 'italic' },
+  'hljs-quote': { color: '#8C8D93', fontStyle: 'italic' },
+  'hljs-doctag': { color: '#8C8D93' },
 
-  'hljs-number': { color: '#098658' },
+  'hljs-number': { color: '#0550AE' },
 
-  'hljs-built_in': { color: '#267F99' },
-  'hljs-type': { color: '#267F99' },
+  'hljs-built_in': { color: '#953800' },
+  'hljs-type': { color: '#953800' },
 
-  'hljs-class': { color: '#000000' },
-  'hljs-function': { color: '#000000' },
-  'hljs-params': { color: '#000000' },
-  'hljs-title': { color: '#795E26' },
+  'hljs-class': { color: '#0B0B0C' },
+  'hljs-function': { color: '#0B0B0C' },
+  'hljs-params': { color: '#0B0B0C' },
+  'hljs-title': { color: '#8250DF' },
 
-  'hljs-attr': { color: '#0451A5' },
-  'hljs-attribute': { color: '#0451A5' },
-  'hljs-variable': { color: '#001080' },
-  'hljs-template-variable': { color: '#001080' },
+  'hljs-attr': { color: '#0550AE' },
+  'hljs-attribute': { color: '#0550AE' },
+  'hljs-variable': { color: '#953800' },
+  'hljs-template-variable': { color: '#953800' },
 
-  'hljs-name': { color: '#800000' },
-  'hljs-tag': { color: '#800000' },
+  'hljs-name': { color: '#116329' },
+  'hljs-tag': { color: '#5C5D63' },
 
-  'hljs-symbol': { color: '#000000' },
-  'hljs-bullet': { color: '#795E26' },
-  'hljs-link': { color: '#0000FF', textDecorationLine: 'underline' },
-  'hljs-meta': { color: '#795E26' },
+  'hljs-symbol': { color: '#0B0B0C' },
+  'hljs-bullet': { color: '#953800' },
+  'hljs-link': { color: '#0A3069', textDecorationLine: 'underline' },
+  'hljs-meta': { color: '#5C5D63' },
 
-  'hljs-selector-tag': { color: '#800000' },
-  'hljs-selector-id': { color: '#800000' },
-  'hljs-selector-class': { color: '#800000' },
-  'hljs-selector-attr': { color: '#800000' },
-  'hljs-selector-pseudo': { color: '#800000' },
+  'hljs-selector-tag': { color: '#116329' },
+  'hljs-selector-id': { color: '#0550AE' },
+  'hljs-selector-class': { color: '#8250DF' },
+  'hljs-selector-attr': { color: '#0550AE' },
+  'hljs-selector-pseudo': { color: '#CF222E' },
 
   'hljs-emphasis': { fontStyle: 'italic' },
   'hljs-strong': { fontWeight: 'bold' },
-  'hljs-addition': { background: '#EAFFEA' },
-  'hljs-deletion': { background: '#FFECEC' },
+  'hljs-addition': { background: 'rgba(18,161,80,0.08)' },
+  'hljs-deletion': { background: 'rgba(229,72,77,0.08)' },
 };

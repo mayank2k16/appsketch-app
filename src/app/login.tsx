@@ -49,9 +49,9 @@ function buildImgs(order: number[]): string[] {
 // Drifting image column
 // ─────────────────────────────────────────────────────────────
 function ScrollColumn({
-  order, goDown, speed, tileH,
+  order, goDown, speed, tileH, isDark,
 }: {
-  order: number[]; goDown: boolean; speed: number; tileH: number;
+  order: number[]; goDown: boolean; speed: number; tileH: number; isDark: boolean;
 }) {
   const imgs = React.useMemo(() => buildImgs(order), [order]);
   const pageH = (imgs.length / 3) * (tileH + TILE_GAP);
@@ -86,7 +86,10 @@ function ScrollColumn({
             style={{
               width: COL_W, height: tileH,
               marginBottom: TILE_GAP, borderRadius: 12,
-              backgroundColor: '#000',
+              // White: an inset placeholder plus the one hairline instead of
+              // a black well (docs/white-theme.md — images get a hairline).
+              backgroundColor: isDark ? '#000' : '#F4F4F2',
+              ...(isDark ? null : { borderWidth: 1, borderColor: '#E7E7E4' }),
             }}
             contentFit="cover"
             cachePolicy="memory-disk"
@@ -207,7 +210,7 @@ export default function Login() {
             <View style={{ width: TILE_GAP }} />
             {COLUMNS.map((c, i) => (
               <React.Fragment key={i}>
-                <ScrollColumn order={c.order} goDown={c.goDown} speed={c.speed} tileH={c.tileH} />
+                <ScrollColumn order={c.order} goDown={c.goDown} speed={c.speed} tileH={c.tileH} isDark={isDark} />
                 <View style={{ width: TILE_GAP }} />
               </React.Fragment>
             ))}
@@ -223,11 +226,15 @@ export default function Login() {
           they lived under AuthForm, its top-fade gradient would paint over
           them and no stars would show at the bottom). Height-capped to the
           visible montage band + fade so they never cover the buttons. */}
-      <View style={s.starsLayer} pointerEvents="none">
-        {stars.map((spec, i) => (
-          <TwinkleStar key={i} spec={spec} />
-        ))}
-      </View>
+      {/* Dark only: white has no glows, and white sparkles fading into a
+          white panel are invisible anyway. */}
+      {isDark ? (
+        <View style={s.starsLayer} pointerEvents="none">
+          {stars.map((spec, i) => (
+            <TwinkleStar key={i} spec={spec} />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

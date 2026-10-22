@@ -13,11 +13,11 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/ui';
 import { useOpenGuestApp } from '@/lib/guest-app';
 import { useAppTheme } from '@/lib/theme';
 
@@ -30,6 +30,7 @@ export function ScanScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const isDark = colorScheme === 'dark';
   const [permission, requestPermission] = useCameraPermissions();
   const { open, opening } = useOpenGuestApp();
   const params = useLocalSearchParams<{ url?: string }>();
@@ -73,14 +74,14 @@ export function ScanScreen() {
           <Text style={[st.note, { color: t.textSub }]}>
             AppSketch needs the camera to read the QR code in your workspace.
           </Text>
-          <TouchableOpacity
+          <PressableScale
             onPress={requestPermission}
             style={[st.primary, { backgroundColor: t.accent }]}
           >
             <Text style={[st.primaryLabel, { color: t.accentOn }]}>
               Allow camera
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       );
     }
@@ -96,17 +97,23 @@ export function ScanScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[st.root, { backgroundColor: t.bg, paddingTop: insets.top }]}
+      style={[
+        st.root,
+        {
+          backgroundColor: t.bg,
+          paddingTop: insets.top,
+        },
+      ]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={st.header}>
-        <TouchableOpacity
+        <PressableScale
           onPress={() => router.back()}
           hitSlop={12}
           accessibilityLabel="Back"
         >
           <Ionicons name="chevron-back" size={24} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.title, { color: t.text }]}>Run an app</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -119,9 +126,17 @@ export function ScanScreen() {
       >
         {camera}
         {opening && (
-          <View style={st.opening}>
-            <ActivityIndicator color="#FFFFFF" />
-            <Text style={st.openingLabel}>Opening app…</Text>
+          <View
+            style={[
+              st.opening,
+              // White: solid paper, no translucent veil over the camera.
+              !isDark && { backgroundColor: '#FAFAF8' },
+            ]}
+          >
+            <ActivityIndicator color={isDark ? '#FFFFFF' : t.accent} />
+            <Text style={[st.openingLabel, !isDark && { color: t.text }]}>
+              Opening app…
+            </Text>
           </View>
         )}
       </View>
@@ -151,18 +166,15 @@ export function ScanScreen() {
             },
           ]}
         />
-        <TouchableOpacity
+        <PressableScale
+          haptic="press"
           disabled={!link.trim() || opening}
           onPress={() => open(link)}
-          style={[
-            st.go,
-            { backgroundColor: t.accent },
-            (!link.trim() || opening) && { opacity: 0.5 },
-          ]}
+          style={[st.go, { backgroundColor: t.accent }]}
           accessibilityLabel="Open link"
         >
           <Ionicons name="arrow-forward" size={18} color={t.accentOn} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </KeyboardAvoidingView>
   );

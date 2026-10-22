@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
@@ -79,18 +80,20 @@ function FAQRow({
       layout={LinearTransition.duration(200)}
       style={[!isLast && s.rowBorder, { borderColor: t.border }]}
     >
-      <TouchableOpacity
+      <PressableScale
         onPress={() => setOpen((v) => !v)}
-        activeOpacity={0.7}
+        scaleTo={0.98}
+        accessibilityState={{ expanded: open }}
         style={s.row}
       >
         <Text style={[s.question, { color: t.text }]}>{item.question}</Text>
         <Ionicons
           name={open ? 'remove' : 'add'}
           size={20}
-          color={t.accent}
+          // White: an ink toggle; orange is kept for the one key action.
+          color={t.statusBar === 'light-content' ? t.accent : t.text}
         />
-      </TouchableOpacity>
+      </PressableScale>
       {open && (
         <Animated.View
           entering={FadeIn.duration(200)}

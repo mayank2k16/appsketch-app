@@ -14,6 +14,8 @@ import com.facebook.react.bridge.JSBundleLoader
 import com.facebook.react.bridge.JSBundleLoaderDelegate
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.common.annotations.UnstableReactNativeAPI
+import com.facebook.react.devsupport.BundleDownloader
+import com.facebook.react.devsupport.interfaces.DevBundleDownloadListener
 import com.facebook.react.defaults.DefaultComponentsRegistry
 import com.facebook.react.defaults.DefaultTurboModuleManagerDelegate
 import com.facebook.react.fabric.ComponentFactory
@@ -24,6 +26,7 @@ import com.facebook.react.runtime.ReactHostImpl
 import com.facebook.react.runtime.hermes.HermesInstance
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -48,6 +51,9 @@ object GuestSession {
 
   /** Set by GuestActivity while it is on screen. Called on the main thread. */
   var onError: ((Exception) -> Unit)? = null
+
+  /** Bundle progress (status, done, total), on the main thread. */
+  var onProgress: ((String, Int, Int) -> Unit)? = null
 
   private val main = Handler(Looper.getMainLooper())
 
@@ -150,6 +156,9 @@ object GuestSession {
   /**
    * Downloads the bundle to the cache, then loads it under its http URL. If
    * the download fails but an earlier copy exists, that copy runs instead.
+   *
+   * RN's BundleDownloader asks Metro for multipart/mixed, so it reports the
+   * build (done/total modules) and then the download (KB) to [onProgress].
    */
   private class DownloadingBundleLoader(
     private val context: Context,
@@ -158,18 +167,32 @@ object GuestSession {
     override fun loadScript(delegate: JSBundleLoaderDelegate): String {
       val dir = File(context.cacheDir, "appsketch-guest").apply { mkdirs() }
       val file = File(dir, "${Integer.toHexString(url.hashCode())}.js")
-      val partial = File(dir, "${file.name}.part")
-      try {
-        val request = Request.Builder().url(url).header("expo-platform", "android").build()
-        http.newCall(request).execute().use { res ->
-          if (!res.isSuccessful) throw IOException("The app's code could not be downloaded (HTTP ${res.code}).")
-          val body = res.body ?: throw IOException("The app server sent an empty bundle.")
-          partial.outputStream().use { out -> body.byteStream().copyTo(out) }
-        }
-        if (!partial.renameTo(file)) throw IOException("Could not save the app's code.")
-      } catch (e: IOException) {
-        partial.delete()
-        if (!file.exists()) throw e
+      val done = CountDownLatch(1)
+      var failure: Exception? = null
+      BundleDownloader(http).downloadBundleFromURL(
+        object : DevBundleDownloadListener {
+          override fun onSuccess() = done.countDown()
+
+          override fun onProgress(status: String?, done: Int?, total: Int?, percent: Int?) {
+            val s = status ?: ""
+            main.post { onProgress?.invoke(s, done ?: 0, total ?: 0) }
+          }
+
+          override fun onFailure(cause: Exception) {
+            failure = cause
+            done.countDown()
+          }
+        },
+        file,
+        url,
+        null,
+        Request.Builder().header("expo-platform", "android")
+      )
+      done.await(180, TimeUnit.SECONDS)
+      if (!file.exists()) {
+        throw IOException(
+          failure?.message?.lineSequence()?.firstOrNull() ?: "The app's code could not be downloaded."
+        )
       }
       delegate.loadScriptFromFile(file.absolutePath, url, false)
       return url

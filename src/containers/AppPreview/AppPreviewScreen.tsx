@@ -1,12 +1,14 @@
 import { useColorScheme } from 'nativewind';
 import * as Clipboard from 'expo-clipboard';
 import * as React from 'react';
-import { ActivityIndicator, Animated, Easing, Linking, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Linking, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useUseTemplate } from '@/api/templates';
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 import { useAppTheme } from '@/lib/theme';
 
@@ -34,6 +36,7 @@ export function AppPreviewScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const isDark = colorScheme === 'dark';
 
   const useTemplate = useUseTemplate();
   const [phase, setPhase] = React.useState<'creating' | 'ready' | 'error'>(
@@ -62,6 +65,8 @@ export function AppPreviewScreen() {
       { id: Number(templateId), name: name || 'your app' },
       {
         onSuccess: (res) => {
+          // The template is now the user's own app: the signature flourish.
+          haptic.magic();
           setUuid(res.uuid);
           setPhase('ready');
         },
@@ -70,6 +75,7 @@ export function AppPreviewScreen() {
             (error.response?.data as { detail?: string; message?: string } | undefined)?.detail ??
             (error.response?.data as { detail?: string; message?: string } | undefined)?.message ??
             'Something went wrong while creating your app.';
+          haptic.error();
           setErrorMessage(message);
           setPhase('error');
         },
@@ -127,18 +133,18 @@ export function AppPreviewScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.title, { color: t.text }]} numberOfLines={1}>
           {name || 'Preview'}
         </Text>
-        <TouchableOpacity onPress={handleCopyUrl} hitSlop={10} style={st.headerIconBtn} disabled={!url}>
+        <PressableScale onPress={handleCopyUrl} hitSlop={10} style={st.headerIconBtn} disabled={!url} disabledOpacity={isDark ? 1 : 0.5}>
           <Ionicons name="copy-outline" size={19} color={url ? t.text : t.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleOpenInBrowser} hitSlop={10} style={st.headerIconBtn} disabled={!url}>
+        </PressableScale>
+        <PressableScale onPress={handleOpenInBrowser} hitSlop={10} style={st.headerIconBtn} disabled={!url} disabledOpacity={isDark ? 1 : 0.5}>
           <Ionicons name="open-outline" size={20} color={url ? t.text : t.textMuted} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       <View style={st.body}>
@@ -146,18 +152,22 @@ export function AppPreviewScreen() {
 
         {phase === 'error' && (
           <View style={st.center}>
-            <View style={[st.errorIconWrap, { backgroundColor: 'rgba(255,92,92,0.14)' }]}>
-              <Ionicons name="alert-circle-outline" size={28} color="#FF5C5C" />
+            <View style={[st.errorIconWrap, { backgroundColor: isDark ? 'rgba(255,92,92,0.14)' : 'rgba(229,72,77,0.08)' }]}>
+              <Ionicons name="alert-circle-outline" size={28} color={isDark ? '#FF5C5C' : '#E5484D'} />
             </View>
             <Text style={{ color: t.text, fontWeight: '700', fontSize: 15, marginBottom: 4 }}>Couldn't create your app</Text>
             <Text style={{ color: t.textSub, fontSize: 12.5, marginBottom: 20, textAlign: 'center' }}>{errorMessage}</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity onPress={() => router.back()} style={[st.retryBtn, { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder }]}>
+              <PressableScale onPress={() => router.back()} style={[st.retryBtn, { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder }]}>
                 <Text style={[st.retryBtnText, { color: t.text }]}>Back to templates</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleRetryCreate} style={[st.retryBtn, { backgroundColor: t.accent }]}>
+              </PressableScale>
+              <PressableScale
+                haptic="press"
+                onPress={handleRetryCreate}
+                style={[st.retryBtn, { backgroundColor: t.accent }]}
+              >
                 <Text style={st.retryBtnText}>Retry</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           </View>
         )}
@@ -216,9 +226,9 @@ export function AppPreviewScreen() {
                 <View style={[st.center, StyleSheet.absoluteFill, { backgroundColor: t.bg }]}>
                   <Text style={{ color: t.text, fontWeight: '700', marginBottom: 4 }}>Couldn't load this app</Text>
                   <Text style={{ color: t.textSub, fontSize: 12.5, marginBottom: 16 }}>Check your connection and try again.</Text>
-                  <TouchableOpacity onPress={handleRetryLoad} style={[st.retryBtn, { backgroundColor: t.accent }]}>
+                  <PressableScale onPress={handleRetryLoad} style={[st.retryBtn, { backgroundColor: t.accent }]}>
                     <Text style={st.retryBtnText}>Retry</Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 </View>
               )}
             </>
@@ -228,9 +238,9 @@ export function AppPreviewScreen() {
               <Text style={{ color: t.textSub, fontSize: 12.5, marginBottom: 16, textAlign: 'center', paddingHorizontal: 32 }}>
                 Open it in your browser instead.
               </Text>
-              <TouchableOpacity onPress={handleOpenInBrowser} style={[st.retryBtn, { backgroundColor: t.accent }]}>
+              <PressableScale onPress={handleOpenInBrowser} style={[st.retryBtn, { backgroundColor: t.accent }]}>
                 <Text style={st.retryBtnText}>Open in Browser</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           ))}
       </View>

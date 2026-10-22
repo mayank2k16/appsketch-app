@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { VendorSettlementListItem } from '@/api/payments';
 
 import { CmsStatusBadge } from '../../../components';
@@ -40,12 +41,12 @@ export const SettlementListCard = React.memo(function SettlementListCard({ settl
       <View style={st.footerRow}>
         <CmsStatusBadge meta={getPaymentStatusMeta(settlement.status)} />
         <View style={st.actions}>
-          <Pressable onPress={onView} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          <PressableScale onPress={onView} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="eye-outline" size={15} color={colors.textPrimary} />
-          </Pressable>
-          <Pressable onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+          </PressableScale>
+          <PressableScale onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
             <Ionicons name="trash-outline" size={15} color={colors.danger} />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </View>

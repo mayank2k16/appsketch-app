@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text } from 'react-native';
+
+import { PressableScale } from '@/components/ui';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
@@ -34,8 +36,10 @@ export function CmsButton({ colors, label, onPress, loading, disabled, variant =
     variant === 'primary' ? colors.accentText : variant === 'danger' ? colors.danger : colors.textPrimary;
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      // The filled button is a form's primary action (Save, Create).
+      haptic={variant === 'primary' ? 'press' : true}
       disabled={isDisabled}
       style={[st.btn, variantStyle, isDisabled && st.disabled, style]}
     >
@@ -44,7 +48,7 @@ export function CmsButton({ colors, label, onPress, loading, disabled, variant =
       ) : (
         <Text style={[st.label, { color: labelColor }]}>{label}</Text>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -219,14 +219,20 @@ describe('the achromatic scope', () => {
 });
 
 describe('the branded-tab scope', () => {
-  it('puts the ramp back on the action tokens', () => {
+  it('puts the ramp back on the action tokens in dark', () => {
     // The point of the second scope: these are what a user taps, and they
     // must land on the ramp rather than the grey ladder underneath.
-    for (const scheme of ['dark', 'light'] as const) {
-      const t = brandedPaletteFor(scheme);
-      for (const key of BRANDED_ON_RAMP)
-        expect(asText(t[key])).toMatch(BRAND_RAMP_RE);
-    }
+    const t = brandedPaletteFor('dark');
+    for (const key of BRANDED_ON_RAMP)
+      expect(asText(t[key])).toMatch(BRAND_RAMP_RE);
+  });
+
+  it('keeps ramp washes off the white theme (docs/white-theme.md)', () => {
+    // White: the tapped thing is ink; no magenta washes on paper.
+    const t = brandedPaletteFor('light');
+    expect(t.accent).toBe('#0B0B0C');
+    expect(t.agentTabActiveBg).toBe('#0B0B0C');
+    expect(asText(t.tagText)).not.toMatch(BRAND_RAMP_RE);
   });
 
   it('leaves the grey ladder alone', () => {

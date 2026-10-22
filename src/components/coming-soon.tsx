@@ -24,18 +24,33 @@ export function ComingSoon({ title, subtitle, icon }: ComingSoonProps) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const dark = colorScheme === 'dark';
+  // White: an inset badge on the hairline with an ink glyph — orange is kept
+  // for a screen's one main action, not for a placeholder icon.
+  const badge = dark
+    ? { bg: t.accentSoft, border: t.accent, icon: t.accent }
+    : { bg: '#F4F4F2', border: t.border, icon: t.text };
 
   return (
     <View style={[s.root, { backgroundColor: t.bg }]}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={t.statusBar}
+      />
 
       <View style={[s.header, { paddingTop: insets.top + 16 }]}>
         <Text style={[s.title, { color: t.text }]}>{title}</Text>
       </View>
 
       <View style={s.body}>
-        <View style={[s.iconBadge, { backgroundColor: t.accentSoft, borderColor: t.accent }]}>
-          <Ionicons name={icon} size={34} color={t.accent} />
+        <View
+          style={[
+            s.iconBadge,
+            { backgroundColor: badge.bg, borderColor: badge.border },
+          ]}
+        >
+          <Ionicons name={icon} size={34} color={badge.icon} />
         </View>
         <Text style={[s.soonTitle, { color: t.text }]}>Coming soon</Text>
         <Text style={[s.soonSub, { color: t.textSub }]}>{subtitle}</Text>

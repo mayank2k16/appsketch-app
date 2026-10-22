@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
@@ -45,6 +46,26 @@ export function StudioScreen() {
   const isLoggedIn = status === 'signIn';
   const { colorScheme } = useColorScheme();
   const t = useBrandedCoderTheme(colorScheme);
+  const isDark = colorScheme === 'dark';
+  // White: BrandScope's light branch still carries the magenta ramp on the
+  // eyebrow, rail and Sign In. The white spec is ink + one orange, no tinted
+  // surfaces, so those three are pinned here for light only. Dark reads the
+  // palette exactly as before.
+  const w = isDark
+    ? {
+        dot: t.accent,
+        eyebrow: t.tagText,
+        railActiveBg: t.studioRailActiveBg,
+        ctaBg: t.accent,
+        ctaText: t.accentOn,
+      }
+    : {
+        dot: '#F2600C',
+        eyebrow: '#5C5D63',
+        railActiveBg: '#FFFFFF',
+        ctaBg: '#0B0B0C',
+        ctaText: '#FFFFFF',
+      };
   // The tab bar floats over the scene, so the body has to end above it rather
   // than behind it — see useTabBarHeight.
   const tabBarH = useTabBarHeight();
@@ -56,8 +77,8 @@ export function StudioScreen() {
     <View style={[st.root, { backgroundColor: t.bg }]}>
       <View style={[st.header, { paddingTop: insets.top + 14 }]}>
         <View style={st.eyebrowRow}>
-          <View style={[st.eyebrowDot, { backgroundColor: t.accent }]} />
-          <Text style={[st.eyebrow, { color: t.tagText }]}>
+          <View style={[st.eyebrowDot, { backgroundColor: w.dot }]} />
+          <Text style={[st.eyebrow, { color: w.eyebrow }]}>
             MANAGE EVERY APPLICATION
           </Text>
         </View>
@@ -95,13 +116,16 @@ export function StudioScreen() {
           <Text style={[st.gateTitle, { color: t.text }]}>
             Sign in to view your stores
           </Text>
-          <Pressable onPress={() => router.push('/login' as never)}>
-            <View style={[st.gateBtn, { backgroundColor: t.accent }]}>
-              <Text style={[st.gateBtnText, { color: t.accentOn }]}>
+          <PressableScale
+            haptic="press"
+            onPress={() => router.push('/login' as never)}
+          >
+            <View style={[st.gateBtn, { backgroundColor: w.ctaBg }]}>
+              <Text style={[st.gateBtnText, { color: w.ctaText }]}>
                 Sign In
               </Text>
             </View>
-          </Pressable>
+          </PressableScale>
         </View>
       ) : (
         <View style={[st.body, { paddingBottom: tabBarH }]}>
@@ -110,13 +134,18 @@ export function StudioScreen() {
             {SECTIONS.map((s) => {
               const active = s.key === section;
               return (
-                <Pressable key={s.key} onPress={() => setSection(s.key)}>
+                <PressableScale
+                  haptic={active ? true : 'select'}
+                  key={s.key}
+                  onPress={() => setSection(s.key)}
+                  accessibilityState={{ selected: active }}
+                >
                   <View
                     style={[
                       st.railItem,
                       {
                         backgroundColor: active
-                          ? t.studioRailActiveBg
+                          ? w.railActiveBg
                           : t.studioRailBg,
                       },
                     ]}
@@ -136,7 +165,7 @@ export function StudioScreen() {
                       {s.label}
                     </Text>
                   </View>
-                </Pressable>
+                </PressableScale>
               );
             })}
           </View>

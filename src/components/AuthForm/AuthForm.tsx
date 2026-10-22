@@ -6,11 +6,11 @@ import * as React from 'react';
 import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/ui';
 import { signInAsGuest } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { brandGradient } from '@/lib/theme';
@@ -33,7 +33,8 @@ export function AuthForm() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const t = loginTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const t = loginTheme[isDark ? 'dark' : 'light'];
 
   // Prefer returning to whatever screen sent the user to login (e.g. Pricing,
   // Studio's gated screen) over always landing on Home. Only screens that
@@ -91,13 +92,17 @@ export function AuthForm() {
       style={[s.panel, { backgroundColor: t.panel, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
     >
       {/* Seamless montage → panel dissolve. Sits just above the panel and ends
-          in the exact panel colour, so no line shows at the boundary. */}
-      <LinearGradient
-        colors={fadeColors}
-        locations={[0, 0.12, 0.5, 0.72, 0.9, 1]}
-        style={s.topFade}
-        pointerEvents="none"
-      />
+          in the exact panel colour, so no line shows at the boundary.
+          Dark only: white has no fades — the panel meets the montage on a
+          clean edge. */}
+      {isDark ? (
+        <LinearGradient
+          colors={fadeColors}
+          locations={[0, 0.12, 0.5, 0.72, 0.9, 1]}
+          style={s.topFade}
+          pointerEvents="none"
+        />
+      ) : null}
 
       <Text style={[s.heading, { color: t.heading }]}>Build Stunning Websites and Apps</Text>
       <Text style={[s.sub, { color: t.sub }]}>Your journey starts from here</Text>
@@ -111,40 +116,43 @@ export function AuthForm() {
           The gradient is a child on `absoluteFill` rather than a background
           because RN has no gradient `backgroundColor`; `overflow: hidden` on
           the button is what clips it to the 27px radius. Label is forced
-          white — `primaryText` is near-black, sized for the white pill. */}
-      <TouchableOpacity
+          white — `primaryText` is near-black, sized for the white pill.
+          White theme: a flat ink pill (primaryBg) — the ramp is not a button
+          fill there (docs/white-theme.md). */}
+      <PressableScale
+        haptic="press"
         onPress={() => openSheet('phone')}
-        activeOpacity={0.85}
-        style={[s.btn, s.btnPrimary]}
+        style={[s.btn, s.btnPrimary, !isDark && { backgroundColor: t.primaryBg }]}
       >
-        <LinearGradient
-          colors={brandGradient()}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+        {isDark ? (
+          <LinearGradient
+            colors={brandGradient()}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : null}
         <Text style={[s.btnLabel, { color: '#FFFFFF' }]}>Continue with Phone</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       {/* Secondary — Email */}
-      <TouchableOpacity
+      <PressableScale
         onPress={() => openSheet('email')}
-        activeOpacity={0.85}
         style={[s.btn, s.btnSecondary, { backgroundColor: t.secondaryBg, borderColor: t.secondaryBorder }]}
       >
         <Ionicons name="mail-outline" size={18} color={t.secondaryIcon} style={s.btnIcon} />
         <Text style={[s.btnLabel, { color: t.secondaryText }]}>Continue with Email</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
 
       {/* Tertiary — Guest */}
-      <TouchableOpacity
+      <PressableScale
+        haptic="press"
         onPress={() => { signInAsGuest(); goBack(); }}
-        activeOpacity={0.7}
         style={s.guestBtn}
       >
         <Text style={[s.guest, { color: t.guest }]}>Continue as Guest</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       <Text style={[s.footer, { color: t.footer }]}>
         By pressing on “Continue with…” you agree to our{' '}

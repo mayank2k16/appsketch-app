@@ -7,6 +7,7 @@ import { useTenantUsersSearch } from '@/api/orders';
 import { useLeafCategories, useProducts } from '@/api/products';
 import type { DiscountAppliedOn, DiscountAttribute, DiscountCodeItem, DiscountPayload } from '@/api/discounts';
 import { useAllInvoicesForDiscount, useCreateDiscount, useUpdateDiscount } from '@/api/discounts';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsDateTimeInput, CmsInput, CmsModal, CmsSelect, CmsSheetScrollView, CmsSwitch, parseValue } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -178,6 +179,7 @@ export const ManageDiscountModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.discountStartTime.trim()) next.discountStartTime = 'Discount Start Time is required';
       if (!form.discountEndTime.trim()) next.discountEndTime = 'Discount End Time is required';
       setErrors(next);
+      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 

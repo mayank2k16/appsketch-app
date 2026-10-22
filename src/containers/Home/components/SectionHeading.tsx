@@ -21,7 +21,16 @@ export function SectionHeading({ eyebrow, lines, t, style }: Props) {
   return (
     <View style={style}>
       <View style={s.eyebrowRow}>
-        <View style={[s.eyebrowDot, { backgroundColor: t.accent }]} />
+        {/* White keeps orange for the screen's one key action; the dot is ink. */}
+        <View
+          style={[
+            s.eyebrowDot,
+            {
+              backgroundColor:
+                t.statusBar === 'light-content' ? t.accent : t.text,
+            },
+          ]}
+        />
         <Text style={[s.eyebrow, { color: t.tagText }]}>{eyebrow}</Text>
       </View>
 

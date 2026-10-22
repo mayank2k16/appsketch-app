@@ -32,33 +32,45 @@ export type GalleryTheme = {
   ecoBg: string;
   ecoText: string;
   skeleton: string;
+  /** The see-through Preview button's edge: orange on black (as on the web),
+   *  the hairline in white, where orange is kept for the one key action. */
+  previewBorder: string;
+  /** The selected type pill and category chip: orange on black (the web's
+   *  treatment), ink in white, where a selection is ink and orange is kept
+   *  for Use app. */
+  activeFill: string;
+  /** White is flat (docs/white-theme.md): no shadow under the phone or the
+   *  Featured tag. */
+  flat: boolean;
   statusBar: 'light-content' | 'dark-content';
 };
 
+// White follows docs/white-theme.md rather than the web page's own white: the
+// app's paper canvas and hairline, three steps of ink, and no glows — so the
+// card's orange/blue light and the stage's two tinted lights are off.
 const WHITE: GalleryTheme = {
-  bg: '#f6f6f8',
-  ink: '#0b0b0c',
-  muted: 'rgba(11, 11, 12, 0.62)',
-  faint: 'rgba(11, 11, 12, 0.42)',
-  line: 'rgba(11, 11, 12, 0.09)',
-  lineStrong: 'rgba(11, 11, 12, 0.2)',
-  panel: '#ffffff',
-  orange: '#f2600c',
-  cardBorder: 'rgba(14, 18, 30, 0.1)',
-  cardBg: '#ffffff',
-  cardGlow: [
-    '-10px -8px 30px -12px rgba(255, 122, 38, 0.36)',
-    '10px 12px 32px -12px rgba(31, 98, 232, 0.32)',
-    '0px 10px 26px -16px rgba(14, 18, 30, 0.12)',
-  ].join(', '),
-  stage: '#f5f6f8',
-  stageTop: 'rgba(255, 122, 38, 0.13)',
-  stageBottom: 'rgba(31, 98, 232, 0.12)',
-  glass: 'rgba(255, 255, 255, 0.86)',
-  glassBorder: 'rgba(11, 11, 12, 0.1)',
-  ecoBg: '#0b0b0c',
-  ecoText: '#ffffff',
-  skeleton: 'rgba(11, 11, 12, 0.06)',
+  bg: '#FAFAF8',
+  ink: '#0B0B0C',
+  muted: '#5C5D63',
+  faint: '#9C9DA3',
+  line: '#E7E7E4',
+  lineStrong: '#D9D9D5',
+  panel: '#FFFFFF',
+  orange: '#F2600C',
+  cardBorder: '#E7E7E4',
+  cardBg: '#FFFFFF',
+  cardGlow: 'none',
+  stage: '#F4F4F2',
+  stageTop: 'rgba(244, 244, 242, 0)',
+  stageBottom: 'rgba(244, 244, 242, 0)',
+  glass: '#FFFFFF',
+  glassBorder: '#E7E7E4',
+  ecoBg: '#0B0B0C',
+  ecoText: '#FFFFFF',
+  skeleton: '#EFEFEC',
+  previewBorder: '#D9D9D5',
+  activeFill: '#0B0B0C',
+  flat: true,
   statusBar: 'dark-content',
 };
 
@@ -82,6 +94,9 @@ const BLACK: GalleryTheme = {
   ecoBg: '#fafafa',
   ecoText: '#0b0b0c',
   skeleton: 'rgba(255, 255, 255, 0.07)',
+  previewBorder: '#f2600c',
+  activeFill: '#f2600c',
+  flat: false,
   statusBar: 'light-content',
 };
 

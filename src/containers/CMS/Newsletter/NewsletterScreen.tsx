@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { NewsletterCampaign, NewsletterSubscriber } from '@/api/newsletter';
 import {
@@ -9,7 +9,7 @@ import {
   useNewsletterSubscribers,
   useSendNewsletterCampaign,
 } from '@/api/newsletter';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsConfirmModal } from '../components';
 import { useCmsTheme } from '../theme';
@@ -98,7 +98,8 @@ export function NewsletterScreen({ onMenuPress: _onMenuPress }: { onMenuPress: (
           {SEGMENTS.map((s) => {
             const active = s.key === segment;
             return (
-              <Pressable
+              <PressableScale
+                haptic={active ? true : 'select'}
                 key={s.key}
                 onPress={() => setSegment(s.key)}
                 style={[st.segment, active && { backgroundColor: colors.accent }]}
@@ -106,14 +107,14 @@ export function NewsletterScreen({ onMenuPress: _onMenuPress }: { onMenuPress: (
                 <Text style={[st.segmentLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
                   {s.label}
                 </Text>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
         {segment === 'campaigns' ? (
-          <Pressable onPress={openCreate} style={[st.newBtn, { backgroundColor: colors.accent }]}>
+          <PressableScale onPress={openCreate} style={[st.newBtn, { backgroundColor: colors.accent }]}>
             <Text style={[st.newBtnLabel, { color: colors.accentText }]}>+ New campaign</Text>
-          </Pressable>
+          </PressableScale>
         ) : null}
       </View>
 

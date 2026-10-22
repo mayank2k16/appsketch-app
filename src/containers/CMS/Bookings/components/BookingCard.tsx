@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { BookingListItem } from '@/api/bookings';
 
 import { CmsStatusBadge } from '../../components';
@@ -16,7 +17,8 @@ type Props = {
 
 export const BookingCard = React.memo(function BookingCard({ booking, colors, onPress }: Props) {
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={0.98}
       onPress={onPress}
       style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
@@ -45,7 +47,7 @@ export const BookingCard = React.memo(function BookingCard({ booking, colors, on
           <Text style={[st.fee, { color: colors.accent }]}>₹{Number(booking.consultation_price).toFixed(2)}</Text>
         ) : null}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 });
 

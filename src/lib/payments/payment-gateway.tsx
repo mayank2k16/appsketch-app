@@ -16,6 +16,8 @@
 
 import { Alert, Linking, Platform } from 'react-native';
 
+import { haptic } from '@/lib/haptics';
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type GatewayProvider = 'Razorpay' | 'PayU' | string;
@@ -257,6 +259,7 @@ export async function openPaymentGateway(
   ctx:      PaymentContext = {},
 ): Promise<PaymentResult> {
   if (!response.operational) {
+    haptic.error();
     Alert.alert(
       'Store unavailable',
       response.unoperational_message ?? 'We are not accepting orders right now.',
@@ -284,6 +287,7 @@ export async function openPaymentGateway(
     // ──────────────────────────────────────────────────────────────────────
 
     default:
+      haptic.error();
       Alert.alert(
         'Payment unavailable',
         `Unsupported payment provider "${response.checkout?.provider}". Contact support.`,

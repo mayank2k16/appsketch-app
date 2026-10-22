@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { MediaDisplayPriority, ProductVariant } from '@/api/products';
 
 import { CmsInput, CmsSelect } from '../../components';
@@ -155,9 +156,9 @@ export function VariantsEditor({ colors, value, onChange, defaults }: Props) {
               {opt.values.map((v, vi) => (
                 <View key={vi} style={[st.tag, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <Text style={[st.tagText, { color: colors.textPrimary }]}>{v}</Text>
-                  <Pressable onPress={() => removeOptionValue(i, vi)} hitSlop={6}>
+                  <PressableScale onPress={() => removeOptionValue(i, vi)} hitSlop={6}>
                     <Ionicons name="close" size={12} color={colors.textSecondary} />
-                  </Pressable>
+                  </PressableScale>
                 </View>
               ))}
               <TextInput
@@ -165,25 +166,25 @@ export function VariantsEditor({ colors, value, onChange, defaults }: Props) {
                 onChangeText={(t) => setOptionInput(i, t)}
                 onSubmitEditing={() => commitOptionValue(i)}
                 placeholder="Add value…"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={colors.textMuted}
                 returnKeyType="done"
                 style={[st.tagInput, { color: colors.textPrimary }]}
               />
             </View>
           </View>
-          <Pressable onPress={() => removeOption(i)} hitSlop={8} style={{ padding: 4 }}>
+          <PressableScale onPress={() => removeOption(i)} hitSlop={8} style={{ padding: 4 }}>
             <Ionicons name="trash-outline" size={18} color={colors.danger} />
-          </Pressable>
+          </PressableScale>
         </View>
       ))}
 
-      <Pressable
+      <PressableScale
         onPress={addOption}
         style={[st.addOptionBtn, { borderColor: colors.accent }]}
       >
         <Ionicons name="add" size={16} color={colors.accent} />
         <Text style={[st.addOptionLabel, { color: colors.accent }]}>Add Option (Size, Color…)</Text>
-      </Pressable>
+      </PressableScale>
 
       {value.length > 0 && (
         <View style={{ gap: 8 }}>
@@ -194,7 +195,8 @@ export function VariantsEditor({ colors, value, onChange, defaults }: Props) {
             const expanded = expandedIndex === i;
             return (
               <View key={i} style={[st.variantRow, { borderColor: colors.border }]}>
-                <Pressable
+                <PressableScale
+                  scaleTo={0.98}
                   onPress={() => setExpandedIndex(expanded ? null : i)}
                   style={st.variantHeader}
                 >
@@ -206,15 +208,15 @@ export function VariantsEditor({ colors, value, onChange, defaults }: Props) {
                       {variant.variant_type || 'Default'} · ₹{variant.price || '—'} · Qty {variant.quantity || '—'}
                     </Text>
                   </View>
-                  <Pressable onPress={() => removeVariant(i)} hitSlop={8} style={{ padding: 4 }}>
+                  <PressableScale onPress={() => removeVariant(i)} hitSlop={8} style={{ padding: 4 }}>
                     <Ionicons name="trash-outline" size={16} color={colors.danger} />
-                  </Pressable>
+                  </PressableScale>
                   <Ionicons
                     name={expanded ? 'chevron-up' : 'chevron-down'}
                     size={16}
                     color={colors.textSecondary}
                   />
-                </Pressable>
+                </PressableScale>
 
                 {expanded && (
                   <View style={st.variantBody}>

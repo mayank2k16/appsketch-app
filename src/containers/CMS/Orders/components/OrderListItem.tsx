@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { OrderListItem as OrderListItemType } from '@/api/orders';
 
 import type { CmsThemeColors } from '../../theme';
@@ -31,14 +32,15 @@ function ActionButton({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       disabled={disabled}
+      disabledOpacity={0.4}
       style={[st.actionBtn, disabled && { opacity: 0.4 }]}
       hitSlop={8}
     >
       <Ionicons name={icon} size={16} color={color} />
-    </Pressable>
+    </PressableScale>
   );
 }
 

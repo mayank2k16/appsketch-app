@@ -2,7 +2,6 @@ import * as React from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { AiAgentWsEvent, ChatMessage, ChatThread, QueryPlanStep } from '@/api/ai-assistant';
 import { buildChatWebSocketUrl, createChatThread, listChatThreads } from '@/api/ai-assistant';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { toast } from '@/lib/toast';
 
 import { useCmsTheme } from '../theme';
@@ -204,10 +203,10 @@ export function AiAssistantScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
             </Text>
           </View>
         </View>
-        <Pressable onPress={threadsModal.present} style={[st.threadsBtn, { borderColor: colors.border }]}>
+        <PressableScale onPress={threadsModal.present} style={[st.threadsBtn, { borderColor: colors.border }]}>
           <Ionicons name="chatbubbles-outline" size={16} color={colors.textPrimary} />
           <Text style={{ color: colors.textPrimary, fontSize: 12.5, fontWeight: '600' }}>Chats</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -220,9 +219,9 @@ export function AiAssistantScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
               </Text>
               <View style={st.suggestions}>
                 {SUGGESTIONS.map((s) => (
-                  <Pressable key={s} onPress={() => setInput(s)} style={[st.suggestion, { borderColor: colors.border }]}>
+                  <PressableScale key={s} onPress={() => setInput(s)} style={[st.suggestion, { borderColor: colors.border }]}>
                     <Text style={{ color: colors.textPrimary, fontSize: 12.5 }}>{s}</Text>
-                  </Pressable>
+                  </PressableScale>
                 ))}
               </View>
             </View>
@@ -257,12 +256,13 @@ export function AiAssistantScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
             value={input}
             onChangeText={setInput}
             placeholder={pendingPlan ? 'Respond to the approval above to continue…' : 'Ask about your business data…'}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             editable={!pendingPlan}
             multiline
             style={[st.input, { color: colors.textPrimary, borderColor: colors.border }]}
           />
-          <Pressable
+          <PressableScale
+            haptic="press"
             onPress={send}
             disabled={!connected || busy || !!pendingPlan || !input.trim()}
             style={[
@@ -272,7 +272,7 @@ export function AiAssistantScreen({ onMenuPress: _onMenuPress }: { onMenuPress: 
             ]}
           >
             <Ionicons name="send" size={16} color={colors.accentText} />
-          </Pressable>
+          </PressableScale>
         </View>
       </KeyboardAvoidingView>
 

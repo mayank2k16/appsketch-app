@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { PaymentListItem } from '@/api/payments';
 
 import { CmsStatusBadge } from '../../../components';
@@ -42,10 +43,10 @@ export const PaymentListCard = React.memo(function PaymentListCard({ payment, co
 
       <View style={st.footerRow}>
         <CmsStatusBadge meta={getPaymentStatusMeta(payment.status)} />
-        <Pressable onPress={onEdit} style={[st.editBtn, { borderColor: colors.border }]} hitSlop={6}>
+        <PressableScale onPress={onEdit} style={[st.editBtn, { borderColor: colors.border }]} hitSlop={6}>
           <Ionicons name="create-outline" size={15} color={colors.textPrimary} />
           <Text style={[st.editLabel, { color: colors.textPrimary }]}>Edit</Text>
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );

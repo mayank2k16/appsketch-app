@@ -9,7 +9,6 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { useUserDomains } from '@/api/domains';
+import { PressableScale } from '@/components/ui';
 import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
 import { toast } from '@/lib/toast';
 import { useCoderTheme, type AppColors } from '@/lib/theme';
@@ -52,10 +52,10 @@ export function DomainsScreen() {
           </Text>
         </View>
       </View>
-      <Pressable onPress={goAddDomain} style={[st.addBtn, { backgroundColor: t.accent }]}>
+      <PressableScale onPress={goAddDomain} style={[st.addBtn, { backgroundColor: t.accent }]}>
         <Ionicons name="add" size={16} color="#FFFFFF" />
         <Text style={[st.addBtnText, { color: t.accentOn }]}>Add domain</Text>
-      </Pressable>
+      </PressableScale>
 
       {isLoading ? (
         <ActivityIndicator color={t.accent} style={{ marginTop: 40 }} />
@@ -65,9 +65,9 @@ export function DomainsScreen() {
           <Text style={[st.emptyText, { color: t.textMuted }]}>
             You haven't added any domain yet.
           </Text>
-          <Pressable onPress={goAddDomain}>
+          <PressableScale onPress={goAddDomain}>
             <Text style={[st.emptyLink, { color: t.accent }]}>Add one now</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       ) : (
         domains.map((domain, i) => {
@@ -85,7 +85,8 @@ export function DomainsScreen() {
                 { backgroundColor: t.card, borderColor: t.border },
               ]}
             >
-              <Pressable
+              <PressableScale
+                scaleTo={0.98}
                 onPress={() => setOpenIndex(open ? null : i)}
                 style={st.cardHeader}
               >
@@ -103,7 +104,7 @@ export function DomainsScreen() {
                   size={16}
                   color={t.textMuted}
                 />
-              </Pressable>
+              </PressableScale>
 
               {open && (
                 <View style={[st.detail, { borderTopColor: t.border }]}>
@@ -146,7 +147,7 @@ export function DomainsScreen() {
                         Name servers
                       </Text>
                       {domain.nameservers.map((ns) => (
-                        <Pressable
+                        <PressableScale
                           key={ns}
                           onPress={() => copyNameserver(ns)}
                           style={st.nsRow}
@@ -159,7 +160,7 @@ export function DomainsScreen() {
                             size={13}
                             color={t.textMuted}
                           />
-                        </Pressable>
+                        </PressableScale>
                       ))}
                     </View>
                   )}

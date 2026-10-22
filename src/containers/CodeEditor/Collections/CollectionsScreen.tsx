@@ -13,7 +13,6 @@ import {
   Switch,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -24,7 +23,13 @@ import type {
   CollectionRecord,
 } from '@/api/coder';
 import { getCollections, setApiActive } from '@/api/coder';
-import { type useAppTheme, useBrandedCoderTheme } from '@/lib/theme';
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
+import {
+  type useAppTheme,
+  useBrandedCoderTheme,
+  useCoderTheme,
+} from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
 import { RecordDrawer } from './RecordDrawer';
@@ -135,7 +140,10 @@ function ApiCard({
       ) : (
         <Switch
           value={!!api.is_active}
-          onValueChange={onToggle}
+          onValueChange={(v) => {
+            haptic.toggle(v);
+            onToggle();
+          }}
           trackColor={{ true: colors.accent }}
         />
       )}
@@ -145,7 +153,16 @@ function ApiCard({
 
 export function CollectionsScreen() {
   const { colorScheme } = useColorScheme();
-  const t = useBrandedCoderTheme(colorScheme);
+  // Dark: the branded scope, unchanged. White: the plain achromatic palette
+  // (ink primary, no magenta) per docs/white-theme.md.
+  const branded = useBrandedCoderTheme(colorScheme);
+  const plain = useCoderTheme(colorScheme);
+  const light = colorScheme !== 'dark';
+  const t = light ? plain : branded;
+  // White's active chip/tab fill is ink, so what sits on it inverts; dark's
+  // is a raised neutral that keeps the normal text colours.
+  const activeText = light ? t.accentOn : t.text;
+  const activeSub = light ? 'rgba(255,255,255,0.64)' : t.textSub;
   const { params } = useCodeEditor();
   const tenantId = params.tenantId;
 
@@ -292,12 +309,21 @@ export function CollectionsScreen() {
           As the agent creates collections and APIs — bookings, orders,
           submissions — they&rsquo;ll show up here as a live, editable database.
         </Text>
-        <TouchableOpacity
+        <PressableScale
           onPress={load}
           style={[st.refreshBtn, { backgroundColor: t.accent }]}
         >
-          <Text style={{ fontWeight: '700', fontSize: 12.5 }}>Refresh</Text>
-        </TouchableOpacity>
+          <Text
+            style={{
+              fontWeight: '700',
+              fontSize: 12.5,
+              // Unset (default black) in dark; on white's ink fill it must flip.
+              color: light ? t.accentOn : undefined,
+            }}
+          >
+            Refresh
+          </Text>
+        </PressableScale>
       </View>
     );
   }
@@ -305,7 +331,8 @@ export function CollectionsScreen() {
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
       <View style={[st.tabRow, { borderColor: t.codeEditorBorder }]}>
-        <TouchableOpacity
+        <PressableScale
+          haptic={tab === 'db' ? true : 'select'}
           onPress={() => setTab('db')}
           style={[
             st.tabBtn,
@@ -314,15 +341,16 @@ export function CollectionsScreen() {
         >
           <Text
             style={{
-              color: t.text,
+              color: tab === 'db' ? activeText : t.text,
               fontSize: 12.5,
               fontWeight: '700',
             }}
           >
             Database
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </PressableScale>
+        <PressableScale
+          haptic={tab === 'apis' ? true : 'select'}
           onPress={() => setTab('apis')}
           style={[
             st.tabBtn,
@@ -331,18 +359,22 @@ export function CollectionsScreen() {
         >
           <Text
             style={{
-              color: t.text,
+              color: tab === 'apis' ? activeText : t.text,
               fontSize: 12.5,
               fontWeight: '700',
             }}
           >
             APIs
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={load} hitSlop={8}>
+        <PressableScale
+          onPress={load}
+          hitSlop={8}
+          accessibilityLabel="Refresh data"
+        >
           <Ionicons name="refresh" size={18} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       {tab === 'apis' ? (
@@ -378,7 +410,8 @@ export function CollectionsScreen() {
               renderItem={({ item }) => {
                 const isActive = item.slug === active;
                 return (
-                  <TouchableOpacity
+                  <PressableScale
+                    haptic={isActive ? true : 'select'}
                     onPress={() => setActive(item.slug)}
                     style={[
                       st.chip,
@@ -392,7 +425,7 @@ export function CollectionsScreen() {
                   >
                     <Text
                       style={{
-                        color: t.text,
+                        color: isActive ? activeText : t.text,
                         fontSize: 12.5,
                         fontWeight: '700',
                       }}
@@ -403,13 +436,13 @@ export function CollectionsScreen() {
                       style={{
                         // The active chip is a RAISED neutral now, not a filled
                         // indigo one, so white-on-it was invisible in light mode.
-                        color: isActive ? t.textSub : t.codeEditorTextMuted,
+                        color: isActive ? activeSub : t.codeEditorTextMuted,
                         fontSize: 10.5,
                       }}
                     >
                       {item.record_count}
                     </Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 );
               }}
             />
@@ -432,12 +465,13 @@ export function CollectionsScreen() {
                     },
                   ]}
                 />
-                <TouchableOpacity
+                <PressableScale
                   onPress={() => openDrawer(null)}
+                  accessibilityLabel="New record"
                   style={[st.newBtn, { backgroundColor: t.accent }]}
                 >
                   <Ionicons name="add" size={16} color="#FFFFFF" />
-                </TouchableOpacity>
+                </PressableScale>
               </View>
 
               {rowsLoading ? (
@@ -450,7 +484,8 @@ export function CollectionsScreen() {
                   keyExtractor={(r) => String(r.id)}
                   contentContainerStyle={{ padding: 12 }}
                   renderItem={({ item }) => (
-                    <TouchableOpacity
+                    <PressableScale
+                      scaleTo={0.98}
                       onPress={() => openDrawer(item)}
                       style={[
                         st.recordRow,
@@ -485,7 +520,7 @@ export function CollectionsScreen() {
                         size={16}
                         color={t.codeEditorTextMuted}
                       />
-                    </TouchableOpacity>
+                    </PressableScale>
                   )}
                   ListEmptyComponent={
                     <Text

@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { EmailTemplate, NotificationEvent, NotificationRule, SmsTemplate } from '@/api/notifications';
 
 import { CmsStatusBadge } from '../../../components';
@@ -33,14 +34,14 @@ export const RuleRow = React.memo(function RuleRow({
   onDelete: () => void;
 }) {
   return (
-    <Pressable onPress={onEdit} style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <PressableScale scaleTo={0.98} onPress={onEdit} style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={st.headerRow}>
         <Text style={[st.eventName, { color: colors.textPrimary }]} numberOfLines={1}>
           {event?.name ?? rule.event_code}
         </Text>
-        <Pressable onPress={onDelete} hitSlop={8}>
+        <PressableScale onPress={onDelete} hitSlop={8}>
           <Ionicons name="trash-outline" size={16} color={colors.danger} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       <View style={st.metaRow}>
@@ -57,7 +58,7 @@ export const RuleRow = React.memo(function RuleRow({
             : { label: 'Inactive', color: colors.textSecondary, kind: 'info' }
         }
       />
-    </Pressable>
+    </PressableScale>
   );
 });
 

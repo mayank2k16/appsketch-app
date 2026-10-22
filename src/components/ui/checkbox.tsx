@@ -9,6 +9,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 
 import colors from '@/components/ui/colors';
+import { haptic } from '@/lib/haptics';
 
 import { Text } from './text';
 
@@ -39,6 +40,7 @@ export const Root = ({
   ...props
 }: RootProps) => {
   const handleChange = useCallback(() => {
+    haptic.toggle(!checked);
     onChange(!checked);
   }, [onChange, checked]);
 

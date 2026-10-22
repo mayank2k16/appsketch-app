@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { CategoryNode } from '@/api/categories';
 import { useCategoryTree, useDeleteCategoryAtAnyLevel, useReorderCategories } from '@/api/categories';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useVendorFilter } from '@/lib/store/vendor-filter-store';
 
 import { CmsConfirmModal } from '../components';
@@ -199,17 +199,17 @@ export function CategoriesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: (
             value={query}
             onChangeText={setQuery}
             placeholder="Type at least 3 characters to search…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
             editable={!categoriesQuery.isLoading}
             returnKeyType="search"
           />
         </View>
       </View>
-      <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+      <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accentText} />
         <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Category</Text>
-      </Pressable>
+      </PressableScale>
 
       {categoriesQuery.isLoading ? (
         <CategoriesSkeleton colors={colors} />

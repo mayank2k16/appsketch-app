@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import type { Commission, VendorListItem } from '@/api/vendors';
 import { useCreateCommission, useUpdateCommission } from '@/api/vendors';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSwitch } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -94,6 +95,7 @@ export const ManageCommissionModal = React.forwardRef<BottomSheetModal, Props>(
         errs.valid_to = 'End date must be after start date';
       }
       setErrors(errs);
+      if (Object.keys(errs).length > 0) haptic.error();
       return Object.keys(errs).length === 0;
     }
 

@@ -20,7 +20,7 @@ export function WalletSearchBar({
         value={value}
         onChangeText={onChangeText}
         placeholder="Search by name, phone or email…"
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={colors.textMuted}
         style={[st.input, { color: colors.textPrimary }]}
         returnKeyType="search"
       />

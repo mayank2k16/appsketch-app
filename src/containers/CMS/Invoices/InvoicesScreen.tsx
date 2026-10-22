@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { InvoiceFilters, InvoiceListItem } from '@/api/invoices';
 import { searchInvoiceRecords, useDeleteInvoice, useInvoices } from '@/api/invoices';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsConfirmModal } from '../components';
@@ -125,21 +125,21 @@ export function InvoicesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () 
             value={query}
             onChangeText={setQuery}
             placeholder="Search invoices by invoice ID…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
             returnKeyType="search"
           />
         </View>
-        <Pressable onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
+        <PressableScale onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
           <Ionicons name="filter-outline" size={18} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       <View style={st.actionsRow}>
-        <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
           <Ionicons name="add" size={16} color={colors.accentText} />
           <Text style={[st.addBtnText, { color: colors.accentText }]}>Generate Invoice</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       {loading && invoices.length === 0 ? (

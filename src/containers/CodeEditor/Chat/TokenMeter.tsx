@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { TokenUsage } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
 
@@ -147,9 +148,8 @@ export function TokenMeter({
           </Text>
         </View>
       ) : showBackground ? (
-        <TouchableOpacity
+        <PressableScale
           onPress={onBackground}
-          activeOpacity={0.75}
           hitSlop={6}
           style={[
             st.chip,
@@ -169,7 +169,7 @@ export function TokenMeter({
           <Text style={[st.chipText, { color: colors.textSub }]}>
             Background
           </Text>
-        </TouchableOpacity>
+        </PressableScale>
       ) : null}
     </View>
   );

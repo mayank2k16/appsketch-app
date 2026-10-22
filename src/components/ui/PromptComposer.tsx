@@ -1,26 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { GallerySheet } from '@/components/ui/GallerySheet';
 import { ModelPickerModal } from '@/components/ui/ModelPickerModal';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { VoiceInputModal } from '@/components/ui/VoiceInputModal';
 import { F } from '@/lib/fonts';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
 import { type AppColors, brandGradient } from '@/lib/theme';
 
 export type PromptModel = { value: string; label: string; context: number };
+
+// White palette (docs/white-theme.md): a still hairline edge instead of the
+// ramp, ink badges, and the one orange action — Send.
+const WHITE_EDGE = '#E7E7E4';
+const WHITE_INK = '#0B0B0C';
+const WHITE_SEND = '#F2600C';
+
+/** Dark never dimmed a disabled composer control; white dims to 50%. */
+const dimFor = (dark: boolean) => (dark ? 1 : 0.5);
 
 type Props = {
   t: AppColors;
@@ -73,6 +82,8 @@ export function PromptComposer({
   const selectedModel = models.find((m) => m.value === model) ?? models[0];
 
   const voiceSupported = Platform.OS !== 'web';
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
 
   // Our own grid rather than the system sheet — see `GallerySheet` for why the
   // iOS picker's Cancel and Add could come up inert.
@@ -105,12 +116,18 @@ export function PromptComposer({
     // of this rendered. `card` is the opaque value on the same ladder, and on
     // a dark canvas it is what the wash was approximating anyway.
     <View style={s.ringWrap}>
-      <LinearGradient
-        colors={[...t.agentBorderGradient] as [string, string, ...string[]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      {dark ? (
+        <LinearGradient
+          colors={[...t.agentBorderGradient] as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : (
+        <View
+          style={[StyleSheet.absoluteFill, { backgroundColor: WHITE_EDGE }]}
+        />
+      )}
       <View style={[s.composer, { backgroundColor: t.card }]}>
         <TextInput
           placeholder={placeholder}
@@ -129,22 +146,24 @@ export function PromptComposer({
                 style={[s.thumb, { borderColor: t.agentInputBorder }]}
               >
                 <Image source={{ uri }} style={s.thumbImg} contentFit="cover" />
-                <Pressable
+                <PressableScale
                   onPress={() => removeImage(i)}
+                  haptic="rigid"
+                  scaleTo={0.88}
                   style={[s.thumbRemove, { backgroundColor: t.agentBtnBg }]}
                   hitSlop={6}
+                  accessibilityLabel="Remove image"
                 >
                   <Ionicons name="close" size={11} color={t.agentBtnIcon} />
-                </Pressable>
+                </PressableScale>
               </View>
             ))}
           </View>
         )}
 
         <View style={s.composerRow}>
-          <TouchableOpacity
+          <PressableScale
             onPress={() => setModelPickerOpen(true)}
-            activeOpacity={0.7}
             style={[
               s.modelChip,
               { backgroundColor: t.agentBtnBg, borderColor: t.agentBtnBorder },
@@ -163,11 +182,11 @@ export function PromptComposer({
               {selectedModel?.label}
             </Text>
             <Ionicons name="chevron-down" size={13} color={t.agentBtnIcon} />
-          </TouchableOpacity>
+          </PressableScale>
 
-          <TouchableOpacity
+          <PressableScale
+            disabledOpacity={dimFor(dark)}
             onPress={handleAttach}
-            activeOpacity={0.7}
             disabled={images.length >= maxImages}
             style={[
               s.circleBtn,
@@ -177,16 +196,19 @@ export function PromptComposer({
             <Ionicons name="add" size={20} color={t.agentBtnIcon} />
             {images.length > 0 && (
               <View
-                style={[s.countBadge, { backgroundColor: t.agentTabActiveBg }]}
+                style={[
+                  s.countBadge,
+                  { backgroundColor: dark ? t.agentTabActiveBg : WHITE_INK },
+                ]}
               >
                 <Text style={s.countBadgeText}>{images.length}</Text>
               </View>
             )}
-          </TouchableOpacity>
+          </PressableScale>
 
-          <TouchableOpacity
+          <PressableScale
+            disabledOpacity={dimFor(dark)}
             onPress={handleCamera}
-            activeOpacity={0.7}
             disabled={images.length >= maxImages}
             style={[
               s.circleBtn,
@@ -194,12 +216,11 @@ export function PromptComposer({
             ]}
           >
             <Ionicons name="camera-outline" size={18} color={t.agentBtnIcon} />
-          </TouchableOpacity>
+          </PressableScale>
 
           {voiceSupported && (
-            <TouchableOpacity
+            <PressableScale
               onPress={() => setVoiceOpen(true)}
-              activeOpacity={0.7}
               style={[
                 s.circleBtn,
                 {
@@ -209,21 +230,23 @@ export function PromptComposer({
               ]}
             >
               <Ionicons name="mic-outline" size={18} color={t.agentBtnIcon} />
-            </TouchableOpacity>
+            </PressableScale>
           )}
 
           <View style={{ flex: 1 }} />
 
-          <TouchableOpacity
+          <PressableScale
+            haptic="press"
+            disabledOpacity={dimFor(dark)}
             onPress={() => onSend()}
-            activeOpacity={0.8}
             disabled={sending || !value.trim()}
           >
             <LinearGradient
-              // The hero heading's own ramp, all three stops — not the
+              // Dark: the hero heading's own ramp, all three stops — not the
               // two-stop send gradient, which stopped short of the magenta
-              // that makes the run recognisable at this size.
-              colors={brandGradient()}
+              // that makes the run recognisable at this size. White: flat
+              // orange, the one accent (docs/white-theme.md).
+              colors={dark ? brandGradient() : [WHITE_SEND, WHITE_SEND]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               // No dimming: the fill is the hero ramp at full strength in
@@ -238,7 +261,7 @@ export function PromptComposer({
                 <Ionicons name="send" size={16} color="#FFFFFF" />
               )}
             </LinearGradient>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
 
         <GallerySheet

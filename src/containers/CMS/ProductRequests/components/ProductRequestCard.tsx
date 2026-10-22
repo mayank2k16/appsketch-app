@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { ProductRequestItem } from '@/api/product-requests';
 import type { VendorListItem } from '@/api/vendors';
 import { resolveMediaUrl } from '@/lib/media-url';
@@ -46,7 +47,9 @@ export const ProductRequestCard = React.memo(function ProductRequestCard({
   const vendorStatusMeta = vendor?.status ? VENDOR_STATUS_META[String(vendor.status).toLowerCase()] : undefined;
 
   return (
-    <Pressable
+    <PressableScale
+      haptic="rigid"
+      scaleTo={0.98}
       onPress={onToggle}
       style={[
         st.card,
@@ -80,9 +83,9 @@ export const ProductRequestCard = React.memo(function ProductRequestCard({
           </Text>
         </View>
 
-        <Pressable onPress={onView} hitSlop={8} style={[st.viewBtn, { borderColor: colors.border }]}>
+        <PressableScale onPress={onView} hitSlop={8} style={[st.viewBtn, { borderColor: colors.border }]}>
           <Ionicons name="eye-outline" size={16} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
 
         <View
           style={[
@@ -156,7 +159,7 @@ export const ProductRequestCard = React.memo(function ProductRequestCard({
           </View>
         ) : null}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 });
 

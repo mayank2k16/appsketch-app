@@ -1,12 +1,12 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { Commission, VendorListItem } from '@/api/vendors';
 import { useCommissions, useDeleteCommission } from '@/api/vendors';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsButton, CmsCard, CmsConfirmModal, CmsField, CmsModal, CmsStatusBadge } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -89,9 +89,9 @@ export const VendorDetailSheet = React.forwardRef<BottomSheetModal, Props>(({ co
           <CmsCard colors={colors}>
             <View style={st.sectionHeader}>
               <Text style={[cmsType.sectionTitle, { color: colors.textPrimary }]}>Commission Details</Text>
-              <Pressable onPress={openAddCommission} hitSlop={6}>
+              <PressableScale onPress={openAddCommission} hitSlop={6}>
                 <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
-              </Pressable>
+              </PressableScale>
             </View>
 
             {commissionsQuery.isLoading ? (
@@ -132,12 +132,12 @@ export const VendorDetailSheet = React.forwardRef<BottomSheetModal, Props>(({ co
               <Text style={{ color: colors.textSecondary, fontSize: 13 }}>No documents configured for this vendor.</Text>
             ) : (
               documentKeys.map((key) => (
-                <Pressable key={key} onPress={() => Linking.openURL(documents[key])} style={[st.docRow, { borderColor: colors.border }]}>
+                <PressableScale scaleTo={0.98} key={key} onPress={() => Linking.openURL(documents[key])} style={[st.docRow, { borderColor: colors.border }]}>
                   <Text style={[st.docLabel, { color: colors.textSecondary }]}>{key}</Text>
                   <Text style={{ color: colors.accent, fontSize: 12.5 }} numberOfLines={1}>
                     {documents[key]}
                   </Text>
-                </Pressable>
+                </PressableScale>
               ))
             )}
           </CmsCard>

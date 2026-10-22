@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { SupportMessage } from '@/api/support';
+import { PressableScale } from '@/components/ui';
 import { clockTime } from '@/containers/CMS/Support/utils';
 import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
@@ -39,6 +40,12 @@ export function MessageBubble({ t, message }: Props) {
 
   const mine = message.sender_type === 'CUSTOMER';
   const open = () => message.attachment_url && Linking.openURL(message.attachment_url);
+  // White: the customer's own bubble is an ink card (orange is reserved for
+  // Send) and their attachments are ink too. Dark is unchanged.
+  const dark = t.statusBar === 'light-content';
+  const mineBg = dark ? t.accent : t.text;
+  const mark = dark ? t.accent : t.text;
+  const failed = dark ? '#EF4444' : '#E5484D';
 
   return (
     <View style={[st.row, mine ? st.rowMine : st.rowTheirs]}>
@@ -46,14 +53,14 @@ export function MessageBubble({ t, message }: Props) {
         style={[
           st.bubble,
           mine
-            ? { backgroundColor: t.accent, borderColor: t.accent }
+            ? { backgroundColor: mineBg, borderColor: mineBg }
             : { backgroundColor: t.surface, borderColor: t.border },
         ]}
       >
         {message.message_type === 'IMAGE' && message.attachment_url ? (
-          <Pressable onPress={open}>
+          <PressableScale onPress={open} scaleTo={0.98} accessibilityLabel="Open image">
             <Image source={{ uri: message.attachment_url }} style={st.media} contentFit="cover" />
-          </Pressable>
+          </PressableScale>
         ) : null}
 
         {message.message_type === 'VIDEO' && message.attachment_url ? (
@@ -61,8 +68,9 @@ export function MessageBubble({ t, message }: Props) {
         ) : null}
 
         {message.message_type === 'FILE' && message.attachment_url ? (
-          <Pressable
+          <PressableScale
             onPress={open}
+            scaleTo={0.98}
             style={[
               st.fileChip,
               { borderColor: mine ? 'rgba(255,255,255,0.45)' : t.border },
@@ -71,7 +79,7 @@ export function MessageBubble({ t, message }: Props) {
             <Ionicons
               name={fileIcon(message.attachment_name)}
               size={20}
-              color={mine ? '#FFFFFF' : t.accent}
+              color={mine ? '#FFFFFF' : mark}
             />
             <View style={{ flex: 1 }}>
               <Text
@@ -86,7 +94,7 @@ export function MessageBubble({ t, message }: Props) {
                 Tap to open
               </Text>
             </View>
-          </Pressable>
+          </PressableScale>
         ) : null}
 
         {message.text ? (
@@ -99,7 +107,7 @@ export function MessageBubble({ t, message }: Props) {
           {message._pending ? (
             <Text style={[st.metaText, { color: mine ? 'rgba(255,255,255,0.75)' : t.textSub }]}>sending…</Text>
           ) : null}
-          {message._failed ? <Text style={[st.metaText, { color: '#EF4444' }]}>failed</Text> : null}
+          {message._failed ? <Text style={[st.metaText, { color: failed }]}>failed</Text> : null}
           <Text style={[st.metaText, { color: mine ? 'rgba(255,255,255,0.75)' : t.textSub }]}>
             {clockTime(message.created_on)}
           </Text>

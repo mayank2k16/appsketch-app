@@ -99,7 +99,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       supportsTablet: true,
       bundleIdentifier: Env.BUNDLE_ID,
       // TestFlight build number: bump before every upload (last: 49).
-      buildNumber: '49',
+      buildNumber: '50',
       // App Store / TestFlight builds are signed with the production push
       // profile; a 'development' value fails the archive's manual signing.
       entitlements:

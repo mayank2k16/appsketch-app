@@ -3,12 +3,24 @@ import type {
   BottomSheetModalProps,
 } from '@gorhom/bottom-sheet';
 import { BottomSheetModal, useBottomSheet } from '@gorhom/bottom-sheet';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
+import { haptic } from '@/lib/haptics';
+
 import { Text } from './text';
+
+/** A sheet landing: a soft cushion as it starts to rise from closed. */
+const softOnOpen =
+  (onAnimate?: BottomSheetModalProps['onAnimate']) =>
+  (...args: Parameters<NonNullable<BottomSheetModalProps['onAnimate']>>) => {
+    const [from, to] = args;
+    if (from === -1 && to >= 0) haptic.soft();
+    onAnimate?.(...args);
+  };
 
 type ModalProps = BottomSheetModalProps & {
   title?: string;
@@ -38,6 +50,7 @@ export const Modal = React.forwardRef(
       snapPoints: _snapPoints = ['60%'],
       title,
       detached = false,
+      onAnimate,
       ...props
     }: ModalProps,
     ref: ModalRef
@@ -57,7 +70,7 @@ export const Modal = React.forwardRef(
     const renderHandleComponent = React.useCallback(
       () => (
         <>
-          <View className="mb-4 mt-3 h-1.5 w-12 self-center rounded-lg bg-gray-400 dark:bg-gray-700" />
+          <View className="mb-4 mt-3 h-1.5 w-12 self-center rounded-lg bg-[#D9D9D5] dark:bg-gray-700" />
           <ModalHeader title={title} dismiss={modal.dismiss} />
         </>
       ),
@@ -70,6 +83,7 @@ export const Modal = React.forwardRef(
         {...detachedProps}
         ref={modal.ref}
         index={0}
+        onAnimate={softOnOpen(onAnimate)}
         snapPoints={snapPoints}
         backdropComponent={props.backdropComponent || renderBackdrop}
         enableDynamicSizing={false}
@@ -87,12 +101,17 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const CustomBackdrop = ({ style }: BottomSheetBackdropProps) => {
   const { close } = useBottomSheet();
+  const { colorScheme } = useColorScheme();
+  // White: the ink scrim at the sheet-overlay strength (AppTheme sheetOverlay).
+  const scrim =
+    colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(11, 11, 12, 0.32)';
   return (
     <AnimatedPressable
+      onPressIn={haptic.tap}
       onPress={() => close()}
       entering={FadeIn.duration(50)}
       exiting={FadeOut.duration(20)}
-      style={[style, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
+      style={[style, { backgroundColor: scrim }]}
     />
   );
 };
@@ -129,9 +148,9 @@ const ModalHeader = React.memo(({ title, dismiss }: ModalHeaderProps) => {
   return (
     <>
       {title && (
-        <View className="flex-row px-2 py-2">
+        <View className="flex-row p-2">
           <View className="flex-1">
-            <Text className="text-center text-[16px] font-bold text-[#26313D] dark:text-white">
+            <Text className="text-center text-[16px] font-bold text-[#0B0B0C] dark:text-white">
               {title}
             </Text>
           </View>
@@ -145,6 +164,7 @@ const ModalHeader = React.memo(({ title, dismiss }: ModalHeaderProps) => {
 const CloseButton = ({ close }: { close: () => void }) => {
   return (
     <Pressable
+      onPressIn={haptic.tap}
       onPress={close}
       className="absolute right-3 top-3 size-[24px] items-center justify-center "
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
@@ -153,7 +173,7 @@ const CloseButton = ({ close }: { close: () => void }) => {
       accessibilityHint="closes the modal"
     >
       <Svg
-        className="fill-neutral-300 dark:fill-white"
+        className="fill-[#9C9DA3] dark:fill-white"
         width={24}
         height={24}
         fill="none"

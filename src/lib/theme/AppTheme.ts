@@ -385,7 +385,7 @@ export const appTheme = {
     toastInfo: '#F2600C',
 
     // ── Header ────────────────────────────────────────────────────────────────
-    headerBg: 'rgba(250,250,248,0.96)',
+    headerBg: '#FAFAF8', // white: solid, no translucent veil
     headerBorder: '#EDEDEA',
 
     // ── Hero dot background ───────────────────────────────────────────────────
@@ -403,10 +403,12 @@ export const appTheme = {
     heroSecondaryBorder: '#E7E7E4',
     heroGhostBorder: '#D9D9D5',
     heroGhostText: '#0B0B0C',
-    heroHeadingFade: '#9C9DA3',
+    heroHeadingFade: '#0B0B0C', // white: no fades on text,
 
-    // ── Gallery overlay — white has no scrims; the band is paper ──────────────
-    galleryOverlay: 'rgba(250,250,248,0.92)',
+    // ── Gallery overlay — white has no scrims or fades; the band is solid
+    // paper (Gallery renders `galleryOverlay` as a hard-edged strip and never
+    // uses the gradient below in white).
+    galleryOverlay: '#FAFAF8',
     galleryOverlayGradient: [
       'rgba(250,250,248,0)',
       'rgba(250,250,248,0.7)',
@@ -548,7 +550,7 @@ export const appTheme = {
     codeEditorAccentWash: 'rgba(11,11,12,0.06)',
     codeEditorAccentText: '#0B0B0C',
 
-    codeEditorGlassOverlay: 'rgba(255,255,255,0.96)',
+    codeEditorGlassOverlay: '#FFFFFF', // white: solid, no translucent veil
     codeEditorGlassBorder: '#E7E7E4',
     codeEditorGlassBorderTop: '#E7E7E4',
     codeEditorUserBubbleFrom: '#F4F4F2',

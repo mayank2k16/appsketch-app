@@ -31,12 +31,14 @@ export function CmsInput({ colors, label, error, required, groupStyle, labelStyl
         </Text>
       ) : null}
       <Field
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={colors.textMuted}
         style={[
           st.field,
           inputStyle,
           {
-            backgroundColor: colors.background,
+            // Read-only fields sit on the inset surface in white so they don't
+            // look editable; dark resolves both tokens to the old background.
+            backgroundColor: inputProps.editable === false ? colors.inset : colors.inputBg,
             borderColor: error ? colors.danger : colors.border,
             color: colors.textPrimary,
           },

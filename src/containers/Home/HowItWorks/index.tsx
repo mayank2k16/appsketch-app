@@ -36,6 +36,12 @@ const BADGE_SIZE = 34;
 // brand ramp, and the thing that read as "blue" next to a warm headline.
 const PULSE_COLOR = MAGENTA;
 
+/** White is ink + hairline: the ramp is kept for the logo, the hero word and
+ *  the active tab (docs/white-theme.md), so the step badges, rails, reviewer
+ *  avatars and the signature ink all go flat ink there. Dark is unchanged. */
+const isDarkTheme = (t: HomeColors) => t.statusBar === 'light-content';
+const INK: [string, string] = ['#0B0B0C', '#0B0B0C'];
+
 const STEPS: {
   number: string;
   title: string;
@@ -145,7 +151,14 @@ function BlinkingCursor({ color }: { color: string }) {
 function VisualCard({ t, children }: { t: HomeColors; children: React.ReactNode }) {
   return (
     <View
-      style={[s.mockCard, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}
+      style={[
+        s.mockCard,
+        {
+          // White: a raised card on the paper canvas, not an inset well.
+          backgroundColor: isDarkTheme(t) ? t.agentTabBg : t.card,
+          borderColor: isDarkTheme(t) ? t.agentTabBorder : t.border,
+        },
+      ]}
     >
       {children}
     </View>
@@ -256,9 +269,18 @@ function SignatureBlock({ t }: { t: HomeColors }) {
             <Svg width={w} height={w * (SIG_H / SIG_W)} viewBox={`0 0 ${SIG_W} ${SIG_H}`}>
               <Defs>
                 <SvgLinearGradient id="sigInk" x1="0" y1="0" x2="1" y2="0">
-                  <Stop offset="0" stopColor={ORANGE} />
-                  <Stop offset="0.5" stopColor={MAGENTA} />
-                  <Stop offset="1" stopColor={VIOLET} />
+                  <Stop
+                    offset="0"
+                    stopColor={isDarkTheme(t) ? ORANGE : t.text}
+                  />
+                  <Stop
+                    offset="0.5"
+                    stopColor={isDarkTheme(t) ? MAGENTA : t.text}
+                  />
+                  <Stop
+                    offset="1"
+                    stopColor={isDarkTheme(t) ? VIOLET : t.text}
+                  />
                 </SvgLinearGradient>
               </Defs>
               <AnimatedPath
@@ -276,7 +298,12 @@ function SignatureBlock({ t }: { t: HomeColors }) {
 
           {/* Pen tip: a glow dot with the nib icon trailing just above it */}
           <Reanimated.View style={[s.penTip, tipStyle]} pointerEvents="none">
-            <View style={s.penGlow} />
+            <View
+              style={[
+                s.penGlow,
+                !isDarkTheme(t) && { backgroundColor: t.text },
+              ]}
+            />
             <Ionicons name="brush" size={13} color={t.text} style={s.penIcon} />
           </Reanimated.View>
         </>
@@ -313,7 +340,7 @@ function HumanTouchCard({ t }: { t: HomeColors }) {
           <View style={[s.dot, { backgroundColor: '#28C840' }]} />
         </View>
         <View style={s.reviewLabelRow}>
-          <LiveDot color="#28C840" />
+          <LiveDot color={isDarkTheme(t) ? '#28C840' : '#12A150'} />
           <Text style={[s.reviewLabel, { color: t.textMuted }]}>human review</Text>
         </View>
       </View>
@@ -328,7 +355,7 @@ function HumanTouchCard({ t }: { t: HomeColors }) {
           {REVIEWERS.map((r, i) => (
             <LinearGradient
               key={r.initials}
-              colors={r.gradient}
+              colors={isDarkTheme(t) ? r.gradient : INK}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[
@@ -377,11 +404,17 @@ function StepVisual({ index, t }: { index: number; t: HomeColors }) {
 
 // Badge for the step number: a halo ripples out of it while its step is live.
 // Static badge. The halo was an always-on repeating scale+fade per step.
-function StepBadge({ step }: { step: (typeof STEPS)[number] }) {
+function StepBadge({
+  step,
+  dark,
+}: {
+  step: (typeof STEPS)[number];
+  dark: boolean;
+}) {
   return (
     <View style={s.badgeWrap}>
       <LinearGradient
-        colors={step.gradient}
+        colors={dark ? step.gradient : INK}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={s.badge}
@@ -407,7 +440,8 @@ function RailLine({ from, to }: { from: string; to: string }) {
 
 export function HowItWorksSection() {
   const { colorScheme } = useColorScheme();
-  const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const t = homeTheme[isDark ? 'dark' : 'light'];
 
   return (
     // No section backgroundColor here — the shared TwinkleDots backdrop
@@ -426,9 +460,12 @@ export function HowItWorksSection() {
           return (
             <View key={step.number} style={s.stepRow}>
               <View style={s.rail}>
-                <StepBadge step={step} />
+                <StepBadge step={step} dark={isDark} />
                 {!isLast && (
-                  <RailLine from={step.gradient[0]} to={STEPS[i + 1].gradient[0]} />
+                  <RailLine
+                    from={isDark ? step.gradient[0] : t.border}
+                    to={isDark ? STEPS[i + 1].gradient[0] : t.border}
+                  />
                 )}
               </View>
 

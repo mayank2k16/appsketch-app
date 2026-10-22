@@ -1,9 +1,10 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import {
   searchProducts,
   useCreateOrder,
@@ -16,6 +17,7 @@ import {
 import type { CreateOrderPayload, DeliveryType, FulfilmentType, OrderDetail, OrderStatus, PaymentStatus } from '@/api/orders';
 import type { SearchOption } from '@/components/ui/searchable-select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { haptic } from '@/lib/haptics';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsSelect, CmsSummaryRow } from '../../components';
@@ -277,6 +279,7 @@ export const CreateOrderModal = React.forwardRef<BottomSheetModal, Props>(
       if (!form.order_status) next.order_status = 'Order status is required';
       if (!form.payment_status) next.payment_status = 'Payment status is required';
       setErrors(next);
+      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 
@@ -395,15 +398,15 @@ export const CreateOrderModal = React.forwardRef<BottomSheetModal, Props>(
                     keyboardType="numeric"
                   />
                 </View>
-                <Pressable onPress={() => removeProductRow(index)} style={st.removeBtn} hitSlop={8}>
+                <PressableScale onPress={() => removeProductRow(index)} style={st.removeBtn} hitSlop={8}>
                   <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                </Pressable>
+                </PressableScale>
               </View>
             ))}
-            <Pressable onPress={addProductRow} style={[st.addBtn, { borderColor: colors.accent }]}>
+            <PressableScale onPress={addProductRow} style={[st.addBtn, { borderColor: colors.accent }]}>
               <Ionicons name="add" size={16} color={colors.accent} />
               <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13 }}>Add Product</Text>
-            </Pressable>
+            </PressableScale>
           </CmsCard>
 
           <CmsCard colors={colors} title="Discount & Summary">

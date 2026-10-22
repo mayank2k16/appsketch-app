@@ -1,8 +1,9 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { UsersStatusFilter } from '@/api/users';
 
 import { CmsButton, CmsCard, CmsModal, CmsSheetScrollView } from '../../components';
@@ -103,14 +104,19 @@ function FilterRow({
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} style={[st.row, { borderColor: colors.border }]}>
+    <PressableScale
+      haptic={active ? true : 'select'}
+      scaleTo={0.98}
+      onPress={onPress}
+      style={[st.row, { borderColor: colors.border }]}
+    >
       <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }}>{label}</Text>
       <Ionicons
         name={active ? 'radio-button-on' : 'radio-button-off'}
         size={20}
         color={active ? colors.accent : colors.textSecondary}
       />
-    </Pressable>
+    </PressableScale>
   );
 }
 

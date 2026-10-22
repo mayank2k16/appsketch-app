@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
+import { haptic } from '@/lib/haptics';
+
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
 
@@ -20,7 +22,10 @@ export function CmsSwitch({ colors, label, value, onChange }: Props) {
       <Text style={[st.label, { color: colors.textPrimary }]}>{label}</Text>
       <Switch
         value={value}
-        onValueChange={onChange}
+        onValueChange={(next) => {
+          haptic.toggle(next);
+          onChange(next);
+        }}
         trackColor={{ false: colors.border, true: colors.accent }}
         thumbColor="#FFFFFF"
       />

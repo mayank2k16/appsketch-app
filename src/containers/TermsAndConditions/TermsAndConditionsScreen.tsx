@@ -7,26 +7,55 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import { GradientText } from '@/components/ui/GradientText';
 import { F } from '@/lib/fonts';
-import { useAppTheme, type AppColors } from '@/lib/theme';
+import { BRAND_RAMP, useAppTheme, type AppColors } from '@/lib/theme';
 
 // ─── Content — kept identical to the web Terms & Conditions page (Vite HomeV3/Tnc) ──
 const LAST_UPDATED = 'Last updated: June 22, 2025';
-const CONTACT_EMAIL = 'care@appsketch.com';
+// Was 'care@appsketch.com' — not an AppSketch inbox; every other page and
+// the Contact screen use care@appsketch.ai.
+const CONTACT_EMAIL = 'care@appsketch.ai';
 const GRADIENT_TITLE_COLORS = ['#C084FC', '#F9A8D4', '#60A5FA'];
+
+/** Screen-local roles. Dark returns exactly what this page always drew. White
+ *  (docs/white-theme.md): RAISED white cards with one hairline, an INSET pill
+ *  and inset contact box, ink marks/links (no orange on a read-only page),
+ *  and the brand ramp on the title — the pastel ramp vanishes on paper. */
+function legalPalette(t: AppColors) {
+  return t.statusBar === 'light-content'
+    ? {
+        cardBg: t.agentTabBg,
+        cardBorder: t.agentTabBorder,
+        pillBg: t.accentSoft,
+        pillBorder: `${t.accent}40`,
+        mark: t.accent,
+        titleColors: GRADIENT_TITLE_COLORS,
+        insetBg: t.card,
+      }
+    : {
+        cardBg: t.card,
+        cardBorder: t.border,
+        pillBg: '#F4F4F2',
+        pillBorder: t.border,
+        mark: t.text,
+        titleColors: [...BRAND_RAMP] as string[],
+        insetBg: '#F4F4F2',
+      };
+}
 
 export function TermsAndConditionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const p = legalPalette(t);
 
   function openEmail() {
     Linking.openURL(`mailto:${CONTACT_EMAIL}`).catch(() => { });
@@ -37,9 +66,9 @@ export function TermsAndConditionsScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.backBtn} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>Terms & Conditions</Text>
         <View style={st.backBtn} />
       </View>
@@ -51,12 +80,12 @@ export function TermsAndConditionsScreen() {
       >
         {/* ── Hero ── */}
         <View style={st.section}>
-          <View style={[st.badge, { backgroundColor: t.accentSoft, borderColor: `${t.accent}40` }]}>
-            <Ionicons name="document-text-outline" size={13} color={t.accent} />
-            <Text style={[st.badgeText, { color: t.accent }]}>AppSketch Legal</Text>
+          <View style={[st.badge, { backgroundColor: p.pillBg, borderColor: p.pillBorder }]}>
+            <Ionicons name="document-text-outline" size={13} color={p.mark} />
+            <Text style={[st.badgeText, { color: p.mark }]}>AppSketch Legal</Text>
           </View>
 
-          <GradientText style={st.heroTitle} colors={GRADIENT_TITLE_COLORS}>
+          <GradientText style={st.heroTitle} colors={p.titleColors}>
             Terms & Conditions
           </GradientText>
 
@@ -104,7 +133,7 @@ export function TermsAndConditionsScreen() {
           <PolicySection title="4. Contact" t={t}>
             <Text style={[st.bodyText, { color: t.textSub }]}>
               If you have questions about these terms, reach out at{' '}
-              <Text onPress={openEmail} style={[st.emailLink, { color: t.accent }]}>
+              <Text onPress={openEmail} style={[st.emailLink, { color: p.mark }]}>
                 {CONTACT_EMAIL}
               </Text>
               .
@@ -131,8 +160,9 @@ function GlassCard({
   contentStyle?: object;
   children: React.ReactNode;
 }) {
+  const p = legalPalette(t);
   return (
-    <View style={[st.glassCard, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}>
+    <View style={[st.glassCard, { backgroundColor: p.cardBg, borderColor: p.cardBorder }]}>
       <View style={[st.glassContent, contentStyle]}>{children}</View>
     </View>
   );
@@ -156,11 +186,12 @@ function PolicySection({
 }
 
 function BulletList({ items, t }: { items: string[]; t: AppColors }) {
+  const p = legalPalette(t);
   return (
     <View style={st.list}>
       {items.map((item) => (
         <View key={item} style={st.listItem}>
-          <Text style={[st.bullet, { color: t.accent }]}>•</Text>
+          <Text style={[st.bullet, { color: p.mark }]}>•</Text>
           <Text style={[st.listText, { color: t.textSub }]}>{item}</Text>
         </View>
       ))}

@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { PaymentListItem } from '@/api/payments';
 import { usePayments } from '@/api/payments';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { useCmsTheme } from '../../theme';
@@ -61,16 +61,16 @@ export function RegularPaymentsScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="Search payments…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
             returnKeyType="search"
           />
         </View>
       </View>
-      <Pressable onPress={openAdd} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+      <PressableScale onPress={openAdd} style={[st.addBtn, { backgroundColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accentText} />
         <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Regular Payment</Text>
-      </Pressable>
+      </PressableScale>
 
       {paymentsQuery.isLoading ? (
         <PaymentsSkeleton colors={colors} />

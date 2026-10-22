@@ -4,10 +4,11 @@
  * standalone piece of the Cart screen rather than embedded inline.
  */
 import * as React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { DomainSearchResult } from '@/api/domains';
+import { PressableScale } from '@/components/ui';
 import { domainRegisterOptions, formatINR, getDomainPriceFromItem, priceForRegisterOption } from '@/lib/domain-pricing';
 import { F } from '@/lib/fonts';
 import type { AppColors } from '@/lib/theme';
@@ -38,6 +39,12 @@ export function DomainSearchSection({
 }) {
   // Available domains first — the ones a user can actually buy shouldn't be
   // buried under taken ones just because of API result order.
+  // White: selection is ink (orange is reserved for the checkout button) and
+  // the status inks are the spec's. Dark keeps its original values.
+  const isDark = t.statusBar === 'light-content';
+  const pick = isDark ? t.accent : t.text;
+  const okColor = isDark ? '#1FA971' : '#12A150';
+  const badColor = isDark ? '#E0392B' : '#E5484D';
   const sortedResults = React.useMemo(
     () => [...(results ?? [])].sort((a, b) => Number(b.available) - Number(a.available)),
     [results]
@@ -76,13 +83,13 @@ export function DomainSearchSection({
               key={item.domain}
               style={[
                 st.resultRow,
-                { borderColor: isSelected ? t.accent : t.border, backgroundColor: t.agentTabBg },
+                { borderColor: isSelected ? pick : t.border, backgroundColor: t.agentTabBg },
                 isSelected && st.resultRowSelected,
               ]}
             >
               <View style={st.resultHeader}>
                 <Text style={[st.resultName, { color: t.text }]}>{item.domain}</Text>
-                <Text style={{ color: item.available ? '#1FA971' : '#E0392B', fontSize: 12.5, fontFamily: F.sans600 }}>
+                <Text style={{ color: item.available ? okColor : badColor, fontSize: 12.5, fontFamily: F.sans600 }}>
                   {item.available ? 'Available' : 'Unavailable'}
                 </Text>
               </View>
@@ -94,33 +101,34 @@ export function DomainSearchSection({
                     const price = priceForRegisterOption(opt);
                     const yearSelected = isSelected && selectedYears === years;
                     return (
-                      <TouchableOpacity
+                      <PressableScale
                         key={years}
                         onPress={() => onSelect(item, years, price)}
-                        activeOpacity={0.85}
+                        haptic={yearSelected ? true : 'select'}
                         style={[
                           st.yearChip,
                           { borderColor: t.border },
-                          yearSelected && { backgroundColor: t.accent, borderColor: t.accent },
+                          yearSelected && { backgroundColor: pick, borderColor: pick },
                         ]}
                       >
                         <Text style={[st.yearChipYears, { color: yearSelected ? '#FFFFFF' : t.text }]}>{years}Y</Text>
                         <Text style={[st.yearChipPrice, { color: yearSelected ? '#FFFFFF' : t.textSub }]}>
                           {formatINR(price)}
                         </Text>
-                      </TouchableOpacity>
+                      </PressableScale>
                     );
                   })}
                 </View>
               ) : item.available ? (
-                <TouchableOpacity
+                <PressableScale
+                  haptic={isSelected ? true : 'select'}
                   onPress={() => onSelect(item, 1, getDomainPriceFromItem(item))}
-                  activeOpacity={0.85}
+                  scaleTo={0.98}
                   style={[st.flatSelectRow, isSelected && { backgroundColor: t.accentSoft }]}
                 >
                   <Text style={[st.resultPrice, { color: t.text }]}>{formatINR(getDomainPriceFromItem(item))}</Text>
-                  <Text style={[st.selectText, { color: t.accent }]}>{isSelected ? 'Selected' : 'Select'}</Text>
-                </TouchableOpacity>
+                  <Text style={[st.selectText, { color: pick }]}>{isSelected ? 'Selected' : 'Select'}</Text>
+                </PressableScale>
               ) : null}
             </View>
           );

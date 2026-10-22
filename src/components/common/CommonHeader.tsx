@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Image, Text } from '@/components/ui';
 import { Cart, Settings } from '@/components/ui/icons';
+import { haptic } from '@/lib/haptics';
 import { useCart } from '@/lib/store/cart-store';
 import { Ionicons } from '@expo/vector-icons';
 import { authenticatedClient } from '@/api/common/client';
@@ -100,6 +101,7 @@ export function CommonHeader({
         {/* LEFT: Back button or Logo */}
         {!searchOpen && (
           <Pressable
+            onPressIn={haptic.tap}
             onPress={showBackButton ? onBackPress : () => router.push('/storefront')}
             hitSlop={8}
           >
@@ -134,7 +136,11 @@ export function CommonHeader({
                 style={styles.searchInput}
                 returnKeyType="search"
               />
-              <Pressable onPress={closeSearch} hitSlop={8}>
+              <Pressable
+                onPressIn={haptic.tap}
+                onPress={closeSearch}
+                hitSlop={8}
+              >
                 <Ionicons name="close" size={18} color="#6B7280" />
               </Pressable>
             </View>
@@ -144,11 +150,17 @@ export function CommonHeader({
         {/* RIGHT ICONS */}
         {!searchOpen && (
           <View style={styles.rightIcons}>
-            <Pressable onPress={() => setSearchOpen(true)} style={{ marginRight: 12 }} hitSlop={8}>
+            <Pressable
+              onPressIn={haptic.tap}
+              onPress={() => setSearchOpen(true)}
+              style={{ marginRight: 12 }}
+              hitSlop={8}
+            >
               <Ionicons name="search" size={22} color="#111" />
             </Pressable>
 
             <Pressable
+              onPressIn={haptic.tap}
               onPress={() => router.push('/storefront/cart')}
               style={{ marginRight: 12 }}
               hitSlop={8}
@@ -163,7 +175,7 @@ export function CommonHeader({
               </View>
             </Pressable>
 
-            <Pressable onPress={onMenuPress} hitSlop={8}>
+            <Pressable onPressIn={haptic.tap} onPress={onMenuPress} hitSlop={8}>
               <Settings color="#111" width={22} height={22} />
             </Pressable>
           </View>
@@ -182,6 +194,7 @@ export function CommonHeader({
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => (
                 <Pressable
+                  onPressIn={haptic.tap}
                   onPress={() => {
                     closeSearch();
                     router.push(`/storefront/${item.id}`);

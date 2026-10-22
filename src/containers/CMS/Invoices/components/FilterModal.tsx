@@ -1,8 +1,9 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { InvoiceFilters } from '@/api/invoices';
 import { useAllEntities } from '@/api/invoices';
 
@@ -82,7 +83,9 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
             entities.map((entity) => {
               const checked = (temp.entity ?? []).includes(entity.id);
               return (
-                <Pressable
+                <PressableScale
+                  haptic="rigid"
+                  scaleTo={0.98}
                   key={entity.id}
                   onPress={() => toggle('entity', entity.id)}
                   style={[st.row, { borderColor: colors.border }]}
@@ -95,7 +98,7 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
                     size={20}
                     color={checked ? colors.accent : colors.textSecondary}
                   />
-                </Pressable>
+                </PressableScale>
               );
             })
           )}
@@ -105,7 +108,9 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
           {TYPE_OPTIONS.map((opt) => {
             const checked = (temp.type ?? []).includes(opt.value);
             return (
-              <Pressable
+              <PressableScale
+                haptic="rigid"
+                scaleTo={0.98}
                 key={opt.value}
                 onPress={() => toggle('type', opt.value)}
                 style={[st.row, { borderColor: colors.border }]}
@@ -116,7 +121,7 @@ export const FilterModal = React.forwardRef<BottomSheetModal, Props>(({ colors, 
                   size={20}
                   color={checked ? colors.accent : colors.textSecondary}
                 />
-              </Pressable>
+              </PressableScale>
             );
           })}
         </CmsCard>

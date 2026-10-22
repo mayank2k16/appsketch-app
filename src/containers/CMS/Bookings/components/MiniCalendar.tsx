@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+import { PressableScale } from '@/components/ui';
 
 import type { CmsThemeColors } from '../../theme';
 
@@ -53,15 +55,23 @@ export function MiniCalendar({ colors, selectedDate, onSelectDate, highlightDate
   return (
     <View style={[st.wrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={st.header}>
-        <Pressable onPress={() => changeMonth(-1)} hitSlop={8}>
+        <PressableScale
+          haptic="rigid"
+          onPress={() => changeMonth(-1)}
+          hitSlop={8}
+        >
           <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
         <Text style={[st.headerLabel, { color: colors.textPrimary }]}>
           {monthCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
         </Text>
-        <Pressable onPress={() => changeMonth(1)} hitSlop={8}>
+        <PressableScale
+          haptic="rigid"
+          onPress={() => changeMonth(1)}
+          hitSlop={8}
+        >
           <Ionicons name="chevron-forward" size={18} color={colors.textPrimary} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       <View style={st.weekRow}>
@@ -79,7 +89,12 @@ export function MiniCalendar({ colors, selectedDate, onSelectDate, highlightDate
             const isSelected = date.toDateString() === selectedDate.toDateString();
             const hasBookings = highlightSet.has(date.toDateString());
             return (
-              <Pressable key={di} onPress={() => onSelectDate(date)} style={st.cell}>
+              <PressableScale
+                haptic={isSelected ? true : 'select'}
+                key={di}
+                onPress={() => onSelectDate(date)}
+                style={st.cell}
+              >
                 <View
                   style={[
                     st.cellInner,
@@ -93,7 +108,7 @@ export function MiniCalendar({ colors, selectedDate, onSelectDate, highlightDate
                 {hasBookings && !isSelected ? (
                   <View style={[st.dot, { backgroundColor: colors.accent }]} />
                 ) : null}
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>

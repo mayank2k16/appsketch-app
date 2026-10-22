@@ -12,10 +12,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { brandGradient } from '@/lib/theme';
 
@@ -24,6 +24,10 @@ import { sheetTheme } from './AuthTheme';
 function useSheetColors() {
   const { colorScheme } = useColorScheme();
   return sheetTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+}
+
+function useIsDark() {
+  return useColorScheme().colorScheme === 'dark';
 }
 
 // ─── Step input ───────────────────────────────────────────────────────────────
@@ -128,19 +132,29 @@ const otpSt = StyleSheet.create({
 // RN has no gradient `backgroundColor`; `overflow: hidden` on the button is
 // what clips it to the pill radius. Label and spinner are forced white —
 // `ctaText` is near-black, sized for the white fill this replaces.
+// White theme: a flat ink pill (docs/white-theme.md — primary buttons are ink,
+// the ramp is for the logo/hero only). Dark keeps the gradient.
 export function CtaButton({ label, onPress, loading }: { label: string; onPress: () => void; loading?: boolean }) {
+  const c = useSheetColors();
+  const dark = useIsDark();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={cta.btn}>
-      <LinearGradient
-        colors={brandGradient()}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+    <PressableScale
+      onPress={onPress}
+      haptic="press"
+      style={[cta.btn, !dark && { backgroundColor: c.ctaBg }]}
+    >
+      {dark ? (
+        <LinearGradient
+          colors={brandGradient()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
       {loading
         ? <ActivityIndicator color="#FFFFFF" size="small" />
         : <Text style={[cta.label, { color: '#FFFFFF' }]}>{label}</Text>}
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -150,16 +164,15 @@ export function GhostButton({
 }: { label: string; onPress: () => void; loading?: boolean; disabled?: boolean }) {
   const c = useSheetColors();
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
-      activeOpacity={0.7}
-      style={[cta.ghost, { borderColor: c.ghostBorder }, disabled && { opacity: 0.5 }]}
+      style={[cta.ghost, { borderColor: c.ghostBorder }]}
       disabled={disabled}
     >
       {loading
         ? <ActivityIndicator color={c.ghostText} size="small" />
         : <Text style={[cta.ghostLabel, { color: c.ghostText }]}>{label}</Text>}
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 

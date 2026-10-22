@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { DiscountCodeItem } from '@/api/discounts';
 
 import { CmsStatusBadge } from '../../components';
@@ -42,14 +43,14 @@ export const DiscountListCard = React.memo(function DiscountListCard({ discount,
       </View>
 
       <View style={st.footerRow}>
-        <Pressable onPress={onView} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+        <PressableScale onPress={onView} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
           <Ionicons name="eye-outline" size={15} color={colors.textPrimary} />
           <Text style={[st.actionLabel, { color: colors.textPrimary }]}>View</Text>
-        </Pressable>
-        <Pressable onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
+        </PressableScale>
+        <PressableScale onPress={onDelete} style={[st.actionBtn, { borderColor: colors.border }]} hitSlop={6}>
           <Ionicons name="trash-outline" size={15} color={colors.danger} />
           <Text style={[st.actionLabel, { color: colors.danger }]}>Delete</Text>
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );

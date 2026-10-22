@@ -9,11 +9,9 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Reanimated, {
@@ -22,11 +20,14 @@ import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
+  withSequence,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
 import { createCoderTenant } from '@/api/coder';
 import { AuthGateModal } from '@/components/AuthForm/AuthGateModal';
+import { PressableScale } from '@/components/ui';
 import {
   type ModelOption,
   ModelPickerModal,
@@ -40,7 +41,8 @@ import { useCoderQuota } from '@/lib/hooks/use-coder-quota';
 import { pickImageFromCamera } from '@/lib/media/pickFromCamera';
 import { toast } from '@/lib/toast';
 
-import { homeTheme } from '../theme/HomeTheme';
+import { HOME_BRAND_RAMP, homeTheme } from '../theme/HomeTheme';
+import { type Idea, IdeaRail } from './idea-rail';
 
 const RADIUS = 15;
 /** Thickness of the prompt card's lit gradient edge — see `ringMask`. */
@@ -59,13 +61,6 @@ const TYPE_GAP_MS = 300; // pause once a phrase is fully deleted, before the nex
 
 type AppTypeKey = 'web' | 'mobile';
 
-/** Where the ring's three brand stops land. Even thirds — a continuous
- *  gradient edge all the way round, which is what the reference shows. The
- *  ring component's own docstring describes an early-cut transparent tail;
- *  that shape belongs to a sweeping-highlight treatment, and passing it here
- *  would leave most of the outline at zero alpha instead of coloured. */
-const RING_STOPS: [number, number, number] = [0, 0.5, 1];
-
 export const APP_TABS: {
   key: AppTypeKey;
   label: string;
@@ -73,6 +68,8 @@ export const APP_TABS: {
   // Starter prompts, both the suggestion-pill text below the card and the
   // rotating typewriter placeholder inside it — one list, two uses.
   suggestions: string[];
+  /** Short starter ideas for the in-card rail (label → full prompt). */
+  ideas: Idea[];
 }[] = [
   {
     key: 'web',
@@ -82,6 +79,33 @@ export const APP_TABS: {
       'Build a landing page for my product launch with an email signup and countdown timer',
       'Build an online store for my clothing brand with product listings and a shopping cart',
     ],
+    ideas: [
+      {
+        label: 'Product launch',
+        prompt:
+          'Build a landing page for my product launch with an email signup and countdown timer',
+      },
+      {
+        label: 'Clothing store',
+        prompt:
+          'Build an online store for my clothing brand with product listings and a shopping cart',
+      },
+      {
+        label: 'Restaurant site',
+        prompt:
+          'Build a website for my restaurant with the menu, table booking and opening hours',
+      },
+      {
+        label: 'Portfolio',
+        prompt:
+          'Build a portfolio site for my design studio with a project gallery and contact form',
+      },
+      {
+        label: 'Clinic booking',
+        prompt:
+          'Build a website for my clinic with doctor profiles and online appointment booking',
+      },
+    ],
   },
   {
     key: 'mobile',
@@ -90,6 +114,33 @@ export const APP_TABS: {
     suggestions: [
       'Build a habit tracker app with daily reminders and streak tracking',
       'Build a food delivery app with restaurant listings and live order tracking',
+    ],
+    ideas: [
+      {
+        label: 'Habit tracker',
+        prompt:
+          'Build a habit tracker app with daily reminders and streak tracking',
+      },
+      {
+        label: 'Food delivery',
+        prompt:
+          'Build a food delivery app with restaurant listings and live order tracking',
+      },
+      {
+        label: 'Ride booking',
+        prompt:
+          'Build a ride booking app with live driver tracking, fares and payments',
+      },
+      {
+        label: 'Salon booking',
+        prompt:
+          'Build a salon booking app with services, stylists and appointment slots',
+      },
+      {
+        label: 'Grocery app',
+        prompt:
+          'Build a grocery shopping app with categories, cart and doorstep delivery',
+      },
     ],
   },
 ];
@@ -227,6 +278,127 @@ function TypewriterPlaceholder({
   );
 }
 
+/** The selected Web/Mobile pill and the armed Send button. Dark keeps the
+ *  ring's gradient fill exactly as before; white is flat — an ink pill and a
+ *  solid orange Send (docs/white-theme.md: one orange, for the key action). */
+function ActionFill({
+  isDark,
+  ringColors,
+  color,
+}: {
+  isDark: boolean;
+  ringColors: [string, string, ...string[]];
+  color: string;
+}) {
+  if (isDark) {
+    return (
+      <LinearGradient
+        colors={ringColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    );
+  }
+  return (
+    <View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { backgroundColor: color }]}
+    />
+  );
+}
+
+const WHITE_INK = '#0B0B0C';
+const WHITE_ORANGE = '#F2600C';
+const RING_STOPS: [number, number, number] = [0, 0.5, 1];
+const WHITE_RING = [...HOME_BRAND_RAMP] as [string, string, ...string[]];
+
+/** The prompt card's lit edge. Dark: the original spinning ring, unchanged.
+ *  White: the brand ramp flowing slowly round (one loop per 6s), resting a
+ *  touch softer and brightening to full while the field is focused. */
+function PromptRing({
+  focused,
+  isDark,
+  ringColors,
+}: {
+  focused: boolean;
+  isDark: boolean;
+  ringColors: [string, string, ...string[]];
+}) {
+  const lift = useSharedValue(isDark ? 1 : 0.8);
+  React.useEffect(() => {
+    lift.value = withTiming(isDark || focused ? 1 : 0.8, { duration: 220 });
+  }, [focused, isDark, lift]);
+  const style = useAnimatedStyle(() => ({ opacity: lift.value }));
+  if (isDark) {
+    return (
+      <RotatingBorderGradient colors={ringColors} locations={RING_STOPS} />
+    );
+  }
+  return (
+    <Reanimated.View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, style]}
+    >
+      <RotatingBorderGradient
+        colors={WHITE_RING}
+        locations={RING_STOPS}
+        durationMs={6000}
+      />
+    </Reanimated.View>
+  );
+}
+
+/** White: the card settles 1% larger, on a spring, while the field is focused. */
+function FocusLift({
+  focused,
+  isDark,
+  children,
+}: {
+  focused: boolean;
+  isDark: boolean;
+  children: React.ReactNode;
+}) {
+  const scale = useSharedValue(1);
+  React.useEffect(() => {
+    scale.value = withSpring(!isDark && focused ? 1.01 : 1, {
+      damping: 16,
+      stiffness: 220,
+    });
+  }, [focused, isDark, scale]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  return (
+    <Reanimated.View style={[s.focusLift, style]}>{children}</Reanimated.View>
+  );
+}
+
+/** Send gives a small spring pop the moment it becomes enabled. */
+function SendPop({
+  enabled,
+  children,
+}: {
+  enabled: boolean;
+  children: React.ReactNode;
+}) {
+  const scale = useSharedValue(1);
+  const was = React.useRef(enabled);
+  React.useEffect(() => {
+    if (enabled && !was.current) {
+      scale.value = withSequence(
+        withSpring(1.14, { damping: 8, stiffness: 420 }),
+        withSpring(1, { damping: 12, stiffness: 260 })
+      );
+    }
+    was.current = enabled;
+  }, [enabled, scale]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  return <Reanimated.View style={style}>{children}</Reanimated.View>;
+}
+
 // The prompt card's lit, spinning edge now lives in components/ui — the
 // bottom tab bar was asked for "the same as the prompt", and the only way to
 // make that literally true is for both to render this one component. See
@@ -284,13 +456,14 @@ export function AgentV2({
 }: {
   onAttachPress?: () => void;
   onSendPress?: () => void;
-  /** The suggestion pills below the card — on by default (the Hero-section
+  /** The starter-idea rail inside the card — on by default (the Hero-section
    *  usage), off for other placements (e.g. ClosingCTA) that just want the
    *  prompt card itself. */
   showSuggestions?: boolean;
 }) {
   const { colorScheme } = useColorScheme();
-  const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const t = homeTheme[isDark ? 'dark' : 'light'];
 
   const router = useRouter();
 
@@ -319,6 +492,9 @@ export function AgentV2({
     () => [...t.agentBorderGradient] as [string, string, ...string[]],
     [t.agentBorderGradient]
   );
+  // Disabled controls show at 50% in white (docs/white-theme.md); dark never
+  // dimmed them.
+  const disabledOpacity = isDark ? 1 : 0.5;
 
   const voiceSupported = Platform.OS !== 'web';
 
@@ -396,218 +572,217 @@ export function AgentV2({
     <View style={s.wrap}>
       <View style={s.stage}>
         <View style={s.promptStack}>
-          <View style={s.ringMask}>
-            {/* The lit gradient edge, restored from the flat single-colour
-                stroke that stood in for it. `ringMask` reserves RING_W of
-                padding and clips; this fills that padding and `cardInner`
-                below covers everything except the edge itself. */}
-            <RotatingBorderGradient
-              colors={ringColors}
-              locations={RING_STOPS}
-            />
-            <View style={s.cardInner}>
-              <BlurView
-                intensity={Platform.OS === 'android' ? 80 : 60}
-                tint={colorScheme === 'dark' ? 'dark' : 'light'}
-                style={StyleSheet.absoluteFill}
+          <FocusLift focused={inputFocused} isDark={isDark}>
+            <View style={s.ringMask}>
+              {/* The lit edge: the brand ramp flowing round the card. `ringMask` reserves RING_W of padding and clips;
+                this fills that padding and `cardInner` below covers
+                everything except the edge itself. */}
+              <PromptRing
+                focused={inputFocused}
+                isDark={isDark}
+                ringColors={ringColors}
               />
-              <View
-                pointerEvents="none"
-                style={[StyleSheet.absoluteFill, { backgroundColor: t.card }]}
-              />
+              <View style={s.cardInner}>
+                {/* Dark only: white is a solid card, no frosted glass. */}
+                {isDark && (
+                  <BlurView
+                    intensity={Platform.OS === 'android' ? 80 : 60}
+                    tint="dark"
+                    style={StyleSheet.absoluteFill}
+                  />
+                )}
+                <View
+                  pointerEvents="none"
+                  style={[StyleSheet.absoluteFill, { backgroundColor: t.card }]}
+                />
 
-              <View style={s.cardContent}>
-                {/* App-type switch, inside the card and above the field.
+                <View style={s.cardContent}>
+                  {/* App-type switch, inside the card and above the field.
                       No border, no fill, no indicator bar — selection is
                       carried entirely by the label and icon going full white
                       against the muted unselected pair. */}
-                <View style={s.tabRow}>
-                  {APP_TABS.map((tab, i) => {
-                    const active = tab.key === appType;
-                    return (
-                      <React.Fragment key={tab.key}>
-                        {/* Hairline rule separating the two halves. Sits
+                  <View style={s.tabRow}>
+                    {APP_TABS.map((tab, i) => {
+                      const active = tab.key === appType;
+                      return (
+                        <React.Fragment key={tab.key}>
+                          {/* Hairline rule separating the two halves. Sits
                               between them rather than around them, so the row
                               still reads as one control. */}
-                        {i > 0 && (
-                          <View
-                            style={[
-                              s.tabDivider,
-                              // { backgroundColor: t.agentTabBorder },
-                            ]}
-                          />
-                        )}
-                        <TouchableOpacity
-                          onPress={() => setAppType(tab.key)}
-                          activeOpacity={0.7}
-                          style={s.tabPill}
-                        >
-                          {/* Selection is a filled brand pill now, not a
+                          {i > 0 && (
+                            <View
+                              style={[
+                                s.tabDivider,
+                                !isDark && { backgroundColor: t.border },
+                              ]}
+                            />
+                          )}
+                          <PressableScale
+                            haptic={active ? true : 'select'}
+                            onPress={() => setAppType(tab.key)}
+                            style={s.tabPill}
+                          >
+                            {/* Selection is a filled brand pill now, not a
                               recolour of the label. Two muted labels where
                               one turns violet and the other orange read as
                               two unrelated states; a filled pill reads as
                               one control with one thing selected. */}
-                          {active && (
-                            <LinearGradient
-                              colors={ringColors}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 1 }}
-                              style={StyleSheet.absoluteFill}
+                            {active && (
+                              <ActionFill
+                                isDark={isDark}
+                                ringColors={ringColors}
+                                color={WHITE_INK}
+                              />
+                            )}
+                            <Ionicons
+                              name={tab.icon}
+                              size={13}
+                              color={active ? '#FFFFFF' : t.agentTabIcon}
                             />
-                          )}
-                          <Ionicons
-                            name={tab.icon}
-                            size={13}
-                            color={active ? '#FFFFFF' : t.agentTabIcon}
-                          />
-                          <Text
-                            style={[
-                              s.tabPillLabel,
-                              active && s.tabPillLabelActive,
-                              { color: active ? '#FFFFFF' : t.agentTabText },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {tab.label}
-                          </Text>
-                        </TouchableOpacity>
-                      </React.Fragment>
-                    );
-                  })}
-                </View>
-
-                <View style={s.inputWrap}>
-                  <TextInput
-                    placeholder={activeTab.suggestions[0]}
-                    placeholderTextColor={
-                      showTypewriter ? 'transparent' : t.agentInputPlaceholder
-                    }
-                    editable
-                    multiline
-                    value={prompt}
-                    onChangeText={setPrompt}
-                    onFocus={() => setInputFocused(true)}
-                    onBlur={() => setInputFocused(false)}
-                    style={[s.input, { color: t.agentInputText }]}
-                  />
-                  <TypewriterPlaceholder
-                    phrases={activeTab.suggestions}
-                    enabled={showTypewriter}
-                    color={t.agentInputPlaceholder}
-                    textStyle={s.input}
-                  />
-                </View>
-
-                {images.length > 0 && (
-                  <View style={s.thumbRow}>
-                    {images.map((uri, i) => (
-                      <View
-                        key={`${uri}-${i}`}
-                        style={[s.thumb, { borderColor: t.agentInputBorder }]}
-                      >
-                        <Image
-                          source={{ uri }}
-                          style={s.thumbImg}
-                          contentFit="cover"
-                        />
-                        <Pressable
-                          onPress={() => removeImage(i)}
-                          style={[
-                            s.thumbRemove,
-                            { backgroundColor: t.agentBtnBg },
-                          ]}
-                          hitSlop={6}
-                        >
-                          <Ionicons
-                            name="close"
-                            size={11}
-                            color={t.agentBtnIcon}
-                          />
-                        </Pressable>
-                      </View>
-                    ))}
+                            <Text
+                              style={[
+                                s.tabPillLabel,
+                                active && s.tabPillLabelActive,
+                                { color: active ? '#FFFFFF' : t.agentTabText },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {tab.label}
+                            </Text>
+                          </PressableScale>
+                        </React.Fragment>
+                      );
+                    })}
                   </View>
-                )}
 
-                <View style={s.row}>
-                  <TouchableOpacity
-                    onPress={() => setModelPickerOpen(true)}
-                    activeOpacity={0.7}
-                    style={[
-                      s.modelChip,
-                      {
-                        backgroundColor: t.agentBtnBg,
-                        borderColor: t.agentBtnBorder,
-                      },
-                    ]}
-                  >
-                    <View
+                  <View style={s.inputWrap}>
+                    <TextInput
+                      placeholder={activeTab.suggestions[0]}
+                      placeholderTextColor={
+                        showTypewriter ? 'transparent' : t.agentInputPlaceholder
+                      }
+                      editable
+                      multiline
+                      value={prompt}
+                      onChangeText={setPrompt}
+                      onFocus={() => setInputFocused(true)}
+                      onBlur={() => setInputFocused(false)}
+                      style={[s.input, { color: t.agentInputText }]}
+                    />
+                    <TypewriterPlaceholder
+                      phrases={activeTab.suggestions}
+                      enabled={showTypewriter}
+                      color={t.agentInputPlaceholder}
+                      textStyle={s.input}
+                    />
+                  </View>
+
+                  {showSuggestions && (
+                    <IdeaRail
+                      ideas={activeTab.ideas}
+                      current={prompt}
+                      onPick={setPrompt}
+                      colors={{
+                        bg: t.agentTabBg,
+                        border: t.agentTabBorder,
+                        text: t.agentTabText,
+                        icon: t.textSub,
+                        activeBg: isDark ? '#FFFFFF' : '#0B0B0C',
+                        activeText: isDark ? '#0B0B0C' : '#FFFFFF',
+                      }}
+                    />
+                  )}
+
+                  {images.length > 0 && (
+                    <View style={s.thumbRow}>
+                      {images.map((uri, i) => (
+                        <View
+                          key={`${uri}-${i}`}
+                          style={[s.thumb, { borderColor: t.agentInputBorder }]}
+                        >
+                          <Image
+                            source={{ uri }}
+                            style={s.thumbImg}
+                            contentFit="cover"
+                          />
+                          <PressableScale
+                            onPress={() => removeImage(i)}
+                            style={[
+                              s.thumbRemove,
+                              { backgroundColor: t.agentBtnBg },
+                            ]}
+                            hitSlop={6}
+                          >
+                            <Ionicons
+                              name="close"
+                              size={11}
+                              color={t.agentBtnIcon}
+                            />
+                          </PressableScale>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  <View style={s.row}>
+                    <PressableScale
+                      onPress={() => setModelPickerOpen(true)}
                       style={[
-                        s.modelDot,
-                        { backgroundColor: t.codeEditorConnectedDot },
+                        s.modelChip,
+                        {
+                          backgroundColor: t.agentBtnBg,
+                          borderColor: t.agentBtnBorder,
+                        },
                       ]}
-                    />
-                    <Text
-                      style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
-                      numberOfLines={1}
                     >
-                      {selectedModel.label}
-                    </Text>
-                    <Ionicons
-                      name="chevron-down"
-                      size={13}
-                      color={t.agentBtnIcon}
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={handleAttach}
-                    activeOpacity={0.7}
-                    disabled={images.length >= MAX_IMAGES}
-                    style={[
-                      s.circleBtn,
-                      {
-                        backgroundColor: t.agentBtnBg,
-                        borderColor: t.agentBtnBorder,
-                      },
-                    ]}
-                  >
-                    <Ionicons name="add" size={20} color={t.agentBtnIcon} />
-                    {images.length > 0 && (
                       <View
                         style={[
-                          s.countBadge,
-                          { backgroundColor: t.agentTabActiveBg },
+                          s.modelDot,
+                          { backgroundColor: t.codeEditorConnectedDot },
                         ]}
+                      />
+                      <Text
+                        style={[s.modelChipLabel, { color: t.agentBtnIcon }]}
+                        numberOfLines={1}
                       >
-                        <Text style={s.countBadgeText}>{images.length}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
+                        {selectedModel.label}
+                      </Text>
+                      <Ionicons
+                        name="chevron-down"
+                        size={13}
+                        color={t.agentBtnIcon}
+                      />
+                    </PressableScale>
 
-                  <TouchableOpacity
-                    onPress={handleCamera}
-                    activeOpacity={0.7}
-                    disabled={images.length >= MAX_IMAGES}
-                    style={[
-                      s.circleBtn,
-                      {
-                        backgroundColor: t.agentBtnBg,
-                        borderColor: t.agentBtnBorder,
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name="camera-outline"
-                      size={19}
-                      color={t.agentBtnIcon}
-                    />
-                  </TouchableOpacity>
+                    <PressableScale
+                      onPress={handleAttach}
+                      disabled={images.length >= MAX_IMAGES}
+                      disabledOpacity={disabledOpacity}
+                      style={[
+                        s.circleBtn,
+                        {
+                          backgroundColor: t.agentBtnBg,
+                          borderColor: t.agentBtnBorder,
+                        },
+                      ]}
+                    >
+                      <Ionicons name="add" size={20} color={t.agentBtnIcon} />
+                      {images.length > 0 && (
+                        <View
+                          style={[
+                            s.countBadge,
+                            { backgroundColor: t.agentTabActiveBg },
+                          ]}
+                        >
+                          <Text style={s.countBadgeText}>{images.length}</Text>
+                        </View>
+                      )}
+                    </PressableScale>
 
-                  {voiceSupported && (
-                    <TouchableOpacity
-                      onPress={() => setVoiceOpen(true)}
-                      activeOpacity={0.7}
+                    <PressableScale
+                      onPress={handleCamera}
+                      disabled={images.length >= MAX_IMAGES}
+                      disabledOpacity={disabledOpacity}
                       style={[
                         s.circleBtn,
                         {
@@ -617,86 +792,75 @@ export function AgentV2({
                       ]}
                     >
                       <Ionicons
-                        name="mic-outline"
+                        name="camera-outline"
                         size={19}
                         color={t.agentBtnIcon}
                       />
-                    </TouchableOpacity>
-                  )}
+                    </PressableScale>
 
-                  <View style={{ flex: 1 }} />
+                    {voiceSupported && (
+                      <PressableScale
+                        onPress={() => setVoiceOpen(true)}
+                        style={[
+                          s.circleBtn,
+                          {
+                            backgroundColor: t.agentBtnBg,
+                            borderColor: t.agentBtnBorder,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="mic-outline"
+                          size={19}
+                          color={t.agentBtnIcon}
+                        />
+                      </PressableScale>
+                    )}
 
-                  {/* Always the hero ramp at full strength with a white
+                    <View style={{ flex: 1 }} />
+
+                    {/* Always the hero ramp at full strength with a white
                         glyph — no hollow idle state and no dimming overlay.
                         It went hollow when the field was empty, which put a
                         disabled-looking outline where the primary action
                         belongs, and a dimmed fill read as broken rather than
                         idle. `disabled` on the pressable still blocks the
                         tap. */}
-                  <TouchableOpacity
-                    onPress={() => handleSend()}
-                    activeOpacity={0.7}
-                    disabled={sending || !prompt.trim()}
-                    style={[s.circleBtn, { borderColor: 'transparent' }]}
-                  >
-                    {/* Armed, this fills with the brand ramp — the same run
+                    <SendPop enabled={!sending && !!prompt.trim()}>
+                      <PressableScale
+                        haptic="press"
+                        onPress={() => handleSend()}
+                        disabled={sending || !prompt.trim()}
+                        disabledOpacity={disabledOpacity}
+                        style={[s.circleBtn, { borderColor: 'transparent' }]}
+                      >
+                        {/* Armed, this fills with the brand ramp — the same run
                         as the card's edge and the selected pill, so the one
                         button worth pressing is also the one carrying the
                         colour. Idle it stays the plain outlined circle its
                         neighbours are. */}
-                    <LinearGradient
-                      colors={ringColors}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFill}
-                    />
-                    {sending ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Ionicons
-                        name="arrow-forward"
-                        size={19}
-                        color="#FFFFFF"
-                      />
-                    )}
-                  </TouchableOpacity>
+                        {/* White: solid orange, the one accent. */}
+                        <ActionFill
+                          isDark={isDark}
+                          ringColors={ringColors}
+                          color={WHITE_ORANGE}
+                        />
+                        {sending ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons
+                            name="arrow-forward"
+                            size={19}
+                            color="#FFFFFF"
+                          />
+                        )}
+                      </PressableScale>
+                    </SendPop>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-
-          {showSuggestions && (
-            <View style={s.suggestionCol}>
-              {activeTab.suggestions.map((suggestion, i) => (
-                <TouchableOpacity
-                  key={suggestion}
-                  onPress={() => setPrompt(suggestion)}
-                  activeOpacity={0.7}
-                  style={[
-                    s.suggestionPill,
-                    {
-                      backgroundColor: t.agentTabBg,
-                      borderColor: t.agentTabBorder,
-                    },
-                  ]}
-                >
-                  {/* Each chip's sparkle takes the next stop along the ramp
-                      rather than all of them sharing one grey. Indexing the
-                      ramp (rather than hardcoding a colour per chip) means
-                      the list can grow without anyone picking new hues. */}
-                  <Ionicons
-                    name="sparkles-outline"
-                    size={13}
-                    color={ringColors[i % ringColors.length]}
-                    style={s.suggestionIcon}
-                  />
-                  <Text style={[s.suggestionText, { color: t.agentTabText }]}>
-                    {suggestion}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+          </FocusLift>
         </View>
       </View>
 
@@ -750,7 +914,7 @@ const s = StyleSheet.create({
   wrap: {
     paddingHorizontal: 12,
     paddingTop: 14,
-    paddingBottom: 28,
+    paddingBottom: 14,
   },
   stage: {
     alignItems: 'center',
@@ -835,35 +999,15 @@ const s = StyleSheet.create({
   tabPillLabelActive: {
     fontFamily: F.sans700,
   },
-  // Suggested-prompt cards below the card — one full prompt per row (not a
-  // wrapping row of short labels), same glass tokens as the tabs above.
-  suggestionCol: {
-    marginTop: 12,
-    gap: 8,
-  },
-  suggestionPill: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 7,
-    paddingVertical: 10,
-    paddingHorizontal: 13,
-    borderRadius: 13,
-    borderWidth: 1,
-  },
-  suggestionIcon: {
-    marginTop: 2,
-  },
-  suggestionText: {
-    flex: 1,
-    fontFamily: F.sans500,
-    fontSize: 12.5,
-    lineHeight: 17,
-  },
   // Gradient-ring border: `ringMask` clips to the rounded rect and reserves
   // RING_W of padding, `RotatingBorderGradient` fills it (rendered as the
   // first child, see JSX), and `cardInner` — sized to fill everything inside
   // that padding — covers the gradient everywhere except the edge, so only
   // the border shows it.
+  // Carries the card's focus scale; stretches like the card it wraps.
+  focusLift: {
+    alignSelf: 'stretch',
+  },
   ringMask: {
     alignSelf: 'stretch',
     // All four corners round: the tabs are a separate row above now, so
@@ -895,7 +1039,7 @@ const s = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     paddingTop: 0,
-    minHeight: 90,
+    minHeight: 54,
     maxHeight: 120,
     paddingHorizontal: 4,
   },

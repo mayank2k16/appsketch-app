@@ -42,6 +42,7 @@ export default function Onboarding() {
       </View>
       <SafeAreaView className="mt-6">
         <Button
+          haptic="press"
           label="Let's Get Started "
           onPress={() => {
             setIsFirstTime(false);

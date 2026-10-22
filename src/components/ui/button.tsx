@@ -1,8 +1,25 @@
+import { cssInterop } from 'nativewind';
 import React from 'react';
-import type { PressableProps, View } from 'react-native';
-import { ActivityIndicator, Pressable, Text } from 'react-native';
+import type { PressableProps, StyleProp, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native';
 import type { VariantProps } from 'tailwind-variants';
 import { tv } from 'tailwind-variants';
+
+import { PressableScale, type PressableScaleProps } from './pressable-scale';
+
+// PressableScale is a custom component, so nativewind needs telling that its
+// `className` resolves into `style` (it merges with the scale transform).
+cssInterop(PressableScale, { className: 'style' });
+
+// React 19 passes `ref` as a prop, and PressableScale spreads it onto its
+// Pressable; this only widens the type so Button can keep forwarding its ref.
+const ScalePressable = PressableScale as React.ComponentType<
+  React.ComponentProps<typeof PressableScale> & { ref?: React.Ref<View> }
+>;
+
+// White (docs/white-theme.md): ink fills and hairline outlines. The disabled
+// look is unchanged in both themes (no dim — `disabledOpacity={1}`), and every
+// `dark:` class is exactly what it was, so dark renders unchanged.
 
 const button = tv({
   slots: {
@@ -14,7 +31,7 @@ const button = tv({
   variants: {
     variant: {
       default: {
-        container: 'bg-black dark:bg-white',
+        container: 'bg-[#0B0B0C] dark:bg-white',
         label: 'text-white dark:text-black',
         indicator: 'text-white dark:text-black',
       },
@@ -24,19 +41,20 @@ const button = tv({
         indicator: 'text-white',
       },
       outline: {
-        container: 'border border-neutral-400',
-        label: 'text-black dark:text-neutral-100',
-        indicator: 'text-black dark:text-neutral-100',
+        container:
+          'border border-[#E7E7E4] bg-white dark:border-neutral-400 dark:bg-transparent',
+        label: 'text-[#0B0B0C] dark:text-neutral-100',
+        indicator: 'text-[#0B0B0C] dark:text-neutral-100',
       },
       destructive: {
-        container: 'bg-red-600',
+        container: 'bg-[#E5484D] dark:bg-red-600',
         label: 'text-white',
         indicator: 'text-white',
       },
       ghost: {
         container: 'bg-transparent',
-        label: 'text-black underline dark:text-white',
-        indicator: 'text-black dark:text-white',
+        label: 'text-[#0B0B0C] underline dark:text-white',
+        indicator: 'text-[#0B0B0C] dark:text-white',
       },
       link: {
         container: 'bg-transparent',
@@ -85,11 +103,18 @@ const button = tv({
 });
 
 type ButtonVariants = VariantProps<typeof button>;
-interface Props extends ButtonVariants, Omit<PressableProps, 'disabled'> {
+interface Props
+  extends ButtonVariants,
+    Omit<PressableProps, 'disabled' | 'style'> {
+  /** A plain style (no pressed-state callback — the press feedback is the
+   *  PressableScale spring). */
+  style?: StyleProp<ViewStyle>;
   label?: string;
   loading?: boolean;
   className?: string;
   textClassName?: string;
+  /** Press haptic — 'press' for a screen's primary action. */
+  haptic?: PressableScaleProps['haptic'];
 }
 
 export const Button = React.forwardRef<View, Props>(
@@ -111,10 +136,11 @@ export const Button = React.forwardRef<View, Props>(
       () => button({ variant, disabled, size }),
       [variant, disabled, size]
     );
-
+    // Press feedback is PressableScale's spring + haptic.
     return (
-      <Pressable
-        disabled={disabled || loading}
+      <ScalePressable
+        disabled={Boolean(disabled || loading)}
+        disabledOpacity={1}
         className={styles.container({ className })}
         {...props}
         ref={ref}
@@ -140,7 +166,7 @@ export const Button = React.forwardRef<View, Props>(
             )}
           </>
         )}
-      </Pressable>
+      </ScalePressable>
     );
   }
 );

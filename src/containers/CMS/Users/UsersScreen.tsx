@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { AppUserProfile, StaffUser, UsersListParams } from '@/api/users';
@@ -12,7 +12,7 @@ import {
   useUsersMeta,
   USERS_PAGE_SIZE,
 } from '@/api/users';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsConfirmModal } from '../components';
@@ -166,7 +166,8 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
         {SEGMENTS.map((s) => {
           const active = s.key === segment;
           return (
-            <Pressable
+            <PressableScale
+              haptic={active ? true : 'select'}
               key={s.key}
               onPress={() => setSegment(s.key)}
               style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}
@@ -175,7 +176,7 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
               <Text style={[st.tabLabel, { color: active ? colors.accent : colors.sidebarText }]} numberOfLines={2}>
                 {s.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>
@@ -188,19 +189,19 @@ export function UsersScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () => 
               value={search}
               onChangeText={setSearch}
               placeholder="Search name / phone / email…"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textMuted}
               style={[st.searchInput, { color: colors.textPrimary }]}
             />
           </View>
-          <Pressable onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
+          <PressableScale onPress={filterModal.present} style={[st.iconBtn, { borderColor: colors.border }]}>
             <Ionicons name="filter-outline" size={18} color={colors.textPrimary} />
-          </Pressable>
+          </PressableScale>
         </View>
         <View style={st.headerRow}>
-          <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+          <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
             <Ionicons name="add" size={16} color={colors.accentText} />
             <Text style={[st.addBtnText, { color: colors.accentText }]}>Add {segment === 'app' ? 'App User' : 'Staff User'}</Text>
-          </Pressable>
+          </PressableScale>
         </View>
 
         <Text style={[st.countText, { color: colors.textSecondary }]}>

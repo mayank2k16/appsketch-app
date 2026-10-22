@@ -10,6 +10,7 @@ import {
   useUserInventories,
   useUsersMeta,
 } from '@/api/users';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsSelect, CmsSheetScrollView, CmsSwitch, CmsModal } from '../../components';
 import type { CmsThemeColors } from '../../theme';
@@ -107,6 +108,7 @@ export const ManageUserModal = React.forwardRef<BottomSheetModal, Props>(({ colo
     if (!form.name.trim()) next.name = 'Name is required';
     if (!form.phone_number.trim()) next.phone_number = 'Phone is required';
     setErrors(next);
+    if (Object.keys(next).length > 0) haptic.error();
     return Object.keys(next).length === 0;
   }
 

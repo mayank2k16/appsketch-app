@@ -10,11 +10,11 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/ui';
 import { useCoderTheme } from '@/lib/theme';
 
 import { useCodeEditor } from '../CodeEditorProvider';
@@ -69,6 +69,13 @@ export function TerminalPane() {
     params.tenantId
   );
   const status = SHELL_STATUS[phase];
+  // The terminal is a dark well in BOTH themes, so in white its header has to
+  // read terminal tokens: the paper ones (ink accent, paper hairline, grey
+  // sub-text) would be invisible or glaring on #111113. Dark is unchanged.
+  const light = colorScheme !== 'dark';
+  const headBorder = light ? t.terminalInputBorder : t.codeEditorBorder;
+  const headText = light ? t.terminalInfo : t.textSub;
+  const reconnectText = light ? t.terminalCmd : t.codeEditorAccentText;
 
   const [input, setInput] = React.useState('');
   const scrollRef = React.useRef<ScrollView>(null);
@@ -107,7 +114,7 @@ export function TerminalPane() {
 
   return (
     <View style={[st.root, { backgroundColor: t.terminalBg }]}>
-      <View style={[st.head, { borderColor: t.codeEditorBorder }]}>
+      <View style={[st.head, { borderColor: headBorder }]}>
         <View
           style={[
             st.dot,
@@ -118,21 +125,21 @@ export function TerminalPane() {
             },
           ]}
         />
-        <Text style={{ color: t.textSub, fontSize: 11.5, fontWeight: '600' }}>
+        <Text style={{ color: headText, fontSize: 11.5, fontWeight: '600' }}>
           {status.label}
         </Text>
         {phase === 'offline' ? (
-          <TouchableOpacity onPress={reconnect} style={st.retryBtn}>
+          <PressableScale onPress={reconnect} style={st.retryBtn}>
             <Text
               style={{
-                color: t.codeEditorAccentText,
+                color: reconnectText,
                 fontSize: 11.5,
                 fontWeight: '700',
               }}
             >
               Reconnect
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         ) : null}
       </View>
 
@@ -178,9 +185,12 @@ export function TerminalPane() {
             autoCorrect={false}
             style={[st.input, { color: t.terminalText }]}
           />
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={!input.trim()}
+          <PressableScale
+            // Guarded rather than `disabled`: the muted label already shows
+            // the empty state, and `disabled` would also dim it to 50%.
+            onPress={input.trim() ? handleSend : undefined}
+            accessibilityState={{ disabled: !input.trim() }}
+            haptic={input.trim() ? 'press' : false}
             style={st.sendBtn}
           >
             <Text
@@ -192,7 +202,7 @@ export function TerminalPane() {
             >
               Run
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </KeyboardAvoidingView>
     </View>

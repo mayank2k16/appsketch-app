@@ -1,12 +1,14 @@
-import type { Tabs } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+import type { Tabs } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import { type AppColors, useBrandedCoderTheme } from '@/lib/theme';
 
 import { TAB_CONFIG } from './tab-config';
@@ -56,7 +58,17 @@ function TabCard({
   const iconGradientId = `tabIconAura-${routeName}`;
 
   return (
-    <Pressable onPress={onPress} style={s.tab} hitSlop={6}>
+    <PressableScale
+      onPress={onPress}
+      // The bar speaks on release: a selection tick when the tab actually
+      // changes, a light tap on a re-press (see GlowTabBar's onPress).
+      haptic={false}
+      style={s.tab}
+      hitSlop={6}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+      accessibilityLabel={conf.label}
+    >
       <View style={s.cardInner}>
         <View style={s.iconWrap}>
           <TabIcon
@@ -87,7 +99,7 @@ function TabCard({
           </Text>
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -97,10 +109,13 @@ function TabCard({
 // takes ONE stop of the ramp, in order left to right — orange, magenta,
 // violet — so the three of them walk the same warm→cool run the border and
 // the hero heading do, instead of three identical grey lines.
-function TabDivider({ color }: { color: string }) {
+// White: a solid hairline — no fade at the ends.
+function TabDivider({ color, dark }: { color: string; dark: boolean }) {
   return (
     <ExpoLinearGradient
-      colors={['transparent', color, 'transparent']}
+      colors={
+        dark ? ['transparent', color, 'transparent'] : [color, color, color]
+      }
       locations={[0, 0.5, 1]}
       style={s.divider}
       pointerEvents="none"
@@ -108,11 +123,24 @@ function TabDivider({ color }: { color: string }) {
   );
 }
 
-// ─── Tab bar ──────────────────────────────────────────────────────────────────
-export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
+// ─── The bar's frame ──────────────────────────────────────────────────────────
+// Two layers: `ring` reserves RING_W all round and clips, the rotating
+// gradient fills it, and `inner` sits on top with an OPAQUE fill — so all
+// that shows of the gradient is the RING_W stroke at the edge. Same
+// arrangement as Home's prompt card, and the same component drawing it.
+//
+// White (docs/white-theme.md): the brand ramp belongs to the active tab icon
+// only, so the edge is a still 1px hairline — no spinning colour round the bar.
+function TabBarFrame({
+  t,
+  dark,
+  children,
+}: {
+  t: AppColors;
+  dark: boolean;
+  children: React.ReactNode;
+}) {
   const insets = useSafeAreaInsets();
-  const { colorScheme } = useColorScheme();
-  const t = useBrandedCoderTheme(colorScheme);
 
   // The ramp, whole — no transparent tail, so the stroke is lit the whole way
   // round. Memoised because `RotatingBorderGradient` takes it as a prop and a
@@ -123,16 +151,20 @@ export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
   );
 
   return (
-    // Two layers: `ring` reserves RING_W all round and clips, the rotating
-    // gradient fills it, and `inner` sits on top with an OPAQUE fill — so all
-    // that shows of the gradient is the RING_W stroke at the edge. Same
-    // arrangement as Home's prompt card, and the same component drawing it.
-    <View style={[s.ring, { paddingBottom: 0 }]}>
-      <RotatingBorderGradient
-        colors={ringColors}
-        locations={RING_STOPS}
-        durationMs={TAB_SPIN_MS}
-      />
+    <View
+      style={[
+        s.ring,
+        { paddingBottom: 0 },
+        !dark && { backgroundColor: t.border },
+      ]}
+    >
+      {dark ? (
+        <RotatingBorderGradient
+          colors={ringColors}
+          locations={RING_STOPS}
+          durationMs={TAB_SPIN_MS}
+        />
+      ) : null}
       <View
         style={[
           s.inner,
@@ -142,45 +174,63 @@ export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
           },
         ]}
       >
-        <View style={s.row}>
-          {state.routes.map((route, index) => {
-            const isFocused = state.index === index;
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
-            };
-            return (
-              <React.Fragment key={route.key}>
-                {index > 0 && (
-                  <TabDivider
-                    // index - 1 so the FIRST divider takes the first stop.
-                    // Modulo guards a fifth tab being added later without
-                    // anyone remembering this line exists.
-                    color={
-                      t.agentBorderGradient[
-                        (index - 1) % t.agentBorderGradient.length
-                      ]
-                    }
-                  />
-                )}
-                <TabCard
-                  routeName={route.name}
-                  isFocused={isFocused}
-                  onPress={onPress}
-                  t={t}
-                />
-              </React.Fragment>
-            );
-          })}
-        </View>
+        {children}
       </View>
     </View>
+  );
+}
+
+// ─── Tab bar ──────────────────────────────────────────────────────────────────
+export function GlowTabBar({ state, navigation }: BottomTabBarProps) {
+  const { colorScheme } = useColorScheme();
+  const t = useBrandedCoderTheme(colorScheme);
+  const dark = colorScheme === 'dark';
+
+  return (
+    <TabBarFrame t={t} dark={dark}>
+      <View style={s.row}>
+        {state.routes.map((route, index) => {
+          const isFocused = state.index === index;
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!isFocused && !event.defaultPrevented) {
+              haptic.select();
+              navigation.navigate(route.name);
+            } else {
+              haptic.tap();
+            }
+          };
+          return (
+            <React.Fragment key={route.key}>
+              {index > 0 && (
+                <TabDivider
+                  // Dark: index - 1 so the FIRST divider takes the first
+                  // stop; modulo guards a fifth tab. White: a hairline.
+                  color={
+                    dark
+                      ? t.agentBorderGradient[
+                          (index - 1) % t.agentBorderGradient.length
+                        ]
+                      : t.border
+                  }
+                  dark={dark}
+                />
+              )}
+              <TabCard
+                routeName={route.name}
+                isFocused={isFocused}
+                onPress={onPress}
+                t={t}
+              />
+            </React.Fragment>
+          );
+        })}
+      </View>
+    </TabBarFrame>
   );
 }
 

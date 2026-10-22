@@ -5,6 +5,9 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
+
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
 
@@ -44,16 +47,26 @@ export const CmsConfirmModal = React.forwardRef<BottomSheetModal, CmsConfirmModa
       handle: colors.border,
       title: colors.textPrimary,
       description: colors.textSecondary,
-      cancelBg: colors.background,
+      // White: secondary button is a raised white pill on the hairline.
+      cancelBg: colors.kind === 'light' ? colors.surface : colors.background,
       cancelBorder: colors.border,
       cancelText: colors.textPrimary,
     };
 
     const actionColor = destructive ? colors.danger : colors.accent;
+    // Non-destructive confirms fill with the accent, so their label must use
+    // accentText in white (ink accent / light accents). Dark is unchanged.
+    const actionText = colors.kind === 'light' && !destructive ? colors.accentText : '#FFFFFF';
 
     const renderBackdrop = React.useCallback(
-      (props: BottomSheetBackdropProps) => <CmsConfirmBackdrop {...props} onPress={() => (ref as React.RefObject<BottomSheetModal | null>)?.current?.dismiss()} />,
-      [ref]
+      (props: BottomSheetBackdropProps) => (
+        <CmsConfirmBackdrop
+          {...props}
+          scrim={colors.kind === 'light' ? colors.scrim : 'rgba(0,0,0,0.5)'}
+          onPress={() => (ref as React.RefObject<BottomSheetModal | null>)?.current?.dismiss()}
+        />
+      ),
+      [ref, colors.kind, colors.scrim]
     );
 
     const renderHandle = React.useCallback(
@@ -79,20 +92,23 @@ export const CmsConfirmModal = React.forwardRef<BottomSheetModal, CmsConfirmModa
           {description ? <Text style={[st.description, { color: palette.description }]}>{description}</Text> : null}
 
           <View style={st.btnRow}>
-            <Pressable
+            <PressableScale
               onPress={() => (ref as React.RefObject<BottomSheetModal | null>)?.current?.dismiss()}
               disabled={loading}
+              disabledOpacity={0.6}
               style={[st.btn, { backgroundColor: palette.cancelBg, borderWidth: 1, borderColor: palette.cancelBorder }, loading && st.btnDisabled]}
             >
               <Text style={[st.btnLabel, { color: palette.cancelText }]}>{cancelLabel}</Text>
-            </Pressable>
-            <Pressable
+            </PressableScale>
+            <PressableScale
+              haptic="press"
               onPress={onConfirm}
               disabled={loading}
+              disabledOpacity={0.6}
               style={[st.btn, { backgroundColor: actionColor }, loading && st.btnDisabled]}
             >
-              {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={[st.btnLabel, { color: '#FFFFFF' }]}>{confirmLabel}</Text>}
-            </Pressable>
+              {loading ? <ActivityIndicator size="small" color={actionText} /> : <Text style={[st.btnLabel, { color: actionText }]}>{confirmLabel}</Text>}
+            </PressableScale>
           </View>
         </View>
       </BottomSheetModal>
@@ -101,13 +117,14 @@ export const CmsConfirmModal = React.forwardRef<BottomSheetModal, CmsConfirmModa
 );
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-function CmsConfirmBackdrop({ style, onPress }: BottomSheetBackdropProps & { onPress: () => void }) {
+function CmsConfirmBackdrop({ style, onPress, scrim }: BottomSheetBackdropProps & { onPress: () => void; scrim: string }) {
   return (
     <AnimatedPressable
+      onPressIn={haptic.tap}
       onPress={onPress}
       entering={FadeIn.duration(50)}
       exiting={FadeOut.duration(20)}
-      style={[style, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+      style={[style, { backgroundColor: scrim }]}
     />
   );
 }

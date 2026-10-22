@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+import { PressableScale } from '@/components/ui';
 
 import { useCmsTheme } from '../theme';
 import { REFER_AND_EARN_TABS } from './tabs';
@@ -22,7 +24,8 @@ export function ReferAndEarnScreen({ onMenuPress: _onMenuPress }: { onMenuPress:
         {REFER_AND_EARN_TABS.map((tab) => {
           const active = tab.key === activeTab;
           return (
-            <Pressable
+            <PressableScale
+              haptic={active ? true : 'select'}
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
               style={[st.tab, active && { backgroundColor: colors.sidebarActiveBg }]}
@@ -31,7 +34,7 @@ export function ReferAndEarnScreen({ onMenuPress: _onMenuPress }: { onMenuPress:
               <Text style={[st.tabLabel, { color: active ? colors.accent : colors.sidebarText }]} numberOfLines={2}>
                 {tab.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>

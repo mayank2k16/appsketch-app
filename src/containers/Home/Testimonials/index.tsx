@@ -13,7 +13,9 @@ import {
   View,
 } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import { SectionHeading } from '../components/SectionHeading';
 import { homeTheme, type HomeColors } from '../theme/HomeTheme';
 
@@ -26,6 +28,29 @@ const GRID_PADDING = 8;
 const GRID_CARD_W = Math.floor((SCREEN_W - GRID_PADDING * 2 - GRID_GAP) / 2);
 
 const NAV_BTN_W = 40;
+
+/** White: raised white cards, ink stars and labels, paper-white modal chrome
+ *  on a light ink scrim — no black glass (docs/white-theme.md). Dark is the
+ *  values this file always used. */
+function palette(t: HomeColors) {
+  const dark = t.statusBar === 'light-content';
+  return {
+    card: dark ? null : { backgroundColor: t.card, borderColor: t.border },
+    cardBorder: dark ? t.agentTabBorder : t.border,
+    star: dark ? t.accent : t.text,
+    company: dark ? t.accent : t.text,
+    imageBg: dark ? null : { backgroundColor: t.agentBtnBg },
+    scrim: dark ? null : { backgroundColor: t.sheetOverlay },
+    chrome: dark
+      ? null
+      : {
+          backgroundColor: t.card,
+          borderWidth: 1,
+          borderColor: t.border,
+        },
+    chromeIcon: dark ? '#fff' : t.text,
+  };
+}
 const MODAL_PREVIEW_H = Math.round(SCREEN_H * 0.34);
 
 const TESTIMONIALS: {
@@ -112,6 +137,7 @@ const TestimonialGridCard = React.memo(function TestimonialGridCard({
   lastInRow: boolean;
   onPress: () => void;
 }) {
+  const p = palette(t);
   return (
     // Layout and skin live on plain Views, never on the Pressable. NativeWind's
     // JSX transform (jsxImportSource) wraps every element, and a `style`
@@ -119,11 +145,11 @@ const TestimonialGridCard = React.memo(function TestimonialGridCard({
     // cost this card its width, border and padding. Pressable stays style-less
     // here and is purely the touch target.
     <View style={[s.cardOuter, !lastInRow && s.cardSpacer]}>
-      <Pressable onPress={onPress}>
-        <View style={[s.card, { borderColor: t.agentTabBorder }]}>
+      <PressableScale onPress={onPress} scaleTo={0.98}>
+        <View style={[s.card, { borderColor: p.cardBorder }, p.card]}>
       <ExpoImage
         source={{ uri: item.preview }}
-        style={s.preview}
+        style={[s.preview, p.imageBg]}
         contentFit="cover"
         cachePolicy="memory-disk"
         transition={0}
@@ -131,7 +157,7 @@ const TestimonialGridCard = React.memo(function TestimonialGridCard({
 
       <View style={s.stars}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <Ionicons key={i} name="star" size={11} color={t.accent} />
+          <Ionicons key={i} name="star" size={11} color={p.star} />
         ))}
       </View>
 
@@ -157,7 +183,7 @@ const TestimonialGridCard = React.memo(function TestimonialGridCard({
         </View>
       </View>
         </View>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 });
@@ -178,44 +204,76 @@ function TestimonialModal({
   onNext: () => void;
 }) {
   const item = TESTIMONIALS[index];
+  const p = palette(t);
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <Modal
+      onShow={haptic.soft}
+      visible
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
       <View style={s.modalRoot}>
-        <BlurView
-          intensity={Platform.OS === 'android' ? 90 : 50}
-          tint={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+        {/* Dark only: white gets the plain scrim, no frosted layer. */}
+        {isDark && (
+          <BlurView
+            intensity={Platform.OS === 'android' ? 90 : 50}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, s.modalScrim, p.scrim]}
         />
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.modalScrim]} />
 
         {/* Tap anywhere outside the card to dismiss */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable
+          onPressIn={haptic.tap}
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+        />
 
         {/* Arrows and card sit in one flow row — left arrow, card, right
             arrow — rather than absolutely-positioned overlays, so they stay
             pinned to the card's sides at any screen size. */}
         <View style={s.modalRow} pointerEvents="box-none">
-          <Pressable onPress={onPrev} hitSlop={10}>
-            <View style={s.navBtn}>
-              <Ionicons name="chevron-back" size={24} color="#fff" />
+          <PressableScale
+            onPress={onPrev}
+            hitSlop={10}
+            accessibilityLabel="Previous testimonial"
+          >
+            <View style={[s.navBtn, p.chrome]}>
+              <Ionicons name="chevron-back" size={24} color={p.chromeIcon} />
             </View>
-          </Pressable>
+          </PressableScale>
 
           <View style={s.modalColumn} pointerEvents="box-none">
-            <Pressable onPress={onClose} hitSlop={10} style={s.closeAlign}>
-              <View style={s.modalClose}>
-                <Ionicons name="close" size={17} color="#fff" />
+            <PressableScale
+              onPress={onClose}
+              hitSlop={10}
+              style={s.closeAlign}
+              accessibilityLabel="Close"
+            >
+              <View style={[s.modalClose, p.chrome]}>
+                <Ionicons name="close" size={17} color={p.chromeIcon} />
               </View>
-            </Pressable>
+            </PressableScale>
 
-            <View style={[s.modalCard, { backgroundColor: t.sheetBg, borderColor: t.agentTabBorder }]}>
+            <View
+              style={[
+                s.modalCard,
+                { backgroundColor: t.sheetBg, borderColor: p.cardBorder },
+              ]}
+            >
               <ExpoImage
                 // Remounts on index change so the GIF restarts from frame 1
                 // instead of resuming mid-loop from the previous testimonial.
                 key={item.id}
                 source={{ uri: item.preview }}
-                style={s.modalPreview}
+                style={[s.modalPreview, p.imageBg]}
                 contentFit="cover"
                 cachePolicy="memory-disk"
                 transition={0}
@@ -224,7 +282,7 @@ function TestimonialModal({
               <View style={s.modalBody}>
                 <View style={s.stars}>
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Ionicons key={i} name="star" size={15} color={t.accent} />
+                    <Ionicons key={i} name="star" size={15} color={p.star} />
                   ))}
                 </View>
 
@@ -246,7 +304,7 @@ function TestimonialModal({
                       {item.role}
                     </Text>
                   </View>
-                  <Text style={[s.companyText, { color: t.accent }]} numberOfLines={1}>
+                  <Text style={[s.companyText, { color: p.company }]} numberOfLines={1}>
                     {item.companyName}
                   </Text>
                 </View>
@@ -254,11 +312,15 @@ function TestimonialModal({
             </View>
           </View>
 
-          <Pressable onPress={onNext} hitSlop={10}>
-            <View style={s.navBtn}>
-              <Ionicons name="chevron-forward" size={24} color="#fff" />
+          <PressableScale
+            onPress={onNext}
+            hitSlop={10}
+            accessibilityLabel="Next testimonial"
+          >
+            <View style={[s.navBtn, p.chrome]}>
+              <Ionicons name="chevron-forward" size={24} color={p.chromeIcon} />
             </View>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </Modal>

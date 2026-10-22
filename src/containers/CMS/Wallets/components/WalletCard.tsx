@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { WalletListItem } from '@/api/wallets';
 
 import { CmsStatusBadge as StatusBadge } from '../../components';
@@ -67,20 +68,20 @@ export const WalletCard = React.memo(function WalletCard({ wallet, colors, onVie
       </View>
 
       <View style={st.actions}>
-        <Pressable
+        <PressableScale
           onPress={onView}
           style={[st.actionBtn, { borderColor: colors.border }]}
           hitSlop={6}
         >
           <Text style={[st.actionLabel, { color: colors.textPrimary }]}>View</Text>
-        </Pressable>
-        <Pressable
+        </PressableScale>
+        <PressableScale
           onPress={onAdjust}
           style={[st.actionBtn, st.actionBtnPrimary, { backgroundColor: colors.accent }]}
           hitSlop={6}
         >
           <Text style={[st.actionLabel, { color: colors.accentText }]}>Adjust</Text>
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );

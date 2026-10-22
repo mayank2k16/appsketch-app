@@ -63,6 +63,16 @@ export type CmsThemeColors = {
   border: string;
   accent: string;
   accentText: string;
+  /** Inset surface — chips, rails, tracks, read-only fields. White: #F4F4F2.
+   * Dark: the content background (what those spots already used). */
+  inset: string;
+  /** Raised surface for text inputs/pickers. White: #FFFFFF (inputs are
+   * raised per docs/white-theme.md). Dark: the content background, as before. */
+  inputBg: string;
+  /** Placeholders and tertiary text. White: #9C9DA3. Dark: textSecondary. */
+  textMuted: string;
+  /** Modal / drawer scrim. White uses a lighter ink scrim; dark is unchanged. */
+  scrim: string;
   success: string;
   danger: string;
   warning: string;
@@ -78,6 +88,9 @@ export type CmsThemeMeta = {
   dark: CmsThemeColors;
 };
 
+// Dark keeps the original status colours untouched. White uses the premium
+// status set from docs/white-theme.md (pills at ~8% alpha, see
+// `CmsStatusBadge`).
 const statusColors = {
   success: '#4CAF50',
   danger: '#F44336',
@@ -85,15 +98,29 @@ const statusColors = {
   info: '#2563EB',
 };
 
-// Shared content-pane neutrals — every palette uses these unless it has a
-// bespoke tint (see `ocean-blue` / `classic` / `emerald-fresh` below,
-// kept verbatim from before this palette expanded to cover light+dark).
+const lightStatusColors = {
+  success: '#12A150',
+  danger: '#E5484D',
+  warning: '#D97706',
+  info: '#2563EB',
+};
+
+// Premium white (docs/white-theme.md): warm canvas, white raised surfaces,
+// one hairline, ink text. Shared by every palette in light mode — a palette's
+// identity lives in its sidebar + accent, never in a tinted content pane.
 const lightBody = {
-  background: '#F7FAFC',
+  background: '#FAFAF8',
   surface: '#FFFFFF',
-  textPrimary: '#1A202C',
-  textSecondary: '#718096',
-  border: '#E2E8F0',
+  textPrimary: '#0B0B0C',
+  textSecondary: '#5C5D63',
+  border: '#E7E7E4',
+};
+
+const lightExtras = {
+  inset: '#F4F4F2',
+  inputBg: '#FFFFFF',
+  textMuted: '#9C9DA3',
+  scrim: 'rgba(11,11,12,0.32)',
 };
 
 const darkBody = {
@@ -117,6 +144,12 @@ type SidebarBrand = {
    * palettes so their existing look doesn't regress). */
   lightOverride?: Partial<typeof lightBody>;
   darkOverride?: Partial<typeof darkBody>;
+  /** Light-mode-only chrome (sidebar/top bar + accent). Used by the default
+   * palette so the CMS is premium white out of the box; dark keeps the
+   * palette's original chrome. */
+  lightBrand?: Partial<
+    Pick<CmsThemeColors, 'sidebarBg' | 'sidebarActiveBg' | 'sidebarText' | 'accent' | 'accentText'>
+  >;
 };
 
 // A theme's identity is its sidebar + accent color, held constant across
@@ -133,7 +166,9 @@ function sidebarBrand({
   accentText = '#FFFFFF',
   lightOverride,
   darkOverride,
+  lightBrand,
 }: SidebarBrand): CmsThemeMeta {
+  const dark = { ...darkBody, ...darkOverride };
   return {
     label,
     group,
@@ -144,9 +179,11 @@ function sidebarBrand({
       sidebarText,
       accent,
       accentText,
+      ...lightBrand,
       ...lightBody,
       ...lightOverride,
-      ...statusColors,
+      ...lightExtras,
+      ...lightStatusColors,
     },
     dark: {
       kind: 'dark',
@@ -155,8 +192,11 @@ function sidebarBrand({
       sidebarText,
       accent,
       accentText,
-      ...darkBody,
-      ...darkOverride,
+      ...dark,
+      inset: dark.background,
+      inputBg: dark.background,
+      textMuted: dark.textSecondary,
+      scrim: 'rgba(0,0,0,0.4)',
       ...statusColors,
     },
   };
@@ -170,7 +210,15 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     sidebarBg: '#111827',
     sidebarActiveBg: '#1F2937',
     accent: '#2563EB',
-    lightOverride: { background: '#F7FAFC', border: '#E2E8F0' },
+    // Default palette: premium white chrome in light — white top bar/drawer,
+    // ink text, ink primary buttons. Dark keeps the navy chrome + blue.
+    lightBrand: {
+      sidebarBg: '#FFFFFF',
+      sidebarActiveBg: '#F4F4F2',
+      sidebarText: '#0B0B0C',
+      accent: '#0B0B0C',
+      accentText: '#FFFFFF',
+    },
   }),
   'classic': sidebarBrand({
     label: 'Classic',
@@ -178,12 +226,6 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     sidebarBg: '#3F0E40',
     sidebarActiveBg: '#522653',
     accent: '#2EB67D',
-    lightOverride: {
-      background: '#F8F8F8',
-      textPrimary: '#1D1C1D',
-      textSecondary: '#616061',
-      border: '#E8E8E8',
-    },
   }),
   'emerald-fresh': sidebarBrand({
     label: 'Emerald Fresh',
@@ -191,12 +233,6 @@ export const cmsThemes: Record<CmsThemeName, CmsThemeMeta> = {
     sidebarBg: '#0B4F30',
     sidebarActiveBg: '#0F6B41',
     accent: '#10B981',
-    lightOverride: {
-      background: '#F4FAF6',
-      textPrimary: '#122118',
-      textSecondary: '#5C7A6C',
-      border: '#DCEBE3',
-    },
   }),
   'charcoal-gray': sidebarBrand({
     label: 'Charcoal Gray',

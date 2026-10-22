@@ -9,7 +9,6 @@ import {
   Switch,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -24,6 +23,8 @@ import {
   updateRecord,
   uploadAsset,
 } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
 
 import { AssetSourceSheet } from './AssetSourceSheet';
@@ -191,7 +192,10 @@ export const RecordDrawer = React.forwardRef<
             {f.type === 'boolean' ? (
               <Switch
                 value={!!values[f.name]}
-                onValueChange={(v) => set(f.name, v)}
+                onValueChange={(v) => {
+                  haptic.toggle(v);
+                  set(f.name, v);
+                }}
                 trackColor={{ true: colors.accent }}
               />
             ) : f.type === 'richtext' ? (
@@ -211,7 +215,14 @@ export const RecordDrawer = React.forwardRef<
                 {values[f.name] ? (
                   <Image
                     source={{ uri: values[f.name] as string }}
-                    style={st.imagePreview}
+                    style={[
+                      st.imagePreview,
+                      // White: images get a hairline frame, never a shadow.
+                      colors.statusBar !== 'light-content' && {
+                        borderWidth: 1,
+                        borderColor: colors.codeEditorBorder,
+                      },
+                    ]}
                   />
                 ) : (
                   <View
@@ -228,9 +239,14 @@ export const RecordDrawer = React.forwardRef<
                   </View>
                 )}
                 <View style={{ flex: 1, gap: 6 }}>
-                  <TouchableOpacity
-                    onPress={() => setSourceFor(f.name)}
-                    disabled={uploading === f.name}
+                  <PressableScale
+                    // Guarded, not `disabled`: the spinner shows the busy state.
+                    onPress={
+                      uploading === f.name
+                        ? undefined
+                        : () => setSourceFor(f.name)
+                    }
+                    accessibilityState={{ busy: uploading === f.name }}
                     style={[
                       st.uploadBtn,
                       {
@@ -259,7 +275,7 @@ export const RecordDrawer = React.forwardRef<
                         </Text>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </PressableScale>
                   <TextInput
                     value={(values[f.name] as string) ?? ''}
                     onChangeText={(v) => set(f.name, v)}
@@ -325,9 +341,9 @@ export const RecordDrawer = React.forwardRef<
 
       <View style={[st.foot, { borderColor: colors.codeEditorBorder }]}>
         {!isNew && (
-          <TouchableOpacity
-            onPress={remove}
-            disabled={saving}
+          <PressableScale
+            onPress={saving ? undefined : remove}
+            accessibilityState={{ disabled: saving }}
             style={[st.footBtn, { borderColor: colors.codeEditorDanger }]}
           >
             <Text
@@ -339,12 +355,12 @@ export const RecordDrawer = React.forwardRef<
             >
               Delete
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         )}
         <View style={{ flex: 1 }} />
-        <TouchableOpacity
-          onPress={save}
-          disabled={saving}
+        <PressableScale
+          onPress={saving ? undefined : save}
+          accessibilityState={{ disabled: saving, busy: saving }}
           style={[
             st.footBtn,
             st.footBtnPrimary,
@@ -358,7 +374,7 @@ export const RecordDrawer = React.forwardRef<
               {isNew ? 'Create' : 'Save'}
             </Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </BottomSheetModal>
   );
@@ -391,7 +407,8 @@ function SelectField({
       {all.map((o) => {
         const on = o === value;
         return (
-          <TouchableOpacity
+          <PressableScale
+            haptic="rigid"
             key={o}
             onPress={() => onChange(on ? '' : o)}
             style={[
@@ -414,7 +431,7 @@ function SelectField({
               {o}
               {orphan && o === value ? ' (not in options)' : ''}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         );
       })}
       {all.length === 0 ? (

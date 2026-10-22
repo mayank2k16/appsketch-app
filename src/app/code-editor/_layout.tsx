@@ -1,4 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import {
+  useLocalSearchParams,
+  useRouter,
+  withLayoutContext,
+} from 'expo-router';
 // Expo Router 56+ vendors React Navigation; the standalone packages are no
 // longer compatible with it.
 import {
@@ -11,29 +16,18 @@ import type {
   ParamListBase,
   TabNavigationState,
 } from 'expo-router/react-navigation';
-import {
-  useLocalSearchParams,
-  useRouter,
-  withLayoutContext,
-} from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AppTypeKey } from '@/api/coder';
+import { PressableScale } from '@/components/ui';
 import {
   CodeEditorProvider,
   useCodeEditor,
 } from '@/containers/CodeEditor/CodeEditorProvider';
+import { haptic } from '@/lib/haptics';
 import { type AppColors, useAppTheme } from '@/lib/theme';
 
 const { Navigator } = createMaterialTopTabNavigator();
@@ -68,11 +62,52 @@ type TabBarProps = {
   };
 };
 
+function TabButton({
+  name,
+  label,
+  isFocused,
+  onPress,
+}: {
+  name: string;
+  label: string;
+  isFocused: boolean;
+  onPress: () => void;
+}) {
+  const { colorScheme } = useColorScheme();
+  const t = useAppTheme(colorScheme);
+  const color = isFocused ? t.codeEditorTabActiveText : t.codeEditorTabText;
+  return (
+    <PressableScale
+      onPress={onPress}
+      // A switch to another tab ticks from the bar's index effect (it covers
+      // swipes too); only a re-press of the open tab taps here.
+      haptic={isFocused}
+      style={styles.tab}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+    >
+      <Ionicons
+        name={TAB_ICONS[name] ?? 'ellipse-outline'}
+        size={16}
+        color={color}
+      />
+      <Text style={[styles.tabLabel, { color }]}>{label}</Text>
+    </PressableScale>
+  );
+}
+
 function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  // Selection tick on every real tab change, tapped or swiped.
+  const lastIndex = React.useRef(state.index);
+  React.useEffect(() => {
+    if (lastIndex.current !== state.index) haptic.select();
+    lastIndex.current = state.index;
+  }, [state.index]);
 
   return (
     <View
@@ -86,13 +121,14 @@ function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
       ]}
     >
       <View style={styles.tabRow}>
-        <TouchableOpacity
+        <PressableScale
           onPress={() => router.back()}
           hitSlop={10}
           style={styles.backBtn}
+          accessibilityLabel="Back"
         >
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </TouchableOpacity>
+        </PressableScale>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -111,27 +147,13 @@ function CodeEditorTabBar({ state, descriptors, navigation }: TabBarProps) {
                 navigation.navigate(route.name);
             };
             return (
-              <Pressable key={route.key} onPress={onPress} style={styles.tab}>
-                <Ionicons
-                  name={TAB_ICONS[route.name] ?? 'ellipse-outline'}
-                  size={16}
-                  color={
-                    isFocused ? t.codeEditorTabActiveText : t.codeEditorTabText
-                  }
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    {
-                      color: isFocused
-                        ? t.codeEditorTabActiveText
-                        : t.codeEditorTabText,
-                    },
-                  ]}
-                >
-                  {label}
-                </Text>
-              </Pressable>
+              <TabButton
+                key={route.key}
+                name={route.name}
+                label={label}
+                isFocused={isFocused}
+                onPress={onPress}
+              />
             );
           })}
         </ScrollView>
@@ -150,7 +172,9 @@ function CodeEditorTabs() {
   const { previewMode } = useCodeEditor();
   return (
     <MaterialTopTabs
-      tabBar={(props: MaterialTopTabBarProps) => <CodeEditorTabBar {...(props as TabBarProps)} />}
+      tabBar={(props: MaterialTopTabBarProps) => (
+        <CodeEditorTabBar {...(props as TabBarProps)} />
+      )}
       screenOptions={{ lazy: true, swipeEnabled: previewMode === null }}
     >
       <MaterialTopTabs.Screen name="chat" options={{ title: 'Chat' }} />

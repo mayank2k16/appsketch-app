@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { InventoryLocation } from '@/api/inventory';
 
 import type { CmsThemeColors } from '../../theme';
@@ -18,7 +19,8 @@ export const InventoryCard = React.memo(function InventoryCard({
   onEdit,
 }: Props) {
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={0.98}
       onPress={onEdit}
       style={[
         st.card,
@@ -95,7 +97,7 @@ export const InventoryCard = React.memo(function InventoryCard({
           style={{ marginLeft: 'auto' }}
         />
       </View>
-    </Pressable>
+    </PressableScale>
   );
 });
 

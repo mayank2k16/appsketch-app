@@ -22,6 +22,17 @@ const [ORANGE, MAGENTA, VIOLET] = HOME_BRAND_RAMP;
  *  only ever be changed in one place — the ramp. */
 const tint = (fg: string) => ({ iconBg: `${fg}29`, iconColor: fg });
 
+/** White: raised white cards on the paper canvas with inset, ink-glyph icon
+ *  badges — no coloured washes (docs/white-theme.md). Dark is unchanged. */
+function surfaces(t: HomeColors) {
+  const dark = t.statusBar === 'light-content';
+  return {
+    dark,
+    cardBg: dark ? t.agentTabBg : t.card,
+    cardBorder: dark ? t.agentTabBorder : t.border,
+  };
+}
+
 // Explicit pixel width for the 2-col grid — a plain '48%' width resolves to
 // 0 here (same trap MockupCard's grid hit: no ancestor in this chain sets an
 // explicit width for the percentage to resolve against).
@@ -89,15 +100,25 @@ function FeatureCard({
   feature: (typeof FEATURES)[number];
   t: HomeColors;
 }) {
+  const c = surfaces(t);
   return (
     <View
       style={[
         s.card,
-        { width: CARD_W, backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder },
+        { width: CARD_W, backgroundColor: c.cardBg, borderColor: c.cardBorder },
       ]}
     >
-      <View style={[s.iconBadge, { backgroundColor: feature.iconBg }]}>
-        <Ionicons name={feature.icon} size={19} color={feature.iconColor} />
+      <View
+        style={[
+          s.iconBadge,
+          { backgroundColor: c.dark ? feature.iconBg : t.agentBtnBg },
+        ]}
+      >
+        <Ionicons
+          name={feature.icon}
+          size={19}
+          color={c.dark ? feature.iconColor : t.text}
+        />
       </View>
       <Text style={[s.cardTitle, { color: t.text }]}>{feature.title}</Text>
       <Text style={[s.cardDesc, { color: t.textSub }]}>{feature.desc}</Text>
@@ -133,6 +154,7 @@ function StatCell({
 export function WhatsInsideSection() {
   const { colorScheme } = useColorScheme();
   const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const c = surfaces(t);
 
   return (
     // No section backgroundColor — same as HowItWorks, so the shared
@@ -151,10 +173,10 @@ export function WhatsInsideSection() {
       </View>
 
       <View
-        style={[s.statsCard, { backgroundColor: t.agentTabBg, borderColor: t.agentTabBorder }]}
+        style={[s.statsCard, { backgroundColor: c.cardBg, borderColor: c.cardBorder }]}
       >
         {STATS.map((stat, i) => (
-          <StatCell key={stat.label} stat={stat} index={i} t={t} borderColor={t.agentTabBorder} />
+          <StatCell key={stat.label} stat={stat} index={i} t={t} borderColor={c.cardBorder} />
         ))}
       </View>
     </View>

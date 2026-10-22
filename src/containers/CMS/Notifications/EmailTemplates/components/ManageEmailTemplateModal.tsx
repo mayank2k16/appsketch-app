@@ -1,10 +1,12 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { EmailTemplate, EmailTemplatePayload } from '@/api/notifications';
 import { useCreateEmailTemplate, useSystemVariables, useCustomVariables, useUpdateEmailTemplate } from '@/api/notifications';
+import { haptic } from '@/lib/haptics';
 
 import { CmsButton, CmsCard, CmsInput, CmsModal, CmsVariableInput } from '../../../components';
 import type { CmsThemeColors } from '../../../theme';
@@ -72,6 +74,7 @@ export const ManageEmailTemplateModal = React.forwardRef<BottomSheetModal, Props
       if (!form.subject.trim()) next.subject = 'Subject is required';
       if (!form.html_body.trim()) next.html_body = 'Body is required';
       setErrors(next);
+      if (Object.keys(next).length > 0) haptic.error();
       return Object.keys(next).length === 0;
     }
 
@@ -97,7 +100,8 @@ export const ManageEmailTemplateModal = React.forwardRef<BottomSheetModal, Props
           {(['edit', 'preview'] as const).map((m) => {
             const active = mode === m;
             return (
-              <Pressable
+              <PressableScale
+                haptic={active ? true : 'select'}
                 key={m}
                 onPress={() => setMode(m)}
                 style={[st.modeTab, active && { backgroundColor: colors.accent }]}
@@ -105,7 +109,7 @@ export const ManageEmailTemplateModal = React.forwardRef<BottomSheetModal, Props
                 <Text style={[st.modeTabLabel, { color: active ? colors.accentText : colors.textSecondary }]}>
                   {m === 'edit' ? 'Edit' : 'Preview'}
                 </Text>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>

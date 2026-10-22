@@ -29,8 +29,10 @@ import {
   startConversation,
   supportRoomSocketUrl,
 } from '@/api/support';
+import { PressableScale } from '@/components/ui';
 import { OFFLINE_DEBOUNCE_MS, PRESENCE, uuid } from '@/containers/CMS/Support/utils';
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import { useVoiceInput } from '@/lib/hooks/use-voice-input';
 import { getDocumentPicker } from '@/lib/safe-document-picker';
 import { useAppTheme } from '@/lib/theme';
@@ -48,6 +50,11 @@ export function SupportChatScreen() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
+  const isDark = colorScheme === 'dark';
+  // White: the live mic is ink (orange stays on Send) and the sheet scrim is
+  // a light ink wash. Dark values are the originals.
+  const micLive = isDark ? t.accent : t.text;
+  const scrim = isDark ? 'rgba(0,0,0,0.5)' : 'rgba(11,11,12,0.32)';
 
   const [conv, setConv] = React.useState<Conversation | null>(null);
   const [starting, setStarting] = React.useState(true);
@@ -396,9 +403,9 @@ export function SupportChatScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
 
       <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
+        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.headerBtn} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={22} color={t.text} />
-        </Pressable>
+        </PressableScale>
         <View style={{ flex: 1 }}>
           <Text style={[st.name, { color: t.text }]}>Help &amp; Support</Text>
           <View style={st.presenceRow}>
@@ -409,9 +416,9 @@ export function SupportChatScreen() {
           </View>
         </View>
         {!isClosed && conv ? (
-          <Pressable onPress={handleClose} style={[st.endBtn, { borderColor: t.border }]}>
+          <PressableScale onPress={handleClose} style={[st.endBtn, { borderColor: t.border }]}>
             <Text style={[st.endBtnText, { color: t.textSub }]}>End chat</Text>
-          </Pressable>
+          </PressableScale>
         ) : (
           <View style={st.headerBtn} />
         )}
@@ -455,9 +462,9 @@ export function SupportChatScreen() {
               },
             ]}
           >
-            <Pressable onPress={() => setAttachOpen(true)} style={st.iconBtn} hitSlop={6}>
+            <PressableScale onPress={() => setAttachOpen(true)} style={st.iconBtn} hitSlop={6} accessibilityLabel="Attach">
               <Ionicons name="attach" size={21} color={t.textSub} />
-            </Pressable>
+            </PressableScale>
             <TextInput
               value={draft}
               onChangeText={onDraftChange}
@@ -467,33 +474,41 @@ export function SupportChatScreen() {
               style={[st.input, { color: t.text, borderColor: t.border, backgroundColor: t.surface }]}
             />
             {voice.supported ? (
-              <Pressable onPress={voice.toggle} style={st.iconBtn} hitSlop={6}>
+              <PressableScale onPress={voice.toggle} style={st.iconBtn} hitSlop={6} accessibilityLabel="Dictate">
                 <Ionicons
                   name={voice.listening ? 'mic' : 'mic-outline'}
                   size={21}
-                  color={voice.listening ? t.accent : t.textSub}
+                  color={voice.listening ? micLive : t.textSub}
                 />
-              </Pressable>
+              </PressableScale>
             ) : null}
-            <Pressable
+            <PressableScale
+              haptic="press"
               onPress={handleSend}
               disabled={!draft.trim()}
+              accessibilityLabel="Send"
               style={[st.sendBtn, { backgroundColor: t.accent }, !draft.trim() && st.sendBtnDisabled]}
             >
               <Ionicons name="send" size={17} color="#FFFFFF" />
-            </Pressable>
+            </PressableScale>
           </View>
         </KeyboardAvoidingView>
       )}
 
       {/* ── Attachment source sheet ── */}
       <Modal
+        onShow={haptic.soft}
         visible={attachOpen}
         transparent
         animationType="slide"
         onRequestClose={() => setAttachOpen(false)}
       >
-        <Pressable style={st.sheetBackdrop} onPress={() => setAttachOpen(false)} />
+        <Pressable
+          onPressIn={haptic.tap}
+          style={[st.sheetBackdrop, { backgroundColor: scrim }]}
+          accessibilityLabel="Close"
+          onPress={() => setAttachOpen(false)}
+        />
         <View
           style={[
             st.sheet,
@@ -545,20 +560,22 @@ function AttachOption({
   onPress: () => void;
   isLast?: boolean;
 }) {
+  const dark = t.statusBar === 'light-content';
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      scaleTo={0.98}
       style={[st.attachRow, !isLast && { borderBottomWidth: 1, borderBottomColor: t.border }]}
     >
-      <View style={[st.attachIcon, { backgroundColor: t.accentSoft }]}>
-        <Ionicons name={icon} size={19} color={t.accent} />
+      <View style={[st.attachIcon, { backgroundColor: dark ? t.accentSoft : '#F4F4F2' }]}>
+        <Ionicons name={icon} size={19} color={dark ? t.accent : t.text} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[st.attachLabel, { color: t.text }]}>{label}</Text>
         <Text style={[st.attachSub, { color: t.textSub }]}>{sub}</Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={t.textMuted} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -608,7 +625,7 @@ const st = StyleSheet.create({
   sendBtnDisabled: { opacity: 0.5 },
 
   // ── Attachment sheet ──
-  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  sheetBackdrop: { flex: 1 },
   sheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { ProductListItem } from '@/api/products';
@@ -11,7 +11,7 @@ import { CmsStatusBadge } from '../../components';
 import type { CmsThemeColors } from '../../theme';
 import { cmsType } from '../../theme/cms-typography';
 import { getProductStatusMeta, inr, primaryImageOf } from '../utils';
-import { colors } from '@/components/ui';
+import { colors, PressableScale } from '@/components/ui';
 
 type Props = {
   product: ProductListItem;
@@ -43,7 +43,8 @@ export const ProductListCard = React.memo(function ProductListCard({
   }
 
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={0.98}
       onPress={onEdit}
       style={[st.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
     >
@@ -83,12 +84,12 @@ export const ProductListCard = React.memo(function ProductListCard({
         </View>
 
         <View style={st.actions}>
-          <Pressable onPress={onEdit} hitSlop={8} style={[st.actionBtn, { borderColor: colors.border }]}>
+          <PressableScale onPress={onEdit} hitSlop={8} style={[st.actionBtn, { borderColor: colors.border }]}>
             <Ionicons name="create-outline" size={16} color={colors.textPrimary} />
-          </Pressable>
-          <Pressable onPress={onDelete} hitSlop={8} style={[st.actionBtn, { borderColor: colors.border }]}>
+          </PressableScale>
+          <PressableScale onPress={onDelete} hitSlop={8} style={[st.actionBtn, { borderColor: colors.border }]}>
             <Ionicons name="trash-outline" size={16} color={colors.danger} />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
 
@@ -99,9 +100,11 @@ export const ProductListCard = React.memo(function ProductListCard({
               Reason: {product.review_notes}
             </Text>
           ) : null}
-          <Pressable
+          <PressableScale
+            haptic="press"
             onPress={handleResubmit}
             disabled={resubmitProduct.isPending}
+            disabledOpacity={0.6}
             style={[st.resubmitBtn, { backgroundColor: colors.accent, opacity: resubmitProduct.isPending ? 0.6 : 1 }]}
           >
             {resubmitProduct.isPending ? (
@@ -109,10 +112,10 @@ export const ProductListCard = React.memo(function ProductListCard({
             ) : (
               <Text style={[st.resubmitText, { color: colors.accentText }]}>Resubmit for Approval</Text>
             )}
-          </Pressable>
+          </PressableScale>
         </View>
       ) : null}
-    </Pressable>
+    </PressableScale>
   );
 });
 

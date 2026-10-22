@@ -28,7 +28,8 @@ const FEATURES: {
 
 export function Showcase() {
   const { colorScheme } = useColorScheme();
-  const t = homeTheme[colorScheme === 'dark' ? 'dark' : 'light'];
+  const isDark = colorScheme === 'dark';
+  const t = homeTheme[isDark ? 'dark' : 'light'];
 
   return (
     // No section backgroundColor — lets Home's shared TwinkleDots backdrop
@@ -42,8 +43,18 @@ export function Showcase() {
       <View style={s.features}>
         {FEATURES.map((f) => (
           <View key={f.title} style={s.featureRow}>
-            <View style={[s.iconBadge, { backgroundColor: t.accentSoft }]}>
-              <Ionicons name={f.icon} size={18} color={t.accent} />
+            {/* White: an inset badge with an ink glyph, not an orange wash. */}
+            <View
+              style={[
+                s.iconBadge,
+                { backgroundColor: isDark ? t.accentSoft : t.agentBtnBg },
+              ]}
+            >
+              <Ionicons
+                name={f.icon}
+                size={18}
+                color={isDark ? t.accent : t.text}
+              />
             </View>
             <View style={s.featureText}>
               <Text style={[s.featureTitle, { color: t.text }]}>{f.title}</Text>

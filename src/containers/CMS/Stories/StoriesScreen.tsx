@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { StoryItem } from '@/api/stories';
 import { useDeleteStory, useStories } from '@/api/stories';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 import { CmsConfirmModal } from '../components';
@@ -74,16 +74,16 @@ export function StoriesScreen({ onMenuPress: _onMenuPress }: { onMenuPress: () =
             value={query}
             onChangeText={setQuery}
             placeholder="Search stories…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textMuted}
             style={[st.searchInput, { color: colors.textPrimary }]}
             returnKeyType="search"
           />
         </View>
       </View>
-      <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+      <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accentText} />
         <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Story</Text>
-      </Pressable>
+      </PressableScale>
 
       {storiesQuery.isLoading ? (
         <StoriesSkeleton colors={colors} />

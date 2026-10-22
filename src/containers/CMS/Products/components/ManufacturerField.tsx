@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import type { ProductManufacturer } from '@/api/products';
 import { useCreateManufacturer } from '@/api/products';
 
@@ -44,9 +45,9 @@ export function ManufacturerField({ colors, manufacturers, value, onChange }: Pr
             placeholder="Select manufacturer…"
           />
         </View>
-        <Pressable onPress={() => setShowAdd((v) => !v)} style={st.addToggle} hitSlop={6}>
+        <PressableScale onPress={() => setShowAdd((v) => !v)} style={st.addToggle} hitSlop={6}>
           <Ionicons name="add-circle-outline" size={26} color={colors.accent} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       {showAdd && (

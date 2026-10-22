@@ -1,9 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { F } from '@/lib/fonts';
+import { haptic } from '@/lib/haptics';
 import type { AppColors } from '@/lib/theme';
+
+import { PressableScale } from './pressable-scale';
 
 export type ModelOption = { value: string; label: string; context: number };
 
@@ -38,21 +42,48 @@ export function ModelPickerModal({
   allowedModels,
   onLockedPress,
 }: Props) {
+  const { colorScheme } = useColorScheme();
+  // White (docs/white-theme.md): ink scrim, hairline sheet edge, ink check.
+  const dark = colorScheme === 'dark';
+  const sheetBorder = dark ? t.agentInputBorder : '#E7E7E4';
+  const checkColor = dark ? t.accent : '#0B0B0C';
+
   function isLocked(m: ModelOption) {
     return Array.isArray(allowedModels) && !allowedModels.includes(m.value);
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={s.modalBackdrop} onPress={onClose}>
-        <Pressable style={[s.modelSheet, { backgroundColor: t.sheetBg, borderColor: t.agentInputBorder }]}>
+    <Modal
+      onShow={haptic.soft}
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        onPressIn={haptic.tap}
+        style={[s.modalBackdrop, !dark && s.whiteScrim]}
+        onPress={onClose}
+      >
+        <Pressable
+          style={[
+            s.modelSheet,
+            { backgroundColor: t.sheetBg, borderColor: sheetBorder },
+          ]}
+        >
           <Text style={[s.modelSheetTitle, { color: t.text }]}>AI model</Text>
           {models.map((m) => {
             const selected = m.value === value;
             const locked = isLocked(m);
             return (
-              <TouchableOpacity
+              <ModelRow
                 key={m.value}
+                m={m}
+                t={t}
+                selected={selected}
+                locked={locked}
+                checkColor={checkColor}
+                formatContext={formatContext}
                 onPress={() => {
                   onClose();
                   if (locked) {
@@ -61,21 +92,7 @@ export function ModelPickerModal({
                   }
                   onChange(m.value);
                 }}
-                activeOpacity={0.7}
-                style={s.modelOption}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.modelOptionLabel, { color: locked ? t.textMuted : t.text }]}>
-                    {m.label}
-                  </Text>
-                  <Text style={[s.modelOptionMeta, { color: t.textSub }]}>{formatContext(m.context)}</Text>
-                </View>
-                {locked ? (
-                  <Ionicons name="lock-closed-outline" size={16} color={t.textMuted} />
-                ) : (
-                  selected && <Ionicons name="checkmark-circle" size={18} color={t.accent} />
-                )}
-              </TouchableOpacity>
+              />
             );
           })}
         </Pressable>
@@ -84,11 +101,54 @@ export function ModelPickerModal({
   );
 }
 
+function ModelRow({
+  m,
+  t,
+  selected,
+  locked,
+  checkColor,
+  formatContext,
+  onPress,
+}: {
+  m: ModelOption;
+  t: AppColors;
+  selected: boolean;
+  locked: boolean;
+  checkColor: string;
+  formatContext: (tokens: number) => string;
+  onPress: () => void;
+}) {
+  return (
+    <PressableScale scaleTo={0.98} onPress={onPress} style={s.modelOption}>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={[s.modelOptionLabel, { color: locked ? t.textMuted : t.text }]}
+        >
+          {m.label}
+        </Text>
+        <Text style={[s.modelOptionMeta, { color: t.textSub }]}>
+          {formatContext(m.context)}
+        </Text>
+      </View>
+      {locked ? (
+        <Ionicons name="lock-closed-outline" size={16} color={t.textMuted} />
+      ) : (
+        selected && (
+          <Ionicons name="checkmark-circle" size={18} color={checkColor} />
+        )
+      )}
+    </PressableScale>
+  );
+}
+
 const s = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
+  },
+  whiteScrim: {
+    backgroundColor: 'rgba(11,11,12,0.32)',
   },
   modelSheet: {
     borderTopLeftRadius: 22,

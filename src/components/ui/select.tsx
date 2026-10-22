@@ -16,25 +16,26 @@ import { tv } from 'tailwind-variants';
 
 import colors from '@/components/ui/colors';
 import { CaretDown } from '@/components/ui/icons';
+import { haptic } from '@/lib/haptics';
 
 import type { InputControllerType } from './input';
-import { useModal } from './modal';
-import { Modal } from './modal';
+import { Modal, useModal } from './modal';
 import { Text } from './text';
 
 const selectTv = tv({
   slots: {
     container: 'mb-4',
-    label: 'text-grey-100 mb-1 text-lg dark:text-neutral-100',
+    label: 'mb-1 text-lg text-[#0B0B0C] dark:text-neutral-100',
+    // White: raised field on a 1px hairline, ink value. dark: unchanged.
     input:
-      'border-grey-50 mt-0 flex-row items-center justify-center rounded-xl border-[0.5px] p-3  dark:border-neutral-500 dark:bg-neutral-800',
-    inputValue: 'dark:text-neutral-100',
+      'mt-0 flex-row items-center justify-center rounded-xl border border-[#E7E7E4] bg-white p-3 dark:border-[0.5px] dark:border-neutral-500 dark:bg-neutral-800',
+    inputValue: 'text-[#0B0B0C] dark:text-neutral-100',
   },
 
   variants: {
     focused: {
       true: {
-        input: 'border-neutral-600',
+        input: 'border-[#9C9DA3]',
       },
     },
     error: {
@@ -46,7 +47,7 @@ const selectTv = tv({
     },
     disabled: {
       true: {
-        input: 'bg-neutral-200',
+        input: 'bg-[#F4F4F2]',
       },
     },
   },
@@ -122,10 +123,13 @@ const Option = React.memo(
   }) => {
     return (
       <Pressable
-        className="flex-row items-center border-b border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
+        onPressIn={haptic.select}
+        className="flex-row items-center border-b border-[#EDEDEA] bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800"
         {...props}
       >
-        <Text className="flex-1 dark:text-neutral-100 ">{label}</Text>
+        <Text className="flex-1 text-[#0B0B0C] dark:text-neutral-100 ">
+          {label}
+        </Text>
         {selected && <Check />}
       </Pressable>
     );
@@ -196,6 +200,7 @@ export const Select = (props: SelectProps) => {
           </Text>
         )}
         <Pressable
+          onPressIn={haptic.tap}
           className={styles.input()}
           disabled={disabled}
           onPress={modal.present}
@@ -256,7 +261,7 @@ const Check = ({ ...props }: SvgProps) => (
     fill="none"
     viewBox="0 0 25 24"
     {...props}
-    className="stroke-black dark:stroke-white"
+    className="stroke-[#0B0B0C] dark:stroke-white"
   >
     <Path
       d="m20.256 6.75-10.5 10.5L4.506 12"

@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { FlatList, Text, TextInput, View, Pressable } from 'react-native';
+import { FlatList, Text, TextInput, View } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { NoteListItem } from '@/api/credit-debit-notes';
 import { useNotes } from '@/api/credit-debit-notes';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsButton } from '../components';
 import { useCmsTheme } from '../theme';
@@ -43,15 +43,15 @@ export function CreditDebitNotesScreen({ onMenuPress: _onMenuPress }: { onMenuPr
           value={query}
           onChangeText={setQuery}
           placeholder="Search Credit/Debit Note…"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={colors.textMuted}
           style={[st.searchInput, { color: colors.textPrimary }]}
         />
       </View>
 
-      <Pressable onPress={createModal.present} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+      <PressableScale onPress={createModal.present} style={[st.addBtn, { backgroundColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accentText} />
         <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Credit/Debit Note</Text>
-      </Pressable>
+      </PressableScale>
 
       {notesQuery.isLoading ? (
         <NotesSkeleton colors={colors} />

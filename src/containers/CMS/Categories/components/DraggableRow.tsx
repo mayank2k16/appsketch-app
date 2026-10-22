@@ -7,6 +7,13 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { haptic } from '@/lib/haptics';
+
+// Plain JS callbacks the gesture worklets hop back to with `runOnJS`.
+const pickUp = () => haptic.dragStart();
+const passSlot = () => haptic.select();
+const drop = () => haptic.soft();
+
 /**
  * Generic long-press-to-drag primitive for a single row inside a flat,
  * fixed-height sibling group. Shared by category rows (`DraggableCategoryRow`)
@@ -64,6 +71,7 @@ function useDragGesture({
       activeGroup.value = groupKey;
       fromIndex.value = indexInGroup;
       toIndex.value = indexInGroup;
+      runOnJS(pickUp)();
       runOnJS(onDragStart)();
     })
     .onUpdate((e) => {
@@ -71,9 +79,13 @@ function useDragGesture({
       // Snap to whole-row steps, clamped to the group's own bounds — the
       // clamp is what keeps a row from ever leaving its group.
       const next = Math.round(e.translationY / rowHeight) + fromIndex.value;
-      toIndex.value = Math.min(Math.max(next, 0), groupSize - 1);
+      const clamped = Math.min(Math.max(next, 0), groupSize - 1);
+      // A tick each time the gap moves to a new slot.
+      if (clamped !== toIndex.value) runOnJS(passSlot)();
+      toIndex.value = clamped;
     })
     .onEnd(() => {
+      runOnJS(drop)();
       runOnJS(onDragEnd)(fromIndex.value, toIndex.value);
     })
     .onFinalize(() => {

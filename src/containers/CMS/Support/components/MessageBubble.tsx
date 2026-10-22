@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import * as React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '@/components/ui';
 import type { SupportMessage } from '@/api/support';
 
 import type { CmsThemeColors } from '../../theme';
@@ -36,9 +37,9 @@ export function MessageBubble({ colors, message }: Props) {
         ]}
       >
         {message.message_type === 'IMAGE' && message.attachment_url ? (
-          <Pressable onPress={open}>
+          <PressableScale onPress={open}>
             <Image source={{ uri: message.attachment_url }} style={st.media} contentFit="cover" />
-          </Pressable>
+          </PressableScale>
         ) : null}
 
         {message.message_type === 'VIDEO' && message.attachment_url ? (
@@ -46,11 +47,11 @@ export function MessageBubble({ colors, message }: Props) {
         ) : null}
 
         {message.message_type === 'FILE' && message.attachment_url ? (
-          <Pressable onPress={open} style={[st.fileChip, { borderColor: mine ? colors.accentText : colors.border }]}>
+          <PressableScale onPress={open} style={[st.fileChip, { borderColor: mine ? colors.accentText : colors.border }]}>
             <Text style={{ color: mine ? colors.accentText : colors.textPrimary, fontSize: 12.5 }} numberOfLines={1}>
               📎 {message.attachment_name || 'Attachment'}
             </Text>
-          </Pressable>
+          </PressableScale>
         ) : null}
 
         {message.text ? (

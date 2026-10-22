@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { ReferralRule } from '@/api/referrals';
 import { useDeleteReferralRule, useReferralRules, useUpdateReferralRule } from '@/api/referrals';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsButton, CmsCard, CmsConfirmModal, CmsStatusBadge } from '../../components';
 import { useCmsTheme } from '../../theme';
@@ -78,10 +78,10 @@ export function RulesScreen() {
           </Text>
         </View>
       </View>
-      <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+      <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
         <Ionicons name="add" size={16} color={colors.accentText} />
         <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Rule</Text>
-      </Pressable>
+      </PressableScale>
 
       {rulesQuery.isLoading ? (
         <RulesSkeleton colors={colors} />

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import Voice from '@/lib/voice';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Modal,
@@ -9,14 +8,13 @@ import {
   Platform,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Reanimated, {
   cancelAnimation,
   Easing,
-  useAnimatedProps,
   type SharedValue,
+  useAnimatedProps,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -30,8 +28,12 @@ import Svg, {
 } from 'react-native-svg';
 
 import { F } from '@/lib/fonts';
-import { BRAND_RAMP, type AppColors } from '@/lib/theme';
+import { haptic } from '@/lib/haptics';
+import { type AppColors, BRAND_RAMP } from '@/lib/theme';
 import { toast } from '@/lib/toast';
+import Voice from '@/lib/voice';
+
+import { PressableScale } from './pressable-scale';
 
 const AnimatedPath = Reanimated.createAnimatedComponent(Path);
 
@@ -40,6 +42,20 @@ const AnimatedPath = Reanimated.createAnimatedComponent(Path);
 const [ORANGE, MAGENTA, VIOLET] = BRAND_RAMP;
 
 const WAVE_H = 104;
+
+// White (docs/white-theme.md): the capture screen is paper with ink type;
+// the waveform keeps the ramp, its bright core turns ink so it reads on white,
+// and the one orange action is the ✓.
+const W = {
+  bg: '#FAFAF8',
+  ink: '#0B0B0C',
+  sub: '#5C5D63',
+  inset: '#F4F4F2',
+  raised: '#FFFFFF',
+  border: '#E7E7E4',
+  danger: '#E5484D',
+  send: '#F2600C',
+};
 const STEPS = 72;
 
 async function requestMicPermission(): Promise<boolean> {
@@ -100,11 +116,14 @@ function Waveform({
   energy,
   phase,
   width,
+  dark,
 }: {
   energy: SharedValue<number>;
   phase: SharedValue<number>;
   width: number;
+  dark: boolean;
 }) {
+  const core = dark ? '#FFFFFF' : W.ink;
   const back = useAnimatedProps(() => ({
     d: wavePath(phase.value, energy.value, { w: width, freq: 3.1, skew: 1.9 }),
   }));
@@ -115,7 +134,7 @@ function Waveform({
       skew: 1.6,
     }),
   }));
-  const core = useAnimatedProps(() => ({
+  const coreProps = useAnimatedProps(() => ({
     d: wavePath(phase.value * 0.85 + 2.4, energy.value * 0.5, {
       w: width,
       freq: 6.2,
@@ -143,15 +162,16 @@ function Waveform({
           <Stop offset="1" stopColor="#A78BFA" />
         </SvgGradient>
         <SvgGradient id="waveLine" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor={ORANGE} stopOpacity="0.35" />
-          <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.95" />
-          <Stop offset="1" stopColor={VIOLET} stopOpacity="0.35" />
+          {/* White: the line holds full strength end to end — no fade. */}
+          <Stop offset="0" stopColor={ORANGE} stopOpacity={dark ? 0.35 : 1} />
+          <Stop offset="0.5" stopColor={core} stopOpacity={dark ? 0.95 : 1} />
+          <Stop offset="1" stopColor={VIOLET} stopOpacity={dark ? 0.35 : 1} />
         </SvgGradient>
       </Defs>
 
       <AnimatedPath animatedProps={back} fill="url(#waveBack)" opacity={0.5} />
       <AnimatedPath animatedProps={mid} fill="url(#waveMid)" opacity={0.6} />
-      <AnimatedPath animatedProps={core} fill="#FFFFFF" opacity={0.85} />
+      <AnimatedPath animatedProps={coreProps} fill={core} opacity={0.85} />
 
       {/* Always-on centre line — this is what "no volume" looks like. */}
       <Path
@@ -184,6 +204,8 @@ export function VoiceInputModal({
   t: AppColors;
 }) {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
   const [listening, setListening] = React.useState(false);
   const [transcript, setTranscript] = React.useState('');
   const [waveWidth, setWaveWidth] = React.useState(0);
@@ -241,8 +263,13 @@ export function VoiceInputModal({
       console.log('[VoiceInputModal] onSpeechEnd');
       if (mountedRef.current) setListening(false);
     };
-    Voice.onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
-      console.log('[VoiceInputModal] onSpeechError ->', JSON.stringify(e?.error));
+    Voice.onSpeechError = (e: {
+      error?: { code?: string; message?: string };
+    }) => {
+      console.log(
+        '[VoiceInputModal] onSpeechError ->',
+        JSON.stringify(e?.error)
+      );
       if (mountedRef.current) setListening(false);
     };
   }
@@ -292,7 +319,8 @@ export function VoiceInputModal({
       -1,
       false
     );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    // Listening starts: one firm bump (it doubles as the sheet's open cue).
+    haptic.press();
     void start();
     return () => {
       cancelAnimation(phase);
@@ -337,21 +365,25 @@ export function VoiceInputModal({
         style={[
           s.root,
           { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 20 },
+          !dark && { backgroundColor: W.bg },
         ]}
       >
-        <TouchableOpacity onPress={handleClose} hitSlop={12} style={s.closeBtn}>
-          <Ionicons name="close" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        <PressableScale onPress={handleClose} hitSlop={12} style={s.closeBtn}>
+          <Ionicons name="close" size={24} color={dark ? '#FFFFFF' : W.ink} />
+        </PressableScale>
 
         <View style={s.center}>
-          <Text style={s.status}>
+          <Text style={[s.status, !dark && { color: W.sub }]}>
             {listening
               ? 'Listening…'
               : transcript
                 ? 'Got it'
                 : 'Tap the mic to start'}
           </Text>
-          <Text style={s.transcript} numberOfLines={6}>
+          <Text
+            style={[s.transcript, !dark && { color: W.ink }]}
+            numberOfLines={6}
+          >
             {transcript || 'Speak now'}
           </Text>
         </View>
@@ -361,52 +393,107 @@ export function VoiceInputModal({
           onLayout={(e) => setWaveWidth(e.nativeEvent.layout.width)}
         >
           {waveWidth > 0 ? (
-            <Waveform energy={energy} phase={phase} width={waveWidth} />
+            <Waveform
+              energy={energy}
+              phase={phase}
+              width={waveWidth}
+              dark={dark}
+            />
           ) : null}
         </View>
 
-        <View style={s.actions}>
-          <TouchableOpacity
-            onPress={handleClose}
-            style={s.cancelBtn}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => (listening ? stop() : start())}
-            activeOpacity={0.8}
-            style={[
-              s.micBtn,
-              { borderColor: listening ? t.codeEditorDanger : t.accent },
-            ]}
-          >
-            <Ionicons
-              name={listening ? 'stop' : 'mic'}
-              size={26}
-              color={listening ? t.codeEditorDanger : t.accent}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleSubmit}
-            activeOpacity={0.8}
-            disabled={!transcript.trim()}
-            style={{ opacity: transcript.trim() ? 1 : 0.4 }}
-          >
-            <LinearGradient
-              colors={[...t.agentSendGradient] as [string, string, ...string[]]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={s.submitBtn}
-            >
-              <Ionicons name="checkmark" size={24} color="#FFFFFF" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+        <VoiceActions
+          t={t}
+          dark={dark}
+          listening={listening}
+          canSubmit={Boolean(transcript.trim())}
+          onCancel={handleClose}
+          onToggle={() => (listening ? stop() : start())}
+          onSubmit={handleSubmit}
+        />
       </View>
     </Modal>
+  );
+}
+
+function SubmitFill({ t, dark }: { t: AppColors; dark: boolean }) {
+  return (
+    <LinearGradient
+      colors={
+        dark
+          ? ([...t.agentSendGradient] as [string, string, ...string[]])
+          : [W.send, W.send]
+      }
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={s.submitBtn}
+    >
+      <Ionicons name="checkmark" size={24} color="#FFFFFF" />
+    </LinearGradient>
+  );
+}
+
+// ─── Cancel · mic · submit ────────────────────────────────────────────────────
+function VoiceActions({
+  t,
+  dark,
+  listening,
+  canSubmit,
+  onCancel,
+  onToggle,
+  onSubmit,
+}: {
+  t: AppColors;
+  dark: boolean;
+  listening: boolean;
+  canSubmit: boolean;
+  onCancel: () => void;
+  onToggle: () => void;
+  onSubmit: () => void;
+}) {
+  const danger = dark ? t.codeEditorDanger : W.danger;
+  const micColor = listening ? danger : dark ? t.accent : W.ink;
+  const submitFill = <SubmitFill t={t} dark={dark} />;
+
+  return (
+    <View style={s.actions}>
+      <PressableScale
+        onPress={onCancel}
+        style={[s.cancelBtn, !dark && { backgroundColor: W.inset }]}
+      >
+        <Ionicons
+          name="trash-outline"
+          size={20}
+          color={dark ? '#FFFFFF' : W.ink}
+        />
+      </PressableScale>
+
+      <PressableScale
+        haptic="rigid"
+        onPress={onToggle}
+        style={[
+          s.micBtn,
+          { borderColor: micColor },
+          !dark && { backgroundColor: W.raised },
+        ]}
+      >
+        <Ionicons
+          name={listening ? 'stop' : 'mic'}
+          size={26}
+          color={micColor}
+        />
+      </PressableScale>
+
+      {/* Disabled ✓ dims to 40% in both themes, as it always did in dark. */}
+      <PressableScale
+        haptic="press"
+        onPress={onSubmit}
+        disabled={!canSubmit}
+        disabledOpacity={0.4}
+      >
+        {submitFill}
+      </PressableScale>
+    </View>
   );
 }
 

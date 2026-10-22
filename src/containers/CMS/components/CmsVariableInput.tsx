@@ -1,6 +1,8 @@
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+
+import { PressableScale } from '@/components/ui';
 
 import type { CmsThemeColors } from '../theme';
 import { cmsType } from '../theme/cms-typography';
@@ -86,13 +88,13 @@ export function CmsVariableInput({
         editable={editable}
         numberOfLines={numberOfLines}
         placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={colors.textMuted}
         textAlignVertical="top"
         style={[
           st.field,
           {
             minHeight: numberOfLines * 20,
-            backgroundColor: colors.background,
+            backgroundColor: colors.inputBg,
             borderColor: error ? colors.danger : colors.border,
             color: colors.textPrimary,
             opacity: editable ? 1 : 0.7,
@@ -105,12 +107,12 @@ export function CmsVariableInput({
       {editable && suggestions.length > 0 && (
         <View style={[st.suggestBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {suggestions.map((v) => (
-            <Pressable key={v.name} onPress={() => insertVariable(v)} style={[st.suggestRow, { borderColor: colors.border }]}>
+            <PressableScale scaleTo={0.98} key={v.name} onPress={() => insertVariable(v)} style={[st.suggestRow, { borderColor: colors.border }]}>
               <Text style={[st.suggestName, { color: colors.accent }]}>{`{{${v.name}}}`}</Text>
               <Text style={[st.suggestLabel, { color: colors.textSecondary }]} numberOfLines={1}>
                 {v.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
       )}

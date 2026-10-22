@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { BulkPaymentDetail } from '@/api/payments';
 import { useBulkPayments } from '@/api/payments';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { useCmsTheme } from '../../theme';
 import { AddBulkPaymentModal } from './components/AddBulkPaymentModal';
@@ -40,10 +40,10 @@ export function BulkPaymentsScreen() {
   return (
     <View style={{ flex: 1 }}>
       <View style={st.actionsRow}>
-        <Pressable onPress={addModal.present} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+        <PressableScale onPress={addModal.present} style={[st.addBtn, { backgroundColor: colors.accent }]}>
           <Ionicons name="add" size={16} color={colors.accentText} />
           <Text style={[st.addBtnText, { color: colors.accentText }]}>Add Bulk Payment</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       {bulkPaymentsQuery.isLoading ? (

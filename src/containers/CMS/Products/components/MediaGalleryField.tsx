@@ -1,9 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { PressableScale } from '@/components/ui';
 import { uploadProductMedia } from '@/api/products';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { toast } from '@/lib/toast';
@@ -79,16 +80,17 @@ export function MediaGalleryField({ colors, label, kind, multiple, value, onChan
                 <Ionicons name="videocam" size={20} color={colors.textSecondary} />
               </View>
             )}
-            <Pressable onPress={() => remove(i)} style={[st.removeBtn, { backgroundColor: colors.danger }]} hitSlop={6}>
+            <PressableScale onPress={() => remove(i)} style={[st.removeBtn, { backgroundColor: colors.danger }]} hitSlop={6}>
               <Ionicons name="close" size={11} color="#FFFFFF" />
-            </Pressable>
+            </PressableScale>
           </View>
         ))}
 
         {(multiple || value.length === 0) && (
-          <Pressable
+          <PressableScale
             onPress={pickAndUpload}
             disabled={isUploading}
+            disabledOpacity={1}
             style={[st.tile, st.addTile, { borderColor: colors.border }]}
           >
             {isUploading ? (
@@ -99,7 +101,7 @@ export function MediaGalleryField({ colors, label, kind, multiple, value, onChan
                 <Text style={[st.addLabel, { color: colors.accent }]}>Add</Text>
               </>
             )}
-          </Pressable>
+          </PressableScale>
         )}
       </View>
     </View>

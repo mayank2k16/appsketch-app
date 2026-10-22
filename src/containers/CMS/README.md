@@ -228,6 +228,23 @@ call the `sidebarBrand()` factory in `cms-theme.ts` with just a label/group/side
 it derives both variants from the shared `lightBody`/`darkBody` neutrals automatically; only pass
 `lightOverride`/`darkOverride` if the palette needs a bespoke content-pane tint.
 
+**White is the default** (`docs/white-theme.md`). The app-wide setting defaults to `light`, so the
+CMS is white unless the user picked dark; the CMS theme picker still only changes the sidebar/accent.
+Light-mode rules, all applied on the light branch only (dark is byte-for-byte what it was):
+- Neutrals: canvas `#FAFAF8`, raised `#FFFFFF` (cards, sheets — `CmsModal` uses `surface` in
+  light — and inputs), inset `#F4F4F2`, hairline `#E7E7E4`, ink `#0B0B0C`.
+- Extra tokens: `inset` (chips, read-only fields), `inputBg` (fields/pickers), `textMuted`
+  (placeholders), `scrim`. Their dark values equal what those spots used before, so use them
+  freely; never hardcode a colour that only works in one mode.
+- The default palette (`ocean-blue`) has a `lightBrand`: white top bar/drawer, ink text, ink
+  primary buttons. Other palettes keep their sidebar colours.
+- Status: `CmsStatusBadge` maps `success`/`danger`/`warning` to the white status set at ~8% alpha
+  in light; `info` keeps the domain's own hue.
+- No shadows/elevation in light. Everything tappable is `PressableScale` (`@/components/ui`):
+  `scaleTo={0.98}` for cards/rows/fields, `haptic={false}` for calendar cells, stars and steppers.
+  It dims `disabled` to 50% by default; pass `disabledOpacity` to keep a control's existing
+  disabled look (e.g. `0.6`, or `1` for no dimming), and render a plain `View` for read-only displays.
+
 ## API layer conventions (`src/api/<domain>/`)
 
 Every domain (`orders`, `inventory`, `notifications`, …) follows the same four-file shape:

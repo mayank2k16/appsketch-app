@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { CustomVariable } from '@/api/notifications';
 import { useCustomVariables, useDeleteCustomVariable, useSystemVariables } from '@/api/notifications';
-import { useModal } from '@/components/ui';
+import { useModal, PressableScale } from '@/components/ui';
 
 import { CmsCard, CmsConfirmModal } from '../../components';
 import { useCmsTheme } from '../../theme';
@@ -75,10 +75,10 @@ export function VariablesScreen() {
 
             <View style={st.customHeader}>
               <Text style={[st.customTitle, { color: colors.textPrimary }]}>Custom Variables</Text>
-              <Pressable onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
+              <PressableScale onPress={openCreate} style={[st.addBtn, { backgroundColor: colors.accent }]}>
                 <Ionicons name="add" size={16} color={colors.accentText} />
                 <Text style={[st.addBtnText, { color: colors.accentText }]}>Add</Text>
-              </Pressable>
+              </PressableScale>
             </View>
           </>
         }
