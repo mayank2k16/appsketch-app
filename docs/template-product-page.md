@@ -202,9 +202,10 @@ How the pager works (`use-pager.ts`):
   8pt outer layout). At rest that sliver is a deck edge: the neighbour's
   orange border plus a solid strip of its loader colour (an overlay that
   fades in as the page leaves the centre, from |d| 0.6 to 1). It also
-  derives a slight scale about the near edge and an animated `BlurView`
-  whose opacity rises as the page leaves the centre (motion blur: a
-  fixed-intensity 26 blur faded in from 12% to 50% off centre). The details panels cross-fade with a short parallax.
+  derives a slight scale about the near edge. There is NO motion blur
+  (removed Oct 23 at the user's request: mid-swipe and landing frames read
+  as a blurred, low-res page; it also cost a live effect layer per card).
+  The details panels cross-fade with a short parallax.
 - One swipe moves at most one page.
 - Pages ±2 (`WINDOW`) around the SETTLED page are rendered (off-centre
   ones without a WebView), so a second quick swipe always finds its page.
@@ -234,10 +235,7 @@ How the pager works (`use-pager.ts`):
 - **Smooth landing.** WebViews never mount or unmount while the spring runs:
   the rendered window stays put until `settled`,
   neighbours warm around the settled page, and a page that had no WebView
-  gets one only after it settles. The hero's motion blur starts at 12% off
-  centre, peaks at intensity 26, and is at opacity 0 when centred (a blur
-  view at intensity 0 still composited the live site every scrolled
-  frame). The loader under a site stops animating once the site is live,
+  gets one only after it settles. The loader under a site stops animating once the site is live,
   and a loader that is not animating is plain views (no animated styles).
 - **Recovery.** A killed web process (`onContentProcessDidTerminate`,
   Android `onRenderProcessGone` — the classic blank white WebView) remounts
