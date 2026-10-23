@@ -24,7 +24,7 @@ Backend contract: `account/app-cart/*` and `account/app-domains/*`
 | Shared UI | `src/components/services/`: palette (white tokens + dark), `inr()` (UI-thread safe), `AnimatedTotal`, `ScreenHeader`, `StateNote`, `AppPicker` / `AppSheet` (my apps, Website / Mobile app). |
 | Pricing | `src/containers/Pricing/planner/*`, `domain-card.tsx`, `domain-result.tsx`, `custom-card.tsx`, `cart-button.tsx`. |
 | Cart | `src/app/cart.tsx` → `src/containers/AppCart/`. |
-| Domains | `src/app/domains/{_layout,index,connect,[id]}.tsx` → `src/containers/Domains/`. Studio → Settings → Domains renders the same `DomainsList`; Profile has a Domains row. |
+| Domains | `src/app/domains/{_layout,index,connect,[id]}.tsx` → `src/containers/Domains/`. My apps → Settings → Domains renders the same `DomainsList`; Profile has a Domains row. |
 
 ## Cart flow (`/cart`)
 

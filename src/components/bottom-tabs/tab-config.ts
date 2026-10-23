@@ -12,6 +12,6 @@ export type TabConfig = {
 export const TAB_CONFIG: TabConfig[] = [
   { name: 'home', label: 'Home', iconKey: 'home' },
   { name: 'agent', label: 'Agent', iconKey: 'agent' },
-  { name: 'studio', label: 'Studio', iconKey: 'studio' },
+  { name: 'my-apps', label: 'My apps', iconKey: 'myApps' },
   { name: 'pricing', label: 'Pricing', iconKey: 'pricing' },
 ];

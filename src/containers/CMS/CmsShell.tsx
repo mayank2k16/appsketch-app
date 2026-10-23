@@ -73,7 +73,7 @@ export function CmsShell() {
 
   function handleBack() {
     if (router.canGoBack()) router.back();
-    else router.replace('/studio' as never);
+    else router.replace('/my-apps' as never);
   }
 
   return (

@@ -1,8 +1,8 @@
-# Studio → Custom Store → Code Editor (resume flow)
+# My apps → Custom Store → Code Editor (resume flow)
 
 ## What changed
 
-Added a **Custom Store** button to each tenant card on the Studio "My Apps"
+Added a **Custom Store** button to each tenant card on the My apps tab's "Apps"
 screen. It sends the user into the same `/code-editor/chat` route the
 hero-prompt flow (`AgentScreen`) uses to *start* a new build, but without a
 `userPrompt` param.
@@ -45,6 +45,6 @@ same way an existing tenant is always resumed.
 
 ## How to use it
 
-From Studio → My Apps, tap **Custom Store** on any tenant card. It opens the
+From My apps → Apps, tap **Custom Store** on any tenant card. It opens the
 Chat tab of `/code-editor` for that tenant with prior conversation, code, and
 live preview already in place — no new prompt is sent.

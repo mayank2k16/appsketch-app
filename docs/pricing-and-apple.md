@@ -5,7 +5,7 @@ build can sell plans.
 
 ## What changed
 
-- **Market tab → Pricing tab.** The bar is Home · Agent · Studio · Pricing
+- **Market tab → Pricing tab.** The bar is Home · Agent · My apps · Pricing
   (`src/components/bottom-tabs/tab-config.ts`, icon `pricing` in
   `TabIcon.tsx`, screen `src/app/(tabs)/pricing.tsx`).
   - The Marketplace is now a pushed stack screen (`src/app/marketplace.tsx`,

@@ -83,12 +83,12 @@ export function StudioScreen() {
           </Text>
         </View>
 
-        {/* Search sits directly left of the "Studio" label rather than
+        {/* Search sits directly left of the "My apps" label rather than
             above it as its own row — the label is the only thing that needs
             full heading weight here, so the two share one compact line
             instead of the search bar eating its own vertical block. */}
         <View style={st.titleRow}>
-          <Text style={[st.title, { color: t.text }]}>Studio</Text>
+          <Text style={[st.title, { color: t.text }]}>My apps</Text>
           <View
             style={[
               st.searchWrap,

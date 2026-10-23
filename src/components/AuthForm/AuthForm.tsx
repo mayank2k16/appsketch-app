@@ -37,7 +37,7 @@ export function AuthForm() {
   const t = loginTheme[isDark ? 'dark' : 'light'];
 
   // Prefer returning to whatever screen sent the user to login (e.g. Pricing,
-  // Studio's gated screen) over always landing on Home. Only screens that
+  // My apps' gated screen) over always landing on Home. Only screens that
   // pushed `/login` onto the stack leave a back entry — flows that reach
   // login via a `replace` (splash, sign-out, the (app) route guard) have none,
   // so falling back to Home is the correct behaviour there.

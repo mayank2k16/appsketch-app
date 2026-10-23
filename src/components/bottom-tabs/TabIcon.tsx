@@ -4,6 +4,7 @@ import Svg, {
   Defs,
   LinearGradient,
   Path,
+  Rect,
   Stop,
 } from 'react-native-svg';
 
@@ -14,7 +15,7 @@ import Svg, {
  * icons as plain react-native-svg paths instead means the active state can
  * just set `stroke` to a gradient url, same as the label text's gradient.
  */
-export type TabIconKey = 'home' | 'agent' | 'studio' | 'pricing';
+export type TabIconKey = 'home' | 'agent' | 'myApps' | 'pricing';
 
 const SIZE = 23;
 const STROKE_WIDTH = 1.9;
@@ -36,14 +37,14 @@ function IconShape({ iconKey }: { iconKey: TabIconKey }) {
           <Path d="M18.6 15.6l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z" />
         </>
       );
-    case 'studio':
+    case 'myApps':
+      // An app grid: four rounded tiles.
       return (
         <>
-          <Circle cx={12} cy={12} r={8.5} />
-          <Circle cx={8.6} cy={10} r={1.05} />
-          <Circle cx={12} cy={8} r={1.05} />
-          <Circle cx={15.4} cy={10} r={1.05} />
-          <Path d="M12 20.5c1.6 0 1.9-1.3 1.2-2.2-.7-.8-.5-2.1 1-2.1h1" />
+          <Rect x={3.5} y={3.5} width={7} height={7} rx={2} />
+          <Rect x={13.5} y={3.5} width={7} height={7} rx={2} />
+          <Rect x={3.5} y={13.5} width={7} height={7} rx={2} />
+          <Rect x={13.5} y={13.5} width={7} height={7} rx={2} />
         </>
       );
     case 'pricing':
