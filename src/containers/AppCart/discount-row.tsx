@@ -19,11 +19,26 @@ import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
 import { useAppCart } from '@/lib/store/app-cart-store';
 
-import { useCartTotals, useDomainDiscount } from './use-cart-totals';
+import { OffersRow } from './offers-row';
+import { useCartDiscount, useCartTotals } from './use-cart-totals';
+
+/** Chip wording per `applies_to`: "on your build|domain|order". */
+const ON: Record<string, string> = {
+  build: 'on your build',
+  domain: 'on your domain',
+  order: 'on your order',
+};
+
+/** Totals wording: "BUILD20 · 20% off team builds". */
+const OFF: Record<string, string> = {
+  build: 'team builds',
+  domain: 'domain',
+  order: 'order',
+};
 
 function Applied({ s }: { s: ServicesPalette }) {
   const setCode = useAppCart((c) => c.setDiscountCode);
-  const { code, result, checking, failed, retry, amount } = useDomainDiscount();
+  const { code, result, checking, failed, retry, amount } = useCartDiscount();
   const ok = !!result?.valid;
   const message = failed
     ? "Couldn't check this code."
@@ -47,7 +62,9 @@ function Applied({ s }: { s: ServicesPalette }) {
           numberOfLines={1}
         >
           {code}
-          {ok ? ` · −${inr(amount)} on your domain` : ''}
+          {ok
+            ? ` · −${inr(amount)} ${ON[result?.applies_to ?? ''] ?? 'off'}`
+            : ''}
         </Text>
         {checking ? <ActivityIndicator size="small" color={s.muted} /> : null}
         <PressableScale
@@ -106,9 +123,7 @@ function Entry({ s, onDone }: { s: ServicesPalette; onDone: () => void }) {
   );
 }
 
-/** "Have a discount code?" → input + Apply → a removable chip
- *  ("DOMAIN50 · −₹450 on your domain") or the server's reason inline. */
-export function DiscountRow({ s }: { s: ServicesPalette }) {
+function CodeControl({ s }: { s: ServicesPalette }) {
   const code = useAppCart((c) => c.discountCode);
   const [open, setOpen] = React.useState(false);
   if (code) return <Applied s={s} />;
@@ -121,13 +136,30 @@ export function DiscountRow({ s }: { s: ServicesPalette }) {
   );
 }
 
+/** "Offers for you" chips (tap to apply), then "Have a discount code?" →
+ *  input + Apply → a removable chip ("BUILD20 · −₹3,000 on your build") or
+ *  the server's reason inline. Works for any cart (builds, extras, domain). */
+export function DiscountRow({ s }: { s: ServicesPalette }) {
+  // Build/extra lines end with their own hairline; the domain line does not.
+  const divider = useAppCart((c) => !!c.domain);
+  return (
+    <View style={[st.row, divider && st.divider, { borderColor: s.hairline }]}>
+      <OffersRow s={s} />
+      <CodeControl s={s} />
+    </View>
+  );
+}
+
 /** Subtotal, the green discount line and the total — only with a discount
  *  (otherwise the pay bar's total says it all). */
 export function Totals({ s }: { s: ServicesPalette }) {
   const { subtotal, discount, total } = useCartTotals();
-  const { result } = useDomainDiscount();
+  const { result } = useCartDiscount();
   if (!discount) return null;
-  const pct = result?.percent ? `${result.percent}% off domain` : 'domain';
+  const what = OFF[result?.applies_to ?? ''] ?? 'order';
+  const pct = result?.percent
+    ? `${result.percent}% off ${what}`
+    : `off ${what}`;
   return (
     <View style={[st.totals, { borderColor: s.hairline }]}>
       <View style={st.tRow}>
@@ -151,6 +183,8 @@ export function Totals({ s }: { s: ServicesPalette }) {
 }
 
 const st = StyleSheet.create({
+  row: { marginTop: 10 },
+  divider: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8 },
   ask: {
     flexDirection: 'row',
     alignItems: 'center',

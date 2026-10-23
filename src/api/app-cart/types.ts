@@ -31,9 +31,10 @@ export type CheckoutDomain = {
 export type CheckoutBody = {
   addon_ids: number[];
   domain: CheckoutDomain | null;
-  /** One code per order (applies to the domain). The response `lines` then
-   *  carry a negative line, e.g. `{"label": "DOMAIN50 · 50% off domain",
-   *  "amount_inr": -450}`, and `total_inr` is after the discount. */
+  /** One code per order; it applies to the builds, the domain or the whole
+   *  order (its `applies_to`). The response `lines` then carry a negative
+   *  line, e.g. `{"label": "BUILD20 · 20% off team builds", "amount_inr":
+   *  -3000}`, and `total_inr` is after the discount. */
   discount_code?: string | null;
 };
 
@@ -56,7 +57,11 @@ export type RazorpayBlock = {
 };
 
 /** The code applied to an order; its negative line is also in `lines`. */
-export type OrderDiscount = { code: string; amount_inr: number };
+export type OrderDiscount = {
+  code: string;
+  amount_inr: number;
+  applies_to?: 'build' | 'domain' | 'order';
+};
 
 export type CheckoutResponse = {
   order_id: number;

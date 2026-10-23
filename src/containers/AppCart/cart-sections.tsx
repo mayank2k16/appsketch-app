@@ -35,7 +35,8 @@ export function Card({
   );
 }
 
-/** Builds/extras (from the live catalogue) and the domain line. */
+/** Builds/extras (from the live catalogue), the domain line, offers +
+ *  discount code and — with a code — the totals. */
 export function OrderCard({ s }: { s: ServicesPalette }) {
   const cat = useCatalogue();
   const ids = useAppCart((c) => c.addonIds);
@@ -55,9 +56,9 @@ export function OrderCard({ s }: { s: ServicesPalette }) {
           />
         )
       ) : null}
-      {domain ? (
+      {domain ? <DomainLine s={s} d={domain} /> : null}
+      {ids.length || domain ? (
         <>
-          <DomainLine s={s} d={domain} />
           <DiscountRow s={s} />
           <Totals s={s} />
         </>

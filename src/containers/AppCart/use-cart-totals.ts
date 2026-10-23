@@ -34,18 +34,49 @@ export function useNeedsPlan(): boolean {
   return hasDomain && (!paid || forced);
 }
 
+/** Builds + extras (live catalogue prices) + the domain, before any code. */
+function useSubtotal() {
+  const cat = useCatalogue();
+  const ids = useAppCart((c) => c.addonIds);
+  const domainPrice = useAppCart((c) => c.domain?.price_inr ?? 0);
+  const items = [...(cat.data?.builds ?? []), ...(cat.data?.extras ?? [])];
+  return {
+    cat,
+    ids,
+    subtotal:
+      items
+        .filter((x) => ids.includes(x.id))
+        .reduce((n, x) => n + x.price_inr, 0) + domainPrice,
+  };
+}
+
 /**
- * The applied code, validated against the domain's current price. In the
- * app a domain is always bought with a plan (the plan step gates Pay), so
- * `has_plan_in_order` is true; checkout re-checks everything server-side.
- * `result` is null until the server answered for THIS code.
+ * The applied code, validated against the whole cart (builds, extras, the
+ * domain and its years) — it re-validates whenever any of them change. In
+ * the app a domain is always bought with a plan (the plan step gates Pay),
+ * so `has_plan_in_order` is true; checkout re-checks everything
+ * server-side. `result` is null until the server answered for THIS code.
  */
-export function useDomainDiscount() {
+export function useCartDiscount() {
   const code = useAppCart((c) => c.discountCode);
-  const price = useAppCart((c) => c.domain?.price_inr ?? 0);
+  const addonIds = useAppCart((c) => c.addonIds);
+  const domain = useAppCart((c) => c.domain);
+  const { subtotal } = useSubtotal();
+  const active = !!code && (addonIds.length > 0 || !!domain);
   const q = useDiscountValidation(
-    code && price > 0
-      ? { code, domain_price_inr: price, has_plan_in_order: true }
+    active
+      ? {
+          code,
+          channel: 'app',
+          addon_ids: addonIds,
+          ...(domain
+            ? {
+                domain: { name: domain.name, years: domain.years },
+                domain_price_inr: domain.price_inr,
+              }
+            : {}),
+          has_plan_in_order: true,
+        }
       : null
   );
   const result: DiscountValidation | null =
@@ -53,24 +84,17 @@ export function useDomainDiscount() {
   return {
     code,
     result,
-    checking: !!code && price > 0 && q.isFetching,
-    failed: !!code && q.isError && !result,
+    checking: active && q.isFetching,
+    failed: active && q.isError && !result,
     retry: () => void q.refetch(),
-    amount: result?.valid ? Math.min(result.discount_inr, price) : 0,
+    amount: result?.valid ? Math.min(result.discount_inr, subtotal) : 0,
   };
 }
 
 /** Subtotal of builds + extras + domain, minus the validated discount. */
 export function useCartTotals() {
-  const cat = useCatalogue();
-  const ids = useAppCart((c) => c.addonIds);
-  const domain = useAppCart((c) => c.domain);
-  const { amount } = useDomainDiscount();
-  const items = [...(cat.data?.builds ?? []), ...(cat.data?.extras ?? [])];
-  const subtotal =
-    items
-      .filter((x) => ids.includes(x.id))
-      .reduce((n, x) => n + x.price_inr, 0) + (domain?.price_inr ?? 0);
+  const { cat, ids, subtotal } = useSubtotal();
+  const { amount } = useCartDiscount();
   return {
     subtotal,
     discount: amount,

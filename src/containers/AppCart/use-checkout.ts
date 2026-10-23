@@ -49,7 +49,8 @@ function toGateway(r: CheckoutResponse): CheckoutV2Response {
 
 function body(discountCode: string | null): CheckoutBody | string {
   const { addonIds, domain, contact } = useAppCart.getState();
-  if (!domain) return { addon_ids: addonIds, domain: null };
+  if (!domain)
+    return { addon_ids: addonIds, domain: null, discount_code: discountCode };
   const missing = contactMissing(contact);
   if (missing) return `Add the registrant's ${missing.toLowerCase()}`;
   return {

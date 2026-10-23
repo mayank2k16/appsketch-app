@@ -65,7 +65,7 @@ export function DomainCard({
       <View style={st.hint}>
         <Ionicons name="pricetag-outline" size={12} color={s.success} />
         <Text style={[st.hintText, { color: s.sub }]}>
-          Comes with any plan · DOMAIN codes accepted
+          Comes with any plan · discount codes accepted
         </Text>
       </View>
       <View style={[st.input, { backgroundColor: s.inset }]}>

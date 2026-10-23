@@ -9,6 +9,7 @@ import { F } from '@/lib/fonts';
 
 import { BuildGrid } from './build-grid';
 import { ExtrasGrid } from './extras-grid';
+import { OfferStrip } from './offer-strip';
 import { StepRail } from './step-rail';
 import { SummaryBar } from './summary-bar';
 import type { Planner } from './use-planner';
@@ -135,6 +136,7 @@ export function PlannerCard({
       end={{ x: 0.4, y: 1 }}
       style={[st.card, { borderColor: s.plannerBorder }]}
     >
+      <OfferStrip s={s} />
       <View style={st.eyebrowRow}>
         <View style={[st.dot, { backgroundColor: s.orange }]} />
         <Text style={[st.eyebrow, { color: s.sub }]}>

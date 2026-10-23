@@ -28,8 +28,8 @@ import { ContactForm } from './contact-form';
 import { OrderSuccess } from './order-success';
 import { PlanStep } from './plan-step';
 import {
+  useCartDiscount,
   useCartTotals,
-  useDomainDiscount,
   useNeedsPlan,
 } from './use-cart-totals';
 import { useCheckout } from './use-checkout';
@@ -43,7 +43,7 @@ function PayBar({
 }) {
   const insets = useSafeAreaInsets();
   const { total, discount, ready } = useCartTotals();
-  const { result, checking } = useDomainDiscount();
+  const { result, checking } = useCartDiscount();
   const needsPlan = useNeedsPlan();
   const { busy, start } = useCheckout(onPaid);
   const code = result?.valid ? result.code : null;

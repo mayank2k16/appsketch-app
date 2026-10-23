@@ -76,31 +76,61 @@ In the app (plans stay App Store only; the domain stays Razorpay):
    `plan_required` sets `planRequired` in the cart store (not persisted),
    which forces the card even if the local subscription looked active; the
    next activation clears it.
-2. **Discount code** (`AppCart/discount-row.tsx`): "Have a discount code?" →
-   input + Apply → `POST account/discounts/validate/` with
-   `{code, domain_price_inr, has_plan_in_order: true}` (true because Pay is
-   gated on the plan). Valid → green removable chip "DOMAIN50 · −₹450 on your
-   domain" plus Subtotal / green "DOMAIN50 · 50% off domain −₹450" / Total
-   rows, and the pay bar reads "Total · you save ₹450". Invalid → the
-   server's `message` under the chip (`reason` is in the body too); network
-   failure → "Couldn't check this code · Retry". It re-validates whenever the
-   domain or its years change (react-query key = code + price). The code is
-   kept in the persisted cart (`discountCode`, uppercased) and cleared with
-   the cart after payment.
-3. **Checkout** sends `discount_code` only when validation said valid.
-   Razorpay always charges the server's `total_inr` (its `lines` carry the
-   negative discount line, `discount: {code, amount_inr}`); if it differs
-   from the screen a toast says "Your total is ₹X" first. A 400 with a code
-   reason (expired, used_up, already_used…) re-validates so the chip shows
-   why. Order lines render negatives green with a minus sign (`signedInr`).
+2. **Discount codes (v2)** work for any cart — team builds, extras, a
+   domain or all of them (`AppCart/discount-row.tsx`, under the order lines).
+   Codes are made by the team in the Sales CRM (Discounts) and apply to
+   `build` (builds + extras), `domain` or `order` (the whole order). Some are
+   **public** (listed), some **assigned** to one user (listed to them as
+   "Your offer"), the rest **private** (work only when typed).
+   - **Offers for you** (`AppCart/offers-row.tsx`): chips from
+     `GET account/discounts/offers/?channel=app` (the JWT is sent when signed
+     in, so assigned codes appear; refetched on sign-in/out). Chip = code +
+     the server's `title` (fallback "20% off team builds"), an orange
+     **Your offer** badge for `assigned`, assigned first. Tap applies the code
+     (tap the applied one again to remove it); the applied chip is green only
+     once validated. Hidden while loading, on error and when empty.
+   - **Have a discount code?** → input + Apply → `POST
+     account/discounts/validate/` with `{code, channel: "app", addon_ids,
+     domain: {name, years} (omitted without a domain), domain_price_inr
+     (display fallback), has_plan_in_order: true}` (true because Pay is gated
+     on the plan step). Valid → green removable chip "BUILD20 · −₹6,000 on
+     your build|domain|order" plus Subtotal / green "BUILD20 · 20% off team
+     builds −₹6,000" / Total rows, and the pay bar reads "Total · you save
+     ₹6,000". Invalid → the server's `message` under the chip (e.g. "Add a
+     domain to use this code."); network failure → "Couldn't check this code
+     · Retry". It re-validates on any cart change (react-query key = code +
+     addon ids + domain name/years/price + user).
+   - **Plan codes never appear in the app** (App Store rule: plans are Apple
+     IAP only). The server filters them for `channel=app`; the client also
+     drops `applies_to: "plan"` offers and treats a plan validation as
+     invalid.
+   - The code is kept in the persisted cart (`discountCode`, uppercased) and
+     cleared with the cart after payment.
+3. **Checkout** sends `discount_code` (with or without a domain) only when
+   validation said valid. Razorpay always charges the server's `total_inr`
+   (its `lines` carry the negative discount line, `discount: {code,
+   amount_inr, applies_to}`); if it differs from the screen a toast says
+   "Your total is ₹X" first. A 400 with a code reason (expired, used_up,
+   already_used…) re-validates so the chip shows why. Order lines render
+   negatives green with a minus sign (`signedInr`).
 
-Pricing tab: the domain card shows "Comes with any plan · DOMAIN codes
-accepted".
+Pricing tab:
+
+- **Offer strip** (`Pricing/planner/offer-strip.tsx`): when there are
+  offers, a slim "BUILD20 · 20% off team builds · Use code" strip sits at the
+  top of the assisted planner (build codes first, then order, then domain;
+  assigned wins a tie). Tapping it adds nothing to the cart — it only
+  pre-fills the code in the cart store and turns into "✓ … Saved"; the cart
+  then opens with the code applied. Hidden while loading, on error and with
+  no offers.
+- The domain card says "Comes with any plan · discount codes accepted".
 
 API: `src/api/app-cart/discount.ts` (`validateDiscount`,
-`useDiscountValidation`, `DISCOUNT_KEY`), `PLAN_REQUIRED` and
-`OrderDiscount` in `types.ts`, `apiErrorCode` in `src/api/app-domains/errors.ts`.
-Not to be confused with `src/api/discounts` (the CMS's store discounts).
+`useDiscountValidation`, `fetchOffers`, `useDiscountOffers`, `offerLabel`,
+`DISCOUNT_KEY`, `OFFERS_KEY`), `useCartDiscount` / `useCartTotals` in
+`AppCart/use-cart-totals.ts`, `PLAN_REQUIRED` and `OrderDiscount` in
+`types.ts`, `apiErrorCode` in `src/api/app-domains/errors.ts`. Not to be
+confused with `src/api/discounts` (the CMS's store discounts).
 
 ## Domain stages
 
@@ -143,3 +173,14 @@ unlocking Pay, the Pricing hint. Unmocked it shows the honest states (the
 validate endpoint was not deployed; no StoreKit products in the simulator).
 Not run: a real Apple purchase, real validate / checkout with a code,
 `plan_required` from the server, Razorpay.
+
+Discount codes v2 (round 3): verified in the iOS Simulator with temporary
+mocks (catalogue, offers incl. a plan code, validate responses; reverted
+before commit): planner offer strip and "Saved" state persisting across a
+relaunch, cart opening with the pre-filled BUILD20 on a build + extra +
+domain cart, "Offers for you" chips with the "Your offer" badge, tapping
+an offer to switch codes, an order code re-validating on a domain years
+change and on removing the domain, a typed code's invalid reason, the plan
+code never listed, offers error → row and strip hidden. Not run: the real
+offers / validate endpoints (backend not deployed), signed-in assigned
+offers, checkout / Razorpay with a code.
