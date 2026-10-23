@@ -17,14 +17,14 @@ Backend contract: `account/app-cart/*` and `account/app-domains/*`
 
 ## Code map
 
-| Area | Files |
-| --- | --- |
-| API | `src/api/app-cart/` (catalogue, checkout, confirm, order), `src/api/app-domains/` (search, list, detail, connect, attach, retry, disconnect, `apiError`). Both clients reject a body without the expected shape: appsketch.ai answers unknown `/api` paths with its HTML shell and a 200. |
-| Cart state | `src/lib/store/app-cart-store.ts`: zustand persisted in MMKV (`app_cart_v1`): `addonIds`, `domain {name, years, price_inr, tenant_id, options}`, and the registrant `contact` (kept for next time). |
-| Shared UI | `src/components/services/`: palette (white tokens + dark), `inr()` (UI-thread safe), `AnimatedTotal`, `ScreenHeader`, `StateNote`, `AppPicker` / `AppSheet` (my apps, Website / Mobile app). |
-| Pricing | `src/containers/Pricing/planner/*`, `domain-card.tsx`, `domain-result.tsx`, `custom-card.tsx`, `cart-button.tsx`. |
-| Cart | `src/app/cart.tsx` → `src/containers/AppCart/`. |
-| Domains | `src/app/domains/{_layout,index,connect,[id]}.tsx` → `src/containers/Domains/`. My apps → Settings → Domains renders the same `DomainsList`; Profile has a Domains row. |
+| Area       | Files                                                                                                                                                                                                                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API        | `src/api/app-cart/` (catalogue, checkout, confirm, order), `src/api/app-domains/` (search, list, detail, connect, attach, retry, disconnect, `apiError`). Both clients reject a body without the expected shape: appsketch.ai answers unknown `/api` paths with its HTML shell and a 200. |
+| Cart state | `src/lib/store/app-cart-store.ts`: zustand persisted in MMKV (`app_cart_v1`): `addonIds`, `domain {name, years, price_inr, tenant_id, options}`, and the registrant `contact` (kept for next time).                                                                                       |
+| Shared UI  | `src/components/services/`: palette (white tokens + dark), `inr()` (UI-thread safe), `AnimatedTotal`, `ScreenHeader`, `StateNote`, `AppPicker` / `AppSheet` (my apps, Website / Mobile app).                                                                                              |
+| Pricing    | `src/containers/Pricing/planner/*`, `domain-card.tsx`, `domain-result.tsx`, `custom-card.tsx`, `cart-button.tsx`.                                                                                                                                                                         |
+| Cart       | `src/app/cart.tsx` → `src/containers/AppCart/`.                                                                                                                                                                                                                                           |
+| Domains    | `src/app/domains/{_layout,index,connect,[id]}.tsx` → `src/containers/Domains/`. My apps → Settings → Domains renders the same `DomainsList`; Profile has a Domains row.                                                                                                                   |
 
 ## Cart flow (`/cart`)
 
@@ -90,11 +90,11 @@ In the app (plans stay App Store only; the domain stays Razorpay):
      **Your offer** badge for `assigned`, assigned first. Tap applies the code
      (tap the applied one again to remove it); the applied chip is green only
      once validated. Hidden while loading, on error and when empty.
-   - **Have a discount code?** → input + Apply → `POST
-     account/discounts/validate/` with `{code, channel: "app", addon_ids,
-     domain: {name, years} (omitted without a domain), domain_price_inr
-     (display fallback), has_plan_in_order: true}` (true because Pay is gated
-     on the plan step). Valid → green removable chip "BUILD20 · −₹6,000 on
+   - **Have a discount code?** → input + Apply →
+     `POST account/discounts/validate/` with `code`, `channel: "app"`,
+     `addon_ids`, `domain: {name, years}` (omitted without a domain),
+     `domain_price_inr` (display fallback) and `has_plan_in_order: true`
+     (true because Pay is gated on the plan step). Valid → green removable chip "BUILD20 · −₹6,000 on
      your build|domain|order" plus Subtotal / green "BUILD20 · 20% off app
      builds −₹6,000" (the server's order-line wording; amount codes have
      `percent: null` → "off app builds") / Total rows, and the pay bar reads "Total · you save
@@ -110,8 +110,8 @@ In the app (plans stay App Store only; the domain stays Razorpay):
      cleared with the cart after payment.
 3. **Checkout** sends `discount_code` (with or without a domain) only when
    validation said valid. Razorpay always charges the server's `total_inr`
-   (its `lines` carry the negative discount line, `discount: {code,
-   amount_inr, applies_to}`); if it differs from the screen a toast says
+   (its `lines` carry the negative discount line,
+   `discount: {code, amount_inr, applies_to}`); if it differs from the screen a toast says
    "Your total is ₹X" first. A 400 with a code reason (expired, used_up,
    already_used…) re-validates so the chip shows why. Order lines render
    negatives green with a minus sign (`signedInr`).
