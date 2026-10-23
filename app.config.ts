@@ -102,7 +102,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       requireFullScreen: true,
       bundleIdentifier: Env.BUNDLE_ID,
       // TestFlight build number: bump before every upload (last: 50).
-      buildNumber: '54',
+      buildNumber: '55',
       // App Store / TestFlight builds are signed with the production push
       // profile; a 'development' value fails the archive's manual signing.
       entitlements:
