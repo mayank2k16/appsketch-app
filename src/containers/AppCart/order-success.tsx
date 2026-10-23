@@ -9,7 +9,12 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { type CartOrder, useOrder } from '@/api/app-cart';
-import { inr, type ServicesPalette, tint } from '@/components/services';
+import {
+  inr,
+  type ServicesPalette,
+  signedInr,
+  tint,
+} from '@/components/services';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
@@ -86,8 +91,13 @@ export function OrderSuccess({
           {order.lines.map((l) => (
             <View key={l.label} style={st.line}>
               <Text style={[st.lineLabel, { color: s.sub }]}>{l.label}</Text>
-              <Text style={[st.lineAmt, { color: s.text }]}>
-                {inr(l.amount_inr)}
+              <Text
+                style={[
+                  st.lineAmt,
+                  { color: l.amount_inr < 0 ? s.success : s.text },
+                ]}
+              >
+                {signedInr(l.amount_inr)}
               </Text>
             </View>
           ))}

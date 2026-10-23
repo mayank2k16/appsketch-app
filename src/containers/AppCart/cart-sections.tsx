@@ -9,6 +9,7 @@ import { getUserSubscription, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { useAppCart } from '@/lib/store/app-cart-store';
 
+import { DiscountRow, Totals } from './discount-row';
 import { DomainLine } from './domain-line';
 import { LineItems } from './line-items';
 
@@ -54,7 +55,13 @@ export function OrderCard({ s }: { s: ServicesPalette }) {
           />
         )
       ) : null}
-      {domain ? <DomainLine s={s} d={domain} /> : null}
+      {domain ? (
+        <>
+          <DomainLine s={s} d={domain} />
+          <DiscountRow s={s} />
+          <Totals s={s} />
+        </>
+      ) : null}
     </Card>
   );
 }

@@ -62,6 +62,12 @@ export function DomainCard({
       <Text style={[st.sub, { color: s.sub }]}>
         Buy it here and your app is live on it in minutes, HTTPS included.
       </Text>
+      <View style={st.hint}>
+        <Ionicons name="pricetag-outline" size={12} color={s.success} />
+        <Text style={[st.hintText, { color: s.sub }]}>
+          Comes with any plan · DOMAIN codes accepted
+        </Text>
+      </View>
       <View style={[st.input, { backgroundColor: s.inset }]}>
         <Ionicons name="search" size={16} color={s.muted} />
         <TextInput
@@ -114,6 +120,8 @@ const st = StyleSheet.create({
     marginTop: -4,
   },
   sub: { fontFamily: F.sans400, fontSize: 12.5, lineHeight: 17, marginTop: -6 },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: -4 },
+  hintText: { fontFamily: F.sans600, fontSize: 11.5 },
   input: {
     flexDirection: 'row',
     alignItems: 'center',

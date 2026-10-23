@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 
@@ -7,7 +8,13 @@ import {
   type CheckoutResponse,
   confirmPayment,
 } from '@/api/app-cart';
-import { apiError, type RegistrantContact } from '@/api/app-domains';
+import { DISCOUNT_KEY, PLAN_REQUIRED } from '@/api/app-cart';
+import {
+  apiError,
+  apiErrorCode,
+  type RegistrantContact,
+} from '@/api/app-domains';
+import { inr } from '@/components/services';
 import { useAuth } from '@/hooks/useAuth';
 import {
   type CheckoutV2Response,
@@ -40,13 +47,14 @@ function toGateway(r: CheckoutResponse): CheckoutV2Response {
   };
 }
 
-function body(): CheckoutBody | string {
+function body(discountCode: string | null): CheckoutBody | string {
   const { addonIds, domain, contact } = useAppCart.getState();
   if (!domain) return { addon_ids: addonIds, domain: null };
   const missing = contactMissing(contact);
   if (missing) return `Add the registrant's ${missing.toLowerCase()}`;
   return {
     addon_ids: addonIds,
+    discount_code: discountCode,
     domain: {
       name: domain.name,
       years: domain.years,
@@ -85,27 +93,45 @@ async function pay(r: CheckoutResponse): Promise<number | null> {
 }
 
 /** Pay: sign-in gate → checkout → Razorpay → confirm. Cancel is silent;
- *  server errors are shown as the server wrote them. */
+ *  server errors are shown as the server wrote them. `shown` is the total on
+ *  screen; Razorpay always charges the server's total (its lines carry the
+ *  discount), and a difference is announced first. `plan_required` opens
+ *  the plan step. `discountCode` is sent only once validated. */
 export function useCheckout(onPaid: (orderId: number) => void) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const status = useAuth.use.status();
   const [busy, setBusy] = React.useState(false);
-  const start = async () => {
+  const start = async (shown: number, discountCode: string | null) => {
     if (status !== 'signIn') {
       toast.info('Sign in to check out');
       router.push({ pathname: '/welcome', params: { return: '1' } });
       return;
     }
-    const b = body();
+    const b = body(discountCode);
     if (typeof b === 'string') return toast.warning(b);
     setBusy(true);
     try {
-      const id = await pay(await checkout(b));
+      const quote = await checkout(b);
+      if (quote.total_inr !== shown)
+        toast.info(
+          `Your total is ${inr(quote.total_inr)}`,
+          quote.lines.map((l) => l.label).join(' · ')
+        );
+      const id = await pay(quote);
       if (id != null) {
         useAppCart.getState().clear();
         onPaid(id);
       }
     } catch (e) {
+      if (apiErrorCode(e) === PLAN_REQUIRED) {
+        useAppCart.getState().setPlanRequired(true);
+        toast.info('Add a plan to continue', apiError(e));
+        return;
+      }
+      // A code that went bad since validation: re-check so the chip shows why.
+      if (discountCode && apiErrorCode(e))
+        void queryClient.invalidateQueries({ queryKey: DISCOUNT_KEY });
       toast.error("Couldn't complete checkout", apiError(e));
     } finally {
       setBusy(false);

@@ -18,3 +18,10 @@ export function apiError(
   }
   return fallback;
 }
+
+/** The machine-readable `code` of a 4xx body (e.g. "plan_required"). */
+export function apiErrorCode(err: unknown): string | null {
+  if (!isAxiosError(err)) return null;
+  const data = err.response?.data as { code?: unknown } | undefined;
+  return data && typeof data.code === 'string' ? data.code : null;
+}

@@ -11,7 +11,6 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useCatalogue } from '@/api/app-cart';
 import {
   AnimatedTotal,
   inr,
@@ -27,23 +26,13 @@ import { cartCount, useAppCart } from '@/lib/store/app-cart-store';
 import { Card, OrderCard, PlanNote } from './cart-sections';
 import { ContactForm } from './contact-form';
 import { OrderSuccess } from './order-success';
+import { PlanStep } from './plan-step';
+import {
+  useCartTotals,
+  useDomainDiscount,
+  useNeedsPlan,
+} from './use-cart-totals';
 import { useCheckout } from './use-checkout';
-
-function useTotal() {
-  const cat = useCatalogue();
-  const ids = useAppCart((c) => c.addonIds);
-  const domain = useAppCart((c) => c.domain);
-  const items = [...(cat.data?.builds ?? []), ...(cat.data?.extras ?? [])];
-  const addons = items.filter((x) => ids.includes(x.id));
-  const ready = !ids.length || !!cat.data;
-  const total =
-    addons.reduce((n, x) => n + x.price_inr, 0) + (domain?.price_inr ?? 0);
-  return {
-    total,
-    ready,
-    hasBuild: (cat.data?.builds ?? []).some((b) => ids.includes(b.id)),
-  };
-}
 
 function PayBar({
   s,
@@ -53,8 +42,11 @@ function PayBar({
   onPaid: (id: number) => void;
 }) {
   const insets = useSafeAreaInsets();
-  const { total, ready } = useTotal();
+  const { total, discount, ready } = useCartTotals();
+  const { result, checking } = useDomainDiscount();
+  const needsPlan = useNeedsPlan();
   const { busy, start } = useCheckout(onPaid);
+  const code = result?.valid ? result.code : null;
   return (
     <View
       style={[
@@ -67,12 +59,21 @@ function PayBar({
       ]}
     >
       <View style={st.payText}>
-        <Text style={[st.payLabel, { color: s.sub }]}>Total · one-time</Text>
+        <Text
+          style={[st.payLabel, { color: needsPlan ? s.warning : s.sub }]}
+          numberOfLines={1}
+        >
+          {needsPlan
+            ? 'Add a plan above to pay'
+            : discount
+              ? `Total · you save ${inr(discount)}`
+              : 'Total · one-time'}
+        </Text>
         <AnimatedTotal value={total} style={[st.payTotal, { color: s.text }]} />
       </View>
       <PressableScale
-        onPress={() => void start()}
-        disabled={busy || !ready || total <= 0}
+        onPress={() => void start(total, code)}
+        disabled={busy || !ready || checking || needsPlan || total <= 0}
         disabledOpacity={busy ? 1 : 0.5}
         style={[st.payBtn, { backgroundColor: s.orange }]}
         accessibilityLabel="Pay"
@@ -91,10 +92,11 @@ function PayBar({
 
 function Body({ s }: { s: ServicesPalette }) {
   const domain = useAppCart((c) => c.domain);
-  const { hasBuild } = useTotal();
+  const { hasBuild } = useCartTotals();
   return (
     <>
       <OrderCard s={s} />
+      {domain ? <PlanStep s={s} /> : null}
       {hasBuild ? <PlanNote s={s} /> : null}
       {domain ? (
         <Card

@@ -13,6 +13,12 @@ export function inr(n: number): string {
   return `₹${parts.join(',')},${s.slice(-3)}`;
 }
 
+/** Like `inr` but keeps the sign: −₹450 for a discount line. */
+export function signedInr(n: number): string {
+  'worklet';
+  return n < 0 ? `−${inr(-n)}` : inr(n);
+}
+
 /** "Android app" → "Android" (the build tiles read as the platform). */
 export const buildName = (name: string) =>
   name.replace(/\s+app$/i, '').trim() || name;

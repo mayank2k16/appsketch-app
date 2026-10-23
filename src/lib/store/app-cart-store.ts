@@ -24,9 +24,17 @@ type Persisted = {
   addonIds: number[];
   domain: CartDomain | null;
   contact: Partial<RegistrantContact>;
+  /** Discount code the user applied (validated live; the server re-checks
+   *  it at checkout). Kept across launches with the cart. */
+  discountCode: string | null;
 };
 
 type AppCartState = Persisted & {
+  /** Not persisted: checkout answered 400 `plan_required` although the
+   *  local subscription looked active — show the plan step anyway. */
+  planRequired: boolean;
+  setDiscountCode: (code: string | null) => void;
+  setPlanRequired: (v: boolean) => void;
   setAddons: (ids: number[]) => void;
   removeAddon: (id: number, buildIds: number[]) => void;
   setDomain: (d: CartDomain | null) => void;
@@ -35,13 +43,19 @@ type AppCartState = Persisted & {
   clear: () => void;
 };
 
-const EMPTY: Persisted = { addonIds: [], domain: null, contact: {} };
+const EMPTY: Persisted = {
+  addonIds: [],
+  domain: null,
+  contact: {},
+  discountCode: null,
+};
 
 function save(s: Persisted) {
   void setItem<Persisted>(KEY, {
     addonIds: s.addonIds,
     domain: s.domain,
     contact: s.contact,
+    discountCode: s.discountCode,
   });
 }
 
@@ -53,6 +67,10 @@ export const useAppCart = create<AppCartState>((set, get) => {
   return {
     ...EMPTY,
     ...(getItem<Persisted>(KEY) ?? {}),
+    planRequired: false,
+    setDiscountCode: (code) =>
+      commit({ discountCode: code?.trim().toUpperCase() || null }),
+    setPlanRequired: (planRequired) => set({ planRequired }),
     setAddons: (ids) => commit({ addonIds: [...new Set(ids)] }),
     // Extras run on a build: dropping the last build drops them too.
     removeAddon: (id, buildIds) => {
@@ -67,7 +85,12 @@ export const useAppCart = create<AppCartState>((set, get) => {
     },
     setContact: (c) => commit({ contact: { ...get().contact, ...c } }),
     clear: () => {
-      set({ addonIds: [], domain: null });
+      set({
+        addonIds: [],
+        domain: null,
+        discountCode: null,
+        planRequired: false,
+      });
       void removeItem(KEY);
       save(get());
     },
