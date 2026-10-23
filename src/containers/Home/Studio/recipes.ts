@@ -39,7 +39,7 @@ export type CellKind =
 
 export type Cell =
   | { kind: 'phone' | 'large' | 'site' | 'small' | 'wide'; t: MarketTemplate }
-  | { kind: 'type'; category: string; count: number }
+  | { kind: 'type'; category: string; count: number; thumbs: string[] }
   | { kind: 'action' };
 
 export type Column = { span: 1 | 2 | 3; cells: Cell[] };
@@ -195,7 +195,7 @@ const fits = (pool: Pool, recipe: Recipe) => {
   );
 };
 
-export type TypeWord = { category: string; count: number };
+export type TypeWord = { category: string; count: number; thumbs: string[] };
 
 /** Hands out category words in turn (never the category on screen). */
 function wordCycle(words: TypeWord[]) {
@@ -203,7 +203,7 @@ function wordCycle(words: TypeWord[]) {
   return () => {
     const w = words.length
       ? words[i++ % words.length]
-      : { category: 'All', count: 0 };
+      : { category: 'All', count: 0, thumbs: [] };
     return { kind: 'type' as const, ...w };
   };
 }

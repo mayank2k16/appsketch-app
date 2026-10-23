@@ -94,6 +94,39 @@ function Stage({
   );
 }
 
+/** The template's description in whatever room the title and chips leave
+ *  above the sheet: as many whole lines as fit (measured once), never a
+ *  clipped half-line, nothing at all if under one line fits. */
+const BLURB_LINE = 15;
+
+function Blurb({ text, dark }: { text?: string; dark: boolean }) {
+  const [lines, setLines] = React.useState(0);
+  if (!text) return null;
+  return (
+    <View
+      style={s.blurbBox}
+      onLayout={(e) =>
+        setLines(Math.floor((e.nativeEvent.layout.height - 6) / BLURB_LINE))
+      }
+    >
+      {lines > 0 ? (
+        <Text
+          numberOfLines={lines}
+          style={[
+            s.blurb,
+            { color: dark ? 'rgba(244,244,245,0.66)' : 'rgba(11,11,12,0.62)' },
+          ]}
+        >
+          {text}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+const descOf = (t: MarketTemplate) =>
+  t.kind === 'code' ? t.description : undefined;
+
 const LARGE_SHEET_W = SPAN2 - 20;
 const STRIP_W = SPAN2 - 16;
 const LARGE_PAGE_H = LARGE_SHEET_W / WEB_RATIO;
@@ -128,6 +161,7 @@ export const LargeSiteTile = React.memo(function LargeSiteTile({
           <Heart template={template} tone={metaTone(dark)} />
         </View>
         <Chips template={template} width={SPAN2 - 24} dark={dark} />
+        <Blurb text={descOf(template)} dark={dark} />
       </View>
       <View ref={ref} collapsable={false} style={s.largeSheet}>
         <BrowserFrame
@@ -269,6 +303,13 @@ const s = StyleSheet.create({
     letterSpacing: -0.5,
   },
   largeSheet: { marginHorizontal: 10, marginBottom: 10 },
+  blurbBox: { flex: 1, overflow: 'hidden', paddingBottom: 6 },
+  blurb: {
+    fontFamily: F.sans500,
+    fontSize: 12,
+    lineHeight: BLURB_LINE,
+    letterSpacing: -0.1,
+  },
   stripHead: { paddingHorizontal: 8 },
   stripSheet: { position: 'absolute', left: 10, right: 10, bottom: -6 },
   smallMedia: {

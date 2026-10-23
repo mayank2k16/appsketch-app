@@ -2,8 +2,13 @@ import { Image as ExpoImage } from 'expo-image';
 import * as React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import ReAnimated, {
+  cancelAnimation,
+  Easing,
   type SharedValue,
   useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
@@ -61,7 +66,11 @@ export const COLLAGE_OVERHANG = 60;
 const STAGGER = [-18, 10, -34, 4];
 /** Neighbouring columns drift in opposite directions along the tilt. */
 const DRIFT_DIR = [-1, 1, -1, 1];
-const DRIFT_PX = 30;
+/** The endless reel: every column scrolls at this speed (pt/s), forever. */
+const REEL_SPEED = 24;
+/** Each column's screens are drawn twice: the reel only ever shifts by up
+ *  to one set, so two always cover the frame and the loop is seamless. */
+const COPIES = 2;
 
 /** The splash clock runs 0 → CLOCK_MS, linearly, on the UI thread. */
 export const CLOCK_MS = 3000;
@@ -112,6 +121,24 @@ function Tile({
   );
 }
 
+/** One column's loop: 0 → 1 over the time its screens take to scroll by
+ *  once at REEL_SPEED, then again, forever (linear, on the UI thread). */
+function useReel(period: number) {
+  const t = useSharedValue(0);
+  React.useEffect(() => {
+    t.value = withRepeat(
+      withTiming(1, {
+        duration: (period / REEL_SPEED) * 1000,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+    return () => cancelAnimation(t);
+  }, [t, period]);
+  return t;
+}
+
 function Column({
   col,
   clock,
@@ -121,26 +148,35 @@ function Column({
   clock: SharedValue<number>;
   tone: Tone;
 }) {
+  const screens = COLUMNS[col];
+  // One full set of this column's screens: shifting by exactly this much
+  // lands on an identical picture, so the wrap is invisible.
+  const period = screens.length * (TILE_H + GAP);
+  const reel = useReel(period);
+  const up = DRIFT_DIR[col] < 0;
   const style = useAnimatedStyle(() => ({
     transform: [
       {
-        translateY:
-          STAGGER[col] + DRIFT_DIR[col] * DRIFT_PX * (clock.value / CLOCK_MS),
+        // Both directions stay within one set: up 0 → -period, down
+        // -period → 0.
+        translateY: STAGGER[col] - (up ? reel.value : 1 - reel.value) * period,
       },
     ],
   }));
   return (
     <ReAnimated.View style={[styles.column, style]}>
-      {COLUMNS[col].map((screen, row) => (
-        <Tile
-          key={row}
-          screen={screen}
-          // The lowest (most visible) tiles arrive first, sweeping across.
-          start={Math.max(0, ROWS - 1 - row) * 90 + col * 70}
-          clock={clock}
-          tone={tone}
-        />
-      ))}
+      {Array.from({ length: COPIES }, (_, k) =>
+        screens.map((screen, row) => (
+          <Tile
+            key={`${k}-${row}`}
+            screen={screen}
+            // The lowest (most visible) tiles arrive first, sweeping across.
+            start={Math.max(0, ROWS - 1 - row) * 90 + col * 70}
+            clock={clock}
+            tone={tone}
+          />
+        ))
+      )}
     </ReAnimated.View>
   );
 }
@@ -148,7 +184,9 @@ function Column({
 /**
  * The top of the welcome screen: a tilted collage of template screens in
  * staggered columns, bleeding off the top and sides. Every tile fades and
- * settles in from one shared clock while the columns drift. `bottom` is the
+ * settles in from one shared clock; the columns scroll endlessly like a reel
+ * (alternate directions, REEL_SPEED pt/s, each a seamless loop of its own
+ * screens repeated COPIES times). `bottom` is the
  * screen y where the columns end (before the tilt).
  */
 export function WhiteCollage({

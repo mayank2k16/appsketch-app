@@ -78,7 +78,7 @@ function typeWords(categories: CategoryInfo[], current: string): TypeWord[] {
   return categories
     .filter((c) => c.name !== ALL_CATEGORIES && c.name !== current)
     .filter((c) => c.count > 1)
-    .map((c) => ({ category: c.name, count: c.count }));
+    .map((c) => ({ category: c.name, count: c.count, thumbs: c.thumbs }));
 }
 
 export function useCategoryData(category: string, query: string) {

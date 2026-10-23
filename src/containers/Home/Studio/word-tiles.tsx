@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
@@ -14,9 +15,10 @@ import { stageOf, useStudioActions } from './studio-context';
 /**
  * The bento's non-template tiles, like the "Music" word and "+ Add Songs"
  * on an iOS widget stack:
- *  - TypeTile: a category as one big bold word on a pastel stage. Tapping it
- *    opens that category's screen (`/category/[name]`); the rail chips still
- *    filter Home in place.
+ *  - TypeTile: a category as one big bold word on a pastel stage, over a
+ *    fanned stack of that category's own screenshots (white 4pt-framed
+ *    prints) filling the middle. Tapping it opens that category's screen
+ *    (`/category/[name]`); the rail chips still filter Home in place.
  *  - ActionTile: "Create yours" — scrolls Home back to the prompt and
  *    focuses it.
  */
@@ -25,12 +27,64 @@ import { stageOf, useStudioActions } from './studio-context';
 export const wordOf = (category: string) =>
   category.split(/\s*(?:&|\band\b|,)\s*/)[0] || category;
 
+/** The prints' size and fan: left, centre, right (centre on top). */
+const PRINT_W = 44;
+const PRINT_H = 62;
+const FAN = [
+  { x: -30, y: 6, deg: '-11deg' },
+  { x: 30, y: 6, deg: '11deg' },
+  { x: 0, y: 0, deg: '0deg' },
+] as const;
+
+/** Up to three screenshots as white-framed prints, fanned out. Small
+ *  decodes (expo-image downsizes to the 44×62 view). */
+function Prints({ thumbs, dark }: { thumbs: string[]; dark: boolean }) {
+  if (!thumbs.length) return <View style={s.prints} />;
+  // With fewer than three the centre one stays on top.
+  const order =
+    thumbs.length === 1 ? [2] : thumbs.length === 2 ? [0, 2] : [0, 1, 2];
+  return (
+    <View style={s.prints} pointerEvents="none">
+      {order.map((slot, k) => {
+        const f = FAN[slot];
+        return (
+          <View
+            key={slot}
+            style={[
+              s.print,
+              dark && s.printDark,
+              {
+                transform: [
+                  { translateX: f.x },
+                  { translateY: f.y },
+                  { rotate: f.deg },
+                ],
+              },
+            ]}
+          >
+            <ExpoImage
+              source={{ uri: thumbs[k] }}
+              style={s.printImg}
+              contentFit="cover"
+              contentPosition="top"
+              transition={0}
+              recyclingKey={thumbs[k]}
+            />
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 export const TypeTile = React.memo(function TypeTile({
   category,
   count,
+  thumbs,
 }: {
   category: string;
   count: number;
+  thumbs: string[];
 }) {
   const { dark } = useStudioActions();
   const router = useRouter();
@@ -57,6 +111,7 @@ export const TypeTile = React.memo(function TypeTile({
       >
         {wordOf(category)}
       </Text>
+      <Prints thumbs={thumbs} dark={dark} />
       <View style={s.foot}>
         <Text style={[s.count, { color: ink }]} numberOfLines={1}>
           {count} {count === 1 ? 'template' : 'templates'}
@@ -120,6 +175,20 @@ const s = StyleSheet.create({
     includeFontPadding: false,
   },
   foot: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  prints: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  print: {
+    position: 'absolute',
+    width: PRINT_W,
+    height: PRINT_H,
+    borderRadius: 7,
+    borderCurve: 'continuous',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  printDark: { borderColor: '#F4F4F5', backgroundColor: '#F4F4F5' },
+  printImg: { width: '100%', height: '100%', borderRadius: 3 },
   count: { fontFamily: F.sans600, fontSize: 11, flexShrink: 1 },
   action: { borderWidth: CARD_EDGE_W },
   plus: {

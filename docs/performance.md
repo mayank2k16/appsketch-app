@@ -106,3 +106,21 @@ work stream. Its frame rate was therefore checked by eye only, not measured.
   them.
 - Dark mode uses the same code paths (its full-screen `TwinkleDots` also
   lost its base layer), but it was not screenshot-checked in this pass.
+
+## Home bento fillers and the welcome reel (2026-10-23)
+
+- **Type tiles** (`Home/Studio/word-tiles.tsx`): the big category word sits over
+  a fan of up to 3 of that category's own screenshots, shown as white
+  4pt-framed prints at 44×62. expo-image downsizes them to the view size, so
+  each type tile adds only three tiny decodes. The thumbs come from
+  `categoriesOf` (`use-studio.ts` / `use-category-data.ts`) through
+  `TypeWord.thumbs`. The user asked for no icons and no iconic Lotties here.
+- **Large site tiles** (`tiles.tsx` `Blurb`): the template description fills
+  the room between the chips and the browser sheet, with as many whole
+  15pt lines as fit. That count is measured once with onLayout and never
+  leaves a clipped line.
+- **Welcome collage** (`components/splash/white-collage.tsx`): the columns
+  scroll endlessly as a reel (24 pt/s, alternate directions). Each column
+  draws its screens twice and shifts by at most one set
+  (`withRepeat(withTiming)`, linear, on the UI thread), so the wrap is
+  seamless. Before, it drifted 30pt over 3s and stopped.

@@ -77,7 +77,13 @@ function CellView({
     case 'wide':
       return <WideTile template={cell.t} onBlack={onBlack} />;
     case 'type':
-      return <TypeTile category={cell.category} count={cell.count} />;
+      return (
+        <TypeTile
+          category={cell.category}
+          count={cell.count}
+          thumbs={cell.thumbs}
+        />
+      );
     case 'action':
       return <ActionTile />;
   }

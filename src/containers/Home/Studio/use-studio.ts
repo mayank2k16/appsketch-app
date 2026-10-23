@@ -25,19 +25,28 @@ async function fetchStudio(): Promise<MarketTemplate[]> {
     .filter((t) => !!thumbOf(t));
 }
 
-export type StudioCategory = { name: string; count: number };
+export type StudioCategory = {
+  name: string;
+  count: number;
+  /** The category's first few screenshots (its type tile shows them). */
+  thumbs: string[];
+};
+
+const TYPE_THUMBS = 3;
 
 function categoriesOf(templates: MarketTemplate[]): StudioCategory[] {
-  const counts = new Map<string, number>();
+  const by = new Map<string, StudioCategory>();
   for (const t of templates) {
     const c = t.kind === 'code' ? t.category : null;
-    if (c) counts.set(c, (counts.get(c) ?? 0) + 1);
+    if (!c) continue;
+    const cat = by.get(c) ?? { name: c, count: 0, thumbs: [] };
+    cat.count += 1;
+    if (cat.thumbs.length < TYPE_THUMBS) cat.thumbs.push(thumbOf(t));
+    by.set(c, cat);
   }
   return [
-    { name: ALL, count: templates.length },
-    ...[...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count })),
+    { name: ALL, count: templates.length, thumbs: [] },
+    ...[...by.values()].sort((a, b) => b.count - a.count),
   ];
 }
 
@@ -46,7 +55,7 @@ function categoriesOf(templates: MarketTemplate[]): StudioCategory[] {
 function wordsFor(categories: StudioCategory[], current: string): TypeWord[] {
   return categories
     .filter((c) => c.name !== ALL && c.name !== current && c.count > 1)
-    .map((c) => ({ category: c.name, count: c.count }));
+    .map((c) => ({ category: c.name, count: c.count, thumbs: c.thumbs }));
 }
 
 export function useStudio() {
