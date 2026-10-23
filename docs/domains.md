@@ -85,7 +85,8 @@ In the app (plans stay App Store only; the domain stays Razorpay):
    - **Offers for you** (`AppCart/offers-row.tsx`): chips from
      `GET account/discounts/offers/?channel=app` (the JWT is sent when signed
      in, so assigned codes appear; refetched on sign-in/out). Chip = code +
-     the server's `title` (fallback "20% off team builds"), an orange
+     the server's `title` (e.g. "20% off your app builds"; built the same way
+     when missing), an orange
      **Your offer** badge for `assigned`, assigned first. Tap applies the code
      (tap the applied one again to remove it); the applied chip is green only
      once validated. Hidden while loading, on error and when empty.
@@ -94,8 +95,9 @@ In the app (plans stay App Store only; the domain stays Razorpay):
      domain: {name, years} (omitted without a domain), domain_price_inr
      (display fallback), has_plan_in_order: true}` (true because Pay is gated
      on the plan step). Valid → green removable chip "BUILD20 · −₹6,000 on
-     your build|domain|order" plus Subtotal / green "BUILD20 · 20% off team
-     builds −₹6,000" / Total rows, and the pay bar reads "Total · you save
+     your build|domain|order" plus Subtotal / green "BUILD20 · 20% off app
+     builds −₹6,000" (the server's order-line wording; amount codes have
+     `percent: null` → "off app builds") / Total rows, and the pay bar reads "Total · you save
      ₹6,000". Invalid → the server's `message` under the chip (e.g. "Add a
      domain to use this code."); network failure → "Couldn't check this code
      · Retry". It re-validates on any cart change (react-query key = code +
@@ -117,7 +119,7 @@ In the app (plans stay App Store only; the domain stays Razorpay):
 Pricing tab:
 
 - **Offer strip** (`Pricing/planner/offer-strip.tsx`): when there are
-  offers, a slim "BUILD20 · 20% off team builds · Use code" strip sits at the
+  offers, a slim "BUILD20 · 20% off your app builds · Use code" strip sits at the
   top of the assisted planner (build codes first, then order, then domain;
   assigned wins a tie). Tapping it adds nothing to the cart — it only
   pre-fills the code in the cart store and turns into "✓ … Saved"; the cart

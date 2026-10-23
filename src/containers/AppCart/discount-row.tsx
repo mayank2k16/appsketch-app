@@ -29,9 +29,10 @@ const ON: Record<string, string> = {
   order: 'on your order',
 };
 
-/** Totals wording: "BUILD20 · 20% off team builds". */
+/** Totals wording, as the server's order line: "BUILD20 · 20% off app
+ *  builds" (an amount code: "off app builds"). */
 const OFF: Record<string, string> = {
-  build: 'team builds',
+  build: 'app builds',
   domain: 'domain',
   order: 'order',
 };

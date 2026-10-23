@@ -33,7 +33,7 @@ export type CheckoutBody = {
   domain: CheckoutDomain | null;
   /** One code per order; it applies to the builds, the domain or the whole
    *  order (its `applies_to`). The response `lines` then carry a negative
-   *  line, e.g. `{"label": "BUILD20 · 20% off team builds", "amount_inr":
+   *  line, e.g. `{"label": "BUILD20 · 20% off app builds", "amount_inr":
    *  -3000}`, and `total_inr` is after the discount. */
   discount_code?: string | null;
 };

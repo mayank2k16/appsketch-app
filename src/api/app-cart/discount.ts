@@ -31,12 +31,19 @@ export type DiscountValidation = {
   code: string;
   discount_inr: number;
   message: string;
-  percent?: number;
+  /** null for an amount code. */
+  percent?: number | null;
   max_discount_inr?: number | null;
-  applies_to?: DiscountTarget;
+  /** Valid only (amount codes carry `value` in rupees). */
+  type?: 'percent' | 'amount';
+  value?: number;
+  /** null when the code is unknown. */
+  applies_to?: DiscountTarget | null;
   /** Invalid only: unknown | inactive | not_started | expired | used_up |
    *  already_used | not_assigned | plan_required | no_domain |
-   *  nothing_to_discount | below_minimum | wrong_channel | wrong_cycle. */
+   *  nothing_to_discount | below_minimum | wrong_channel | wrong_cycle |
+   *  not_supported (wrong_cycle only applies with a plan in the order, so
+   *  never in the app cart). */
   reason?: string;
 };
 
@@ -133,14 +140,14 @@ export function useDiscountOffers() {
 }
 
 const TARGET: Record<DiscountTarget, string> = {
-  build: 'team builds',
+  build: 'your app builds',
   domain: 'your domain',
   order: 'your order',
   plan: 'plans',
 };
 
-/** "20% off team builds" / "₹500 off your domain" — the server's title
- *  wins when it sent one. */
+/** The server's `title` ("20% off your app builds", "₹200 off your
+ *  domain"); the same wording is built when it is missing. */
 export function offerLabel(o: DiscountOffer): string {
   if (o.title?.trim()) return o.title.trim();
   const amt =

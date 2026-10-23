@@ -28,7 +28,7 @@ function pick(list: DiscountOffer[]): DiscountOffer | null {
 }
 
 /**
- * A slim "BUILD20 · 20% off team builds" strip at the top of the assisted
+ * A slim "BUILD20 · 20% off your app builds" strip at the top of the assisted
  * planner when there are offers. Tapping it adds nothing to the cart — it
  * only pre-fills the code in the cart store, so the cart opens with it
  * applied. Hidden while loading, on error and without offers.
