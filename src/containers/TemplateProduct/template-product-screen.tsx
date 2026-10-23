@@ -31,7 +31,7 @@ import { ProductFallback } from './not-found';
 import { PageBackdrop } from './page-backdrop';
 import { pageTheme } from './theme';
 import { usePageActive } from './use-page-active';
-import { usePager } from './use-pager';
+import { usePager, WINDOW } from './use-pager';
 import {
   type ProductMotion,
   useProductTransition,
@@ -202,6 +202,19 @@ function usePageState(p: PageProps) {
     x: pager.x,
   });
   const nav = useCrumbNav(p.templateKey);
+  // One array for every layer, rebuilt only when the page has landed, so a
+  // swipe's release re-renders nothing heavy (memoised children skip).
+  const pages = React.useMemo(
+    () => windowOf(list, pager.settled),
+    [list, pager.settled]
+  );
+  const placeOf = React.useCallback(
+    (i: number) => {
+      const gr = groupOf(groups, i);
+      return { n: i - gr.start + 1, of: gr.size };
+    },
+    [groups]
+  );
   return {
     list,
     groups,
@@ -212,10 +225,8 @@ function usePageState(p: PageProps) {
     warm,
     ...choices,
     nav,
-    placeOf: (i: number) => {
-      const gr = groupOf(groups, i);
-      return { n: i - gr.start + 1, of: gr.size };
-    },
+    pages,
+    placeOf,
   };
 }
 
@@ -249,17 +260,13 @@ function groupOf(groups: readonly Group[], i: number): Group {
   return { name: null, start: 0, size: 1 };
 }
 
-/** The pages around the centred one — and, while a swipe is still
- *  landing, around the page it left too, so nothing unmounts mid-spring. */
-function windowOf(
-  list: readonly MarketTemplate[],
-  index: number,
-  settled = index
-) {
+/** The pages mounted around the settled one (±WINDOW): a second swipe
+ *  before the first has committed still finds its page there. */
+function windowOf(list: readonly MarketTemplate[], settled: number) {
   const out: { template: MarketTemplate; i: number }[] = [];
   for (
-    let i = Math.max(0, Math.min(index, settled) - 1);
-    i <= Math.min(list.length - 1, Math.max(index, settled) + 1);
+    let i = Math.max(0, settled - WINDOW);
+    i <= Math.min(list.length - 1, settled + WINDOW);
     i++
   ) {
     out.push({ template: list[i], i });
@@ -267,17 +274,15 @@ function windowOf(
   return out;
 }
 
-/** The centred page is live; a neighbour of the settled page preloads once
- *  that one is up (`warm`), or stays loaded if it already rendered
- *  (swiping back). While a swipe lands, only WebViews that already exist
- *  stay; a page that had none gets its own once the swipe has settled. */
+/** The settled page is live; a neighbour preloads once that one is up
+ *  (`warm`), or stays loaded if it already rendered (swiping back). Keyed
+ *  on `settled` only, so a release changes no hero's props: a page swiped
+ *  to turns 'on' (its own WebView, autoscroll) once it has landed. */
 function loadOf(st: State, key: string, i: number) {
+  if (i === st.settled) return 'on' as const;
   const d = i - st.settled;
   const mounted =
     st.live.has(key) || (d === 1 && st.warm >= 1) || (d === -1 && st.warm >= 2);
-  if (i === st.index) {
-    return st.settled === i || mounted ? ('on' as const) : ('off' as const);
-  }
   return mounted ? ('warm' as const) : ('off' as const);
 }
 
@@ -299,7 +304,7 @@ function useZoneStyle(m: ProductMotion, g: Geometry) {
 }
 
 function Heroes({ s: st, origin }: { s: State; origin: string | null }) {
-  const pages = windowOf(st.list, st.index, st.settled);
+  const { pages } = st;
   const zone = useZoneStyle(st.m, st.g);
   return (
     <GestureDetector gesture={st.gestures.hero}>
@@ -397,7 +402,7 @@ function ProductPage(p: PageProps) {
       <StatusBar style={st.dark ? 'light' : 'dark'} />
       <Animated.View style={[StyleSheet.absoluteFill, bg]}>
         <PageBackdrop
-          pages={windowOf(st.list, st.index)}
+          pages={st.pages}
           x={st.x}
           dark={st.dark}
           base={st.t.page}
@@ -405,7 +410,7 @@ function ProductPage(p: PageProps) {
       </Animated.View>
       <Heroes s={st} origin={p.fromTile ? p.templateKey : null} />
       <DetailsBox
-        pages={windowOf(st.list, st.index)}
+        pages={st.pages}
         index={st.index}
         placeOf={st.placeOf}
         swiped={swiped}

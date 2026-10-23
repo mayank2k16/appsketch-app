@@ -22,11 +22,16 @@ import type { ProductMotion } from './use-product-transition';
  * The left/right pager over the template list. `x` is the continuous page
  * position (2.4 = 40% of the way from page 2 to 3) — every page derives its
  * hero offset, scale, blur and the details crossfade from it on the UI
- * thread. JS hears about a swipe once, when it is released (`index`, so the
- * ±1 window re-renders and the new page's live site mounts at once) and
- * once more as the page lands (`settled`, ~SETTLE_MS after the release —
- * not the spring's own "finished", which only fires once its energy has
- * died out, seconds later).
+ * thread. JS hears about a swipe twice: on release (`index` — only the
+ * light chrome follows it: breadcrumb, LIVE badge, details' touch target)
+ * and, debounced, once the page has landed (`settled`, SETTLE_MS after the
+ * LAST release — not the spring's own "finished", which only fires once
+ * its energy has died out, seconds later). Everything that mounts views
+ * (the ±WINDOW pages, live sites) follows `settled`, so a swipe's spring
+ * never shares a frame with a React commit, and a run of quick swipes
+ * commits once. Pages stay mounted ±WINDOW around `settled` so a second
+ * swipe before the commit still finds its page; a swipe that reaches the
+ * window's edge commits at once, and the drag can never run past it.
  *
  * Haptics follow the finger, like a picker: one `select` tick the moment a
  * drag crosses halfway to the next template (and back), one on release if
@@ -39,6 +44,8 @@ import type { ProductMotion } from './use-product-transition';
  */
 
 const SETTLE_MS = 380;
+/** Pages kept mounted either side of the settled one. */
+export const WINDOW = 2;
 /** Horizontal travel before the pager claims a drag; vertical travel that
  *  fails it on the hero (so the site keeps it). The hero decides within
  *  the first ~8pt, BEFORE the live site's own scroll view starts (≈10pt):
@@ -58,14 +65,28 @@ export type Pager = {
   settled: number;
 };
 
-function useSettle(start: number) {
+function useSettle(start: number, span: SharedValue<number>) {
   const [index, setIndex] = React.useState(start);
   const [settled, setSettled] = React.useState(start);
+  const committed = React.useRef(start);
   const timer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
-  const onSettle = React.useCallback((i: number) => {
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setSettled(i), SETTLE_MS);
-  }, []);
+  const commit = React.useCallback(
+    (i: number) => {
+      committed.current = i;
+      span.set(i);
+      setSettled(i);
+    },
+    [span]
+  );
+  const onSettle = React.useCallback(
+    (i: number) => {
+      clearTimeout(timer.current);
+      // At the window's edge the next page is not mounted yet: re-centre now.
+      if (Math.abs(i - committed.current) >= WINDOW) commit(i);
+      else timer.current = setTimeout(() => commit(i), SETTLE_MS);
+    },
+    [commit]
+  );
   React.useEffect(() => () => clearTimeout(timer.current), []);
   return { index, setIndex, settled, onSettle };
 }
@@ -77,12 +98,16 @@ type GestureOpts = {
   onRelease: (i: number) => void;
   onSettle: (i: number) => void;
   onClose: () => void;
+  /** The settled page the mounted window is centred on. */
+  span: SharedValue<number>;
 };
 
-function clampPage(v: number, base: number, count: number) {
+/** One page either side of `base`, and never outside the mounted window. */
+function clampPage(v: number, base: number, o: GestureOpts) {
   'worklet';
-  const lo = Math.max(0, base - 1);
-  const hi = Math.min(count - 1, base + 1);
+  const c = o.span.value;
+  const lo = Math.max(0, base - 1, c - WINDOW);
+  const hi = Math.min(o.count - 1, base + 1, c + WINDOW);
   return Math.min(hi, Math.max(lo, v));
 }
 
@@ -92,6 +117,16 @@ function rubber(v: number, count: number) {
   if (v < 0) return v * 0.3;
   if (v > count - 1) return count - 1 + (v - (count - 1)) * 0.3;
   return v;
+}
+
+/** Where a drag puts the pager: at most one page either way of `base`,
+ *  inside the mounted window, rubber-banding past either end. */
+function follow(v: number, base: number, o: GestureOpts) {
+  'worklet';
+  const c = o.span.value;
+  const lo = Math.max(base - 1, c - WINDOW);
+  const hi = Math.min(base + 1, c + WINDOW);
+  return rubber(Math.min(hi, Math.max(lo, v)), o.count);
 }
 
 const tick = () => haptic.select();
@@ -105,9 +140,10 @@ function tickAt(page: number, ticked: SharedValue<number>) {
   runOnJS(tick)();
 }
 
-/** The hero's pan decides by hand from the raw touches: clearly sideways
- *  (≥ HERO_CLAIM, mostly horizontal) claims the swipe, any real vertical
- *  travel first gives it to the site. */
+/** The hero's pan decides by hand from the raw touches: sideways travel
+ *  of HERO_CLAIM that leads the vertical claims the swipe (a thumb's arc
+ *  dips a few points, so no stricter ratio), a drag that is MORE vertical
+ *  than sideways by YIELD_Y gives it to the site. */
 function heroClaim(
   p: ReturnType<typeof Gesture.Pan>,
   start: SharedValue<{ x: number; y: number }>
@@ -125,8 +161,8 @@ function heroClaim(
       if (!t) return;
       const dx = Math.abs(t.absoluteX - start.value.x);
       const dy = Math.abs(t.absoluteY - start.value.y);
-      if (dx >= HERO_CLAIM && dx > dy * 1.3) mgr.activate();
-      else if (dy >= YIELD_Y) mgr.fail();
+      if (dx >= HERO_CLAIM && dx > dy) mgr.activate();
+      else if (dy >= YIELD_Y && dy > dx * 1.2) mgr.fail();
     });
 }
 
@@ -156,7 +192,7 @@ function release(
 ) {
   'worklet';
   const projected = x.value - (vx / o.g.stride) * 0.18;
-  const to = clampPage(Math.round(projected), base.value, o.count);
+  const to = clampPage(Math.round(projected), base.value, o);
   tickAt(to, ticked);
   base.value = to;
   runOnJS(o.onRelease)(to);
@@ -193,10 +229,7 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
         m.drag.value = Math.max(0, ty) * 0.75;
         return;
       }
-      // At most one page either way, then rubber-band past either end.
-      const v = from.value - tx / g.stride;
-      const b = base.value;
-      x.value = rubber(Math.min(b + 1, Math.max(b - 1, v)), count);
+      x.value = follow(from.value - tx / g.stride, base.value, o);
       feel(x.value, { count, ticked, bumped });
     };
     const onEnd = (vx: number, vy: number) => {
@@ -262,7 +295,7 @@ function useHint(
   }, [x, ready, count, stride]);
 }
 
-type Params = Omit<GestureOpts, 'onRelease' | 'onSettle'> & {
+type Params = Omit<GestureOpts, 'onRelease' | 'onSettle' | 'span'> & {
   start: number;
   /** The open transition has finished (hint waits for it). */
   ready: boolean;
@@ -270,12 +303,13 @@ type Params = Omit<GestureOpts, 'onRelease' | 'onSettle'> & {
 
 export function usePager(p: Params) {
   const x = useSharedValue(p.start);
-  const st = useSettle(p.start);
+  const span = useSharedValue(p.start);
+  const st = useSettle(p.start, span);
   const { count, g, m, onClose } = p;
   const { setIndex: onRelease, onSettle } = st;
   const opts = React.useMemo<GestureOpts>(
-    () => ({ count, g, m, onClose, onRelease, onSettle }),
-    [count, g, m, onClose, onRelease, onSettle]
+    () => ({ count, g, m, onClose, onRelease, onSettle, span }),
+    [count, g, m, onClose, onRelease, onSettle, span]
   );
   const gestures = usePagerGestures(x, opts);
   useHint(x, p.ready, { count, stride: g.stride });

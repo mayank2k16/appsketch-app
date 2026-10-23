@@ -206,7 +206,8 @@ How the pager works (`use-pager.ts`):
   whose opacity rises as the page leaves the centre (motion blur: a
   fixed-intensity 26 blur faded in from 12% to 50% off centre). The details panels cross-fade with a short parallax.
 - One swipe moves at most one page.
-- Only the current page and its two neighbours are rendered.
+- Pages ±2 (`WINDOW`) around the SETTLED page are rendered (off-centre
+  ones without a WebView), so a second quick swipe always finds its page.
 - WebViews: see the loading timeline above. The release settles after a
   fixed 380ms (`SETTLE_MS`), not the spring callback.
 - **Hint.** Once per app session, 600ms after the open finishes, the page
@@ -216,12 +217,22 @@ How the pager works (`use-pager.ts`):
   release if a fling lands on a page not ticked yet, and one `soft` bump per
   drag at either end of the list.
 - **Claiming the swipe over a live site.** The hero's pan uses manual
-  activation from raw touches: ≥7pt mostly-sideways claims it, ≥8pt
-  vertical gives it to the site. It must decide before WKWebView's own
+  activation from raw touches: ≥7pt sideways that leads the vertical claims
+  it; ≥8pt vertical that is clearly MORE than the sideways (×1.2) gives it
+  to the site. (Oct 23: the old rule — claim only if dx > 1.3·dy, yield at
+  any 8pt vertical — handed a natural thumb arc to the site, so first
+  swipes often did nothing.) It must decide before WKWebView's own
   scroll pan starts (~10pt); with `activeOffsetX(18)` the site won every
   drag and sideways swipes only nudged the page.
+- **Debounced commit.** A release only updates the light chrome (`index`:
+  breadcrumb, LIVE badge, details touch target). The page window, every
+  hero's `load` and the warm neighbours follow `settled`, committed
+  SETTLE_MS after the LAST release (a run of quick swipes commits once),
+  or at once when a swipe reaches the window's edge. The drag is clamped on
+  the UI thread to the mounted window (`span`). Before, every release
+  re-rendered and mounted a new neighbour card in the spring's first frames.
 - **Smooth landing.** WebViews never mount or unmount while the spring runs:
-  the rendered window spans both the old and new page until `settled`,
+  the rendered window stays put until `settled`,
   neighbours warm around the settled page, and a page that had no WebView
   gets one only after it settles. The hero's motion blur starts at 12% off
   centre, peaks at intensity 26, and is at opacity 0 when centred (a blur
