@@ -49,8 +49,12 @@ panels' frame only. The geometry is fixed in `geometry.ts`.
   34pt of the site (a site's own top-left hamburger can sit under it).
 - **Pills row** (websites only). One centred capsule: the **LIVE** status
   (grey dot while the site loads, then a pulsing green one) and the
-  **Mobile | Tablet | Desktop** switch; Desktop is the default (user
-  request, Oct 2026). Mobile lays out at the panel's own width with no
+  **Mobile | Tablet | Desktop** switch; Mobile is the default (user request,
+  23 Oct 2026 — lightest load, smoother swipes; Desktop was the default
+  before). ‹ and › capsules sit at the row's two ends and page to the
+  previous / next template (`stepPage` in use-pager.ts: same spring, haptics
+  and debounced settle as a swipe; dimmed at the list's ends, a tap there
+  bumps). Mobile lays out at the panel's own width with no
   transform (native scrolling); Tablet / Desktop render at 820 / 1280 CSS px
   and are scaled down with an RN transform. A viewport-meta approach
   (`width=1280` injected before content, letting WebKit zoom natively) was
@@ -118,18 +122,15 @@ decoded image. Only the centred page scrolls.
   stays inside the WebView (no link previews). The pager's pan claims only
   horizontal moves (`activeOffsetX ±18`, `failOffsetY ±10`), so vertical
   scrolls go to the site.
-- It auto-scrolls (`autoScrollScript(speed, userStops = true)`). The first
-  touch stops it for good, also across in-site navigation
-  (`sessionStorage.__asTaken`). It pauses when the screen loses focus or the
-  app backgrounds (`use-page-active.ts`), and a warm (hidden) neighbour is
-  paused from its first load (the pause state is sent with the onLoad
-  injection; before, the only pause was injected before the page existed,
-  so hidden neighbours scrolled offscreen). A paused or taken page runs no
-  rAF loop at all. The motion is eased: the speed ramps up over 1.2s from
-  every start and eases out over the last 90 px before an end, and the
-  position moves in device-pixel steps (1/dpr CSS px) rather than whole CSS
-  px — whole-px steps at ~0.7 px/frame gave an uneven 1-0-1 cadence that
-  shimmered ("the initial scroll is blinking").
+- It does NOT auto-scroll any more (removed 23 Oct 2026 at the user's
+  request; `autoScrollScript` is still used by Home's Studio live site).
+- **Sideways drags never reach the site** (`SWIPE_GUARD_SCRIPT`):
+  `touch-action: pan-y` on `<html>` stops WebKit's horizontal panning, and a
+  passive capture listener on window swallows (`stopImmediatePropagation`)
+  the touch/pointer moves of a drag that went sideways first, so the site's
+  own carousels don't run under a page swipe. REJECTED: also calling
+  `preventDefault` on those touchmoves — WebKit then claims the touch and
+  the native pager's pan fails (hero swipes stopped paging on the sim).
 - **Never half-rendered.** `READY_SCRIPT` (`autoscroll-script.ts`) polls
   every 80ms and posts `{"as":"ready"}` only once the first screen has
   painted: the body has real content, `document.readyState` is `complete`,
@@ -278,6 +279,9 @@ remains only because the category screen, `src/containers/TemplateCategory/`,
 still calls it.)
 
 ## Performance (Oct 2026 pass)
+
+PAGE_SPRING is damping 32 / stiffness 340 (was 26 / 220: snappier
+landing, still no overshoot).
 
 Measured on a Release simulator build (iPhone 16e sim), Plinth Desktop,
 12 fast swipes (8 forward, then back/forth), with a temporary UI-thread

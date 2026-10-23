@@ -200,6 +200,34 @@ function release(
   x.value = withSpring(to, { ...PAGE_SPRING, velocity: -vx / o.g.stride });
 }
 
+/** The ‹ › buttons: one page either way, the same spring and haptics as a
+ *  swipe (a tap at either end of the list only bumps). */
+function stepPage(
+  dir: 1 | -1,
+  {
+    x,
+    base,
+    ticked,
+    o,
+  }: {
+    x: SharedValue<number>;
+    base: SharedValue<number>;
+    ticked: SharedValue<number>;
+    o: GestureOpts;
+  }
+) {
+  if (o.m.closing.get()) return;
+  const at = base.get();
+  const to = clampPage(at + dir, at, o);
+  if (to === at) return bump();
+  base.set(to);
+  ticked.set(to);
+  tick();
+  o.onRelease(to);
+  o.onSettle(to);
+  x.set(withSpring(to, PAGE_SPRING));
+}
+
 function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
   const { count, g, m } = o;
   const base = useSharedValue(Math.round(x.value));
@@ -262,7 +290,8 @@ function usePagerGestures(x: SharedValue<number>, o: GestureOpts) {
         .onFinalize(onFinalize);
       return pullDown ? p.activeOffsetY(14) : heroClaim(p, start);
     };
-    return { hero: pan(false), details: pan(true) };
+    const step = (dir: 1 | -1) => stepPage(dir, { x, base, ticked, o });
+    return { hero: pan(false), details: pan(true), step };
   }, [x, base, from, axis, ticked, bumped, start, o, count, g, m]);
 }
 
@@ -313,5 +342,11 @@ export function usePager(p: Params) {
   );
   const gestures = usePagerGestures(x, opts);
   useHint(x, p.ready, { count, stride: g.stride });
-  return { x, index: st.index, settled: st.settled, gestures };
+  return {
+    x,
+    index: st.index,
+    settled: st.settled,
+    gestures,
+    step: gestures.step,
+  };
 }

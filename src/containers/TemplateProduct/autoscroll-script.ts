@@ -201,3 +201,41 @@ export const FIT_SCRIPT = `(function(){
     head.appendChild(st);
   } catch (e) {}
 })(); true;`;
+
+/**
+ * Keeps sideways swipes out of the live site: the product page's pager owns
+ * every horizontal drag, so the site must not scroll sideways or run its own
+ * carousel under the finger while the page moves. `touch-action: pan-y` on
+ * the root stops WebKit's horizontal panning; a passive capture listener
+ * on window swallows the touch/pointer moves of a drag that went sideways first, so
+ * the site's own swipe handlers (carousels, sliders) never see it. Vertical
+ * scrolling and taps are untouched.
+ */
+export const SWIPE_GUARD_SCRIPT = `(function(){
+  if (window.__asGuardInstalled) return; window.__asGuardInstalled = true;
+  try {
+    var st = document.createElement('style');
+    st.textContent = 'html{touch-action:pan-y!important;overscroll-behavior-x:none!important}';
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+  var x0 = 0, y0 = 0, mode = 0;
+  function at(e){ var t = e.touches ? e.touches[0] : e; return t ? [t.clientX, t.clientY] : null; }
+  function down(e){ var p = at(e); if (p) { x0 = p[0]; y0 = p[1]; mode = 0; } }
+  function move(e){
+    if (mode === 2) return;
+    var p = at(e); if (!p) return;
+    if (!mode) {
+      var dx = Math.abs(p[0] - x0), dy = Math.abs(p[1] - y0);
+      if (dx < 5 && dy < 5) return;
+      mode = dx > dy ? 1 : 2;
+      if (mode === 2) return;
+    }
+    // No preventDefault: a cancelled touchmove makes WebKit claim the
+    // touch and fail the native pager's pan.
+    e.stopImmediatePropagation();
+  }
+  window.addEventListener('touchstart', down, { capture: true, passive: true });
+  window.addEventListener('pointerdown', down, { capture: true, passive: true });
+  window.addEventListener('touchmove', move, { capture: true, passive: true });
+  window.addEventListener('pointermove', move, { capture: true, passive: true });
+})(); true;`;

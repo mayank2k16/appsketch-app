@@ -128,7 +128,6 @@ function HeroBody(p: BodyProps) {
       url={url}
       size={size}
       device={p.device}
-      active={on && p.active}
       interactive={on}
       dark={p.dark}
       onLive={onLive}

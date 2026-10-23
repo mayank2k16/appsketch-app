@@ -12,10 +12,9 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { F } from '@/lib/fonts';
 
 import {
-  autoScrollScript,
   FIT_SCRIPT,
-  pauseAutoScroll,
   READY_SCRIPT,
+  SWIPE_GUARD_SCRIPT,
 } from './autoscroll-script';
 import { DotVeil } from './dot-loader';
 import { type Device, VIEWPORT } from './live-url';
@@ -30,8 +29,9 @@ import { type Device, VIEWPORT } from './live-url';
  * so a swipe lands on a site that is already up.
  *
  * On the current page the site is the user's: vertical drags scroll it and
- * taps work (links, menus; navigation stays inside the WebView). The
- * auto-scroll stops for good on the first touch. The scale transform maps
+ * taps work (links, menus; navigation stays inside the WebView). It does
+ * not scroll by itself, and never sideways: horizontal drags belong to the
+ * pager (SWIPE_GUARD_SCRIPT). The scale transform maps
  * touches back to the right element at Tablet / Desktop widths too.
  *
  * Recovery: if iOS kills the page's web process (memory pressure — the
@@ -49,12 +49,10 @@ import { type Device, VIEWPORT } from './live-url';
  * then the new one fades in over both (~200ms) and the old one is dropped.
  */
 
-/** Page px/s at phone width — about 20pt/s on screen. */
-const SPEED = 40;
 /** The loader → site crossfade. */
 const FADE_MS = 200;
 
-const SCRIPT = FIT_SCRIPT + autoScrollScript(SPEED, true) + READY_SCRIPT;
+const SCRIPT = FIT_SCRIPT + SWIPE_GUARD_SCRIPT + READY_SCRIPT;
 
 type Size = { width: number; height: number };
 
@@ -62,8 +60,6 @@ type LayerProps = {
   url: string;
   size: Size;
   device: Device;
-  /** Auto-scroll may run (centred page, screen focused, app foreground). */
-  active: boolean;
   /** Takes touches (the centred page). */
   interactive: boolean;
   dark: boolean;
@@ -133,25 +129,11 @@ const LiveLayer = React.memo(function LiveLayer(p: LayerProps) {
   );
 });
 
-/** The page's auto-scroll follows `active`. Its script starts running, so
- *  every load sends the current state with it (a warm, hidden neighbour
- *  stays paused — no scrolling, no frames — until it is centred); later
- *  changes are sent as they happen, never to a page that has not loaded.
- *  iOS can skip `injectedJavaScript`, so the script is also injected on
- *  load; it installs once per document. */
-function useAutoScrollSync(
-  ref: React.RefObject<WebView | null>,
-  active: boolean
-) {
-  const activeRef = React.useRef(active);
-  activeRef.current = active;
-  const loaded = React.useRef(false);
-  React.useEffect(() => {
-    if (loaded.current) ref.current?.injectJavaScript(pauseAutoScroll(active));
-  }, [ref, active]);
+/** iOS can skip `injectedJavaScript`, so the scripts are injected again on
+ *  load; each installs once per document. */
+function useInject(ref: React.RefObject<WebView | null>) {
   return React.useCallback(() => {
-    loaded.current = true;
-    ref.current?.injectJavaScript(SCRIPT + pauseAutoScroll(activeRef.current));
+    ref.current?.injectJavaScript(SCRIPT);
   }, [ref]);
 }
 
@@ -160,7 +142,7 @@ const LiveWeb = React.memo(function LiveWeb(
 ) {
   const ref = React.useRef<WebView>(null);
   const { style, reveal } = useReveal(p.device, p.onReady);
-  const onLoad = useAutoScrollSync(ref, p.active);
+  const onLoad = useInject(ref);
   // Mobile lays out at the panel's own width (a phone width already), so it
   // needs no transform and scrolls natively; Tablet / Desktop render at
   // their real width and are scaled down.
@@ -215,7 +197,6 @@ type Props = {
   url: string;
   size: Size;
   device: Device;
-  active: boolean;
   interactive: boolean;
   dark: boolean;
   onLive: (live: boolean) => void;
@@ -273,7 +254,6 @@ export const LivePreview = React.memo(function LivePreview(p: Props) {
             url={p.url}
             size={p.size}
             device={d}
-            active={p.active}
             interactive={p.interactive && d === device}
             dark={p.dark}
             onReady={onReady}

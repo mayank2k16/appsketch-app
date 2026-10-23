@@ -64,4 +64,4 @@ export const pageTheme = (dark: boolean) => (dark ? DARK : LIGHT);
 /** The grow spring, per the Joker reference: soft, no overshoot to speak of. */
 export const GROW_SPRING = { damping: 18, stiffness: 140, mass: 1 } as const;
 /** A page settling after a swipe. */
-export const PAGE_SPRING = { damping: 26, stiffness: 220, mass: 1 } as const;
+export const PAGE_SPRING = { damping: 32, stiffness: 340, mass: 1 } as const;

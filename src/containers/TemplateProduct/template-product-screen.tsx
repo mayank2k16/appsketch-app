@@ -158,10 +158,11 @@ function useWarmNeighbours({
   return n;
 }
 
-/** Page-wide choices: the device the live sites render at (Desktop first)
+/** Page-wide choices: the device the live sites render at (Mobile first:
+ *  the lightest layout, and swipes stay smooth)
  *  and the template whose "More" card is open. */
 function useChoices() {
-  const [device, setDevice] = React.useState<Device>('desktop');
+  const [device, setDevice] = React.useState<Device>('mobile');
   const [more, setMore] = React.useState<MarketTemplate | null>(null);
   const closeMore = React.useCallback(() => setMore(null), []);
   return { device, setDevice, more, setMore, closeMore };
@@ -371,6 +372,9 @@ function Overlays({ s: st, p }: { s: State; p: PageProps }) {
         index={st.index}
         device={liveUrlOf(current) ? st.device : null}
         onDevice={st.setDevice}
+        onStep={st.step}
+        canPrev={st.index > 0}
+        canNext={st.index < st.list.length - 1}
       />
       <BreadCrumbs
         g={st.g}
