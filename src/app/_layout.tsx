@@ -59,19 +59,21 @@ SplashScreen.setOptions({
   fade: true,
 });
 
+// ── Inter (replaces Proxima Nova app-wide, mapped via @/lib/fonts) ──
+const FONTS = {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+};
+
 function RootLayoutContent() {
   const { colorScheme } = useColorScheme();
   const screenBg = appTheme[colorScheme === 'dark' ? 'dark' : 'light'].bg;
 
-  const [fontsLoaded] = useFonts({
-    // ── Inter (replaces Proxima Nova app-wide, mapped via @/lib/fonts) ──
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
-  });
+  const [fontsLoaded] = useFonts(FONTS);
 
   // Keep splash until fonts ready — avoids flash of unstyled text
   if (!fontsLoaded) return null;
@@ -110,6 +112,9 @@ function RootLayoutContent() {
       {/* `/pricing` is a tab now; Marketplace is a pushed screen. */}
       <Stack.Screen name="marketplace" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ headerShown: false }} />
+      {/* Services cart (Razorpay) and domains — docs/domains.md. */}
+      <Stack.Screen name="cart" options={{ headerShown: false }} />
+      <Stack.Screen name="domains" options={{ headerShown: false }} />
       <Stack.Screen name="support" options={{ headerShown: false }} />
       <Stack.Screen name="support-chat" options={{ headerShown: false }} />
       <Stack.Screen name="category/[name]" options={{ headerShown: false }} />

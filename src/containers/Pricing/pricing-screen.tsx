@@ -1,18 +1,24 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
+  type LayoutChangeEvent,
   Linking,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  type TextInput,
   View,
 } from 'react-native';
+import Animated, {
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCatalogue } from '@/api/app-cart';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
-import { GradientText } from '@/components/ui/GradientText';
+import { type ServicesPalette, servicesPalette } from '@/components/services';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import { buyPlan, isIos, type PlanInterval, useIapStore } from '@/lib/iap';
@@ -20,8 +26,14 @@ import { type AppColors, useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
 import { BillingToggle } from './billing-toggle';
+import { CartButton } from './cart-button';
+import { CustomCard } from './custom-card';
+import { DomainCard } from './domain-card';
 import { PlanCard } from './plan-card';
 import { PlanSkeleton } from './plan-skeleton';
+import { PlannerCard } from './planner/planner-card';
+import { StickySummary } from './planner/summary-bar';
+import { usePlanner } from './planner/use-planner';
 import { CurrentPlan, StoreUnavailable } from './status-notes';
 import { StoreFooter } from './store-footer';
 import { type PricingPalette, pricingPalette } from './theme';
@@ -30,21 +42,6 @@ import { type PlanView, usePricing } from './use-pricing';
 /** Android keeps the pre-IAP behaviour (plans are bought on the web). iOS
  *  never reaches this — digital plans there are App Store only (3.1.1). */
 const ANDROID_PRICING_URL = 'https://appsketch.ai/pricing';
-
-function Hero({ t, p }: { t: AppColors; p: PricingPalette }) {
-  return (
-    <View style={st.hero}>
-      <Text style={[st.eyebrow, { color: p.eyebrow }]}>AppSketch plans</Text>
-      <Text style={[st.title, { color: t.text }]}>Build more with</Text>
-      <GradientText style={st.title} colors={p.titleColors}>
-        the right plan
-      </GradientText>
-      <Text style={[st.sub, { color: t.textSub }]}>
-        More AI, more apps, more room to grow. Switch plans or cancel anytime.
-      </Text>
-    </View>
-  );
-}
 
 function usePlanPress(cycle: PlanInterval) {
   const router = useRouter();
@@ -115,73 +112,212 @@ function PlanList({
   );
 }
 
-/** The Pricing tab: hero, current plan, Monthly/Yearly, the plan cards and —
- *  on iOS — StoreKit subscriptions with Restore and the 3.1.2 disclosures. */
+/** "Build with AI": the App Store plans (Yearly first), compact cards and
+ *  the 3.1.2 block (Restore, auto-renew text, Terms, Privacy). */
+function PlansSection({ t, p }: { t: AppColors; p: PricingPalette }) {
+  const [cycle, setCycle] = React.useState<PlanInterval>('yearly');
+  const signedIn = useAuth.use.status() === 'signIn';
+  const { saving, activePlanName } = usePricing(cycle);
+  return (
+    <View>
+      <SectionHead
+        t={t}
+        title="Build with AI"
+        sub="Self-serve plans. Switch or cancel anytime."
+      />
+      {signedIn && activePlanName ? (
+        <View style={st.pad}>
+          <CurrentPlan t={t} p={p} name={activePlanName} manage={isIos()} />
+        </View>
+      ) : null}
+      <View style={st.toggle}>
+        <BillingToggle
+          p={p}
+          sub={t.textSub}
+          value={cycle}
+          saving={saving}
+          onChange={setCycle}
+        />
+      </View>
+      <PlanList t={t} p={p} cycle={cycle} />
+      {isIos() ? <StoreFooter t={t} p={p} signedIn={signedIn} /> : null}
+    </View>
+  );
+}
+
+function SectionHead({
+  t,
+  title,
+  sub,
+}: {
+  t: AppColors;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <View style={st.section}>
+      <Text style={[st.sectionTitle, { color: t.text }]}>{title}</Text>
+      <Text style={[st.sectionSub, { color: t.textSub }]}>{sub}</Text>
+    </View>
+  );
+}
+
+function Hero({ s }: { s: ServicesPalette }) {
+  return (
+    <View style={st.hero}>
+      <View style={st.heroText}>
+        <Text style={[st.title, { color: s.text }]}>Pricing</Text>
+        <Text style={[st.sub, { color: s.sub }]} numberOfLines={1}>
+          Launch with our team, or build it yourself with AI.
+        </Text>
+      </View>
+      <CartButton s={s} />
+    </View>
+  );
+}
+
+/** Scroll offset, viewport height and the in-card bar's y — all UI-thread
+ *  values, so the sticky summary never re-renders React while scrolling. */
+function useStickyGeometry() {
+  const scrollY = useSharedValue(0);
+  const viewH = useSharedValue(0);
+  const inlineY = useSharedValue(0);
+  const cardY = React.useRef(0);
+  const barY = React.useRef(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+  const sync = () => {
+    inlineY.value = cardY.current + barY.current;
+  };
+  return {
+    scrollY,
+    viewH,
+    inlineY,
+    onScroll,
+    onRoot: (e: LayoutChangeEvent) => {
+      viewH.value = e.nativeEvent.layout.height;
+    },
+    onCard: (e: LayoutChangeEvent) => {
+      cardY.current = e.nativeEvent.layout.y;
+      sync();
+    },
+    onBar: (e: LayoutChangeEvent) => {
+      // the slot's y inside the card's padding box
+      barY.current = e.nativeEvent.layout.y;
+      sync();
+    },
+  };
+}
+
+/** `/pricing?section=domain` scrolls to the domain card and focuses search. */
+function useDomainJump(scroll: React.RefObject<Animated.ScrollView | null>) {
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  const input = React.useRef<TextInput>(null);
+  const y = React.useRef(0);
+  React.useEffect(() => {
+    if (section !== 'domain') return;
+    const id = setTimeout(() => {
+      scroll.current?.scrollTo({
+        y: Math.max(0, y.current - 60),
+        animated: true,
+      });
+      input.current?.focus();
+    }, 350);
+    return () => clearTimeout(id);
+  }, [section, scroll]);
+  return {
+    input,
+    onLayout: (e: LayoutChangeEvent) => {
+      y.current = e.nativeEvent.layout.y;
+    },
+  };
+}
+
+/** The Pricing tab: compact hero, the gamified "Launch with our team"
+ *  planner (services, Razorpay via the cart), the App Store plans, the
+ *  domain search and custom solutions. */
 export function PricingScreen() {
   const insets = useSafeAreaInsets();
   const tabBarH = useTabBarHeight();
   const { colorScheme } = useColorScheme();
   const t = useAppTheme(colorScheme);
   const p = pricingPalette(t);
-  const [cycle, setCycle] = React.useState<PlanInterval>('yearly');
-  const signedIn = useAuth.use.status() === 'signIn';
-  const { saving, activePlanName } = usePricing(cycle);
+  const s = servicesPalette(t);
+  const catalogue = useCatalogue();
+  const pl = usePlanner(catalogue.data);
+  const geo = useStickyGeometry();
+  const scroll = React.useRef<Animated.ScrollView>(null);
+  const jump = useDomainJump(scroll);
   return (
-    <View style={[st.root, { backgroundColor: t.bg }]}>
+    <View style={[st.root, { backgroundColor: t.bg }]} onLayout={geo.onRoot}>
       <StatusBar
         translucent
         backgroundColor="transparent"
         barStyle={t.statusBar}
       />
-      <ScrollView
+      <Animated.ScrollView
+        ref={scroll}
+        onScroll={geo.onScroll}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: insets.top + 18,
-          paddingBottom: tabBarH + 28,
+          paddingTop: insets.top + 10,
+          paddingBottom: tabBarH + (pl.unlocked ? 96 : 28),
         }}
       >
-        <Hero t={t} p={p} />
-        {signedIn && activePlanName ? (
-          <View style={st.pad}>
-            <CurrentPlan t={t} p={p} name={activePlanName} manage={isIos()} />
-          </View>
-        ) : null}
-        <View style={st.toggle}>
-          <BillingToggle
-            p={p}
-            sub={t.textSub}
-            value={cycle}
-            saving={saving}
-            onChange={setCycle}
+        <Hero s={s} />
+        <View style={st.pad} onLayout={geo.onCard}>
+          <PlannerCard
+            s={s}
+            pl={pl}
+            query={catalogue}
+            onBarLayout={geo.onBar}
           />
         </View>
-        <PlanList t={t} p={p} cycle={cycle} />
-        {isIos() ? <StoreFooter t={t} p={p} signedIn={signedIn} /> : null}
-      </ScrollView>
+        <PlansSection t={t} p={p} />
+        <View style={[st.pad, st.cards]} onLayout={jump.onLayout}>
+          <DomainCard s={s} inputRef={jump.input} />
+          <CustomCard s={s} whatsapp={catalogue.data?.whatsapp} />
+        </View>
+      </Animated.ScrollView>
+      {/* Solid strip under the clock so scrolled content never sits there. */}
+      <View
+        style={[st.statusStrip, { height: insets.top, backgroundColor: t.bg }]}
+      />
+      <StickySummary
+        s={s}
+        pl={pl}
+        scrollY={geo.scrollY}
+        inlineY={geo.inlineY}
+        viewH={geo.viewH}
+        bottom={tabBarH}
+      />
     </View>
   );
 }
 
 const st = StyleSheet.create({
   root: { flex: 1 },
-  hero: { paddingHorizontal: 20, paddingBottom: 20 },
-  eyebrow: {
-    fontFamily: F.sans600,
-    fontSize: 11.5,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 10,
+  statusStrip: { position: 'absolute', top: 0, left: 0, right: 0 },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingBottom: 12,
+    gap: 12,
   },
-  title: {
-    fontFamily: F.display900,
-    fontSize: 32,
-    lineHeight: 37,
-    letterSpacing: -0.9,
-  },
-  sub: { fontFamily: F.sans400, fontSize: 14, lineHeight: 20, marginTop: 10 },
-  pad: { paddingHorizontal: 16, paddingBottom: 4 },
-  toggle: { paddingTop: 18, paddingBottom: 22 },
-  list: { paddingHorizontal: 16, gap: 16 },
+  heroText: { flex: 1 },
+  title: { fontFamily: F.display900, fontSize: 26, letterSpacing: -0.7 },
+  sub: { fontFamily: F.sans400, fontSize: 13, marginTop: 1 },
+  section: { paddingHorizontal: 18, paddingTop: 26, paddingBottom: 10 },
+  sectionTitle: { fontFamily: F.display900, fontSize: 19, letterSpacing: -0.4 },
+  sectionSub: { fontFamily: F.sans400, fontSize: 12.5, marginTop: 2 },
+  pad: { paddingHorizontal: 12 },
+  cards: { paddingTop: 26, gap: 12 },
+  toggle: { paddingTop: 6, paddingBottom: 14 },
+  list: { paddingHorizontal: 12, gap: 10 },
   error: {
     fontFamily: F.sans600,
     fontSize: 14,

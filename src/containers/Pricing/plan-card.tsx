@@ -19,87 +19,53 @@ type Props = {
   onSubscribe: () => void;
 };
 
-function PriceWell({ plan, t, p }: Pick<Props, 'plan' | 't' | 'p'>) {
+function Price({ plan, t }: Pick<Props, 'plan' | 't'>) {
+  if (plan.free) return <Text style={[st.price, { color: t.text }]}>Free</Text>;
+  if (!plan.price)
+    return (
+      <Text style={[st.unavailable, { color: t.textSub }]}>
+        Not available right now
+      </Text>
+    );
   return (
-    <View style={[st.priceWell, { backgroundColor: p.priceBg }]}>
-      {plan.free ? (
-        <Text style={[st.price, { color: t.text }]}>Free</Text>
-      ) : plan.price ? (
-        <>
-          <View style={st.priceRow}>
-            <Text style={[st.price, { color: t.text }]}>{plan.price}</Text>
-            <Text style={[st.period, { color: t.textSub }]}>{plan.period}</Text>
-          </View>
-          {plan.monthlyEquivalent ? (
-            <Text style={[st.equiv, { color: t.textSub }]}>
-              {plan.monthlyEquivalent}/month, billed yearly
-            </Text>
-          ) : null}
-        </>
-      ) : (
-        <Text style={[st.unavailable, { color: t.textSub }]}>
-          Not available right now
+    <View style={st.priceCol}>
+      <Text style={[st.price, { color: t.text }]}>
+        {plan.price}
+        <Text style={[st.period, { color: t.textSub }]}>{plan.period}</Text>
+      </Text>
+      {plan.monthlyEquivalent ? (
+        <Text style={[st.equiv, { color: t.textSub }]}>
+          {plan.monthlyEquivalent}/mo, billed yearly
         </Text>
-      )}
+      ) : null}
     </View>
   );
 }
 
-/** Show everything up to this many; beyond it, the first 6 + one tap. */
-const FEATURES_INLINE = 8;
-const FEATURES_FOLDED = 6;
-
-function Features({ plan, t, p }: Pick<Props, 'plan' | 't' | 'p'>) {
+/** Features fold to a few lines (one dot-separated paragraph); tap to open. */
+function Features({ plan, t }: Pick<Props, 'plan' | 't'>) {
   const [open, setOpen] = React.useState(false);
-  const fold = plan.features.length > FEATURES_INLINE && !open;
-  const shown = fold ? plan.features.slice(0, FEATURES_FOLDED) : plan.features;
+  const lead = [
+    plan.credits,
+    plan.models.length ? `AI: ${plan.models.join(', ')}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  if (!lead && !plan.features.length) return null;
   return (
-    <View style={st.features}>
-      {shown.map((feat) => (
-        <View key={feat} style={st.featureRow}>
-          <Ionicons name="checkmark" size={15} color={p.mark} style={st.tick} />
-          <Text style={[st.featureText, { color: t.textSub }]}>{feat}</Text>
-        </View>
-      ))}
-      {fold ? (
-        <Text
-          onPress={() => setOpen(true)}
-          accessibilityRole="button"
-          style={[st.more, { color: t.text }]}
-        >
-          See all {plan.features.length} features
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-/** Build credits per month and the AI models the plan unlocks. */
-function Extras({ plan, t, p }: Pick<Props, 'plan' | 't' | 'p'>) {
-  if (!plan.credits && !plan.models.length) return null;
-  return (
-    <View style={[st.extras, { borderColor: p.cardBorder }]}>
-      {plan.credits ? (
-        <View style={st.extraRow}>
-          <Ionicons name="flash-outline" size={15} color={t.text} />
-          <Text style={[st.extraText, { color: t.text }]}>{plan.credits}</Text>
-        </View>
-      ) : null}
-      {plan.models.length ? (
-        <View style={st.extraRow}>
-          <Ionicons
-            name="sparkles-outline"
-            size={15}
-            color={t.text}
-            style={st.tick}
-          />
-          <Text style={[st.extraText, { color: t.textSub }]}>
-            <Text style={{ color: t.text }}>AI models: </Text>
-            {plan.models.join(', ')}
-          </Text>
-        </View>
-      ) : null}
-    </View>
+    <Text
+      onPress={() => setOpen((o) => !o)}
+      numberOfLines={open ? undefined : 3}
+      accessibilityRole="button"
+      accessibilityHint={
+        open ? 'Collapses the features' : 'Shows every feature'
+      }
+      style={[st.features, { color: t.textSub }]}
+    >
+      {lead ? <Text style={[st.lead, { color: t.text }]}>{lead}</Text> : null}
+      {lead && plan.features.length ? '  ·  ' : ''}
+      {plan.features.join('  ·  ')}
+    </Text>
   );
 }
 
@@ -135,9 +101,9 @@ function Cta({ plan, p, t, ctaLabel, busy, locked, onSubscribe }: Props) {
   );
 }
 
-/** One plan: name + description, the price well (App Store price on iOS),
- *  the feature list and its Subscribe. The highlighted plan (Growth) gets
- *  the ink border, the "Most popular" tab and the screen's one orange CTA. */
+/** One plan, compact: name + description beside the App Store price, the
+ *  features folded to three lines, and Subscribe. The highlighted plan
+ *  (Growth) gets the ink border, the "Most popular" tab and the orange CTA. */
 export function PlanCard(props: Props) {
   const { plan, t, p } = props;
   return (
@@ -150,20 +116,27 @@ export function PlanCard(props: Props) {
         },
       ]}
     >
-      {plan.popular ? (
-        <View style={[st.badge, { backgroundColor: p.popularBadgeBg }]}>
-          <Text style={[st.badgeText, { color: p.popularBadgeText }]}>
-            Most popular
-          </Text>
+      <View style={st.head}>
+        <View style={st.headText}>
+          <View style={st.nameRow}>
+            <Text style={[st.name, { color: t.text }]}>{plan.name}</Text>
+            {plan.popular ? (
+              <View style={[st.badge, { backgroundColor: p.popularBadgeBg }]}>
+                <Text style={[st.badgeText, { color: p.popularBadgeText }]}>
+                  Most popular
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          {plan.description ? (
+            <Text style={[st.desc, { color: t.textSub }]} numberOfLines={2}>
+              {plan.description}
+            </Text>
+          ) : null}
         </View>
-      ) : null}
-      <Text style={[st.name, { color: t.text }]}>{plan.name}</Text>
-      {plan.description ? (
-        <Text style={[st.desc, { color: t.textSub }]}>{plan.description}</Text>
-      ) : null}
-      <PriceWell plan={plan} t={t} p={p} />
-      <Extras plan={plan} t={t} p={p} />
-      <Features plan={plan} t={t} p={p} />
+        <Price plan={plan} t={t} />
+      </View>
+      <Features plan={plan} t={t} />
       <Cta {...props} />
     </View>
   );
@@ -171,71 +144,39 @@ export function PlanCard(props: Props) {
 
 const st = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 20,
+    padding: 14,
+    gap: 10,
     overflow: 'hidden',
   },
-  badge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderBottomLeftRadius: 12,
-  },
-  badgeText: { fontFamily: F.sans700, fontSize: 10.5, letterSpacing: 0.4 },
-  name: { fontFamily: F.display900, fontSize: 21, letterSpacing: -0.3 },
-  desc: {
-    fontFamily: F.sans400,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 4,
-  },
-  priceWell: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 18,
-  },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  price: { fontFamily: F.display900, fontSize: 28, letterSpacing: -0.6 },
-  period: { fontFamily: F.sans500, fontSize: 14 },
-  unavailable: { fontFamily: F.sans600, fontSize: 14 },
-  equiv: { fontFamily: F.sans500, fontSize: 12.5, marginTop: 4 },
-  extras: {
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    paddingVertical: 12,
-    marginBottom: 16,
-    gap: 8,
-  },
-  extraRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
-  extraText: { flex: 1, fontFamily: F.sans600, fontSize: 13, lineHeight: 18 },
-  more: {
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  badgeText: { fontFamily: F.sans700, fontSize: 9.5, letterSpacing: 0.4 },
+  head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  headText: { flex: 1 },
+  name: { fontFamily: F.display900, fontSize: 18, letterSpacing: -0.3 },
+  desc: { fontFamily: F.sans400, fontSize: 12, lineHeight: 16, marginTop: 2 },
+  priceCol: { alignItems: 'flex-end' },
+  price: { fontFamily: F.sans700, fontSize: 18, letterSpacing: -0.3 },
+  period: { fontFamily: F.sans500, fontSize: 12 },
+  unavailable: {
     fontFamily: F.sans600,
-    fontSize: 13,
-    textDecorationLine: 'underline',
-    marginTop: 2,
+    fontSize: 12,
+    maxWidth: 110,
+    textAlign: 'right',
   },
-  features: { gap: 10, marginBottom: 20 },
-  featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
-  tick: { marginTop: 2 },
-  featureText: {
-    flex: 1,
-    fontFamily: F.sans400,
-    fontSize: 13.5,
-    lineHeight: 19,
-  },
+  equiv: { fontFamily: F.sans500, fontSize: 11, marginTop: 1 },
+  features: { fontFamily: F.sans400, fontSize: 12, lineHeight: 17 },
+  lead: { fontFamily: F.sans600 },
   cta: {
-    height: 50,
-    borderRadius: 14,
+    height: 42,
+    borderRadius: 12,
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ctaOutline: { borderWidth: 1 },
-  ctaText: { fontFamily: F.sans700, fontSize: 15 },
+  ctaText: { fontFamily: F.sans700, fontSize: 14 },
 });

@@ -9,7 +9,6 @@ export * from './common';
 export * from './contact';
 export * from './credit-debit-notes';
 export * from './discounts';
-export * from './domains';
 export * from './inventory';
 export * from './invoices';
 export * from './newsletter';

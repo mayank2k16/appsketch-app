@@ -15,7 +15,40 @@ build can sell plans.
   - The old `/pricing` stack route is gone. `/pricing` resolves to the tab, so
     the drawer's "Pricing & Plans" and `router.navigate('/pricing')` both land
     there.
-- **Pricing screen** (`src/containers/Pricing/`). Hero, current plan (with
+- **Pricing screen** (`src/containers/Pricing/`), dense, top to bottom:
+  1. A one-line hero ("Pricing") with the cart button (`cart-button.tsx`,
+     count badge, only while the services cart has items).
+  2. **"Launch with our team"** (`planner/`), the website's assisted planner
+     as a small game. Builds (Android / iOS / Web) and extras come live from
+     `GET account/app-cart/catalogue/` (no hardcoded prices; a failed load
+     shows a Retry state). Step rail 1 Choose what we build → 2 Add extras →
+     3 Review & checkout with a growing fill; extras sit at 55% with a lock
+     until a build is picked, and tapping one then lifts the build tiles with
+     an orange ring + `haptic.warning`. Every pick is a `haptic.select`;
+     reaching step 3 pops the third dot with an orange ring burst and
+     `haptic.success`. The dark summary bar shows "Android + iOS + 2 extras"
+     and a total that counts on the UI thread (`AnimatedTotal`, an animated
+     read-only TextInput). While the in-card bar is off screen the same bar
+     is pinned above the tab bar (`StickySummary`, visibility derived from
+     the scroll offset on the UI thread). "Review & checkout" puts the picks
+     in the cart and opens `/cart`. Dropping the last build drops the extras.
+  3. **"Build with AI"**: the App Store plans below (cards made compact: the
+     price beside the name, features folded into one 3-line paragraph that
+     opens on tap) and the 3.1.2 store footer right after them.
+  4. **"Get your domain"** (`domain-card.tsx`, `domain-result.tsx`): search
+     debounced 400ms → `GET account/app-domains/search/`, rows with
+     Available/Taken, year chips and Add to cart; "Already own a domain?
+     Connect it →" opens `/domains/connect`. `/pricing?section=domain`
+     scrolls here and focuses the field.
+  5. **"Custom solutions"** (`custom-card.tsx`): topic chips and "Discuss my
+     project →", which opens the catalogue's WhatsApp link with `?text=`
+     listing the picks.
+- **Two payment rails, never mixed.** Platform plans are App Store
+  subscriptions only. Team builds, extras and domains are real-world
+  services (3.1.3(e)) and go through the services cart (`/cart`, Razorpay).
+  The cart never contains a plan and nothing links to a web checkout for
+  plans. Flow details: `docs/domains.md`.
+- The plan section on its own, as before: current plan (with
   Manage on iOS), the Yearly/Monthly toggle, the plan cards and the store
   footer.
   - The toggle puts Yearly first and selects it by default, as on
@@ -53,10 +86,12 @@ build can sell plans.
   - `UpgradeSheet` opens the Pricing tab on iOS ("See plans") and keeps the
     browser hand-off on Android.
   - The Domains upgrade copy no longer says "purchased on the web" on iOS.
-  - The Razorpay plan checkout is deleted on every platform: the `/cart`
-    route, `src/containers/Cart/`, `src/lib/domain-pricing.ts`, and the
+  - The Razorpay plan checkout is deleted on every platform: the old
+    `src/containers/Cart/`, `src/lib/domain-pricing.ts`, and the
     `initiateSubscriptionPayment` / `confirmSubscriptionPayment*` helpers and
-    types. The user wants plans bought only through Apple.
+    types. The user wants plans bought only through Apple. `/cart` is back
+    as the **services** cart (`src/containers/AppCart/`), which never sells
+    a plan.
     `react-native-razorpay` stays, because generated apps' shop checkout
     (`src/lib/payments`) uses it.
   - The Pricing screen's Android path still opens appsketch.ai/pricing, as

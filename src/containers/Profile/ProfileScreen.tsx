@@ -387,6 +387,12 @@ export function ProfileScreen() {
                   <GlassCard t={t} contentStyle={st.sectionCard}>
                     <MenuRow
                       t={t}
+                      icon="globe-outline"
+                      label="Domains"
+                      onPress={() => router.push('/domains')}
+                    />
+                    <MenuRow
+                      t={t}
                       icon="help-buoy-outline"
                       label="Help & Support"
                       onPress={() => router.push('/support')}

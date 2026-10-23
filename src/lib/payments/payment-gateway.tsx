@@ -77,6 +77,8 @@ export type PaymentContext = {
   prefillPhone?:    string;   // from address.phone — fixes black screen + keyboard bug
   prefillEmail?:    string;   // from user profile if available
   logoUrl?:         string;   // your tenant logo URL — fixes black header
+  prefillName?:     string;   // payer's name (else customer_name)
+  description?:     string;   // line under the merchant name (else 'Order Payment')
 };
 
 // ── Razorpay ───────────────────────────────────────────────────────────────────
@@ -100,14 +102,14 @@ function buildRazorpayOptions(checkout: CheckoutDetails, customerName: string, c
   const email = ctx.prefillEmail || 'customer@order.com';  // placeholder
 
   return {
-    description: 'Order Payment',
+    description: ctx.description || 'Order Payment',
     currency:    checkout.currency ?? 'INR',
     key:         checkout.key_id   ?? '',
     amount:      String(checkout.amount_minor ?? 0),  // paise as string
     name:        customerName || 'Store',
     order_id:    checkout.order_id ?? '',
     prefill: {
-      name:    customerName || 'Customer',
+      name:    ctx.prefillName || customerName || 'Customer',
       contact,    // ← must be non-empty
       email,      // ← must be non-empty
     },

@@ -1,15 +1,15 @@
 /**
  * Settings — sub-tab switcher, ported from `Studio/Settings/index.jsx`.
  */
+import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { PressableScale } from '@/components/ui';
 import { useCoderTheme } from '@/lib/theme';
 
-import { DomainsScreen } from './Domains/DomainsScreen';
+import { DomainsTab } from './Domains/domains-tab';
 import { PaymentsScreen } from './Payments/PaymentsScreen';
 
 type SettingsSubTab = 'domains' | 'payments';
@@ -70,7 +70,7 @@ export function SettingsScreen() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {tab === 'domains' && <DomainsScreen />}
+        {tab === 'domains' && <DomainsTab />}
         {tab === 'payments' && <PaymentsScreen />}
       </View>
     </View>

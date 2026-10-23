@@ -6,7 +6,7 @@ import type { AppColors } from '@/lib/theme';
 
 import type { PricingPalette } from './theme';
 
-/** Mirrors PlanCard's layout so nothing reflows when the plans arrive. */
+/** Mirrors the compact PlanCard so nothing reflows when the plans arrive. */
 export function PlanSkeleton({ t, p }: { t: AppColors; p: PricingPalette }) {
   return (
     <View
@@ -15,28 +15,29 @@ export function PlanSkeleton({ t, p }: { t: AppColors; p: PricingPalette }) {
         { backgroundColor: p.cardBg, borderColor: p.cardBorder },
       ]}
     >
-      <Skeleton t={t} height={21} width="40%" borderRadius={5} />
-      <Skeleton t={t} height={13} width="78%" borderRadius={4} style={st.gap} />
-      <Skeleton t={t} height={62} borderRadius={14} style={st.well} />
-      {[0, 1, 2, 3].map((i) => (
-        <Skeleton
-          key={i}
-          t={t}
-          height={13}
-          width={`${82 - i * 9}%`}
-          borderRadius={4}
-          style={st.line}
-        />
-      ))}
-      <Skeleton t={t} height={50} borderRadius={14} style={st.cta} />
+      <View style={st.head}>
+        <View style={st.grow}>
+          <Skeleton t={t} height={18} width="45%" borderRadius={5} />
+          <Skeleton
+            t={t}
+            height={12}
+            width="85%"
+            borderRadius={4}
+            style={st.gap}
+          />
+        </View>
+        <Skeleton t={t} height={18} width={80} borderRadius={5} />
+      </View>
+      <Skeleton t={t} height={12} width="96%" borderRadius={4} />
+      <Skeleton t={t} height={12} width="70%" borderRadius={4} />
+      <Skeleton t={t} height={42} borderRadius={12} style={st.gap} />
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  card: { borderRadius: 20, borderWidth: 1, padding: 20 },
-  gap: { marginTop: 8 },
-  well: { marginTop: 16, marginBottom: 18 },
-  line: { marginBottom: 10 },
-  cta: { marginTop: 10 },
+  card: { borderRadius: 18, borderWidth: 1, padding: 14, gap: 8 },
+  head: { flexDirection: 'row', gap: 12, marginBottom: 4 },
+  grow: { flex: 1 },
+  gap: { marginTop: 6 },
 });
