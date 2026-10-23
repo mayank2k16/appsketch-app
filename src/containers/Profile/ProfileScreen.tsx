@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -14,16 +15,20 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 import { updateOwnProfile, useSubscriptionPlans } from '@/api';
 import { accountClient } from '@/api/common/client';
 import { PressableScale } from '@/components/ui';
 import { PlanBadge } from '@/components/ui/PlanBadge';
-import { getUserSubscription, signOut, updateUserFields, useAuth } from '@/hooks/useAuth';
+import {
+  getUserSubscription,
+  signOut,
+  updateUserFields,
+  useAuth,
+} from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
+import { type AppColors, useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
-import { useAppTheme, type AppColors } from '@/lib/theme';
 
 type FieldKey = 'name' | 'email' | 'phone';
 
@@ -56,7 +61,10 @@ function profilePalette(t: AppColors) {
       };
 }
 
-function readUserField(user: Record<string, unknown> | null, key: FieldKey): string {
+function readUserField(
+  user: Record<string, unknown> | null,
+  key: FieldKey
+): string {
   if (!user) return '';
   if (key === 'phone') {
     return String(user.phone_number ?? user.phone ?? '');
@@ -81,7 +89,8 @@ export function ProfileScreen() {
 
   const original = React.useMemo(
     () => ({
-      name: readUserField(user, 'name') || (isGuest ? 'Guest User' : 'Your Name'),
+      name:
+        readUserField(user, 'name') || (isGuest ? 'Guest User' : 'Your Name'),
       email: readUserField(user, 'email') || (isGuest ? '' : 'you@example.com'),
       phone: readUserField(user, 'phone') || '',
     }),
@@ -182,10 +191,27 @@ export function ProfileScreen() {
 
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={t.statusBar}
+      />
 
-      <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border, backgroundColor: t.bg }]}>
-        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
+      <View
+        style={[
+          st.header,
+          {
+            paddingTop: insets.top + 10,
+            borderColor: t.border,
+            backgroundColor: t.bg,
+          },
+        ]}
+      >
+        <PressableScale
+          onPress={() => router.back()}
+          hitSlop={10}
+          style={st.headerBtn}
+        >
           <Ionicons name="chevron-back" size={22} color={t.text} />
         </PressableScale>
         <Text style={[st.headerTitle, { color: t.text }]}>My Account</Text>
@@ -198,7 +224,10 @@ export function ProfileScreen() {
         )}
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
@@ -207,23 +236,41 @@ export function ProfileScreen() {
         >
           {/* ── Avatar ── */}
           <View style={st.avatarSection}>
-            <View style={[st.avatar, { backgroundColor: p.wellBg, borderColor: p.avatarBorder }]}>
-              <Text style={[st.avatarInitial, { color: p.mark }]}>{initial}</Text>
+            <View
+              style={[
+                st.avatar,
+                { backgroundColor: p.wellBg, borderColor: p.avatarBorder },
+              ]}
+            >
+              <Text style={[st.avatarInitial, { color: p.mark }]}>
+                {initial}
+              </Text>
             </View>
-            <Text style={[st.avatarName, { color: t.text }]}>{original.name}</Text>
-            {!!original.email && <Text style={[st.avatarSub, { color: t.textSub }]}>{original.email}</Text>}
+            <Text style={[st.avatarName, { color: t.text }]}>
+              {original.name}
+            </Text>
+            {!!original.email && (
+              <Text style={[st.avatarSub, { color: t.textSub }]}>
+                {original.email}
+              </Text>
+            )}
           </View>
 
           {isGuest ? (
             <View style={st.section}>
               <GlassCard t={t} contentStyle={st.sectionCard}>
-                <Text style={[st.sectionHeading, { color: t.text }]}>You&rsquo;re browsing as a guest</Text>
+                <Text style={[st.sectionHeading, { color: t.text }]}>
+                  You&rsquo;re browsing as a guest
+                </Text>
                 <Text style={[st.bodyText, { color: t.textSub, marginTop: 8 }]}>
                   Sign in to see and manage your account details.
                 </Text>
                 <PressableScale
                   onPress={() => router.replace('/welcome')}
-                  style={[st.primaryBtn, { backgroundColor: p.primary, marginTop: 16 }]}
+                  style={[
+                    st.primaryBtn,
+                    { backgroundColor: p.primary, marginTop: 16 },
+                  ]}
                 >
                   <Text style={st.primaryBtnText}>Sign In / Register</Text>
                 </PressableScale>
@@ -234,7 +281,9 @@ export function ProfileScreen() {
               {/* ── Account details ── */}
               <View style={st.section}>
                 <GlassCard t={t} contentStyle={st.sectionCard}>
-                  <Text style={[st.sectionHeading, { color: t.text }]}>Account Details</Text>
+                  <Text style={[st.sectionHeading, { color: t.text }]}>
+                    Account Details
+                  </Text>
 
                   <ProfileField
                     t={t}
@@ -272,15 +321,22 @@ export function ProfileScreen() {
                     onPress={cancelEdit}
                     style={[st.secondaryBtn, { borderColor: t.border }]}
                   >
-                    <Text style={[st.secondaryBtnText, { color: t.textSub }]}>Cancel</Text>
+                    <Text style={[st.secondaryBtnText, { color: t.textSub }]}>
+                      Cancel
+                    </Text>
                   </PressableScale>
                   <PressableScale
                     onPress={handleSave}
                     disabled={saving}
                     disabledOpacity={0.6}
-                    style={[st.primaryBtn, { backgroundColor: p.primary, flex: 1 }]}
+                    style={[
+                      st.primaryBtn,
+                      { backgroundColor: p.primary, flex: 1 },
+                    ]}
                   >
-                    <Text style={st.primaryBtnText}>{saving ? 'Saving…' : 'Save Changes'}</Text>
+                    <Text style={st.primaryBtnText}>
+                      {saving ? 'Saving…' : 'Save Changes'}
+                    </Text>
                   </PressableScale>
                 </View>
               )}
@@ -289,26 +345,38 @@ export function ProfileScreen() {
                 <View style={st.section}>
                   <GlassCard t={t} contentStyle={st.sectionCard}>
                     <View style={st.planHeaderRow}>
-                      <Text style={[st.sectionHeading, { color: t.text }]}>Your Plan</Text>
-                      {subscription?.active && <PlanBadge tier={subscription.plan.tier} />}
+                      <Text style={[st.sectionHeading, { color: t.text }]}>
+                        Your Plan
+                      </Text>
+                      {subscription?.active && (
+                        <PlanBadge tier={subscription.plan.tier} />
+                      )}
                     </View>
 
                     <Text style={[st.planName, { color: t.text }]}>
-                      {subscription?.active ? subscription.plan.display_name : 'Free'}
+                      {subscription?.active
+                        ? subscription.plan.display_name
+                        : 'Free'}
                     </Text>
                     {!!currentPlan?.description && (
-                      <Text style={[st.bodyText, { color: t.textSub, marginTop: 4 }]}>
+                      <Text
+                        style={[
+                          st.bodyText,
+                          { color: t.textSub, marginTop: 4 },
+                        ]}
+                      >
                         {currentPlan.description}
                       </Text>
                     )}
 
                     <PressableScale
-                      onPress={() => router.push('/pricing')}
-                      style={[st.primaryBtn, { backgroundColor: p.keyAction, marginTop: 16 }]}
+                      onPress={() => router.navigate('/pricing')}
+                      style={[
+                        st.primaryBtn,
+                        { backgroundColor: p.keyAction, marginTop: 16 },
+                      ]}
                     >
-                      <Text style={st.primaryBtnText}>
-                        {'Upgrade Plan'}
-                      </Text>
+                      <Text style={st.primaryBtnText}>{'Upgrade Plan'}</Text>
                     </PressableScale>
                   </GlassCard>
                 </View>
@@ -334,8 +402,19 @@ export function ProfileScreen() {
                     onPress={handleLogout}
                     style={[st.secondaryBtn, { borderColor: `${p.danger}40` }]}
                   >
-                    <Ionicons name="log-out-outline" size={16} color={p.danger} />
-                    <Text style={[st.secondaryBtnText, { color: p.danger, marginLeft: 6 }]}>Log Out</Text>
+                    <Ionicons
+                      name="log-out-outline"
+                      size={16}
+                      color={p.danger}
+                    />
+                    <Text
+                      style={[
+                        st.secondaryBtnText,
+                        { color: p.danger, marginLeft: 6 },
+                      ]}
+                    >
+                      Log Out
+                    </Text>
                   </PressableScale>
 
                   <PressableScale
@@ -347,9 +426,18 @@ export function ProfileScreen() {
                     {deletingAccount ? (
                       <ActivityIndicator size="small" color={p.danger} />
                     ) : (
-                      <Ionicons name="trash-outline" size={16} color={p.danger} />
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={p.danger}
+                      />
                     )}
-                    <Text style={[st.secondaryBtnText, { color: p.danger, marginLeft: 6 }]}>
+                    <Text
+                      style={[
+                        st.secondaryBtnText,
+                        { color: p.danger, marginLeft: 6 },
+                      ]}
+                    >
                       {deletingAccount ? 'Deleting…' : 'Delete Account'}
                     </Text>
                   </PressableScale>
@@ -375,7 +463,12 @@ function GlassCard({
 }) {
   const p = profilePalette(t);
   return (
-    <View style={[st.glassCard, { backgroundColor: p.cardBg, borderColor: p.cardBorder }]}>
+    <View
+      style={[
+        st.glassCard,
+        { backgroundColor: p.cardBg, borderColor: p.cardBorder },
+      ]}
+    >
       <View style={[st.glassContent, contentStyle]}>{children}</View>
     </View>
   );
@@ -402,7 +495,12 @@ function ProfileField({
 }) {
   const p = profilePalette(t);
   return (
-    <View style={[st.fieldRow, !isLast && { borderBottomWidth: 1, borderBottomColor: t.border }]}>
+    <View
+      style={[
+        st.fieldRow,
+        !isLast && { borderBottomWidth: 1, borderBottomColor: t.border },
+      ]}
+    >
       <View style={[st.fieldIconWrap, { backgroundColor: p.wellBg }]}>
         <Ionicons name={icon} size={15} color={p.mark} />
       </View>
@@ -442,7 +540,10 @@ function MenuRow({
     <PressableScale
       onPress={onPress}
       scaleTo={0.98}
-      style={[st.fieldRow, !isLast && { borderBottomWidth: 1, borderBottomColor: t.border }]}
+      style={[
+        st.fieldRow,
+        !isLast && { borderBottomWidth: 1, borderBottomColor: t.border },
+      ]}
     >
       <View style={[st.fieldIconWrap, { backgroundColor: p.wellBg }]}>
         <Ionicons name={icon} size={15} color={p.mark} />
@@ -464,7 +565,12 @@ const st = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  headerBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  headerBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerTitle: { fontFamily: F.sans700, fontSize: 15 },
 
   avatarSection: { alignItems: 'center', paddingTop: 28, paddingBottom: 8 },
@@ -487,7 +593,11 @@ const st = StyleSheet.create({
   sectionHeading: { fontFamily: F.sans700, fontSize: 15 },
   bodyText: { fontFamily: F.sans400, fontSize: 13.5, lineHeight: 20 },
 
-  planHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  planHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   planName: { fontFamily: F.sans700, fontSize: 17, marginTop: 10 },
 
   fieldRow: {
@@ -503,7 +613,13 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fieldLabel: { fontFamily: F.sans600, fontSize: 10.5, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 3 },
+  fieldLabel: {
+    fontFamily: F.sans600,
+    fontSize: 10.5,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginBottom: 3,
+  },
   fieldValue: { fontFamily: F.sans500, fontSize: 14.5 },
   fieldInput: {
     fontFamily: F.sans500,

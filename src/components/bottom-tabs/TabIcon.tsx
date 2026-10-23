@@ -1,5 +1,11 @@
 import * as React from 'react';
-import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient,
+  Path,
+  Stop,
+} from 'react-native-svg';
 
 /**
  * Custom line-icon set for the bottom tab bar. Ionicons (font glyphs) can
@@ -8,7 +14,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg'
  * icons as plain react-native-svg paths instead means the active state can
  * just set `stroke` to a gradient url, same as the label text's gradient.
  */
-export type TabIconKey = 'home' | 'agent' | 'studio' | 'market';
+export type TabIconKey = 'home' | 'agent' | 'studio' | 'pricing';
 
 const SIZE = 23;
 const STROKE_WIDTH = 1.9;
@@ -40,12 +46,12 @@ function IconShape({ iconKey }: { iconKey: TabIconKey }) {
           <Path d="M12 20.5c1.6 0 1.9-1.3 1.2-2.2-.7-.8-.5-2.1 1-2.1h1" />
         </>
       );
-    case 'market':
+    case 'pricing':
+      // A price tag: rounded body, punched hole.
       return (
         <>
-          <Path d="M4 8h16l-1 3.2a3 3 0 0 1-2.9 2.2H7.9A3 3 0 0 1 5 11.2z" />
-          <Path d="M4 8l1.4-3.5h13.2L20 8" />
-          <Path d="M6.5 13.4V20h11v-6.6" />
+          <Path d="M3.6 12.4V5.1a1.5 1.5 0 0 1 1.5-1.5h7.3a1.5 1.5 0 0 1 1.06.44l7 7a1.5 1.5 0 0 1 0 2.12l-7.3 7.3a1.5 1.5 0 0 1-2.12 0l-7-7a1.5 1.5 0 0 1-.44-1.06z" />
+          <Circle cx={8.4} cy={8.4} r={1.5} />
         </>
       );
   }
@@ -81,7 +87,11 @@ export function TabIcon({
         <Defs>
           <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             {gradientStops.map((color, i) => (
-              <Stop key={i} offset={`${GRADIENT_STOPS_PCT[i]}%`} stopColor={color} />
+              <Stop
+                key={i}
+                offset={`${GRADIENT_STOPS_PCT[i]}%`}
+                stopColor={color}
+              />
             ))}
           </LinearGradient>
         </Defs>

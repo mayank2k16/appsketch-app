@@ -25,7 +25,6 @@ import {
   useMarketTemplates,
   useTemplateCategories,
 } from '@/api/templates';
-import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { PressableScale } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
@@ -61,9 +60,9 @@ export function MarketplaceScreen() {
   const { width: winW, height: winH } = useWindowDimensions();
   const fullW = winW - 2 * OUTER;
   const colW = (fullW - COL_GAP) / 2;
-  // The tab bar floats over the scene, so the grid has to end above it rather
-  // than behind it — see useTabBarHeight.
-  const tabBarH = useTabBarHeight();
+  // A pushed screen now (Pricing took its tab), so the grid only clears the
+  // home indicator, not a tab bar.
+  const bottomPad = Math.max(insets.bottom, 16);
 
   const [activeCategory, setActiveCategory] = React.useState<string | number>(
     ALL
@@ -241,6 +240,16 @@ export function MarketplaceScreen() {
   const listHeader = (
     <>
       <View onLayout={handleHeadingsLayout}>
+        <PressableScale
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace('/home')
+          }
+          hitSlop={8}
+          accessibilityLabel="Back"
+          style={[s.backBtn, { borderColor: g.line, backgroundColor: g.panel }]}
+        >
+          <Ionicons name="chevron-back" size={19} color={g.ink} />
+        </PressableScale>
         {/* The web gallery's hero, in its words. */}
         <View style={s.header}>
           <View style={s.eyebrowRow}>
@@ -276,7 +285,7 @@ export function MarketplaceScreen() {
     showsVerticalScrollIndicator: false,
     contentContainerStyle: [
       s.gridContent,
-      { paddingTop: HEADER_TOP, paddingBottom: tabBarH + 14 },
+      { paddingTop: HEADER_TOP, paddingBottom: bottomPad + 14 },
     ],
     onScroll,
     scrollEventThrottle: 16,
@@ -531,9 +540,19 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   eyebrowDot: { width: 6, height: 6, borderRadius: 3 },
+  backBtn: {
+    marginTop: 18,
+    marginLeft: 4,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   header: {
     paddingHorizontal: 10,
-    paddingTop: 18,
+    paddingTop: 14,
     marginBottom: 16,
     width: '90%',
   },

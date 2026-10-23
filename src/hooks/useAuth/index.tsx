@@ -6,15 +6,27 @@
  * `src/components/auth/use-continue-auth-flow.ts` (OTP steps), plus an
  * orphaned duplicate that used to live at this exact path. Consolidated here.
  */
+import { Env } from '@env';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as React from 'react';
-import { Animated, Easing } from 'react-native';
+import { Animated, Easing, Platform } from 'react-native';
 import { create } from 'zustand';
 
-import { continueAuth, continueGoogle, verifyOtp } from '@/api/auth';
-import type { AuthNextStep, AuthUser, ContinueAuthResponse, UserSubscription, VerifyOtpResponse } from '@/api/auth/types';
-import { Env } from '@env';
+import {
+  continueApple,
+  continueAuth,
+  continueGoogle,
+  verifyOtp,
+} from '@/api/auth';
+import type {
+  AuthNextStep,
+  AuthUser,
+  ContinueAuthResponse,
+  UserSubscription,
+  VerifyOtpResponse,
+} from '@/api/auth/types';
 import { getFCMToken } from '@/lib/notifications';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 import { toast } from '@/lib/toast';
@@ -64,7 +76,8 @@ const _useAuth = create<AuthState>((set, get) => ({
 
   signIn: (token, user) => {
     setToken(token);
-    if (user) setUser(user); else removeUser();
+    if (user) setUser(user);
+    else removeUser();
     // Clear guest flag if they were browsing as guest
     removeItem(GUEST_KEY);
     set({ status: 'signIn', token, user: user ?? null });
@@ -128,7 +141,8 @@ const _useAuth = create<AuthState>((set, get) => ({
 export const useAuth = createSelectors(_useAuth);
 
 export const signOut = () => _useAuth.getState().signOut();
-export const signIn = (token: TokenType, user?: AuthUser) => _useAuth.getState().signIn(token, user);
+export const signIn = (token: TokenType, user?: AuthUser) =>
+  _useAuth.getState().signIn(token, user);
 export const signInAsGuest = () => _useAuth.getState().signInAsGuest();
 export const hydrateAuth = () => _useAuth.getState().hydrate();
 export const updateSubscription = (subscription: UserSubscription) =>
@@ -137,19 +151,25 @@ export const updateUserFields = (fields: Partial<AuthUser>) =>
   _useAuth.getState().updateUserFields(fields);
 
 /** Reads `user.subscription` — see `UserSubscription` in `@/api/auth/types` for the field-name caveat. */
-export const getUserSubscription = (user: AuthUser | null): UserSubscription | null =>
+export const getUserSubscription = (
+  user: AuthUser | null
+): UserSubscription | null =>
   (user?.subscription as UserSubscription | undefined) ?? null;
 
 /** True when the user is browsing without an account */
 export const isGuest = () => _useAuth.getState().status === 'guest';
 
 function signInAfterVerify(response: VerifyOtpResponse): void {
-  const pendingItems = getItem<{ id: number; quantity: number }[]>('pending_cart_sync') ?? [];
+  const pendingItems =
+    getItem<{ id: number; quantity: number }[]>('pending_cart_sync') ?? [];
 
-  signIn({
-    access: response.token.access,
-    refresh: response.token.refresh,
-  }, response.user);
+  signIn(
+    {
+      access: response.token.access,
+      refresh: response.token.refresh,
+    },
+    response.user
+  );
 
   void removeItem('pending_cart_sync');
 
@@ -173,7 +193,8 @@ const RESEND_COOLDOWN_SECONDS = 30;
 const INDIAN_PHONE_REGEX = /^(?:\+91|91|0)?[6-9]\d{9}$/;
 
 export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-export const isValidIndianPhone = (v: string) => INDIAN_PHONE_REGEX.test(v.trim());
+export const isValidIndianPhone = (v: string) =>
+  INDIAN_PHONE_REGEX.test(v.trim());
 
 type AuthFlowState = {
   nextStep: AuthNextStep | null;
@@ -223,10 +244,18 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
 
   function transitionStep(newStep: Step) {
     Animated.timing(stepAnim, {
-      toValue: 0, duration: 120, easing: Easing.out(Easing.ease), useNativeDriver: true,
+      toValue: 0,
+      duration: 120,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
     }).start(() => {
       setStep(newStep);
-      Animated.spring(stepAnim, { toValue: 1, tension: 70, friction: 12, useNativeDriver: true }).start();
+      Animated.spring(stepAnim, {
+        toValue: 1,
+        tension: 70,
+        friction: 12,
+        useNativeDriver: true,
+      }).start();
     });
   }
 
@@ -241,13 +270,19 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
 
   async function handleContinueContact() {
     const c = contact.trim();
-    if (!c) { toast.error('Enter your email or phone number'); return; }
+    if (!c) {
+      toast.error('Enter your email or phone number');
+      return;
+    }
 
     let payload: { email: string } | { phone: string };
     if (isEmail(c)) {
       payload = { email: c };
     } else {
-      if (!isValidIndianPhone(c)) { toast.error('Enter a valid phone number'); return; }
+      if (!isValidIndianPhone(c)) {
+        toast.error('Enter a valid phone number');
+        return;
+      }
       payload = { phone: c };
     }
 
@@ -255,7 +290,9 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
     try {
       const res: ContinueAuthResponse = await continueAuth(payload);
       setAuthState({
-        nextStep: res.next_step, otpSentVia: res.otp_sent_via, sessionId: res.session_id,
+        nextStep: res.next_step,
+        otpSentVia: res.otp_sent_via,
+        sessionId: res.session_id,
         ...payload,
       });
       if (res.next_step === 'ASK_NAME') {
@@ -263,35 +300,62 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
       } else if (res.next_step === 'VERIFY_OTP') {
         transitionStep('otp');
         setResendCooldown(RESEND_COOLDOWN_SECONDS);
-        toast.success(`Code sent to your ${'email' in payload ? 'email' : 'phone'}.`);
+        toast.success(
+          `Code sent to your ${'email' in payload ? 'email' : 'phone'}.`
+        );
       }
-    } catch (err) { showErrorFlash(err, 'Something went wrong. Please try again.'); }
-    finally { setLoading(false); }
+    } catch (err) {
+      showErrorFlash(err, 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSubmitName() {
     const n = name.trim();
-    if (!n) { toast.error('Please enter your name'); return; }
+    if (!n) {
+      toast.error('Please enter your name');
+      return;
+    }
     if (!authState) return;
     setLoading(true);
     try {
-      const payload = authState.email ? { email: authState.email, name: n } : { phone: authState.phone, name: n };
+      const payload = authState.email
+        ? { email: authState.email, name: n }
+        : { phone: authState.phone, name: n };
       const res: ContinueAuthResponse = await continueAuth(payload);
-      setAuthState((prev) => (prev
-        ? { ...prev, nextStep: res.next_step, otpSentVia: res.otp_sent_via, sessionId: res.session_id }
-        : null));
+      setAuthState((prev) =>
+        prev
+          ? {
+              ...prev,
+              nextStep: res.next_step,
+              otpSentVia: res.otp_sent_via,
+              sessionId: res.session_id,
+            }
+          : null
+      );
       transitionStep('otp');
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      toast.success(`Code sent to your ${authState.email ? 'email' : 'phone'}.`);
-    } catch (err) { showErrorFlash(err, 'Registration failed. Please try again.'); }
-    finally { setLoading(false); }
+      toast.success(
+        `Code sent to your ${authState.email ? 'email' : 'phone'}.`
+      );
+    } catch (err) {
+      showErrorFlash(err, 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleVerifyOtp(directOtp?: string) {
     const o = (directOtp ?? otp).replace(/\s/g, '');
-    if (o.length < OTP_MIN_LENGTH) { toast.error('Enter the code sent to you'); return; }
+    if (o.length < OTP_MIN_LENGTH) {
+      toast.error('Enter the code sent to you');
+      return;
+    }
     if (!authState?.email && !authState?.phone) {
-      toast.error('Session expired. Please start again.'); reset(); return;
+      toast.error('Session expired. Please start again.');
+      reset();
+      return;
     }
     setLoading(true);
     try {
@@ -312,8 +376,11 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
       if (saved) void setItem('user_contact', saved);
       toast.success('Welcome to AppSketch! 👋');
       onVerified();
-    } catch (err) { showErrorFlash(err, 'Invalid code. Please try again.'); }
-    finally { setLoading(false); }
+    } catch (err) {
+      showErrorFlash(err, 'Invalid code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleResendOtp() {
@@ -321,25 +388,49 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
     if (resendCooldown > 0) return;
     setResendLoading(true);
     try {
-      const payload = authState.email ? { email: authState.email } : { phone: authState.phone };
+      const payload = authState.email
+        ? { email: authState.email }
+        : { phone: authState.phone };
       const res: ContinueAuthResponse = await continueAuth(payload);
-      setAuthState((prev) => (prev ? { ...prev, sessionId: res.session_id } : prev));
+      setAuthState((prev) =>
+        prev ? { ...prev, sessionId: res.session_id } : prev
+      );
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      toast.success(`New code sent to your ${authState.email ? 'email' : 'phone'}.`);
-    } catch (err) { showErrorFlash(err, 'Could not resend. Please try again.'); }
-    finally { setResendLoading(false); }
+      toast.success(
+        `New code sent to your ${authState.email ? 'email' : 'phone'}.`
+      );
+    } catch (err) {
+      showErrorFlash(err, 'Could not resend. Please try again.');
+    } finally {
+      setResendLoading(false);
+    }
   }
 
   return {
-    step, setStep, transitionStep, stepAnim, reset,
-    loading, resendLoading, resendCooldown,
-    contact, setContact, name, setName, otp, setOtp,
+    step,
+    setStep,
+    transitionStep,
+    stepAnim,
+    reset,
+    loading,
+    resendLoading,
+    resendCooldown,
+    contact,
+    setContact,
+    name,
+    setName,
+    otp,
+    setOtp,
     authState,
-    handleContinueContact, handleSubmitName, handleVerifyOtp, handleResendOtp,
+    handleContinueContact,
+    handleSubmitName,
+    handleVerifyOtp,
+    handleResendOtp,
   };
 }
 
-const GOOGLE_AUTHORIZATION_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_AUTHORIZATION_ENDPOINT =
+  'https://accounts.google.com/o/oauth2/v2/auth';
 
 export function useGoogleSignIn(onSuccess: () => void) {
   const [loading, setLoading] = React.useState(false);
@@ -388,4 +479,79 @@ export function useGoogleSignIn(onSuccess: () => void) {
   }, [isConfigured, promptAsync]);
 
   return { signInWithGoogle, loading, isConfigured, ready: Boolean(request) };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Sign in with Apple (iOS only — App Store guideline 4.8)
+// ─────────────────────────────────────────────────────────────────────────────
+/** True once we know the device can show the system Apple button (iOS 13+,
+ *  not on Android/web). Starts false so the button never flashes in. */
+export function useAppleSignInAvailable(): boolean {
+  const [available, setAvailable] = React.useState(false);
+  React.useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let alive = true;
+    AppleAuthentication.isAvailableAsync()
+      .then((ok) => alive && setAvailable(ok))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return available;
+}
+
+function isAppleCancel(err: unknown): boolean {
+  return (err as { code?: string } | null)?.code === 'ERR_REQUEST_CANCELED';
+}
+
+/** Native Apple sheet → identity token → our backend → same session handling
+ *  as Google. Apple shares the name/email only on the first authorization,
+ *  so they are sent when present and null otherwise. */
+export function useAppleSignIn(onSuccess: () => void) {
+  const [loading, setLoading] = React.useState(false);
+
+  const signInWithApple = React.useCallback(async () => {
+    let credential: AppleAuthentication.AppleAuthenticationCredential;
+    try {
+      credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+    } catch (err) {
+      if (!isAppleCancel(err))
+        toast.error('Apple sign-in failed. Please try again.');
+      return;
+    }
+    if (!credential.identityToken) {
+      toast.error('Apple sign-in failed. Please try again.');
+      return;
+    }
+    const name = credential.fullName;
+    const hasName = Boolean(name?.givenName || name?.familyName);
+    setLoading(true);
+    try {
+      const data = await continueApple({
+        identity_token: credential.identityToken,
+        full_name: hasName
+          ? {
+              given_name: name?.givenName ?? null,
+              family_name: name?.familyName ?? null,
+            }
+          : null,
+        email: credential.email ?? null,
+      });
+      signInAfterVerify(data);
+      toast.success('Welcome to AppSketch! 👋');
+      onSuccess();
+    } catch {
+      toast.error('Apple sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [onSuccess]);
+
+  return { signInWithApple, loading };
 }

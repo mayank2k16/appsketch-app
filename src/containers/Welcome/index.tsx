@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, StatusBar, StyleSheet, Text, View } from 'react-native';
@@ -89,11 +89,21 @@ export default function WelcomeScreen() {
   const clock = useCollageClock();
   const [brandY, setBrandY] = React.useState<number | null>(null);
   const [sheet, setSheet] = React.useState(false);
-  const goHome = React.useCallback(() => router.replace('/home'), [router]);
+  // `?return=1`: pushed from a screen that needs an account (the Pricing
+  // tab's Subscribe), so signing in goes back there instead of to Home.
+  const { return: returnTo } = useLocalSearchParams<{ return?: string }>();
+  const goHome = React.useCallback(() => {
+    if (returnTo && router.canGoBack()) router.back();
+    else router.replace('/home');
+  }, [router, returnTo]);
   const browseAsGuest = React.useCallback(() => {
+    if (returnTo && router.canGoBack()) {
+      router.back();
+      return;
+    }
     signInAsGuest();
     goHome();
-  }, [goHome]);
+  }, [goHome, returnTo, router]);
 
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
@@ -118,6 +128,7 @@ export default function WelcomeScreen() {
         <Brand t={t} />
         <WelcomeActions
           t={t}
+          dark={dark}
           onPhoneEmail={() => setSheet(true)}
           onSuccess={goHome}
         />

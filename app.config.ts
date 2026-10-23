@@ -103,6 +103,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundleIdentifier: Env.BUNDLE_ID,
       // TestFlight build number: bump before every upload (last: 50).
       buildNumber: '55',
+      // Sign in with Apple (App Store guideline 4.8 — required because the
+      // app offers Google sign-in). Prebuild adds
+      // com.apple.developer.applesignin; ios/AppSketch/AppSketch.entitlements
+      // carries the same key by hand. See docs/pricing-and-apple.md.
+      usesAppleSignIn: true,
       // App Store / TestFlight builds are signed with the production push
       // profile; a 'development' value fails the archive's manual signing.
       entitlements:
@@ -272,6 +277,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       'expo-audio',
+      // StoreKit 2 subscriptions on the Pricing tab (iOS only in JS; see
+      // docs/pricing-and-apple.md).
+      'expo-iap',
       './plugins/with-release-signing',
       './plugins/with-firebase-modular-headers',
       './plugins/with-guest-network',

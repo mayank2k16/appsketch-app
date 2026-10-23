@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 import type {
   ContinueAuthRequest,
   ContinueAuthResponse,
@@ -47,6 +48,22 @@ export async function continueGoogle(payload: {
 }): Promise<VerifyOtpResponse> {
   const { data } = await authClient.post<VerifyOtpResponse>(
     'account/auth/google-tenant-login/',
+    payload
+  );
+  return data;
+}
+
+/** Sign in with Apple — `identity_token` is the JWT from
+ * expo-apple-authentication. Apple sends the name and email only on the very
+ * first authorization, so both are nullable; the backend keeps what it got the
+ * first time. Same response envelope as Google / `verifyOtp`. */
+export async function continueApple(payload: {
+  identity_token: string;
+  full_name: { given_name: string | null; family_name: string | null } | null;
+  email: string | null;
+}): Promise<VerifyOtpResponse> {
+  const { data } = await authClient.post<VerifyOtpResponse>(
+    'account/auth/apple-tenant-login/',
     payload
   );
   return data;

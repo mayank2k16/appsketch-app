@@ -1,0 +1,150 @@
+{
+  "identifier": "9C1D7E2A-5B8F-4E3A-9D61-7A2C4B8E1F03",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_IN",
+    "_storefront": "IND",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [
+    {
+      "id": "21482001",
+      "localizations": [],
+      "name": "AppSketch Plans",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "1499",
+          "familyShareable": false,
+          "groupNumber": 3,
+          "internalID": "61482001",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "AppSketch Basic plan, billed monthly.",
+              "displayName": "Basic (Monthly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "ai.appsketch.plan.basic.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Basic Monthly",
+          "subscriptionGroupID": "21482001",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "14999",
+          "familyShareable": false,
+          "groupNumber": 3,
+          "internalID": "61482002",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "AppSketch Basic plan, billed yearly.",
+              "displayName": "Basic (Yearly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "ai.appsketch.plan.basic.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Basic Yearly",
+          "subscriptionGroupID": "21482001",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4999",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "61482003",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "AppSketch Growth plan, billed monthly.",
+              "displayName": "Growth (Monthly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "ai.appsketch.plan.growth.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Growth Monthly",
+          "subscriptionGroupID": "21482001",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "49999",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "61482004",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "AppSketch Growth plan, billed yearly.",
+              "displayName": "Growth (Yearly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "ai.appsketch.plan.growth.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Growth Yearly",
+          "subscriptionGroupID": "21482001",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "19999",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "61482005",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "AppSketch 100X plan, billed monthly.",
+              "displayName": "100X (Monthly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "ai.appsketch.plan.100x.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "100X Monthly",
+          "subscriptionGroupID": "21482001",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "199999",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "61482006",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "AppSketch 100X plan, billed yearly.",
+              "displayName": "100X (Yearly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "ai.appsketch.plan.100x.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "100X Yearly",
+          "subscriptionGroupID": "21482001",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

@@ -205,6 +205,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - ExpoAppleAuthentication (57.0.2):
+    - ExpoModulesCore
   - ExpoAsset (57.0.20):
     - ExpoModulesCore
   - ExpoAudio (57.0.5):
@@ -233,6 +235,9 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (57.0.3):
     - ExpoModulesCore
+  - ExpoIap (6.1.1):
+    - ExpoModulesCore
+    - openiap (= 4.0.3)
   - ExpoImage (57.0.5):
     - ExpoModulesCore
   - ExpoImageManipulator (57.0.21):
@@ -417,6 +422,7 @@ PODS:
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
+  - openiap (4.0.3)
   - PromisesObjC (2.4.1)
   - razorpay-core-pod (1.0.7)
   - razorpay-pod (1.5.0):
@@ -2910,6 +2916,7 @@ DEPENDENCIES:
   - expo-dev-launcher (from `../node_modules/expo-dev-launcher`)
   - expo-dev-menu (from `../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
+  - ExpoAppleAuthentication (from `../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../node_modules/expo-audio/ios`)
   - ExpoBlur (from `../node_modules/expo-blur/ios`)
@@ -2924,6 +2931,7 @@ DEPENDENCIES:
   - ExpoFont (from `../node_modules/expo-font/ios/ExpoFont.podspec`)
   - ExpoGlassEffect (from `../node_modules/expo-glass-effect/ios`)
   - ExpoHaptics (from `../node_modules/expo-haptics/ios`)
+  - ExpoIap (from `../node_modules/expo-iap/ios`)
   - ExpoImage (from `../node_modules/expo-image/ios/ExpoImage.podspec`)
   - ExpoImageManipulator (from `../node_modules/expo-image-manipulator/ios/ExpoImageManipulator.podspec`)
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
@@ -3060,6 +3068,7 @@ SPEC REPOS:
     - GoogleUtilities
     - lottie-ios
     - nanopb
+    - openiap
     - PromisesObjC
     - razorpay-core-pod
     - razorpay-pod
@@ -3086,6 +3095,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-dev-menu"
   expo-dev-menu-interface:
     :path: "../node_modules/expo-dev-menu-interface/ios"
+  ExpoAppleAuthentication:
+    :path: "../node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
   ExpoAudio:
@@ -3114,6 +3125,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-glass-effect/ios"
   ExpoHaptics:
     :path: "../node_modules/expo-haptics/ios"
+  ExpoIap:
+    :path: "../node_modules/expo-iap/ios"
   ExpoImage:
     :podspec: "../node_modules/expo-image/ios/ExpoImage.podspec"
   ExpoImageManipulator:
@@ -3369,6 +3382,7 @@ SPEC CHECKSUMS:
   expo-dev-launcher: cd9d8fcf89622f23e21ffb6940fadbe07465785d
   expo-dev-menu: 7fb359361a69f0b5280f530e4f770878cea456f2
   expo-dev-menu-interface: 7a59e803916fbfd1b96c75ff91ea8dddac7e722f
+  ExpoAppleAuthentication: 16c2955d33ec7315e5a99d17fb5d62ed33cdb5b9
   ExpoAsset: 2581425f9b581b4fce3c83ffc9f28528d1c4ee68
   ExpoAudio: edc9230b788be6f65238a53907d5c176b57a7ce0
   ExpoBlur: 975b78b65b3c8f475c44bd8f8b53948146b1ff9b
@@ -3383,6 +3397,7 @@ SPEC CHECKSUMS:
   ExpoFont: f8198a952ba2ff53c9b393b5269ea435f232cfc3
   ExpoGlassEffect: 310dc75c8d862de1c4b3ff15a90439ba51a39798
   ExpoHaptics: 32efd02d88953d30a5c2ff796c0fce692e7bcd2e
+  ExpoIap: d4f838048b8f9895a3fa7469345a27bc1648ffa1
   ExpoImage: abe60c6c68d08d837b2c51fb9e8b6c6e320b9125
   ExpoImageManipulator: 9dc637d77a29941bbbff5ec9cfc6ef3d6772d875
   ExpoImagePicker: 661e13a7616fbcea630cfb9409b7483094978e02
@@ -3421,6 +3436,7 @@ SPEC CHECKSUMS:
   lottie-ios: 8f959969761e9c45d70353667d00af0e5b9cadb3
   lottie-react-native: ee142214581f3bb68fbda7efcf07b835a189eeda
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
+  openiap: f6c3a601bc82b3f89a68c70aa459301f93ae36a3
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   razorpay-core-pod: c7f3ac3d214c1a7fac4e9a59c1de7eac02130573
   razorpay-pod: f634f1b8397eb54d547f25d35291f679545ddf17

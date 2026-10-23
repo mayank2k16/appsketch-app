@@ -2,8 +2,12 @@ import { Tabs } from 'expo-router';
 import * as React from 'react';
 
 import { GlowTabBar } from '@/components/bottom-tabs/GlowTabBar';
+import { useAppleIapBootstrap } from '@/lib/iap';
 
 export default function TabsLayout() {
+  // StoreKit connection + unfinished-transaction sweep (iOS only) for as
+  // long as the main app is up — see docs/pricing-and-apple.md.
+  useAppleIapBootstrap();
   return (
     <Tabs
       initialRouteName="home"
@@ -20,7 +24,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="home" options={{ title: 'Home' }} />
       <Tabs.Screen name="agent" options={{ title: 'Agent' }} />
       <Tabs.Screen name="studio" options={{ title: 'Studio' }} />
-      <Tabs.Screen name="marketplace" options={{ title: 'Marketplace' }} />
+      <Tabs.Screen name="pricing" options={{ title: 'Pricing' }} />
     </Tabs>
   );
 }

@@ -9,13 +9,21 @@ import { useAuth } from '@/hooks/useAuth';
  * nothing", so a quota-fetch hiccup can never wrongly block a user. */
 export function useCoderQuota(): string[] | null {
   const status = useAuth.use.status();
-  const [allowedModels, setAllowedModels] = React.useState<string[] | null>(null);
+  // A plan bought in the app (StoreKit → verify → updateSubscription)
+  // changes the tier without a status change; refetch for that too.
+  const tier = (
+    useAuth.use.user()?.subscription as { plan?: { tier?: string } } | undefined
+  )?.plan?.tier;
+  const [allowedModels, setAllowedModels] = React.useState<string[] | null>(
+    null
+  );
 
   React.useEffect(() => {
     let cancelled = false;
     getCoderQuota()
       .then((q) => {
-        if (!cancelled) setAllowedModels(Array.isArray(q.models) ? q.models : null);
+        if (!cancelled)
+          setAllowedModels(Array.isArray(q.models) ? q.models : null);
       })
       .catch(() => {
         if (!cancelled) setAllowedModels(null);
@@ -23,7 +31,7 @@ export function useCoderQuota(): string[] | null {
     return () => {
       cancelled = true;
     };
-  }, [status]);
+  }, [status, tier]);
 
   return allowedModels;
 }

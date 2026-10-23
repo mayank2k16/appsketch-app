@@ -72,7 +72,7 @@ type MenuItem = {
 };
 
 // Account shortcuts get their own section, above the general links. Plans
-// and domains are bought on the web now (see UpgradeSheet) — no in-app cart.
+// live on the Pricing tab (App Store subscriptions on iOS) — no in-app cart.
 const QUICK_ACCESS_ITEMS: MenuItem[] = [
   {
     id: 'profile',

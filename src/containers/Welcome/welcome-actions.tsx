@@ -5,9 +5,10 @@ import { ActivityIndicator, StyleSheet, Text } from 'react-native';
 import ReAnimated from 'react-native-reanimated';
 
 import { PressableScale } from '@/components/ui';
-import { useGoogleSignIn } from '@/hooks/useAuth';
+import { useAppleSignInAvailable, useGoogleSignIn } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 
+import { AppleButton } from './apple-button';
 import { GoogleG } from './google-g';
 import { useRiseIn, WELCOME_T, type WelcomeTheme } from './use-welcome-intro';
 
@@ -66,24 +67,35 @@ function Terms({ t }: { t: WelcomeTheme }) {
 }
 
 /**
- * The sign-in stack: Google (the real expo-auth-session flow behind
- * `useGoogleSignIn`), then phone or email (the AuthSheet OTP flow), then the
- * terms line. Each rises in from below once the collage has settled.
+ * The sign-in stack: Sign in with Apple (iOS, when available — guideline 4.8
+ * asks for it next to any third-party login, at equal prominence), Google
+ * (the real expo-auth-session flow behind `useGoogleSignIn`), then phone or
+ * email (the AuthSheet OTP flow), then the terms line. Each rises in from
+ * below once the collage has settled.
  */
 export function WelcomeActions({
   t,
+  dark,
   onPhoneEmail,
   onSuccess,
 }: {
   t: WelcomeTheme;
+  dark: boolean;
   onPhoneEmail: () => void;
   onSuccess: () => void;
 }) {
-  const r0 = useRiseIn(WELCOME_T.actions, FROM);
-  const r1 = useRiseIn(WELCOME_T.actions + WELCOME_T.step, FROM);
-  const r2 = useRiseIn(WELCOME_T.actions + WELCOME_T.step * 2, FROM);
+  const apple = useAppleSignInAvailable();
+  const ra = useRiseIn(WELCOME_T.actions, FROM);
+  const r0 = useRiseIn(WELCOME_T.actions + WELCOME_T.step * 0.5, FROM);
+  const r1 = useRiseIn(WELCOME_T.actions + WELCOME_T.step * 1.5, FROM);
+  const r2 = useRiseIn(WELCOME_T.actions + WELCOME_T.step * 2.5, FROM);
   return (
     <>
+      {apple ? (
+        <ReAnimated.View style={ra}>
+          <AppleButton dark={dark} onSuccess={onSuccess} />
+        </ReAnimated.View>
+      ) : null}
       <ReAnimated.View style={r0}>
         <GoogleButton t={t} onSuccess={onSuccess} />
       </ReAnimated.View>

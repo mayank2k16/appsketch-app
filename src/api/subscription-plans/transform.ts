@@ -4,7 +4,11 @@
  * route param, same cache) can use the exact same shaping without
  * duplicating it.
  */
-import type { SubscriptionPlan, SubscriptionPlanFeature, SubscriptionPricingOption } from './types';
+import type {
+  SubscriptionPlan,
+  SubscriptionPlanFeature,
+  SubscriptionPricingOption,
+} from './types';
 
 export type TransformedPlan = {
   tier: string;
@@ -31,7 +35,9 @@ export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-IN').format(value);
 }
 
-export function formatFeatures(planFeatures: SubscriptionPlanFeature[]): string[] {
+export function formatFeatures(
+  planFeatures: SubscriptionPlanFeature[]
+): string[] {
   return (planFeatures || [])
     .filter((pf) => pf.enabled)
     .map((pf) => {
@@ -46,12 +52,16 @@ export function formatFeatures(planFeatures: SubscriptionPlanFeature[]): string[
     });
 }
 
-export function planPrice(plan: Pick<TransformedPlan, 'monthly' | 'yearly'>): number {
+export function planPrice(
+  plan: Pick<TransformedPlan, 'monthly' | 'yearly'>
+): number {
   const option = plan.monthly ?? plan.yearly;
   return option ? Number(option.price) || 0 : 0;
 }
 
-export function isPlanFree(plan: Pick<TransformedPlan, 'monthly' | 'yearly'>): boolean {
+export function isPlanFree(
+  plan: Pick<TransformedPlan, 'monthly' | 'yearly'>
+): boolean {
   return planPrice(plan) === 0;
 }
 

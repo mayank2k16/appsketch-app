@@ -4,23 +4,24 @@
  * bundled with a plan — "Add domain" opens the upgrade prompt instead of an
  * in-app checkout (see UpgradeSheet).
  */
+import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { useUserDomains } from '@/api/domains';
 import { PressableScale } from '@/components/ui';
 import { UpgradeSheet } from '@/components/ui/UpgradeSheet';
+import { type AppColors, useCoderTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
-import { useCoderTheme, type AppColors } from '@/lib/theme';
 
 export function DomainsScreen() {
   const { colorScheme } = useColorScheme();
@@ -52,7 +53,10 @@ export function DomainsScreen() {
           </Text>
         </View>
       </View>
-      <PressableScale onPress={goAddDomain} style={[st.addBtn, { backgroundColor: t.accent }]}>
+      <PressableScale
+        onPress={goAddDomain}
+        style={[st.addBtn, { backgroundColor: t.accent }]}
+      >
         <Ionicons name="add" size={16} color="#FFFFFF" />
         <Text style={[st.addBtnText, { color: t.accentOn }]}>Add domain</Text>
       </PressableScale>
@@ -175,7 +179,11 @@ export function DomainsScreen() {
         visible={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
         t={t}
-        body="Custom domains are purchased on the web, bundled with your plan."
+        body={
+          Platform.OS === 'ios'
+            ? 'Custom domains come with a paid plan.'
+            : 'Custom domains are purchased on the web, bundled with your plan.'
+        }
       />
     </ScrollView>
   );
@@ -217,7 +225,7 @@ const st = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 'auto',
     maxWidth: 150,
-    marginBottom: 10
+    marginBottom: 10,
   },
   addBtnText: { fontSize: 12.5, fontWeight: '700' },
 

@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   Linking,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -26,11 +28,13 @@ type Props = {
 };
 
 const UPGRADE_URL = 'https://appsketch.ai/pricing';
+const IOS = Platform.OS === 'ios';
 
-// There is no in-app purchase flow — plans and domains are bought on the
-// web (appsketch.ai/pricing) and the app picks up the new plan/tokens the
-// next time the same phone number signs in. This sheet just hands off to a
-// browser instead of a checkout screen.
+// iOS: plans are App Store subscriptions on the Pricing tab (guideline
+// 3.1.1 — no web checkout links or mentions on iOS), so the CTA opens that
+// tab. Android keeps the web hand-off: plans are bought on
+// appsketch.ai/pricing and the app picks up the new plan/tokens the next
+// time the same phone number signs in.
 // White (docs/white-theme.md): ink scrim, raised sheet on the hairline, an
 // inset lock badge in ink, and orange for the one action — Upgrade.
 const WHITE = {
@@ -40,6 +44,28 @@ const WHITE = {
   badgeIcon: '#0B0B0C',
   cta: '#F2600C',
 };
+
+/** iOS: the Pricing tab (App Store subscriptions). Android: the web. */
+function UpgradeCta({
+  onClose,
+  color,
+}: {
+  onClose: () => void;
+  color: string;
+}) {
+  return (
+    <PressableScale
+      onPress={() => {
+        onClose();
+        if (IOS) router.navigate('/pricing');
+        else Linking.openURL(UPGRADE_URL).catch(() => {});
+      }}
+      style={[s.cta, IOS && s.ctaIos, { backgroundColor: color }]}
+    >
+      <Text style={s.ctaText}>{IOS ? 'See plans' : 'Upgrade in Browser'}</Text>
+    </PressableScale>
+  );
+}
 
 export function UpgradeSheet({ visible, onClose, t, modelLabel, body }: Props) {
   const { colorScheme } = useColorScheme();
@@ -84,19 +110,13 @@ export function UpgradeSheet({ visible, onClose, t, modelLabel, body }: Props) {
           </View>
           <Text style={[s.title, { color: t.text }]}>Upgrade your plan</Text>
           <Text style={[s.body, { color: t.textSub }]}>{message}</Text>
-          <Text style={[s.hint, { color: t.textSub }]}>
-            Upgrade from a browser, then sign in here with the same phone number
-            — it unlocks instantly.
-          </Text>
-          <PressableScale
-            onPress={() => {
-              onClose();
-              Linking.openURL(UPGRADE_URL).catch(() => {});
-            }}
-            style={[s.cta, { backgroundColor: dark ? t.accent : WHITE.cta }]}
-          >
-            <Text style={s.ctaText}>Upgrade in Browser</Text>
-          </PressableScale>
+          {IOS ? null : (
+            <Text style={[s.hint, { color: t.textSub }]}>
+              Upgrade from a browser, then sign in here with the same phone
+              number — it unlocks instantly.
+            </Text>
+          )}
+          <UpgradeCta onClose={onClose} color={dark ? t.accent : WHITE.cta} />
           <PressableScale onPress={onClose} style={s.dismiss}>
             <Text style={[s.dismissText, { color: t.textSub }]}>Not now</Text>
           </PressableScale>
@@ -155,6 +175,7 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
+  ctaIos: { marginTop: 12 },
   ctaText: {
     fontFamily: F.sans700,
     fontSize: 14.5,
