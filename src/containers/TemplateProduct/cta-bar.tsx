@@ -84,13 +84,13 @@ export const CtaBar = React.memo(function CtaBar(p: Props) {
 const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
   btn: {
-    height: 48,
-    borderRadius: 24,
+    height: 40,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
   grow: { flex: 1 },
   outline: { borderWidth: 1, flexShrink: 1 },
-  btnText: { fontFamily: F.sans700, fontSize: 15, letterSpacing: -0.1 },
+  btnText: { fontFamily: F.sans700, fontSize: 14, letterSpacing: -0.1 },
 });

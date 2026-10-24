@@ -1,5 +1,4 @@
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -12,14 +11,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MarketTemplate } from '@/api/templates';
-import { thumbOf, titleOf } from '@/containers/Home/TemplateReel/layout';
-import { openCategory } from '@/lib/category-route';
-import {
-  clearPendingTemplate,
-  type PendingTemplate,
-} from '@/lib/template-transition';
+import { thumbOf } from '@/containers/Home/TemplateReel/layout';
+import { type PendingTemplate } from '@/lib/template-transition';
 
-import { BreadCrumbs } from './bread-crumbs';
 import { DetailsBox } from './details-box';
 import { type Geometry, pageGeometry } from './geometry';
 import { GrowOverlay } from './grow-overlay';
@@ -39,9 +33,10 @@ import {
 import { type Group, useResolvedTemplate } from './use-resolved-template';
 
 /**
- * The template product page (docs/template-product-page.md): two stacked
- * panels — the template's LIVE site on the top ~75% (Mobile | Tablet |
- * Desktop), its details and CTAs in a box below — and a left/right swipe
+ * The template product page (docs/template-product-page.md): the
+ * template's LIVE site in a phone-shaped card at the top (nothing above
+ * it), the Mobile | Tablet | Desktop pills under it, then its details and
+ * CTAs on frosted glass at the bottom — and a left/right swipe
  * through the rest of its list. Opened from a tile via `openTemplate()`
  * (grows out of the tile) or cold by route (fades up).
  */
@@ -202,7 +197,6 @@ function usePageState(p: PageProps) {
     currentLive: lives.live.has(list[pager.settled].key),
     x: pager.x,
   });
-  const nav = useCrumbNav(p.templateKey);
   // One array for every layer, rebuilt only when the page has landed, so a
   // swipe's release re-renders nothing heavy (memoised children skip).
   const pages = React.useMemo(
@@ -225,34 +219,12 @@ function usePageState(p: PageProps) {
     ...lives,
     warm,
     ...choices,
-    nav,
     pages,
     placeOf,
   };
 }
 
 type State = ReturnType<typeof usePageState>;
-
-/** The breadcrumb's links. "Templates" pops back to Home; a category
- *  replaces this page with its screen (back from there returns to where
- *  the page was opened from, never to this page again). */
-function useCrumbNav(templateKey: string) {
-  const router = useRouter();
-  return React.useMemo(
-    () => ({
-      home: () => {
-        clearPendingTemplate(templateKey);
-        router.dismissTo('/home' as never);
-      },
-      category: (name: string) => {
-        clearPendingTemplate(templateKey);
-        if (router.canGoBack()) router.back();
-        openCategory(router, name);
-      },
-    }),
-    [router, templateKey]
-  );
-}
 
 /** Page i's category run in the swipe list. */
 function groupOf(groups: readonly Group[], i: number): Group {
@@ -372,15 +344,6 @@ function Overlays({ s: st, p }: { s: State; p: PageProps }) {
         index={st.index}
         device={liveUrlOf(current) ? st.device : null}
         onDevice={st.setDevice}
-      />
-      <BreadCrumbs
-        g={st.g}
-        m={st.m}
-        t={st.t}
-        category={groupOf(st.groups, st.index).name}
-        name={titleOf(current)}
-        onHome={st.nav.home}
-        onCategory={st.nav.category}
       />
       <MoreSheet
         template={st.more}

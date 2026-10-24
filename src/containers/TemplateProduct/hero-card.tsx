@@ -73,11 +73,11 @@ function useHeroStyles(p: Props) {
       transform: [{ translateX: d * g.stride - near - peek }, { scale }],
     };
   });
-  // At rest a neighbour shows only a 4pt sliver at the screen edge: its
-  // orange border plus a solid strip of its loader colour, like the edge of
-  // the next card in a deck. The fill fades out as it comes to the centre.
+  // At rest a neighbour peeks in at the screen edge (the hero is phone-
+  // shaped and centred), its content softly tinted with its loader colour
+  // so the centred template leads. The tint fades as it comes to centre.
   const tint = useAnimatedStyle(() => ({
-    opacity: interpolate(Math.abs(i - x.value), [0.6, 1], [0, 1], 'clamp'),
+    opacity: interpolate(Math.abs(i - x.value), [0.6, 1], [0, 0.3], 'clamp'),
   }));
   return { card, tint };
 }

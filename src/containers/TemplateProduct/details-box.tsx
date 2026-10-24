@@ -1,5 +1,6 @@
+import { BlurView } from 'expo-blur';
 import * as React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { GestureType } from 'react-native-gesture-handler';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -15,8 +16,8 @@ import type { PageTheme } from './theme';
 import type { ProductMotion } from './use-product-transition';
 
 /**
- * The details box under the hero: a separate rounded panel (hairline, no
- * shadow) holding the centred template's details, "3 / 52 · Swipe ›" on
+ * The details box under the hero: frosted glass (the blurred page backdrop
+ * shows through, so the eye stays on the template) holding the centred template's details, "3 / 52 · Swipe ›" on
  * the name's row (the cue goes after the first swipe). Swiping on it pages
  * too, and a pull down on it closes the page.
  */
@@ -54,12 +55,28 @@ export function DetailsBox(p: Props) {
             top: g.box.y,
             width: g.box.width,
             height: g.box.height,
-            backgroundColor: t.panel,
-            borderColor: t.frame,
+            borderColor: p.dark
+              ? 'rgba(255,255,255,0.14)'
+              : 'rgba(255,255,255,0.7)',
           },
           rise,
         ]}
       >
+        <BlurView
+          intensity={p.dark ? 40 : 50}
+          tint={p.dark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: p.dark
+                ? 'rgba(17,17,19,0.3)'
+                : 'rgba(255,255,255,0.32)',
+            },
+          ]}
+        />
         {p.pages.map(({ template, i }) => (
           <DetailsPanel
             key={template.key}
@@ -87,6 +104,6 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: BOX_RADIUS,
     borderCurve: 'continuous',
-    borderWidth: 1.5,
+    borderWidth: StyleSheet.hairlineWidth * 2,
   },
 });
