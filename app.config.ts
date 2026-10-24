@@ -102,7 +102,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       requireFullScreen: true,
       bundleIdentifier: Env.BUNDLE_ID,
       // TestFlight build number: bump before every upload (last: 50).
-      buildNumber: '64',
+      buildNumber: "65",
       // Sign in with Apple (App Store guideline 4.8 — required because the
       // app offers Google sign-in). Prebuild adds
       // com.apple.developer.applesignin; ios/AppSketch/AppSketch.entitlements

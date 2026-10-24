@@ -52,7 +52,7 @@ from PIL import Image
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 CANVAS = '#FAFAF8'       # appTheme.light.bg: the splash field
-DOT_HEX = '#FA8F32'      # the logo's dot, measured
+DOT_HEX = '#EB4709'      # the logo's dot: the launch orange (was #FA8F32, measured)
 ORANGE = '#EB4709'       # the native launch screen; the gather fades it into the dot
 MARK_PT = 168            # finished logo box on screen, points
 SEED_PT = 16             # the native launch dot, points

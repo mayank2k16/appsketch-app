@@ -14,7 +14,7 @@ import { RotatingBorderGradient } from '@/components/ui/RotatingBorderGradient';
 import { CHROME_BLACK, chromeTone, INK_AT } from '@/lib/chrome-tone';
 import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
-import { type AppColors, useBrandedCoderTheme } from '@/lib/theme';
+import { type AppColors, BRAND_RAMP, useBrandedCoderTheme } from '@/lib/theme';
 
 import { TAB_CONFIG } from './tab-config';
 import { TabIcon } from './TabIcon';
@@ -42,9 +42,6 @@ const TAB_SPIN_MS = 14000;
  *  matches it — the motion comes from the spin, not from the colour going
  *  away. */
 const RING_STOPS: [number, number, number] = [0, 0.5, 1];
-
-/** White theme's border colour: firmer than the page hairline. */
-const WHITE_RING = '#D3D3CE';
 
 // ─── Chrome tone ──────────────────────────────────────────────────────────────
 // Home's one black showcase turns the bar black while it passes: everything
@@ -163,8 +160,8 @@ function TabDivider({ color, dark }: { color: string; dark: boolean }) {
 // that shows of the gradient is the RING_W stroke at the edge. Same
 // arrangement as Home's prompt card, and the same component drawing it.
 //
-// White (docs/white-theme.md): the brand ramp belongs to the active tab icon
-// only, so the edge is a still 1px hairline — no spinning colour round the bar.
+// Both themes: the theme's own ramp spins round the bar's edge (white uses
+// the white theme's ramp, the one on the home prompt card).
 function TabBarFrame({
   t,
   dark,
@@ -179,29 +176,32 @@ function TabBarFrame({
   // The ramp, whole — no transparent tail, so the stroke is lit the whole way
   // round. Memoised because `RotatingBorderGradient` takes it as a prop and a
   // fresh array every render would defeat any downstream memo.
+  // White: the brand ramp (the home prompt card's edge); the white theme's
+  // own agentBorderGradient is a flat hairline.
   const ringColors = React.useMemo(
-    () => [...t.agentBorderGradient] as [string, string, ...string[]],
-    [t.agentBorderGradient]
+    () =>
+      [...(dark ? t.agentBorderGradient : BRAND_RAMP)] as [
+        string,
+        string,
+        ...string[],
+      ],
+    [dark, t.agentBorderGradient]
   );
-  // White: a clearly visible neutral border round the bar (the page
-  // hairline, #E7E7E4, all but vanished against the white canvas). Dark:
-  // transparent — the spinning ramp is the border.
+  // Transparent in both themes: the spinning ramp is the border.
   const ringTone = useToneColor(
     'backgroundColor',
-    dark ? 'rgba(0,0,0,0)' : WHITE_RING,
-    dark ? 'rgba(0,0,0,0)' : CHROME_BLACK.ring
+    'rgba(0,0,0,0)',
+    'rgba(0,0,0,0)'
   );
   const fillTone = useToneColor('backgroundColor', t.tabBarBg, CHROME_BLACK.bg);
 
   return (
     <Animated.View style={[s.ring, { paddingBottom: 0 }, ringTone]}>
-      {dark ? (
-        <RotatingBorderGradient
-          colors={ringColors}
-          locations={RING_STOPS}
-          durationMs={TAB_SPIN_MS}
-        />
-      ) : null}
+      <RotatingBorderGradient
+        colors={ringColors}
+        locations={RING_STOPS}
+        durationMs={TAB_SPIN_MS}
+      />
       <Animated.View
         style={[
           s.inner,

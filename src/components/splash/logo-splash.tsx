@@ -19,7 +19,7 @@ export const SPLASH_CANVAS = '#FAFAF8';
 /** The native launch screen's colour (app.config.ts), solid edge to edge;
  *  the Lottie's frame 0 and the logo's dot are the same orange. */
 export const SPLASH_ORANGE = '#EB4709';
-const ACCENT = '#F2600C';
+const ACCENT = SPLASH_ORANGE;
 /** assets/lottie/splash-logo.json, made by scripts/make-splash-logo.py: a
  *  1120x1440pt comp drawn 1:1 around the screen centre (it covers any
  *  portrait phone or iPad). Frames 0-60: solid orange, swept clockwise to the

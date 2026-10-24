@@ -205,9 +205,11 @@ function PlansSection({
       <SectionHead
         t={t}
         first
+        center
         title="Build with AI"
         sub="Self-serve plans. Switch or cancel anytime."
       />
+      <CustomPricing t={t} />
       {signedIn && activePlanName ? (
         <View style={st.pad}>
           <CurrentPlan t={t} p={p} name={activePlanName} manage={isIos()} />
@@ -232,16 +234,49 @@ function SectionHead({
   title,
   sub,
   first,
+  center,
 }: {
   t: AppColors;
   title: string;
   sub: string;
   first?: boolean;
+  center?: boolean;
 }) {
+  const align = center ? st.center : null;
   return (
     <View style={[st.section, first && st.sectionFirst]}>
-      <Text style={[st.sectionTitle, { color: t.text }]}>{title}</Text>
-      <Text style={[st.sectionSub, { color: t.textSub }]}>{sub}</Text>
+      <Text style={[st.sectionTitle, align, { color: t.text }]}>{title}</Text>
+      <Text style={[st.sectionSub, align, { color: t.textSub }]}>{sub}</Text>
+    </View>
+  );
+}
+
+const WEBSITE_PRICING = 'https://appsketch.ai/pricing';
+
+/** Under the heading: custom plans go to Contact us (in the app) or the
+ *  website's pricing page. */
+function CustomPricing({ t }: { t: AppColors }) {
+  const router = useRouter();
+  return (
+    <View style={st.custom}>
+      <Text style={[st.customText, { color: t.textSub }]}>
+        Need a custom plan?{' '}
+        <Text
+          onPress={() => router.push('/contact')}
+          accessibilityRole="link"
+          style={[st.customLink, { color: '#EB4709' }]}
+        >
+          Contact us
+        </Text>
+        {' or '}
+        <Text
+          onPress={() => void Linking.openURL(WEBSITE_PRICING)}
+          accessibilityRole="link"
+          style={[st.customLink, { color: '#EB4709' }]}
+        >
+          visit our website
+        </Text>
+      </Text>
     </View>
   );
 }
@@ -345,6 +380,15 @@ const st = StyleSheet.create({
   sectionFirst: { paddingTop: 4 },
   sectionTitle: { fontFamily: F.display900, fontSize: 19, letterSpacing: -0.4 },
   sectionSub: { fontFamily: F.sans400, fontSize: 12.5, marginTop: 2 },
+  center: { textAlign: 'center' },
+  custom: { paddingHorizontal: 14, paddingBottom: 10 },
+  customText: {
+    fontFamily: F.sans500,
+    fontSize: 12.5,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  customLink: { fontFamily: F.sans700, textDecorationLine: 'underline' },
   pad: { paddingHorizontal: 8 },
   cards: { paddingTop: 26, gap: 12 },
   toggle: { paddingTop: 6, paddingBottom: 14 },

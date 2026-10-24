@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 import { PressableScale } from '@/components/ui';
@@ -98,7 +99,11 @@ export function PillTabs({
   const x = useSharedValue(0);
   React.useEffect(() => {
     x.value = w
-      ? withSpring(index * step, { damping: 20, stiffness: 220 })
+      ? // ~200ms: twice as quick as the earlier spring (~400ms to settle)
+        withTiming(index * step, {
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+        })
       : index * step;
   }, [index, step, w, x]);
   const pill = useAnimatedStyle(() => ({
