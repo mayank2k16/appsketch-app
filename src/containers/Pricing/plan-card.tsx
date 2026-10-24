@@ -28,15 +28,19 @@ function Price({ plan, t }: Pick<Props, 'plan' | 't'>) {
         Not available right now
       </Text>
     );
+  // Yearly leads with the per-month figure; the yearly total sits below.
+  const lead = plan.monthlyEquivalent
+    ? { amount: plan.monthlyEquivalent, unit: '/month' }
+    : { amount: plan.price, unit: plan.period };
   return (
     <View style={st.priceCol}>
       <Text style={[st.price, { color: t.text }]}>
-        {plan.price}
-        <Text style={[st.period, { color: t.textSub }]}>{plan.period}</Text>
+        {lead.amount}
+        <Text style={[st.period, { color: t.textSub }]}>{lead.unit}</Text>
       </Text>
       {plan.monthlyEquivalent ? (
         <Text style={[st.equiv, { color: t.textSub }]}>
-          {plan.monthlyEquivalent}/mo, billed yearly
+          {plan.price} billed yearly
         </Text>
       ) : null}
     </View>
