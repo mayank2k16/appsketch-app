@@ -107,6 +107,14 @@ function PlanList({
 
 const DOMAIN_TAB = 'domain';
 
+/** Tab icons: Basic → leaf, Growth → trending up, 100X → rocket. */
+function tierIcon(tier: string) {
+  const t = tier.toLowerCase();
+  if (t.includes('100')) return 'rocket' as const;
+  if (t.includes('growth')) return 'trending-up' as const;
+  return 'leaf' as const;
+}
+
 /** "50% OFF" / "₹500 OFF" ("$6 OFF" abroad) for the Domain tab, from the
  *  best live offer. */
 function useDomainOff(): string | null {
@@ -117,7 +125,7 @@ function useDomainOff(): string | null {
   return o.type === 'percent' ? `${o.value}% OFF` : `${money(o.value)} OFF`;
 }
 
-/** Basic / Growth / 100X / Domain as folder tabs over one card. Opens on
+/** Basic / Growth / 100X / Domain as a pill tab bar over one card. Opens on
  *  the Domain tab for `/pricing?section=domain`, else the user's plan, else
  *  the popular one. */
 function TabbedPlans({
@@ -152,10 +160,11 @@ function TabbedPlans({
     ...views.map((v) => ({
       key: v.tier,
       name: v.name,
+      icon: tierIcon(v.tier),
       off: v.savePct ? `${v.savePct}% OFF` : null,
       dot: v.current,
     })),
-    { key: DOMAIN_TAB, name: 'Domain', off: domainOff },
+    { key: DOMAIN_TAB, name: 'Domain', icon: 'globe' as const, off: domainOff },
   ];
   const plan = views.find((v) => v.tier === value);
   return (

@@ -59,8 +59,6 @@ function Price({ plan, k }: { plan: PlanView; k: Skin }) {
   );
 }
 
-const FOLDED = 5;
-
 function FeatureRow({
   icon,
   label,
@@ -87,8 +85,8 @@ function FeatureRow({
   );
 }
 
-/** Credits and AI models first, then each feature on its own ticked row;
- *  long lists fold to five with a "Show all" toggle. */
+/** Credits and AI models first, then every feature on its own ticked row
+ *  (all of them, never folded). */
 function Features({
   plan,
   k,
@@ -98,14 +96,11 @@ function Features({
   k: Skin;
   accent: string;
 }) {
-  const [open, setOpen] = React.useState(false);
   // The credits row already says it; the API also lists it as a feature.
   const all = plan.credits
     ? plan.features.filter((f) => !/build credits/i.test(f))
     : plan.features;
   if (!plan.credits && !plan.models.length && !all.length) return null;
-  const shown = open ? all : all.slice(0, FOLDED);
-  const hidden = all.length - shown.length;
   return (
     <View style={st.features}>
       {plan.credits ? (
@@ -126,7 +121,7 @@ function Features({
           text={k.text}
         />
       ) : null}
-      {shown.map((f) => (
+      {all.map((f) => (
         <FeatureRow
           key={f}
           icon="checkmark-circle"
@@ -135,15 +130,6 @@ function Features({
           text={k.text}
         />
       ))}
-      {all.length > FOLDED ? (
-        <Text
-          onPress={() => setOpen((o) => !o)}
-          accessibilityRole="button"
-          style={[st.more, { color: k.sub }]}
-        >
-          {open ? 'Show less' : `Show all ${all.length} features (+${hidden})`}
-        </Text>
-      ) : null}
     </View>
   );
 }
@@ -278,7 +264,6 @@ const st = StyleSheet.create({
   rowIcon: { marginTop: 1 },
   rowText: { flex: 1, fontFamily: F.sans500, fontSize: 14, lineHeight: 19 },
   rowStrong: { fontFamily: F.sans700 },
-  more: { fontFamily: F.sans600, fontSize: 13, paddingTop: 2 },
   cta: {
     height: 50,
     borderRadius: 25,

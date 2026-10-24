@@ -69,7 +69,7 @@ cairosvg.
 | `app.config.ts` `expo-splash-screen` | `backgroundColor: '#EB4709'`, `image: ./assets/splash-blank.png` (transparent) |
 | `app.config.ts` `ios.infoPlist` | `UIStatusBarStyle: UIStatusBarStyleLightContent` |
 | `plugins/with-splash-light-status-bar.js` | adds `android:windowLightStatusBar=false` to `Theme.App.SplashScreen`. It is listed before `expo-splash-screen`, because mods on one file run last-registered first |
-| `ios/AppSketch/Images.xcassets/SplashScreenBackground.colorset`, `SplashScreen.storyboard` | orange |
+| `ios/AppSketch/Images.xcassets/SplashScreenBackground.colorset`, `LaunchOrange.storyboard` | orange |
 | `ios/AppSketch/Images.xcassets/SplashScreenLogo.imageset/*.png` | transparent, written by the script |
 | `ios/AppSketch/Info.plist` | `UIStatusBarStyleLightContent` |
 | `android/.../values/colors.xml` `splashscreen_background` | `#EB4709` |
@@ -84,3 +84,13 @@ nothing but the dot remains after frame 52, and frames 60+ match the old
 sequence. On-device timing and the native-to-Lottie handoff still need a
 simulator or a phone. See also the memory note on Lottie splash device
 gotchas: the exit race, `hideAsync`, and `onAnimationFinish(cancelled)`.
+
+## Launch screen cache
+
+iOS caches the launch screen snapshot across app updates, so a colour change
+in the storyboard can keep showing the old colour on devices that had the app
+installed. Build 64 renamed `SplashScreen.storyboard` to
+`LaunchOrange.storyboard` (Info.plist `UILaunchStoryboardName` and the
+pbxproj), which makes iOS treat it as a new launch screen and redraw it. A
+future `expo prebuild` regenerates `SplashScreen.storyboard`: keep the rename
+(or rename again) whenever the launch colour changes.
