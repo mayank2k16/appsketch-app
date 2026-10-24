@@ -10,13 +10,10 @@ import {
   type TextInput,
   View,
 } from 'react-native';
-import Animated, {
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useCatalogue } from '@/api/app-cart';
+import { useDiscountOffers } from '@/api/app-cart';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { type ServicesPalette, servicesPalette } from '@/components/services';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,13 +24,11 @@ import { toast } from '@/lib/toast';
 
 import { BillingToggle } from './billing-toggle';
 import { CartButton } from './cart-button';
-import { CustomCard } from './custom-card';
-import { DomainCard } from './domain-card';
+import { DomainPane } from './domain-pane';
+import { FolderCard, type FolderTab } from './folder-card';
 import { PlanCard } from './plan-card';
 import { PlanSkeleton } from './plan-skeleton';
-import { PlannerCard } from './planner/planner-card';
-import { StickySummary } from './planner/summary-bar';
-import { usePlanner } from './planner/use-planner';
+import { pickOffer } from './planner/offer-strip';
 import { CurrentPlan, StoreUnavailable } from './status-notes';
 import { StoreFooter } from './store-footer';
 import { type PricingPalette, pricingPalette } from './theme';
@@ -64,10 +59,12 @@ function PlanList({
   t,
   p,
   cycle,
+  domainInput,
 }: {
   t: AppColors;
   p: PricingPalette;
   cycle: PlanInterval;
+  domainInput: React.RefObject<TextInput | null>;
 }) {
   const data = usePricing(cycle);
   const busySku = useIapStore((s) => s.busySku);
@@ -102,54 +99,95 @@ function PlanList({
         views={data.views}
         busySku={busySku}
         onPress={onPress}
+        domainInput={domainInput}
       />
     </View>
   );
 }
 
-/** One immersive card with Basic / Growth / 100X folder tabs. Opens on the user's
- *  plan, else the popular one. */
+const DOMAIN_TAB = 'domain';
+
+/** "50% OFF" / "₹500 OFF" for the Domain tab, from the best live offer. */
+function useDomainOff(): string | null {
+  const offers = useDiscountOffers();
+  const o = pickOffer(offers.data ?? [], ['domain', 'order']);
+  if (!o) return null;
+  return o.type === 'percent'
+    ? `${o.value}% OFF`
+    : `₹${Math.round(o.value).toLocaleString('en-IN')} OFF`;
+}
+
+/** Basic / Growth / 100X / Domain as folder tabs over one card. Opens on
+ *  the Domain tab for `/pricing?section=domain`, else the user's plan, else
+ *  the popular one. */
 function TabbedPlans({
   t,
   p,
   views,
   busySku,
   onPress,
+  domainInput,
 }: {
   t: AppColors;
   p: PricingPalette;
   views: PlanView[];
   busySku: string | null;
   onPress: (plan: PlanView) => void;
+  domainInput: React.RefObject<TextInput | null>;
 }) {
+  const s = servicesPalette(t);
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  const domainOff = useDomainOff();
   const start =
+    (section === DOMAIN_TAB ? DOMAIN_TAB : null) ??
     views.find((v) => v.current)?.tier ??
     views.find((v) => v.popular)?.tier ??
     views[0]?.tier ??
-    '';
-  // null = not picked yet: follow `start` (plans and the user's plan can
-  // arrive after the first render).
-  const [tier, setTier] = React.useState<string | null>(null);
-  const plan = views.find((v) => v.tier === (tier ?? start)) ?? views[0];
-  if (!plan) return null;
+    DOMAIN_TAB;
+  // null = not picked yet: follow `start` (plans, the user's plan and the
+  // deep link can arrive after the first render).
+  const [key, setKey] = React.useState<string | null>(null);
+  const value = key ?? start;
+  const tabs: FolderTab[] = [
+    ...views.map((v) => ({
+      key: v.tier,
+      name: v.name,
+      off: v.savePct ? `${v.savePct}% OFF` : null,
+      dot: v.current,
+    })),
+    { key: DOMAIN_TAB, name: 'Domain', off: domainOff },
+  ];
+  const plan = views.find((v) => v.tier === value);
   return (
-    <PlanCard
-      plan={plan}
-      plans={views}
-      onPick={setTier}
-      t={t}
-      p={p}
-      ctaLabel={isIos() ? 'Subscribe' : 'Get the plan'}
-      busy={!!plan.sku && busySku === plan.sku}
-      locked={!!busySku}
-      onSubscribe={() => onPress(plan)}
-    />
+    <FolderCard t={t} p={p} tabs={tabs} value={value} onPick={setKey}>
+      {plan ? (
+        <PlanCard
+          plan={plan}
+          t={t}
+          p={p}
+          ctaLabel={isIos() ? 'Subscribe' : 'Get the plan'}
+          busy={!!plan.sku && busySku === plan.sku}
+          locked={!!busySku}
+          onSubscribe={() => onPress(plan)}
+        />
+      ) : (
+        <DomainPane s={s} inputRef={domainInput} />
+      )}
+    </FolderCard>
   );
 }
 
 /** "Build with AI": the App Store plans (Yearly first), compact cards and
  *  the 3.1.2 block (Restore, auto-renew text, Terms, Privacy). */
-function PlansSection({ t, p }: { t: AppColors; p: PricingPalette }) {
+function PlansSection({
+  t,
+  p,
+  domainInput,
+}: {
+  t: AppColors;
+  p: PricingPalette;
+  domainInput: React.RefObject<TextInput | null>;
+}) {
   const [cycle, setCycle] = React.useState<PlanInterval>('yearly');
   const signedIn = useAuth.use.status() === 'signIn';
   const { saving, activePlanName } = usePricing(cycle);
@@ -175,7 +213,7 @@ function PlansSection({ t, p }: { t: AppColors; p: PricingPalette }) {
           onChange={setCycle}
         />
       </View>
-      <PlanList t={t} p={p} cycle={cycle} />
+      <PlanList t={t} p={p} cycle={cycle} domainInput={domainInput} />
     </View>
   );
 }
@@ -205,46 +243,12 @@ function Hero({ s }: { s: ServicesPalette }) {
       <View style={st.heroText}>
         <Text style={[st.title, { color: s.text }]}>Pricing</Text>
         <Text style={[st.sub, { color: s.sub }]} numberOfLines={1}>
-          Launch with our team, or build it yourself with AI.
+          Build your app with AI. Plans and domains.
         </Text>
       </View>
       <CartButton s={s} />
     </View>
   );
-}
-
-/** Scroll offset, viewport height and the in-card bar's y — all UI-thread
- *  values, so the sticky summary never re-renders React while scrolling. */
-function useStickyGeometry() {
-  const scrollY = useSharedValue(0);
-  const viewH = useSharedValue(0);
-  const inlineY = useSharedValue(0);
-  const cardY = React.useRef(0);
-  const barY = React.useRef(0);
-  const onScroll = useAnimatedScrollHandler((e) => {
-    scrollY.value = e.contentOffset.y;
-  });
-  const sync = () => {
-    inlineY.value = cardY.current + barY.current;
-  };
-  return {
-    scrollY,
-    viewH,
-    inlineY,
-    onScroll,
-    onRoot: (e: LayoutChangeEvent) => {
-      viewH.value = e.nativeEvent.layout.height;
-    },
-    onCard: (e: LayoutChangeEvent) => {
-      cardY.current = e.nativeEvent.layout.y;
-      sync();
-    },
-    onBar: (e: LayoutChangeEvent) => {
-      // the slot's y inside the card's padding box
-      barY.current = e.nativeEvent.layout.y;
-      sync();
-    },
-  };
 }
 
 /** `/pricing?section=domain` scrolls to the domain card and focuses search. */
@@ -271,10 +275,9 @@ function useDomainJump(scroll: React.RefObject<Animated.ScrollView | null>) {
   };
 }
 
-/** The Pricing tab: compact hero, the self-serve plans (App Store on iOS)
- *  with the user's current plan on top, then the "Launch with our team"
- *  planner (services, Razorpay via the cart), the domain search and custom
- *  solutions. */
+/** The Pricing tab: compact hero, then one folder card with the self-serve
+ *  plans (App Store on iOS) and a Domain tab, then the 3.1.2 footer. The
+ *  assisted (team-built) services are not sold in the app. */
 export function PricingScreen() {
   const insets = useSafeAreaInsets();
   const tabBarH = useTabBarHeight();
@@ -282,14 +285,11 @@ export function PricingScreen() {
   const t = useAppTheme(colorScheme);
   const p = pricingPalette(t);
   const s = servicesPalette(t);
-  const catalogue = useCatalogue();
-  const pl = usePlanner(catalogue.data);
-  const geo = useStickyGeometry();
   const scroll = React.useRef<Animated.ScrollView>(null);
   const jump = useDomainJump(scroll);
   const signedIn = useAuth.use.status() === 'signIn';
   return (
-    <View style={[st.root, { backgroundColor: t.bg }]} onLayout={geo.onRoot}>
+    <View style={[st.root, { backgroundColor: t.bg }]}>
       <StatusBar
         translucent
         backgroundColor="transparent"
@@ -297,28 +297,16 @@ export function PricingScreen() {
       />
       <Animated.ScrollView
         ref={scroll}
-        onScroll={geo.onScroll}
-        scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + 10,
-          paddingBottom: tabBarH + (pl.unlocked ? 96 : 28),
+          paddingBottom: tabBarH + 28,
         }}
       >
         <Hero s={s} />
-        <PlansSection t={t} p={p} />
-        <View style={[st.pad, st.teamGap]} onLayout={geo.onCard}>
-          <PlannerCard
-            s={s}
-            pl={pl}
-            query={catalogue}
-            onBarLayout={geo.onBar}
-          />
-        </View>
-        <View style={[st.pad, st.cards]} onLayout={jump.onLayout}>
-          <DomainCard s={s} inputRef={jump.input} />
-          <CustomCard s={s} whatsapp={catalogue.data?.whatsapp} />
+        <View onLayout={jump.onLayout}>
+          <PlansSection t={t} p={p} domainInput={jump.input} />
         </View>
         {/* Restore Purchases, auto-renew terms, Terms of Use, Privacy. */}
         {isIos() ? <StoreFooter t={t} p={p} signedIn={signedIn} /> : null}
@@ -326,14 +314,6 @@ export function PricingScreen() {
       {/* Solid strip under the clock so scrolled content never sits there. */}
       <View
         style={[st.statusStrip, { height: insets.top, backgroundColor: t.bg }]}
-      />
-      <StickySummary
-        s={s}
-        pl={pl}
-        scrollY={geo.scrollY}
-        inlineY={geo.inlineY}
-        viewH={geo.viewH}
-        bottom={tabBarH}
       />
     </View>
   );
@@ -354,7 +334,6 @@ const st = StyleSheet.create({
   sub: { fontFamily: F.sans400, fontSize: 13, marginTop: 1 },
   section: { paddingHorizontal: 14, paddingTop: 26, paddingBottom: 10 },
   sectionFirst: { paddingTop: 4 },
-  teamGap: { paddingTop: 28 },
   sectionTitle: { fontFamily: F.display900, fontSize: 19, letterSpacing: -0.4 },
   sectionSub: { fontFamily: F.sans400, fontSize: 12.5, marginTop: 2 },
   pad: { paddingHorizontal: 8 },

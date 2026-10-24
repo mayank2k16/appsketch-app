@@ -1,21 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import Svg, { Line, Path, Rect } from 'react-native-svg';
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { isIos } from '@/lib/iap';
 import type { AppColors } from '@/lib/theme';
 
+import { type Skin, skinFor } from './folder-card';
 import type { PricingPalette } from './theme';
 import type { PlanView } from './use-pricing';
 
 type Props = {
   plan: PlanView;
-  /** Every plan, for the folder tabs along the top of the frame. */
-  plans: PlanView[];
-  onPick: (tier: string) => void;
   t: AppColors;
   p: PricingPalette;
   ctaLabel: string;
@@ -23,54 +20,6 @@ type Props = {
   locked: boolean;
   onSubscribe: () => void;
 };
-
-/** Card and frame colours. Every plan uses the same card in a full-width
- *  striped band: a white card on orange (white theme), a dark card on the
- *  accent (dark theme). */
-type Skin = {
-  frame: string;
-  bg: string;
-  text: string;
-  sub: string;
-  rule: string;
-  price: string;
-  check: string;
-  ctaBg: string;
-  ctaText: string;
-  badgeBg: string;
-  badgeText: string;
-};
-
-function skinFor(t: AppColors, p: PricingPalette): Skin {
-  if (p.dark) {
-    return {
-      frame: t.accent,
-      bg: '#18181B',
-      text: '#FFFFFF',
-      sub: 'rgba(255,255,255,0.6)',
-      rule: 'rgba(255,255,255,0.16)',
-      price: t.accent,
-      check: '#3DD68C',
-      ctaBg: '#FFFFFF',
-      ctaText: '#0B0B0C',
-      badgeBg: '#FFFFFF',
-      badgeText: '#0B0B0C',
-    };
-  }
-  return {
-    frame: '#F2600C',
-    bg: '#FFFFFF',
-    text: '#0B0B0C',
-    sub: '#5C5D63',
-    rule: '#E7E7E4',
-    price: '#F2600C',
-    check: '#12A150',
-    ctaBg: '#0B0B0C',
-    ctaText: '#FFFFFF',
-    badgeBg: '#0B0B0C',
-    badgeText: '#FFFFFF',
-  };
-}
 
 function Price({ plan, k }: { plan: PlanView; k: Skin }) {
   if (plan.free) return <Text style={[st.big, { color: k.text }]}>Free</Text>;
@@ -269,223 +218,25 @@ function Body(props: Props & { k: Skin }) {
   );
 }
 
-const PAD_X = 8; // striped band beside the card (its gutter to the screen)
-const PAD_Y = 14; // striped band above and below the card
-/** The band runs edge to edge: it undoes the plan list's 8pt gutter. */
-const GUTTER = 8;
-const TAB = 54; // height of the folder tabs
-const RADIUS = 22; // card corners
-const TAB_R = 16; // tab top corners
-const FLARE = 14; // concave shoulder where the tab meets the card
-
-/** The card outline: a rounded body whose top rises into a folder tab
- *  spanning [a, b] (a = 0 / b = w put the tab flush on that corner). */
-function folderPath(
-  { w, h }: { w: number; h: number },
-  [a, b]: [number, number]
-) {
-  const x0 = PAD_X;
-  const top = PAD_Y;
-  const body = PAD_Y + TAB;
-  const right = PAD_X + w;
-  const bottom = PAD_Y + h;
-  const R = RADIUS;
-  const r = TAB_R;
-  const c = FLARE;
-  const d: string[] = [];
-  if (a <= 0) {
-    d.push(`M${x0},${top + r}`, `Q${x0},${top} ${x0 + r},${top}`);
-  } else {
-    d.push(
-      `M${x0},${body + R}`,
-      `Q${x0},${body} ${x0 + R},${body}`,
-      `L${x0 + a - c},${body}`,
-      `Q${x0 + a},${body} ${x0 + a},${body - c}`,
-      `L${x0 + a},${top + r}`,
-      `Q${x0 + a},${top} ${x0 + a + r},${top}`
-    );
-  }
-  d.push(`L${x0 + b - r},${top}`);
-  if (b >= w) {
-    d.push(`Q${right},${top} ${right},${top + r}`);
-  } else {
-    d.push(
-      `Q${x0 + b},${top} ${x0 + b},${top + r}`,
-      `L${x0 + b},${body - c}`,
-      `Q${x0 + b},${body} ${x0 + b + c},${body}`,
-      `L${right - R},${body}`,
-      `Q${right},${body} ${right},${body + R}`
-    );
-  }
-  d.push(
-    `L${right},${bottom - R}`,
-    `Q${right},${bottom} ${right - R},${bottom}`,
-    `L${x0 + R},${bottom}`,
-    `Q${x0},${bottom} ${x0},${bottom - R}`,
-    'Z'
-  );
-  return d.join(' ');
-}
-
-/** The band: brand colour with diagonal stripes, full width, the card cut as a folder
- *  whose raised tab is the selected plan. */
-function Frame({
-  size,
-  k,
-  index,
-  count,
-}: {
-  size: { w: number; h: number };
-  k: Skin;
-  index: number;
-  count: number;
-}) {
-  const { w, h } = size;
-  if (!w || !h) return null;
-  const inner = w - PAD_X * 2;
-  const step = inner / count;
-  const lines: number[] = [];
-  for (let x = -h; x < w; x += 13) lines.push(x);
-  return (
-    <Svg style={StyleSheet.absoluteFill} width={w} height={h}>
-      <Rect width={w} height={h} fill={k.frame} />
-      {lines.map((x) => (
-        <Line
-          key={x}
-          x1={x}
-          y1={h}
-          x2={x + h}
-          y2={0}
-          stroke="#FFFFFF"
-          strokeOpacity={0.2}
-          strokeWidth={5}
-        />
-      ))}
-      <Path
-        d={folderPath({ w: inner, h: h - PAD_Y * 2 }, [
-          index * step,
-          (index + 1) * step,
-        ])}
-        fill={k.bg}
-      />
-    </Svg>
-  );
-}
-
-/** Basic / Growth / 100X as folder tabs: the picked one is part of the card,
- *  the others sit on the stripes. Each says what yearly saves. */
-function FolderTabs({
-  plans,
-  value,
-  onPick,
-  k,
-}: {
-  plans: PlanView[];
-  value: string;
-  onPick: (tier: string) => void;
-  k: Skin;
-}) {
-  return (
-    <View style={st.tabs}>
-      {plans.map((plan) => {
-        const on = plan.tier === value;
-        const note = plan.savePct
-          ? `Save ${plan.savePct}%`
-          : plan.popular
-            ? 'Popular'
-            : null;
-        return (
-          <PressableScale
-            key={plan.tier}
-            onPress={() => onPick(plan.tier)}
-            haptic="tap"
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            style={st.tab}
-          >
-            {/* Off tabs sit on a solid chip so the stripes never run
-                under the text. */}
-            <View style={[st.tabChip, !on && { backgroundColor: k.frame }]}>
-              <View style={st.tabRow}>
-                <Text
-                  style={[st.tabName, { color: on ? k.text : '#FFFFFF' }]}
-                  numberOfLines={1}
-                >
-                  {plan.name}
-                </Text>
-                {plan.current ? (
-                  <View style={[st.dot, { backgroundColor: k.check }]} />
-                ) : null}
-              </View>
-              {note ? (
-                <Text style={[st.tabNote, { color: on ? k.price : '#FFFFFF' }]}>
-                  {note}
-                </Text>
-              ) : null}
-            </View>
-          </PressableScale>
-        );
-      })}
-    </View>
-  );
-}
-
-/** One plan in the immersive folder style: a striped brand frame whose
- *  top edge carries the plan tabs, the picked tab rising out of a dark
- *  card with the struck-through monthly price, the per-month price, the
- *  yearly saving, a ticked feature list and a white pill CTA. */
+/** One plan's body inside the folder card: badge and description, the
+ *  struck-through monthly price beside the per-month price, the yearly
+ *  saving, a ticked feature list and a pill CTA. */
 export function PlanCard(props: Props) {
-  const { plan, plans, onPick, t, p } = props;
-  const k = skinFor(t, p);
-  const [size, setSize] = React.useState({ w: 0, h: 0 });
-  const index = Math.max(
-    0,
-    plans.findIndex((v) => v.tier === plan.tier)
-  );
+  const { t, p } = props;
   return (
-    <View
-      style={st.frame}
-      onLayout={(e) => {
-        const { width, height } = e.nativeEvent.layout;
-        if (width !== size.w || height !== size.h)
-          setSize({ w: width, h: height });
-      }}
-    >
-      <Frame size={size} k={k} index={index} count={plans.length || 1} />
-      <FolderTabs plans={plans} value={plan.tier} onPick={onPick} k={k} />
-      <View style={st.card}>
-        <Body {...props} k={k} />
-      </View>
+    <View style={st.card}>
+      <Body {...props} k={skinFor(t, p)} />
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  frame: {
-    overflow: 'hidden',
-    marginHorizontal: -GUTTER,
-    paddingHorizontal: PAD_X,
-    paddingVertical: PAD_Y,
-  },
-  tabs: { flexDirection: 'row', height: TAB },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1 },
-  tabChip: {
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  tabName: { fontFamily: F.sans800, fontSize: 15, letterSpacing: -0.2 },
-  tabNote: { fontFamily: F.sans700, fontSize: 11 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
   card: {
     paddingHorizontal: 18,
     paddingTop: 18,
     paddingBottom: 18,
     gap: 12,
   },
-  name: { fontFamily: F.display900, fontSize: 22, letterSpacing: -0.5 },
   badge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 8,

@@ -17,13 +17,22 @@ import { useAppCart } from '@/lib/store/app-cart-store';
  *  domain codes; an assigned code wins a tie. */
 const RANK: Record<string, number> = { build: 0, order: 1, domain: 2 };
 
-function pick(list: DiscountOffer[]): DiscountOffer | null {
+/** " (up to ₹500)" for a capped percent code. */
+export function capOf(o: DiscountOffer): string {
+  if (o.type !== 'percent' || !o.max_discount_inr) return '';
+  return ` (up to ₹${Math.round(o.max_discount_inr).toLocaleString('en-IN')})`;
+}
+
+export function pickOffer(
+  list: DiscountOffer[],
+  only?: string[]
+): DiscountOffer | null {
+  const rank = (o: DiscountOffer) =>
+    only ? only.indexOf(o.applies_to) : (RANK[o.applies_to] ?? 9);
   return (
-    [...list].sort(
-      (a, b) =>
-        (RANK[a.applies_to] ?? 9) - (RANK[b.applies_to] ?? 9) ||
-        +b.assigned - +a.assigned
-    )[0] ?? null
+    [...list]
+      .filter((o) => !only || only.includes(o.applies_to))
+      .sort((a, b) => rank(a) - rank(b) || +b.assigned - +a.assigned)[0] ?? null
   );
 }
 
@@ -33,11 +42,18 @@ function pick(list: DiscountOffer[]): DiscountOffer | null {
  * only pre-fills the code in the cart store, so the cart opens with it
  * applied. Hidden while loading, on error and without offers.
  */
-export function OfferStrip({ s }: { s: ServicesPalette }) {
+export function OfferStrip({
+  s,
+  only,
+}: {
+  s: ServicesPalette;
+  /** Only these targets, in this order of preference (e.g. the Domain tab). */
+  only?: string[];
+}) {
   const offers = useDiscountOffers();
   const code = useAppCart((c) => c.discountCode);
   const setCode = useAppCart((c) => c.setDiscountCode);
-  const o = pick(offers.data ?? []);
+  const o = pickOffer(offers.data ?? [], only);
   if (!o) return null;
   const saved = code === o.code.toUpperCase();
   return (
@@ -92,7 +108,6 @@ const st = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 10,
-    marginBottom: 12,
   },
   text: { flex: 1, fontFamily: F.sans500, fontSize: 12.5 },
   code: { fontFamily: F.sans700, letterSpacing: 0.4 },

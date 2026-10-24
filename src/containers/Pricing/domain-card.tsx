@@ -41,22 +41,10 @@ function Results({ s, q }: { s: ServicesPalette; q: string }) {
   );
 }
 
-/** "Get your domain": debounced search → Available/Taken rows with year
- *  chips → Add to cart. Paid with the cart (Razorpay), set up automatically. */
-export function DomainCard({
-  s,
-  inputRef,
-}: {
-  s: ServicesPalette;
-  inputRef?: React.RefObject<TextInput | null>;
-}) {
-  const router = useRouter();
-  const [text, setText] = React.useState('');
-  const q = useDebouncedValue(text, 400);
+/** The standalone card's heading (the Domain tab has its own). */
+function Header({ s }: { s: ServicesPalette }) {
   return (
-    <View
-      style={[st.card, { backgroundColor: s.raised, borderColor: s.hairline }]}
-    >
+    <>
       <Text style={[st.eyebrow, { color: s.sub }]}>Domains</Text>
       <Text style={[st.title, { color: s.text }]}>Get your domain</Text>
       <Text style={[st.sub, { color: s.sub }]}>
@@ -68,6 +56,35 @@ export function DomainCard({
           Comes with any plan · discount codes accepted
         </Text>
       </View>
+    </>
+  );
+}
+
+/** "Get your domain": debounced search → Available/Taken rows with year
+ *  chips → Add to cart. Paid with the cart (Razorpay), set up automatically. */
+export function DomainCard({
+  s,
+  inputRef,
+  bare,
+}: {
+  s: ServicesPalette;
+  inputRef?: React.RefObject<TextInput | null>;
+  /** Search, results and the connect link only (the Domain tab draws its own
+   *  card and heading). */
+  bare?: boolean;
+}) {
+  const router = useRouter();
+  const [text, setText] = React.useState('');
+  const q = useDebouncedValue(text, 400);
+  return (
+    <View
+      style={
+        bare
+          ? st.bare
+          : [st.card, { backgroundColor: s.raised, borderColor: s.hairline }]
+      }
+    >
+      {bare ? null : <Header s={s} />}
       <View style={[st.input, { backgroundColor: s.inset }]}>
         <Ionicons name="search" size={16} color={s.muted} />
         <TextInput
@@ -107,6 +124,7 @@ export function DomainCard({
 
 const st = StyleSheet.create({
   card: { borderRadius: 22, borderWidth: 1, padding: 14, gap: 10 },
+  bare: { gap: 10 },
   eyebrow: {
     fontFamily: F.sans600,
     fontSize: 11,
