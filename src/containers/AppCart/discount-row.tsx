@@ -8,12 +8,8 @@ import {
   View,
 } from 'react-native';
 
-import {
-  inr,
-  type ServicesPalette,
-  signedInr,
-  tint,
-} from '@/components/services';
+import { useMoney } from '@/api/app-cart';
+import { type ServicesPalette, tint } from '@/components/services';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
@@ -40,6 +36,7 @@ const OFF: Record<string, string> = {
 function Applied({ s }: { s: ServicesPalette }) {
   const setCode = useAppCart((c) => c.setDiscountCode);
   const { code, result, checking, failed, retry, amount } = useCartDiscount();
+  const { money } = useMoney();
   const ok = !!result?.valid;
   const message = failed
     ? "Couldn't check this code."
@@ -64,7 +61,7 @@ function Applied({ s }: { s: ServicesPalette }) {
         >
           {code}
           {ok
-            ? ` · −${inr(amount)} ${ON[result?.applies_to ?? ''] ?? 'off'}`
+            ? ` · −${money(amount)} ${ON[result?.applies_to ?? ''] ?? 'off'}`
             : ''}
         </Text>
         {checking ? <ActivityIndicator size="small" color={s.muted} /> : null}
@@ -156,6 +153,7 @@ export function DiscountRow({ s }: { s: ServicesPalette }) {
 export function Totals({ s }: { s: ServicesPalette }) {
   const { subtotal, discount, total } = useCartTotals();
   const { result } = useCartDiscount();
+  const { money, signed } = useMoney();
   if (!discount) return null;
   const what = OFF[result?.applies_to ?? ''] ?? 'order';
   const pct = result?.percent
@@ -165,19 +163,17 @@ export function Totals({ s }: { s: ServicesPalette }) {
     <View style={[st.totals, { borderColor: s.hairline }]}>
       <View style={st.tRow}>
         <Text style={[st.tLabel, { color: s.sub }]}>Subtotal</Text>
-        <Text style={[st.tAmt, { color: s.text }]}>{inr(subtotal)}</Text>
+        <Text style={[st.tAmt, { color: s.text }]}>{money(subtotal)}</Text>
       </View>
       <View style={st.tRow}>
         <Text style={[st.tLabel, { color: s.success }]}>
           {result?.code} · {pct}
         </Text>
-        <Text style={[st.tAmt, { color: s.success }]}>
-          {signedInr(-discount)}
-        </Text>
+        <Text style={[st.tAmt, { color: s.success }]}>{signed(-discount)}</Text>
       </View>
       <View style={st.tRow}>
         <Text style={[st.tTotal, { color: s.text }]}>Total</Text>
-        <Text style={[st.tTotal, { color: s.text }]}>{inr(total)}</Text>
+        <Text style={[st.tTotal, { color: s.text }]}>{money(total)}</Text>
       </View>
     </View>
   );

@@ -7,6 +7,7 @@ import {
   type CheckoutBody,
   type CheckoutResponse,
   confirmPayment,
+  format,
 } from '@/api/app-cart';
 import { DISCOUNT_KEY, PLAN_REQUIRED } from '@/api/app-cart';
 import {
@@ -14,7 +15,6 @@ import {
   apiErrorCode,
   type RegistrantContact,
 } from '@/api/app-domains';
-import { inr } from '@/components/services';
 import { useAuth } from '@/hooks/useAuth';
 import {
   type CheckoutV2Response,
@@ -30,7 +30,7 @@ function toGateway(r: CheckoutResponse): CheckoutV2Response {
   return {
     status: 200,
     order_id: r.order_id,
-    order_amount: r.total_inr,
+    order_amount: r.total ?? r.total_inr,
     customer_name: r.razorpay.name || 'AppSketch',
     checkout: {
       provider: 'Razorpay',
@@ -46,6 +46,14 @@ function toGateway(r: CheckoutResponse): CheckoutV2Response {
     inventory_status: {},
   };
 }
+
+/** What the server charged, in its currency: "$5.39" / "₹449". */
+const charged = (r: CheckoutResponse) =>
+  format(r.total ?? r.total_inr, {
+    code: r.currency ?? 'INR',
+    symbol: r.symbol ?? '₹',
+    rate_from_inr: '1',
+  });
 
 function body(discountCode: string | null): CheckoutBody | string {
   const { addonIds, domain, contact } = useAppCart.getState();
@@ -114,9 +122,11 @@ export function useCheckout(onPaid: (orderId: number) => void) {
     setBusy(true);
     try {
       const quote = await checkout(b);
+      // `shown` is the cart's rupee total (the screen converts it); the
+      // server charges in its own currency and says so when it differs.
       if (quote.total_inr !== shown)
         toast.info(
-          `Your total is ${inr(quote.total_inr)}`,
+          `Your total is ${charged(quote)}`,
           quote.lines.map((l) => l.label).join(' · ')
         );
       const id = await pay(quote);

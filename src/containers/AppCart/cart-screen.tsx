@@ -11,9 +11,9 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useMoney } from '@/api/app-cart';
 import {
   AnimatedTotal,
-  inr,
   ScreenHeader,
   type ServicesPalette,
   StateNote,
@@ -46,6 +46,7 @@ function PayBar({
   const { result, checking } = useCartDiscount();
   const needsPlan = useNeedsPlan();
   const { busy, start } = useCheckout(onPaid);
+  const { money, rate, symbol } = useMoney();
   const code = result?.valid ? result.code : null;
   return (
     <View
@@ -66,10 +67,15 @@ function PayBar({
           {needsPlan
             ? 'Add a plan above to pay'
             : discount
-              ? `Total · you save ${inr(discount)}`
+              ? `Total · you save ${money(discount)}`
               : 'Total · one-time'}
         </Text>
-        <AnimatedTotal value={total} style={[st.payTotal, { color: s.text }]} />
+        <AnimatedTotal
+          value={total}
+          rate={rate}
+          symbol={symbol}
+          style={[st.payTotal, { color: s.text }]}
+        />
       </View>
       <PressableScale
         onPress={() => void start(total, code)}
@@ -82,7 +88,7 @@ function PayBar({
           <ActivityIndicator color={s.onOrange} />
         ) : (
           <Text style={[st.payBtnText, { color: s.onOrange }]}>
-            Pay {inr(total)}
+            Pay {money(total)}
           </Text>
         )}
       </PressableScale>

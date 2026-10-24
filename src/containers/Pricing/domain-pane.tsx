@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { StyleSheet, Text, type TextInput, View } from 'react-native';
 
-import { useDiscountOffers } from '@/api/app-cart';
+import { useDiscountOffers, useMoney } from '@/api/app-cart';
 import { type ServicesPalette } from '@/components/services';
 import { F } from '@/lib/fonts';
 
@@ -12,11 +12,12 @@ import { capOf, OfferStrip, pickOffer } from './planner/offer-strip';
  *  refuses a domain without an active plan) and a discount code. */
 function useSteps(): string[] {
   const offers = useDiscountOffers();
+  const { money } = useMoney();
   const o = pickOffer(offers.data ?? [], ['domain', 'order']);
   const off = o
     ? o.type === 'percent'
-      ? `${o.value}% off${capOf(o)}`
-      : `₹${Math.round(o.value).toLocaleString('en-IN')} off`
+      ? `${o.value}% off${capOf(o, money)}`
+      : `${money(o.value)} off`
     : null;
   return [
     'Search and pick a name',

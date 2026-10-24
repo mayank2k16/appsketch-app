@@ -8,13 +8,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { type CartOrder, useOrder } from '@/api/app-cart';
-import {
-  inr,
-  type ServicesPalette,
-  signedInr,
-  tint,
-} from '@/components/services';
+import { type CartOrder, moneyFor, useOrder } from '@/api/app-cart';
+import { type ServicesPalette, tint } from '@/components/services';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
@@ -76,6 +71,12 @@ export function OrderSuccess({
   const router = useRouter();
   const { data: order } = useOrder(orderId);
   const [title, note] = COPY[order?.status ?? 'pending'];
+  // The order's own currency (what was charged), not today's geo.
+  const { money, signed } = moneyFor({
+    code: order?.currency ?? 'INR',
+    symbol: order?.symbol ?? '₹',
+    rate_from_inr: '1',
+  });
   return (
     <View style={st.wrap}>
       <Badge s={s} status={order?.status} />
@@ -97,14 +98,14 @@ export function OrderSuccess({
                   { color: l.amount_inr < 0 ? s.success : s.text },
                 ]}
               >
-                {signedInr(l.amount_inr)}
+                {signed(l.amount_inr, l.amount)}
               </Text>
             </View>
           ))}
           <View style={st.line}>
             <Text style={[st.total, { color: s.text }]}>Paid</Text>
             <Text style={[st.total, { color: s.text }]}>
-              {inr(order.total_inr)}
+              {money(order.total_inr, order.total)}
             </Text>
           </View>
         </View>

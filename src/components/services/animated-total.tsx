@@ -12,21 +12,33 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { inr } from './format';
+import { foreign, inr } from './format';
 
 const AnimatedInput = Animated.createAnimatedComponent(TextInput);
 
+/** INR in, the display currency out (rate 1 + ₹ = plain rupees). */
+function show(n: number, rate: number, symbol: string): string {
+  'worklet';
+  return symbol === '₹'
+    ? inr(n)
+    : foreign(Math.round(n * rate * 100) / 100, symbol);
+}
+
 /**
- * A rupee amount that counts to its new value on the UI thread (no React
+ * A rupee amount (shown converted when `rate`/`symbol` say so) that counts to its new value on the UI thread (no React
  * render per frame): a read-only TextInput whose `text` prop is animated.
  */
 export function AnimatedTotal({
   value,
   suffix = '',
+  rate = 1,
+  symbol = '₹',
   style,
 }: {
   value: number;
   suffix?: string;
+  rate?: number;
+  symbol?: string;
   style?: StyleProp<TextStyle>;
 }) {
   const v = useSharedValue(value);
@@ -37,7 +49,7 @@ export function AnimatedTotal({
     });
   }, [value, v]);
   const props = useAnimatedProps(() => {
-    const text = `${inr(v.value)}${suffix}`;
+    const text = `${show(v.value, rate, symbol)}${suffix}`;
     return { text, defaultValue: text } as never;
   });
   return (
@@ -45,7 +57,7 @@ export function AnimatedTotal({
       editable={false}
       pointerEvents="none"
       underlineColorAndroid="transparent"
-      defaultValue={`${inr(value)}${suffix}`}
+      defaultValue={`${show(value, rate, symbol)}${suffix}`}
       animatedProps={props}
       style={[st.input, style]}
     />

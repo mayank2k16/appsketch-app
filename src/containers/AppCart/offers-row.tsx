@@ -6,6 +6,7 @@ import {
   type DiscountOffer,
   offerLabel,
   useDiscountOffers,
+  useMoney,
 } from '@/api/app-cart';
 import { type ServicesPalette, tint } from '@/components/services';
 import { PressableScale } from '@/components/ui';
@@ -30,13 +31,14 @@ function OfferChip({
   onPress: () => void;
 }) {
   const green = on && ok;
+  const { money } = useMoney();
   return (
     <PressableScale
       onPress={onPress}
       scaleTo={0.96}
       accessibilityRole="button"
       accessibilityState={{ selected: on }}
-      accessibilityLabel={`${o.assigned ? 'Your offer, ' : ''}${o.code}, ${offerLabel(o)}`}
+      accessibilityLabel={`${o.assigned ? 'Your offer, ' : ''}${o.code}, ${offerLabel(o, money)}`}
       style={[
         st.chip,
         {
@@ -54,7 +56,7 @@ function OfferChip({
         {o.code}
       </Text>
       <Text style={[st.label, { color: s.sub }]} numberOfLines={1}>
-        {offerLabel(o)}
+        {offerLabel(o, money)}
       </Text>
       {o.assigned ? (
         <View style={[st.badge, { backgroundColor: tint(s.orange, 0.12) }]}>

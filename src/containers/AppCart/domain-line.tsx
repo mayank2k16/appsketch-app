@@ -2,13 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useMoney } from '@/api/app-cart';
 import { useUserTenants } from '@/api/studio';
-import {
-  appKind,
-  AppSheet,
-  inr,
-  type ServicesPalette,
-} from '@/components/services';
+import { appKind, AppSheet, type ServicesPalette } from '@/components/services';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { type CartDomain, useAppCart } from '@/lib/store/app-cart-store';
@@ -77,6 +73,7 @@ function UseFor({ s, d }: { s: ServicesPalette; d: CartDomain }) {
 /** The domain in the cart: name, years, price, app, remove. */
 export function DomainLine({ s, d }: { s: ServicesPalette; d: CartDomain }) {
   const setDomain = useAppCart((c) => c.setDomain);
+  const { money } = useMoney();
   return (
     <View style={st.wrap}>
       <View style={st.row}>
@@ -88,7 +85,7 @@ export function DomainLine({ s, d }: { s: ServicesPalette; d: CartDomain }) {
             Domain · {d.years} yr · HTTPS + setup included
           </Text>
         </View>
-        <Text style={[st.price, { color: s.text }]}>{inr(d.price_inr)}</Text>
+        <Text style={[st.price, { color: s.text }]}>{money(d.price_inr)}</Text>
         <PressableScale
           onPress={() => setDomain(null)}
           hitSlop={8}

@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { Catalogue, CatalogueItem } from '@/api/app-cart';
-import { buildName, inr, type ServicesPalette } from '@/components/services';
+import { type Catalogue, type CatalogueItem, useMoney } from '@/api/app-cart';
+import { buildName, type ServicesPalette } from '@/components/services';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
@@ -20,6 +20,7 @@ function Row({
   kind: string;
   onRemove: () => void;
 }) {
+  const { money } = useMoney();
   return (
     <View style={[st.row, { borderColor: s.hairline }]}>
       <View style={st.body}>
@@ -28,7 +29,9 @@ function Row({
         </Text>
         <Text style={[st.kind, { color: s.muted }]}>{kind} · one-time</Text>
       </View>
-      <Text style={[st.price, { color: s.text }]}>{inr(item.price_inr)}</Text>
+      <Text style={[st.price, { color: s.text }]}>
+        {money(item.price_inr, item.price)}
+      </Text>
       <PressableScale
         onPress={onRemove}
         hitSlop={8}

@@ -13,6 +13,17 @@ export function inr(n: number): string {
   return `₹${parts.join(',')},${s.slice(-3)}`;
 }
 
+/** "$1,234.50" / "$12" — a non-rupee amount (US grouping, cents only when
+ *  there are any). Safe on the UI thread. */
+export function foreign(n: number, symbol: string): string {
+  'worklet';
+  const cents = Math.round(Math.max(0, n) * 100);
+  const whole = Math.floor(cents / 100).toString();
+  const frac = cents % 100;
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${symbol}${grouped}${frac ? `.${frac.toString().padStart(2, '0')}` : ''}`;
+}
+
 /** Like `inr` but keeps the sign: −₹450 for a discount line. */
 export function signedInr(n: number): string {
   'worklet';

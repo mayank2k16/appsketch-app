@@ -6,6 +6,7 @@ import {
   type DiscountOffer,
   offerLabel,
   useDiscountOffers,
+  useMoney,
 } from '@/api/app-cart';
 import { type ServicesPalette, tint } from '@/components/services';
 import { PressableScale } from '@/components/ui';
@@ -17,10 +18,14 @@ import { useAppCart } from '@/lib/store/app-cart-store';
  *  domain codes; an assigned code wins a tie. */
 const RANK: Record<string, number> = { build: 0, order: 1, domain: 2 };
 
-/** " (up to ₹500)" for a capped percent code. */
-export function capOf(o: DiscountOffer): string {
+/** " (up to ₹500)" / " (up to $6)" for a capped percent code; `money` is
+ *  useMoney's (the cap is in rupees). */
+export function capOf(
+  o: DiscountOffer,
+  money: (amountInr: number) => string
+): string {
   if (o.type !== 'percent' || !o.max_discount_inr) return '';
-  return ` (up to ₹${Math.round(o.max_discount_inr).toLocaleString('en-IN')})`;
+  return ` (up to ${money(o.max_discount_inr)})`;
 }
 
 export function pickOffer(
@@ -53,6 +58,7 @@ export function OfferStrip({
   const offers = useDiscountOffers();
   const code = useAppCart((c) => c.discountCode);
   const setCode = useAppCart((c) => c.setDiscountCode);
+  const { money } = useMoney();
   const o = pickOffer(offers.data ?? [], only);
   if (!o) return null;
   const saved = code === o.code.toUpperCase();
@@ -68,7 +74,7 @@ export function OfferStrip({
       accessibilityLabel={
         saved
           ? `${o.code} saved for checkout`
-          : `Use code ${o.code}, ${offerLabel(o)}`
+          : `Use code ${o.code}, ${offerLabel(o, money)}`
       }
       style={[
         st.strip,
@@ -85,7 +91,7 @@ export function OfferStrip({
       />
       <Text style={[st.text, { color: s.text }]} numberOfLines={1}>
         <Text style={st.code}>{o.code}</Text>
-        {` · ${offerLabel(o)}`}
+        {` · ${offerLabel(o, money)}`}
       </Text>
       <View style={st.end}>
         <Text

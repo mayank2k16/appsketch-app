@@ -147,12 +147,17 @@ const TARGET: Record<DiscountTarget, string> = {
 };
 
 /** The server's `title` ("20% off your app builds", "₹200 off your
- *  domain"); the same wording is built when it is missing. */
-export function offerLabel(o: DiscountOffer): string {
-  if (o.title?.trim()) return o.title.trim();
-  const amt =
-    o.type === 'percent'
-      ? `${o.value}%`
-      : `₹${Math.round(o.value).toLocaleString('en-IN')}`;
+ *  domain"); the same wording is built when it is missing, or when the
+ *  title is in rupees and `money` (useMoney) shows another currency. */
+export function offerLabel(
+  o: DiscountOffer,
+  money?: (amountInr: number) => string
+): string {
+  const fmt =
+    money ?? ((n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`);
+  const title = o.title?.trim();
+  const rupeeTitle = !!title?.includes('₹') && !fmt(1).startsWith('₹');
+  if (title && !rupeeTitle) return title;
+  const amt = o.type === 'percent' ? `${o.value}%` : fmt(o.value);
   return `${amt} off ${TARGET[o.applies_to] ?? 'your order'}`;
 }

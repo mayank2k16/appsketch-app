@@ -52,13 +52,19 @@ export type DomainView = {
   error: string | null;
 };
 
-export type DomainYearPrice = { years: number; price_inr: number };
+/** `price` is in the cart currency (INR in India, USD elsewhere). */
+export type DomainYearPrice = {
+  years: number;
+  price_inr: number;
+  price?: number | null;
+};
 
 export type DomainSearchResult = {
   domain: string;
   available: boolean;
   premium: boolean;
   price_inr: number | null;
+  price?: number | null;
   years: DomainYearPrice[];
 };
 

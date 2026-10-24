@@ -5,12 +5,16 @@
  */
 import type { RegistrantContact } from '@/api/app-domains';
 
+import type { CartCurrency } from './currency';
+
 export type CatalogueItem = {
   id: number;
   code: string;
   name: string;
   description: string;
   price_inr: number;
+  /** In the cart currency (a hand-set USD price wins over conversion). */
+  price?: number;
   features: string[];
 };
 
@@ -19,6 +23,8 @@ export type Catalogue = {
   extras: CatalogueItem[];
   included: string[];
   whatsapp: string;
+  /** INR in India, USD elsewhere (server geo); absent on older servers. */
+  currency?: CartCurrency;
 };
 
 export type CheckoutDomain = {
@@ -36,6 +42,8 @@ export type CheckoutBody = {
    *  line, e.g. `{"label": "BUILD20 · 20% off app builds", "amount_inr":
    *  -3000}`, and `total_inr` is after the discount. */
   discount_code?: string | null;
+  /** The total on screen, in the cart currency (else `expected_total_inr`). */
+  expected_total?: number;
 };
 
 /** 400 `code` whenever the cart has a domain (code or not) and the user has
@@ -44,11 +52,16 @@ export type CheckoutBody = {
  *  (expired, used_up, already_used…). A total under ₹1 is also a 400. */
 export const PLAN_REQUIRED = 'plan_required';
 
-export type OrderLine = { label: string; amount_inr: number };
+/** `amount` is in the order's currency (absent on old servers). */
+export type OrderLine = { label: string; amount_inr: number; amount?: number };
+
+/** The order's currency, beside the INR figures. */
+type InCurrency = { total?: number; currency?: string; symbol?: string };
 
 export type RazorpayBlock = {
   key_id: string;
   order_id: string;
+  /** Minor units of `currency` (cents for USD). */
   amount_paise: number;
   currency: string;
   name: string;
@@ -60,10 +73,11 @@ export type RazorpayBlock = {
 export type OrderDiscount = {
   code: string;
   amount_inr: number;
+  amount?: number;
   applies_to?: 'build' | 'domain' | 'order';
 };
 
-export type CheckoutResponse = {
+export type CheckoutResponse = InCurrency & {
   order_id: number;
   total_inr: number;
   lines: OrderLine[];
@@ -85,7 +99,7 @@ export type OrderStatus =
   | 'fulfilled'
   | 'failed';
 
-export type CartOrder = {
+export type CartOrder = InCurrency & {
   id: number;
   status: OrderStatus;
   total_inr: number;

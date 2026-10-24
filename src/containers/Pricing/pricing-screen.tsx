@@ -13,7 +13,7 @@ import {
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useDiscountOffers } from '@/api/app-cart';
+import { useDiscountOffers, useMoney } from '@/api/app-cart';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { type ServicesPalette, servicesPalette } from '@/components/services';
 import { useAuth } from '@/hooks/useAuth';
@@ -107,14 +107,14 @@ function PlanList({
 
 const DOMAIN_TAB = 'domain';
 
-/** "50% OFF" / "₹500 OFF" for the Domain tab, from the best live offer. */
+/** "50% OFF" / "₹500 OFF" ("$6 OFF" abroad) for the Domain tab, from the
+ *  best live offer. */
 function useDomainOff(): string | null {
   const offers = useDiscountOffers();
+  const { money } = useMoney();
   const o = pickOffer(offers.data ?? [], ['domain', 'order']);
   if (!o) return null;
-  return o.type === 'percent'
-    ? `${o.value}% OFF`
-    : `₹${Math.round(o.value).toLocaleString('en-IN')} OFF`;
+  return o.type === 'percent' ? `${o.value}% OFF` : `${money(o.value)} OFF`;
 }
 
 /** Basic / Growth / 100X / Domain as folder tabs over one card. Opens on

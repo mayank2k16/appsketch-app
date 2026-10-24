@@ -2,8 +2,9 @@ import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useMoney } from '@/api/app-cart';
 import type { DomainSearchResult } from '@/api/app-domains';
-import { inr, type ServicesPalette, tint } from '@/components/services';
+import { type ServicesPalette, tint } from '@/components/services';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { haptic } from '@/lib/haptics';
@@ -77,6 +78,7 @@ export function DomainResult({
 }) {
   const [years, setYears] = React.useState(r.years[0]?.years ?? 1);
   const { inCart, price, add } = useAdd(r, years);
+  const { money } = useMoney();
   const ok = r.available && price > 0;
   const tone = r.available ? s.success : s.muted;
   return (
@@ -99,7 +101,7 @@ export function DomainResult({
       {ok ? (
         <View style={st.bottom}>
           <Text style={[st.price, { color: s.text }]}>
-            {inr(price)}
+            {money(price)}
             <Text style={[st.per, { color: s.muted }]}> / {years} yr</Text>
           </Text>
           <PressableScale
