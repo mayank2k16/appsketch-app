@@ -19,7 +19,7 @@ import { type Geometry, pageGeometry } from './geometry';
 import { GrowOverlay } from './grow-overlay';
 import { HeroCard, heroRectOf } from './hero-card';
 import { HeroChrome } from './hero-chrome';
-import { type Device, liveUrlOf } from './live-url';
+import { type Device, isAppShot, liveUrlOf } from './live-url';
 import { MoreSheet } from './more-sheet';
 import { ProductFallback } from './not-found';
 import { PageBackdrop } from './page-backdrop';
@@ -282,11 +282,7 @@ function Heroes({ s: st, origin }: { s: State; origin: string | null }) {
   return (
     <GestureDetector gesture={st.gestures.hero}>
       <Animated.View
-        style={[
-          s.zone,
-          { height: st.g.heroTall.y + st.g.heroTall.height },
-          zone,
-        ]}
+        style={[s.zone, { height: st.g.hero.y + st.g.hero.height }, zone]}
       >
         {pages.map(({ template, i }) => (
           <HeroCard
@@ -338,10 +334,7 @@ function Overlays({ s: st, p }: { s: State; p: PageProps }) {
         t={st.t}
         dark={st.dark}
         onClose={st.close}
-        live={st.live.has(current.key)}
-        active={st.active}
-        x={st.x}
-        index={st.index}
+        app={isAppShot(current)}
         device={liveUrlOf(current) ? st.device : null}
         onDevice={st.setDevice}
       />

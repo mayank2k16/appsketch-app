@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   interpolate,
   type SharedValue,
@@ -8,6 +8,10 @@ import Animated, {
 
 import type { MarketTemplate } from '@/api/templates';
 import { thumbOf } from '@/containers/Home/TemplateReel/layout';
+import {
+  phoneScreenOf,
+  PhoneShell,
+} from '@/containers/Home/TemplateReel/phone-frame';
 import { F } from '@/lib/fonts';
 
 import { DotSurface } from './dot-loader';
@@ -19,9 +23,11 @@ import { type Device, isAppShot, liveUrlOf } from './live-url';
 import type { ProductMotion } from './use-product-transition';
 
 /**
- * One template's hero in the pager, edge to edge in a panel with big
- * continuous corners, no device frame. A website shows its live site; an app
- * shows only its screenshot (hero-shot.tsx), never a live render.
+ * One template's hero in the pager. A website shows its live site edge to
+ * edge in a panel with big continuous corners and an orange border; an app
+ * shows only its screenshot (hero-shot.tsx), never a live render, inside the
+ * Home masonry's iPhone frame (phone-frame.tsx) — the two kinds read
+ * differently at a glance.
  * A website's panel rests on the orange dot ripple (dot-loader.tsx) until
  * its site has painted, then the site crossfades in over it
  * (live-preview.tsx); an app's screenshot fades in over the flowing
@@ -59,7 +65,7 @@ type Props = {
 
 function useHeroStyles(p: Props) {
   const { i, x, g, m, origin } = p;
-  const w = g.hero.width;
+  const w = heroRectOf(p.template, g).width;
   const card = useAnimatedStyle(() => {
     const d = i - x.value;
     const a = Math.min(1, Math.abs(d));
@@ -95,15 +101,17 @@ function NoLive({ dark }: { dark: boolean }) {
 type BodyProps = Omit<Props, 'onLive'> & { onLive: (on: boolean) => void };
 
 function HeroBody(p: BodyProps) {
+  const app = isAppShot(p.template);
   const hero = heroRectOf(p.template, p.g);
   // The panel's INSIDE (its border clips the content), so a Desktop site
-  // scales its full 1280px into what is actually visible.
+  // scales its full 1280px into what is actually visible; an app's phone
+  // screen under its status bar.
   const size = React.useMemo(
-    () => ({
-      width: hero.width - BORDER * 2,
-      height: hero.height - BORDER * 2,
-    }),
-    [hero.width, hero.height]
+    () =>
+      app
+        ? phoneScreenOf(hero.width)
+        : { width: hero.width - BORDER * 2, height: hero.height - BORDER * 2 },
+    [app, hero.width, hero.height]
   );
   const { onLive } = p;
   const onShown = React.useCallback(() => onLive(true), [onLive]);
@@ -135,9 +143,9 @@ function HeroBody(p: BodyProps) {
   );
 }
 
-/** An app's hero runs down past the (absent) pills row. */
+/** An app lands in the phone frame, a website in the hero panel. */
 export const heroRectOf = (t: MarketTemplate, g: Geometry) =>
-  isAppShot(t) ? g.heroTall : g.hero;
+  isAppShot(t) ? g.phone : g.hero;
 
 export const HeroCard = React.memo(function HeroCard(p: Props) {
   const st = useHeroStyles(p);
@@ -155,15 +163,42 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
   );
   const on = p.load === 'on';
   const spin = on && p.active && !live;
+  const rect = {
+    left: hero.x,
+    top: hero.y,
+    width: hero.width,
+    height: hero.height,
+  };
+  const tint = (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: paletteOf(template.key)[0] },
+        st.tint,
+      ]}
+    />
+  );
+  if (isAppShot(template)) {
+    return (
+      <Animated.View
+        pointerEvents={on ? 'box-none' : 'none'}
+        style={[s.phone, rect, st.card]}
+      >
+        <PhoneShell w={hero.width} dark={p.dark}>
+          <View style={s.screen}>
+            <LiveLoader seed={template.key} dark={p.dark} animate={spin} />
+            <HeroBody {...p} onLive={onLive} />
+            {tint}
+          </View>
+        </PhoneShell>
+      </Animated.View>
+    );
+  }
   return (
     <Animated.View
       pointerEvents={on ? 'box-none' : 'none'}
-      style={[
-        s.card,
-        { left: hero.x, top: hero.y, width: hero.width, height: hero.height },
-        { borderColor: p.edge },
-        st.card,
-      ]}
+      style={[s.card, rect, { borderColor: p.edge }, st.card]}
     >
       {liveUrlOf(template) ? (
         <DotSurface dark={p.dark} animate={spin} />
@@ -171,14 +206,7 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
         <LiveLoader seed={template.key} dark={p.dark} animate={spin} />
       )}
       <HeroBody {...p} onLive={onLive} />
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: paletteOf(template.key)[0] },
-          st.tint,
-        ]}
-      />
+      {tint}
     </Animated.View>
   );
 });
@@ -186,6 +214,8 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
 const BORDER = 1.5;
 
 const s = StyleSheet.create({
+  phone: { position: 'absolute' },
+  screen: { flex: 1, overflow: 'hidden' },
   card: {
     position: 'absolute',
     overflow: 'hidden',

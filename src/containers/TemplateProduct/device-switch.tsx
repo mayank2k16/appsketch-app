@@ -15,13 +15,13 @@ import { type Device, DEVICES } from './live-url';
 import { BRAND_ORANGE } from './theme';
 
 /**
- * Mobile | Tablet | Desktop as pills on top of a website's hero: a frosted
+ * Mobile | Tablet | Desktop as pills inside a website's hero: a frosted
  * glass capsule (the live site blurs through it) with an orange thumb that
  * slides to the chosen device. The live site re-renders at that device's
  * width (live-preview.tsx). Mobile is the default.
  */
 
-const SEG_W = 66; // the capsule clears the close X on a 375pt phone
+const SEG_W = 64; // the capsule clears the close X on a 375pt phone
 const H = 34;
 const PAD = 3;
 

@@ -143,18 +143,47 @@ const StatusBar = React.memo(function StatusBar({ w }: { w: number }) {
 
 type PhoneProps = { uri: string; w: number; dark: boolean };
 
+/** The screen under the status bar (what the screenshot fills), for a
+ *  frame `w` wide. */
+export function phoneScreenOf(w: number) {
+  const inset = w * 0.0091 * 2 + w * 0.023 * 2;
+  return {
+    width: w - inset,
+    height: (w * 812) / 390 - inset - (40 * w) / 300,
+  };
+}
+
 const fits = new Map<number, ShotFit>();
 
 /** The screen under the status bar, for the screenshot's decode size. */
 function screenFit(w: number): ShotFit {
   let f = fits.get(w);
   if (!f) {
-    const inset = w * 0.0091 * 2 + w * 0.023 * 2;
-    const h = (w * 812) / 390 - inset - (40 * w) / 300;
-    f = { w: w - inset, h, ratio: SHOT_RATIO.app };
+    const { width, height } = phoneScreenOf(w);
+    f = { w: width, h: height, ratio: SHOT_RATIO.app };
     fits.set(w, f);
   }
   return f;
+}
+
+type ShellProps = { w: number; dark: boolean; children: React.ReactNode };
+
+/** The iPhone around any screen content: rim, bezel, status bar, island and
+ *  home indicator. `children` fill the screen under the status bar. */
+export function PhoneShell({ w, dark, children }: ShellProps) {
+  const st = phoneStyles(w);
+  return (
+    <Rim dark={dark} style={st.rim}>
+      <View style={st.glass}>
+        <View style={st.screen}>
+          <StatusBar w={w} />
+          {children}
+          <View pointerEvents="none" style={st.home} />
+          <View pointerEvents="none" style={st.island} />
+        </View>
+      </View>
+    </Rim>
+  );
 }
 
 export const PhoneFrame = React.memo(function PhoneFrame({
@@ -162,17 +191,9 @@ export const PhoneFrame = React.memo(function PhoneFrame({
   w,
   dark,
 }: PhoneProps) {
-  const st = phoneStyles(w);
   return (
-    <Rim dark={dark} style={st.rim}>
-      <View style={st.glass}>
-        <View style={st.screen}>
-          <StatusBar w={w} />
-          <Shot uri={uri} fit={screenFit(w)} />
-          <View style={st.home} />
-          <View style={st.island} />
-        </View>
-      </View>
-    </Rim>
+    <PhoneShell w={w} dark={dark}>
+      <Shot uri={uri} fit={screenFit(w)} />
+    </PhoneShell>
   );
 });
