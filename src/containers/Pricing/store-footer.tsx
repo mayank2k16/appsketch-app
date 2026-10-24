@@ -88,7 +88,7 @@ export function StoreFooter({
 }
 
 const st = StyleSheet.create({
-  wrap: { paddingHorizontal: 16, paddingTop: 26, gap: 16 },
+  wrap: { paddingHorizontal: 8, paddingTop: 30, gap: 16 },
   restore: {
     height: 48,
     borderRadius: 14,

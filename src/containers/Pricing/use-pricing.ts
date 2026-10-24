@@ -41,6 +41,12 @@ export type PlanView = {
   /** Yearly only: "≈ ₹1,250/month". */
   monthlyEquivalent: string | null;
   sku: string | null;
+  /** Yearly only: the monthly plan's price, struck through ("₹1,499"). */
+  compareAt: string | null;
+  /** Yearly only: whole-percent saving vs 12 × monthly. */
+  savePct: number | null;
+  /** Yearly only: rupees (or the store currency) saved a year, formatted. */
+  saveAmount: string | null;
   current: boolean;
   popular: boolean;
 };
@@ -110,12 +116,64 @@ function backendPrice(plan: SubscriptionPlan, cycle: PlanInterval) {
   };
 }
 
+function currencyOf(
+  plan: SubscriptionPlan,
+  cycle: PlanInterval,
+  products: Products
+): string {
+  if (isIos()) {
+    const c = products[appleProductId(plan.tier, cycle)]?.currency;
+    if (c) return c;
+  }
+  return option(plan, cycle)?.currency?.code ?? 'INR';
+}
+
+/** Yearly: the monthly price to strike through, and the saving. */
+function compare(
+  plan: SubscriptionPlan,
+  cycle: PlanInterval,
+  products: Products
+) {
+  const none = { compareAt: null, savePct: null, saveAmount: null };
+  if (cycle !== 'yearly') return none;
+  // Both prices from the same source (StoreKit or the plans API).
+  const fromStore =
+    isIos() &&
+    !!products[appleProductId(plan.tier, 'yearly')] &&
+    !!products[appleProductId(plan.tier, 'monthly')];
+  const num = (c: PlanInterval) =>
+    fromStore
+      ? Number(products[appleProductId(plan.tier, c)]?.price)
+      : Number(option(plan, c)?.price);
+  const m = num('monthly');
+  const y = num('yearly');
+  if (!(m > 0) || !(y > 0) || y / 12 >= m) return none;
+  const code = currencyOf(plan, 'monthly', fromStore ? products : {});
+  const fmt = (n: number) => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: code,
+        maximumFractionDigits: n >= 100 ? 0 : 2,
+      }).format(n);
+    } catch {
+      return null;
+    }
+  };
+  return {
+    compareAt: fmt(m),
+    savePct: Math.round((1 - y / (12 * m)) * 100),
+    saveAmount: fmt(12 * m - y),
+  };
+}
+
 function toView(
   plan: SubscriptionPlan,
   cycle: PlanInterval,
   products: Products
 ) {
   return {
+    ...compare(plan, cycle, products),
     tier: plan.tier,
     name: shortName(plan),
     description: plan.description ?? '',

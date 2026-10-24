@@ -31,6 +31,7 @@ import { CustomCard } from './custom-card';
 import { DomainCard } from './domain-card';
 import { PlanCard } from './plan-card';
 import { PlanSkeleton } from './plan-skeleton';
+import { PlanTabs } from './plan-tabs';
 import { PlannerCard } from './planner/planner-card';
 import { StickySummary } from './planner/summary-bar';
 import { usePlanner } from './planner/use-planner';
@@ -96,19 +97,62 @@ function PlanList({
       {isIos() && data.storeStatus === 'unavailable' ? (
         <StoreUnavailable t={t} p={p} detail={data.storeDetail} />
       ) : null}
-      {data.views.map((plan) => (
-        <PlanCard
-          key={plan.tier}
-          plan={plan}
-          t={t}
-          p={p}
-          ctaLabel={isIos() ? 'Subscribe' : 'Get the plan'}
-          busy={!!plan.sku && busySku === plan.sku}
-          locked={!!busySku}
-          onSubscribe={() => onPress(plan)}
-        />
-      ))}
+      <TabbedPlans
+        t={t}
+        p={p}
+        views={data.views}
+        busySku={busySku}
+        onPress={onPress}
+      />
     </View>
+  );
+}
+
+/** Basic / Growth / 100X tabs over one immersive card. Opens on the user's
+ *  plan, else the popular one. */
+function TabbedPlans({
+  t,
+  p,
+  views,
+  busySku,
+  onPress,
+}: {
+  t: AppColors;
+  p: PricingPalette;
+  views: PlanView[];
+  busySku: string | null;
+  onPress: (plan: PlanView) => void;
+}) {
+  const start =
+    views.find((v) => v.current)?.tier ??
+    views.find((v) => v.popular)?.tier ??
+    views[0]?.tier ??
+    '';
+  // null = not picked yet: follow `start` (plans and the user's plan can
+  // arrive after the first render).
+  const [tier, setTier] = React.useState<string | null>(null);
+  const plan = views.find((v) => v.tier === (tier ?? start)) ?? views[0];
+  if (!plan) return null;
+  return (
+    <>
+      <PlanTabs
+        t={t}
+        p={p}
+        plans={views}
+        value={plan.tier}
+        onChange={setTier}
+      />
+      <PlanCard
+        key={plan.tier}
+        plan={plan}
+        t={t}
+        p={p}
+        ctaLabel={isIos() ? 'Subscribe' : 'Get the plan'}
+        busy={!!plan.sku && busySku === plan.sku}
+        locked={!!busySku}
+        onSubscribe={() => onPress(plan)}
+      />
+    </>
   );
 }
 
@@ -141,7 +185,6 @@ function PlansSection({ t, p }: { t: AppColors; p: PricingPalette }) {
         />
       </View>
       <PlanList t={t} p={p} cycle={cycle} />
-      {isIos() ? <StoreFooter t={t} p={p} signedIn={signedIn} /> : null}
     </View>
   );
 }
@@ -253,6 +296,7 @@ export function PricingScreen() {
   const geo = useStickyGeometry();
   const scroll = React.useRef<Animated.ScrollView>(null);
   const jump = useDomainJump(scroll);
+  const signedIn = useAuth.use.status() === 'signIn';
   return (
     <View style={[st.root, { backgroundColor: t.bg }]} onLayout={geo.onRoot}>
       <StatusBar
@@ -285,6 +329,8 @@ export function PricingScreen() {
           <DomainCard s={s} inputRef={jump.input} />
           <CustomCard s={s} whatsapp={catalogue.data?.whatsapp} />
         </View>
+        {/* Restore Purchases, auto-renew terms, Terms of Use, Privacy. */}
+        {isIos() ? <StoreFooter t={t} p={p} signedIn={signedIn} /> : null}
       </Animated.ScrollView>
       {/* Solid strip under the clock so scrolled content never sits there. */}
       <View
@@ -308,22 +354,22 @@ const st = StyleSheet.create({
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
     paddingBottom: 12,
     gap: 12,
   },
   heroText: { flex: 1 },
   title: { fontFamily: F.display900, fontSize: 26, letterSpacing: -0.7 },
   sub: { fontFamily: F.sans400, fontSize: 13, marginTop: 1 },
-  section: { paddingHorizontal: 18, paddingTop: 26, paddingBottom: 10 },
+  section: { paddingHorizontal: 14, paddingTop: 26, paddingBottom: 10 },
   sectionFirst: { paddingTop: 4 },
   teamGap: { paddingTop: 28 },
   sectionTitle: { fontFamily: F.display900, fontSize: 19, letterSpacing: -0.4 },
   sectionSub: { fontFamily: F.sans400, fontSize: 12.5, marginTop: 2 },
-  pad: { paddingHorizontal: 12 },
+  pad: { paddingHorizontal: 8 },
   cards: { paddingTop: 26, gap: 12 },
   toggle: { paddingTop: 6, paddingBottom: 14 },
-  list: { paddingHorizontal: 12, gap: 10 },
+  list: { paddingHorizontal: 8, gap: 12 },
   error: {
     fontFamily: F.sans600,
     fontSize: 14,
