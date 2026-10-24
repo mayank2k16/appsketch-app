@@ -18,6 +18,9 @@ type IapState = {
   /** Product id whose purchase sheet / verification is in flight. */
   busySku: string | null;
   restoring: boolean;
+  /** Why StoreKit has nothing to sell (shown small under the notice), e.g.
+   *  "App Store returned 0 of 6 plans" or StoreKit's error message. */
+  detail: string | null;
 };
 
 export const useIapStore = create<IapState>(() => ({
@@ -25,6 +28,7 @@ export const useIapStore = create<IapState>(() => ({
   products: {},
   busySku: null,
   restoring: false,
+  detail: null,
 }));
 
 export const setIap = (patch: Partial<IapState>) => useIapStore.setState(patch);

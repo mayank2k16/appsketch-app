@@ -94,7 +94,7 @@ function PlanList({
   return (
     <View style={st.list}>
       {isIos() && data.storeStatus === 'unavailable' ? (
-        <StoreUnavailable t={t} p={p} />
+        <StoreUnavailable t={t} p={p} detail={data.storeDetail} />
       ) : null}
       {data.views.map((plan) => (
         <PlanCard
@@ -122,6 +122,7 @@ function PlansSection({ t, p }: { t: AppColors; p: PricingPalette }) {
     <View>
       <SectionHead
         t={t}
+        first
         title="Build with AI"
         sub="Self-serve plans. Switch or cancel anytime."
       />
@@ -149,13 +150,15 @@ function SectionHead({
   t,
   title,
   sub,
+  first,
 }: {
   t: AppColors;
   title: string;
   sub: string;
+  first?: boolean;
 }) {
   return (
-    <View style={st.section}>
+    <View style={[st.section, first && st.sectionFirst]}>
       <Text style={[st.sectionTitle, { color: t.text }]}>{title}</Text>
       <Text style={[st.sectionSub, { color: t.textSub }]}>{sub}</Text>
     </View>
@@ -234,9 +237,10 @@ function useDomainJump(scroll: React.RefObject<Animated.ScrollView | null>) {
   };
 }
 
-/** The Pricing tab: compact hero, the gamified "Launch with our team"
- *  planner (services, Razorpay via the cart), the App Store plans, the
- *  domain search and custom solutions. */
+/** The Pricing tab: compact hero, the self-serve plans (App Store on iOS)
+ *  with the user's current plan on top, then the "Launch with our team"
+ *  planner (services, Razorpay via the cart), the domain search and custom
+ *  solutions. */
 export function PricingScreen() {
   const insets = useSafeAreaInsets();
   const tabBarH = useTabBarHeight();
@@ -268,7 +272,8 @@ export function PricingScreen() {
         }}
       >
         <Hero s={s} />
-        <View style={st.pad} onLayout={geo.onCard}>
+        <PlansSection t={t} p={p} />
+        <View style={[st.pad, st.teamGap]} onLayout={geo.onCard}>
           <PlannerCard
             s={s}
             pl={pl}
@@ -276,7 +281,6 @@ export function PricingScreen() {
             onBarLayout={geo.onBar}
           />
         </View>
-        <PlansSection t={t} p={p} />
         <View style={[st.pad, st.cards]} onLayout={jump.onLayout}>
           <DomainCard s={s} inputRef={jump.input} />
           <CustomCard s={s} whatsapp={catalogue.data?.whatsapp} />
@@ -312,6 +316,8 @@ const st = StyleSheet.create({
   title: { fontFamily: F.display900, fontSize: 26, letterSpacing: -0.7 },
   sub: { fontFamily: F.sans400, fontSize: 13, marginTop: 1 },
   section: { paddingHorizontal: 18, paddingTop: 26, paddingBottom: 10 },
+  sectionFirst: { paddingTop: 4 },
+  teamGap: { paddingTop: 28 },
   sectionTitle: { fontFamily: F.display900, fontSize: 19, letterSpacing: -0.4 },
   sectionSub: { fontFamily: F.sans400, fontSize: 12.5, marginTop: 2 },
   pad: { paddingHorizontal: 12 },

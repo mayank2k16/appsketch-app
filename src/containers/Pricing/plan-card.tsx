@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
+import { isIos } from '@/lib/iap';
 import type { AppColors } from '@/lib/theme';
 
 import type { PricingPalette } from './theme';
@@ -42,44 +43,101 @@ function Price({ plan, t }: Pick<Props, 'plan' | 't'>) {
   );
 }
 
-/** Features fold to a few lines (one dot-separated paragraph); tap to open. */
-function Features({ plan, t }: Pick<Props, 'plan' | 't'>) {
-  const [open, setOpen] = React.useState(false);
-  const lead = [
-    plan.credits,
-    plan.models.length ? `AI: ${plan.models.join(', ')}` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  if (!lead && !plan.features.length) return null;
+const FOLDED = 5;
+
+function FeatureRow({
+  icon,
+  label,
+  color,
+  strong,
+  text,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  color: string;
+  strong?: boolean;
+  text: string;
+}) {
   return (
-    <Text
-      onPress={() => setOpen((o) => !o)}
-      numberOfLines={open ? undefined : 3}
-      accessibilityRole="button"
-      accessibilityHint={
-        open ? 'Collapses the features' : 'Shows every feature'
-      }
-      style={[st.features, { color: t.textSub }]}
-    >
-      {lead ? <Text style={[st.lead, { color: t.text }]}>{lead}</Text> : null}
-      {lead && plan.features.length ? '  ·  ' : ''}
-      {plan.features.join('  ·  ')}
-    </Text>
+    <View style={st.row}>
+      <Ionicons name={icon} size={15} color={color} style={st.rowIcon} />
+      <Text
+        style={[st.rowText, strong && st.rowStrong, { color: text }]}
+        numberOfLines={2}
+      >
+        {label}
+      </Text>
+    </View>
   );
 }
 
-function Cta({ plan, p, t, ctaLabel, busy, locked, onSubscribe }: Props) {
+/** Credits and AI models first, then each feature on its own ticked row;
+ *  long lists fold to five with a "Show all" toggle. */
+function Features({ plan, t, p }: Pick<Props, 'plan' | 't' | 'p'>) {
+  const [open, setOpen] = React.useState(false);
+  // The credits row already says it; the API also lists it as a feature.
+  const all = plan.credits
+    ? plan.features.filter((f) => !/build credits/i.test(f))
+    : plan.features;
+  if (!plan.credits && !plan.models.length && !all.length) return null;
+  const shown = open ? all : all.slice(0, FOLDED);
+  const hidden = all.length - shown.length;
+  return (
+    <View style={[st.features, { borderTopColor: p.cardBorder }]}>
+      {plan.credits ? (
+        <FeatureRow
+          icon="flash"
+          label={plan.credits}
+          color={p.primaryBg}
+          strong
+          text={t.text}
+        />
+      ) : null}
+      {plan.models.length ? (
+        <FeatureRow
+          icon="sparkles"
+          label={`AI: ${plan.models.join(', ')}`}
+          color={p.primaryBg}
+          strong
+          text={t.text}
+        />
+      ) : null}
+      {shown.map((f) => (
+        <FeatureRow
+          key={f}
+          icon="checkmark-circle"
+          label={f}
+          color={p.success}
+          text={t.text}
+        />
+      ))}
+      {all.length > FOLDED ? (
+        <Text
+          onPress={() => setOpen((o) => !o)}
+          accessibilityRole="button"
+          style={[st.more, { color: t.textSub }]}
+        >
+          {open ? 'Show less' : `Show all ${all.length} features (+${hidden})`}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function Cta({ plan, p, ctaLabel, busy, locked, onSubscribe }: Props) {
   if (plan.free) return null;
   if (plan.current) {
     return (
-      <View style={[st.cta, st.ctaOutline, { borderColor: p.cardBorder }]}>
-        <Ionicons name="checkmark-circle" size={16} color={p.success} />
-        <Text style={[st.ctaText, { color: t.text }]}>Current plan</Text>
+      <View style={[st.cta, { backgroundColor: p.currentSoft }]}>
+        <Ionicons name="checkmark-circle" size={17} color={p.currentInk} />
+        <Text style={[st.ctaText, { color: p.currentInk }]}>
+          You&apos;re on this plan
+        </Text>
       </View>
     );
   }
-  const enabled = !!plan.price && !locked;
+  // iOS sells through StoreKit only: no App Store product, no Subscribe.
+  const enabled = !!plan.price && !locked && (!isIos() || !!plan.sku);
   const bg = plan.popular ? p.primaryBg : p.secondaryBg;
   const fg = plan.popular ? '#FFFFFF' : p.secondaryText;
   return (
@@ -101,18 +159,25 @@ function Cta({ plan, p, t, ctaLabel, busy, locked, onSubscribe }: Props) {
   );
 }
 
-/** One plan, compact: name + description beside the App Store price, the
- *  features folded to three lines, and Subscribe. The highlighted plan
+/** One plan: name + description beside the price, the features as a
+ *  ticked list, and Subscribe. The user's own plan gets the orange border,
+ *  a tinted card and a "Your plan" badge; otherwise the highlighted plan
  *  (Growth) gets the ink border, the "Most popular" tab and the orange CTA. */
 export function PlanCard(props: Props) {
   const { plan, t, p } = props;
+  const border = plan.current
+    ? p.currentBorder
+    : plan.popular
+      ? p.popularBorder
+      : p.cardBorder;
   return (
     <View
       style={[
         st.card,
         {
-          backgroundColor: p.cardBg,
-          borderColor: plan.popular ? p.popularBorder : p.cardBorder,
+          backgroundColor: plan.current ? p.currentBg : p.cardBg,
+          borderColor: border,
+          borderWidth: plan.current ? 2 : 1,
         },
       ]}
     >
@@ -120,7 +185,13 @@ export function PlanCard(props: Props) {
         <View style={st.headText}>
           <View style={st.nameRow}>
             <Text style={[st.name, { color: t.text }]}>{plan.name}</Text>
-            {plan.popular ? (
+            {plan.current ? (
+              <View style={[st.badge, { backgroundColor: p.currentInk }]}>
+                <Text style={[st.badgeText, { color: '#FFFFFF' }]}>
+                  YOUR PLAN
+                </Text>
+              </View>
+            ) : plan.popular ? (
               <View style={[st.badge, { backgroundColor: p.popularBadgeBg }]}>
                 <Text style={[st.badgeText, { color: p.popularBadgeText }]}>
                   Most popular
@@ -136,7 +207,7 @@ export function PlanCard(props: Props) {
         </View>
         <Price plan={plan} t={t} />
       </View>
-      <Features plan={plan} t={t} />
+      <Features plan={plan} t={t} p={p} />
       <Cta {...props} />
     </View>
   );
@@ -167,8 +238,16 @@ const st = StyleSheet.create({
     textAlign: 'right',
   },
   equiv: { fontFamily: F.sans500, fontSize: 11, marginTop: 1 },
-  features: { fontFamily: F.sans400, fontSize: 12, lineHeight: 17 },
-  lead: { fontFamily: F.sans600 },
+  features: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+    gap: 7,
+  },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  rowIcon: { marginTop: 1 },
+  rowText: { flex: 1, fontFamily: F.sans400, fontSize: 13, lineHeight: 18 },
+  rowStrong: { fontFamily: F.sans600 },
+  more: { fontFamily: F.sans600, fontSize: 12.5, paddingTop: 2 },
   cta: {
     height: 42,
     borderRadius: 12,
@@ -177,6 +256,5 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ctaOutline: { borderWidth: 1 },
   ctaText: { fontFamily: F.sans700, fontSize: 14 },
 });

@@ -45,6 +45,12 @@ const inFlight = new Set<string>();
 
 export const isIos = () => Platform.OS === 'ios';
 
+function errorText(err: unknown): string {
+  const e = err as { code?: unknown; message?: string } | null;
+  const msg = e?.message || String(err);
+  return e?.code ? `${String(e.code)}: ${msg}` : msg;
+}
+
 function txKey(p: Purchase): string {
   return String(
     (p as { transactionId?: string }).transactionId ?? p.id ?? p.productId
@@ -108,12 +114,14 @@ async function loadProducts() {
     })) as ProductSubscription[] | null;
     const products: Record<string, ProductSubscription> = {};
     for (const product of list ?? []) products[product.id] = product;
+    const found = Object.keys(products).length;
     setIap({
       products,
-      status: Object.keys(products).length ? 'ready' : 'unavailable',
+      status: found ? 'ready' : 'unavailable',
+      detail: found ? null : `App Store returned 0 of ${wanted.size} plans`,
     });
-  } catch {
-    setIap({ status: 'unavailable' });
+  } catch (err) {
+    setIap({ status: 'unavailable', detail: errorText(err) });
   }
 }
 
@@ -134,8 +142,8 @@ export async function connectStore() {
   try {
     await initConnection();
     connected = true;
-  } catch {
-    setIap({ status: 'unavailable' });
+  } catch (err) {
+    setIap({ status: 'unavailable', detail: errorText(err) });
     return;
   }
   subs = [

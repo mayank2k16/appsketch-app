@@ -69,7 +69,17 @@ function readUserField(
   if (key === 'phone') {
     return String(user.phone_number ?? user.phone ?? '');
   }
+  if (key === 'email') {
+    // Older sign-in payloads had no top-level email; the workspace carries it.
+    const ws = user.workspace as { email?: string } | undefined;
+    return String(user.email || ws?.email || '');
+  }
   return String(user[key] ?? '');
+}
+
+/** Apple "Hide My Email" addresses forward to the user's real inbox. */
+function isAppleRelay(email: string): boolean {
+  return /@privaterelay\.appleid\.com$/i.test(email);
 }
 
 export function ProfileScreen() {
@@ -91,7 +101,7 @@ export function ProfileScreen() {
     () => ({
       name:
         readUserField(user, 'name') || (isGuest ? 'Guest User' : 'Your Name'),
-      email: readUserField(user, 'email') || (isGuest ? '' : 'you@example.com'),
+      email: readUserField(user, 'email'),
       phone: readUserField(user, 'phone') || '',
     }),
     [user, isGuest]
@@ -251,7 +261,9 @@ export function ProfileScreen() {
             </Text>
             {!!original.email && (
               <Text style={[st.avatarSub, { color: t.textSub }]}>
-                {original.email}
+                {isAppleRelay(original.email)
+                  ? 'Private email via Apple · forwards to your inbox'
+                  : original.email}
               </Text>
             )}
           </View>
@@ -295,7 +307,11 @@ export function ProfileScreen() {
                   />
                   <ProfileField
                     t={t}
-                    label="Email"
+                    label={
+                      isAppleRelay(original.email)
+                        ? 'Email (hidden by Apple)'
+                        : 'Email'
+                    }
                     value={editing ? form.email : original.email || '—'}
                     editing={editing}
                     onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}

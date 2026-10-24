@@ -11,7 +11,8 @@ import type { PricingPalette } from './theme';
 
 type Base = { t: AppColors; p: PricingPalette };
 
-/** The signed-in user's plan, with Apple's subscription management on iOS. */
+/** The signed-in user's plan, front and centre: a tinted brand card with a
+ *  ribbon icon, and Apple's subscription management on iOS. */
 export function CurrentPlan({
   t,
   p,
@@ -20,21 +21,34 @@ export function CurrentPlan({
 }: Base & { name: string; manage: boolean }) {
   return (
     <View
-      style={[st.box, { backgroundColor: p.cardBg, borderColor: p.cardBorder }]}
+      style={[
+        st.box,
+        st.current,
+        { backgroundColor: p.currentBg, borderColor: p.currentBorder },
+      ]}
     >
-      <View style={[st.dot, { backgroundColor: p.success }]} />
+      <View style={[st.medal, { backgroundColor: p.currentInk }]}>
+        <Ionicons name="ribbon" size={20} color="#FFFFFF" />
+      </View>
       <View style={st.body}>
-        <Text style={[st.kicker, { color: t.textSub }]}>Current plan</Text>
-        <Text style={[st.title, { color: t.text }]}>{name}</Text>
+        <View style={st.kickRow}>
+          <View style={[st.dot, { backgroundColor: p.success }]} />
+          <Text style={[st.kicker, { color: p.currentInk }]}>
+            Your current plan · Active
+          </Text>
+        </View>
+        <Text style={[st.title, st.big, { color: t.text }]} numberOfLines={1}>
+          {name}
+        </Text>
       </View>
       {manage ? (
         <PressableScale
           onPress={() => void manageSubscriptions()}
           haptic="tap"
           accessibilityRole="button"
-          style={[st.pill, { borderColor: p.cardBorder }]}
+          style={[st.pill, { backgroundColor: p.currentInk, borderWidth: 0 }]}
         >
-          <Text style={[st.pillText, { color: t.text }]}>Manage</Text>
+          <Text style={[st.pillText, { color: '#FFFFFF' }]}>Manage</Text>
         </PressableScale>
       ) : null}
     </View>
@@ -44,7 +58,11 @@ export function CurrentPlan({
 /** StoreKit returned no products (not set up in App Store Connect yet, no
  *  StoreKit configuration on a simulator, or the store is unreachable). A
  *  calm notice and a retry — never a way to pay outside the App Store. */
-export function StoreUnavailable({ t, p }: Base) {
+export function StoreUnavailable({
+  t,
+  p,
+  detail,
+}: Base & { detail?: string | null }) {
   return (
     <View
       style={[
@@ -60,6 +78,11 @@ export function StoreUnavailable({ t, p }: Base) {
         <Text style={[st.note, { color: t.textSub }]}>
           You can still compare the plans. Please try again in a little while.
         </Text>
+        {detail ? (
+          <Text style={[st.detail, { color: t.textSub }]} numberOfLines={2}>
+            {detail}
+          </Text>
+        ) : null}
       </View>
       <PressableScale
         onPress={() => void reloadProducts()}
@@ -83,7 +106,18 @@ const st = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  current: { borderWidth: 1.5, paddingVertical: 16 },
+  medal: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kickRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  big: { fontFamily: F.display900, fontSize: 21, letterSpacing: -0.4 },
+  detail: { fontFamily: F.sans500, fontSize: 11, marginTop: 6 },
   body: { flex: 1 },
   kicker: {
     fontFamily: F.sans600,

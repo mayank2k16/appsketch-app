@@ -30,6 +30,10 @@ export function pricingPalette(t: AppColors) {
         noticeBg: 'rgba(255,255,255,0.05)',
         error: '#E0392B',
         success: '#3DD68C',
+        currentBg: 'rgba(242,96,12,0.10)',
+        currentBorder: t.accent,
+        currentSoft: 'rgba(242,96,12,0.18)',
+        currentInk: t.accent,
       }
     : {
         dark,
@@ -54,6 +58,10 @@ export function pricingPalette(t: AppColors) {
         noticeBg: '#F4F4F2',
         error: '#E5484D',
         success: '#12A150',
+        currentBg: '#FFF6F0',
+        currentBorder: '#F2600C',
+        currentSoft: '#FFE6D6',
+        currentInk: '#D2500A',
       };
 }
 

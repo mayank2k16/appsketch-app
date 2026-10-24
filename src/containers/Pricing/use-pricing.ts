@@ -10,6 +10,7 @@ import {
   ensureProducts,
   isIos,
   type PlanInterval,
+  reloadProducts,
   type StoreStatus,
   useIapStore,
 } from '@/lib/iap';
@@ -78,7 +79,9 @@ function priceFor(
   if (isIos()) {
     const sku = appleProductId(plan.tier, cycle);
     const product = products[sku];
-    if (!product) return { price: null, sku: null, monthlyEquivalent: null };
+    // Not in the App Store right now: still show the plan's price to
+    // compare; Subscribe stays off (no sku).
+    if (!product) return { ...backendPrice(plan, cycle), sku: null };
     return {
       price: product.displayPrice,
       sku,
@@ -87,8 +90,13 @@ function priceFor(
         : null,
     };
   }
+  return { ...backendPrice(plan, cycle), sku: null };
+}
+
+function backendPrice(plan: SubscriptionPlan, cycle: PlanInterval) {
+  const yearly = cycle === 'yearly';
   const opt = option(plan, cycle);
-  if (!opt) return { price: null, sku: null, monthlyEquivalent: null };
+  if (!opt) return { price: null, monthlyEquivalent: null };
   const code = opt.currency?.code ?? 'INR';
   const fmt = (n: number) =>
     new Intl.NumberFormat(undefined, {
@@ -98,7 +106,6 @@ function priceFor(
     }).format(n);
   return {
     price: fmt(Number(opt.price)),
-    sku: null,
     monthlyEquivalent: yearly ? perMonth(Number(opt.price), code) : null,
   };
 }
@@ -127,6 +134,7 @@ export function usePricing(cycle: PlanInterval) {
   const query = useSubscriptionPlans();
   const products = useIapStore((s) => s.products);
   const storeStatus: StoreStatus = useIapStore((s) => s.status);
+  const storeDetail = useIapStore((s) => s.detail);
   const sub = getUserSubscription(useAuth.use.user());
   const currentTier = sub?.active ? sub.plan?.tier?.toLowerCase() : undefined;
 
@@ -139,6 +147,12 @@ export function usePricing(cycle: PlanInterval) {
       ),
     [query.data]
   );
+
+  // The tab opening is a natural moment to ask StoreKit again.
+  React.useEffect(() => {
+    if (isIos() && useIapStore.getState().status === 'unavailable')
+      void reloadProducts();
+  }, []);
 
   React.useEffect(() => {
     if (!isIos() || !plans.length) return;
@@ -168,6 +182,7 @@ export function usePricing(cycle: PlanInterval) {
     isError: query.isError,
     refetch: query.refetch,
     storeStatus,
+    storeDetail,
     activePlanName: sub?.active
       ? sub.plan?.display_name || sub.plan?.tier
       : null,
