@@ -76,19 +76,23 @@ export function pillsOf(template: MarketTemplate) {
   return out;
 }
 
-/** The details box's highlight chips: what kind of template this is —
- *  its category, then its own tags ("E-commerce", "Fashion"…), then
- *  App / Website. Deduplicated, case-insensitively; the row clips what
- *  does not fit. */
+/** Tags that only restate the kind (the details box shows a solid
+ *  App / Website badge for that). */
+const KIND_WORDS = /^(app|apps|mobile|mobile app|website|web|site|web app)$/i;
+
+/** The details box's highlight chips: what kind of business this is — its
+ *  category, then its own tags ("E-commerce", "Fashion"…). Deduplicated,
+ *  case-insensitively; the row clips what does not fit. App vs Website is
+ *  the separate badge in front of them. */
 export function highlightsOf(template: MarketTemplate) {
   const category = categoryOf(template);
   const tags = template.kind === 'code' ? (template.tags ?? []) : [];
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const raw of [category, ...tags, kindOf(template)]) {
+  for (const raw of [category, ...tags]) {
     const label = (raw || '').trim();
     const k = label.toLowerCase();
-    if (!label || seen.has(k)) continue;
+    if (!label || seen.has(k) || KIND_WORDS.test(label)) continue;
     seen.add(k);
     // Tags are often lower-case ("food"); chips read as titles.
     out.push(label[0].toUpperCase() + label.slice(1));

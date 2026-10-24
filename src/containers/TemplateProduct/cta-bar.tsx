@@ -26,9 +26,14 @@ function Primary({ cta, t }: { cta: Cta; t: PageTheme }) {
     <PressableScale
       haptic="press"
       onPress={cta.onPress}
+      disabled={cta.busy}
       style={[s.btn, s.grow, { backgroundColor: t.primaryBg }]}
     >
-      <Text style={[s.btnText, { color: t.primaryFg }]}>{cta.label}</Text>
+      {cta.busy ? (
+        <ActivityIndicator size="small" color={t.primaryFg} />
+      ) : (
+        <Text style={[s.btnText, { color: t.primaryFg }]}>{cta.label}</Text>
+      )}
     </PressableScale>
   );
 }

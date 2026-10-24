@@ -9,7 +9,7 @@ import Animated, {
 
 import type { MarketTemplate } from '@/api/templates';
 import { PressableScale } from '@/components/ui';
-import { categoryOf } from '@/containers/Home/TemplateReel/layout';
+import { categoryOf, isMobile } from '@/containers/Home/TemplateReel/layout';
 import { pillTone } from '@/containers/Home/TemplateReel/pills';
 import { F } from '@/lib/fonts';
 
@@ -100,9 +100,34 @@ function Highlight({ label, dark }: { label: string; dark: boolean }) {
   );
 }
 
+/** App or Website, at a glance: a solid badge (ink on white, white on
+ *  dark) with the device icon, ahead of the tinted category chips. */
+function KindBadge({
+  template,
+  t,
+}: {
+  template: MarketTemplate;
+  t: PageTheme;
+}) {
+  const app = isMobile(template);
+  return (
+    <View style={[s.kind, { backgroundColor: t.primaryBg }]}>
+      <Ionicons
+        name={app ? 'phone-portrait' : 'globe-outline'}
+        size={12}
+        color={t.primaryFg}
+      />
+      <Text style={[s.kindText, { color: t.primaryFg }]}>
+        {app ? 'App' : 'Website'}
+      </Text>
+    </View>
+  );
+}
+
 function Highlights(p: Props) {
   return (
     <View style={s.topRow}>
+      <KindBadge template={p.template} t={p.t} />
       <View style={s.chips}>
         {highlightsOf(p.template).map((label) => (
           <Highlight key={label} label={label} dark={p.dark} />
@@ -160,7 +185,16 @@ const s = StyleSheet.create({
     padding: 11,
   },
   flex: { flex: 1, minHeight: 8 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  kind: {
+    height: 26,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  kindText: { fontFamily: F.sans800, fontSize: 12, letterSpacing: 0.1 },
   // One line of WHOLE chips: one that does not fit wraps onto a second
   // line, which the fixed height hides (never a chip cut mid-word).
   chips: {
