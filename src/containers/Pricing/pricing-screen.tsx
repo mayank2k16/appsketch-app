@@ -31,7 +31,6 @@ import { CustomCard } from './custom-card';
 import { DomainCard } from './domain-card';
 import { PlanCard } from './plan-card';
 import { PlanSkeleton } from './plan-skeleton';
-import { PlanTabs } from './plan-tabs';
 import { PlannerCard } from './planner/planner-card';
 import { StickySummary } from './planner/summary-bar';
 import { usePlanner } from './planner/use-planner';
@@ -108,7 +107,7 @@ function PlanList({
   );
 }
 
-/** Basic / Growth / 100X tabs over one immersive card. Opens on the user's
+/** One immersive card with Basic / Growth / 100X folder tabs. Opens on the user's
  *  plan, else the popular one. */
 function TabbedPlans({
   t,
@@ -134,25 +133,17 @@ function TabbedPlans({
   const plan = views.find((v) => v.tier === (tier ?? start)) ?? views[0];
   if (!plan) return null;
   return (
-    <>
-      <PlanTabs
-        t={t}
-        p={p}
-        plans={views}
-        value={plan.tier}
-        onChange={setTier}
-      />
-      <PlanCard
-        key={plan.tier}
-        plan={plan}
-        t={t}
-        p={p}
-        ctaLabel={isIos() ? 'Subscribe' : 'Get the plan'}
-        busy={!!plan.sku && busySku === plan.sku}
-        locked={!!busySku}
-        onSubscribe={() => onPress(plan)}
-      />
-    </>
+    <PlanCard
+      plan={plan}
+      plans={views}
+      onPick={setTier}
+      t={t}
+      p={p}
+      ctaLabel={isIos() ? 'Subscribe' : 'Get the plan'}
+      busy={!!plan.sku && busySku === plan.sku}
+      locked={!!busySku}
+      onSubscribe={() => onPress(plan)}
+    />
   );
 }
 

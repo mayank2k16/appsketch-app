@@ -1,18 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import Svg, { Line, Path, Rect } from 'react-native-svg';
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 import { isIos } from '@/lib/iap';
-import { type AppColors, brandGradient } from '@/lib/theme';
+import type { AppColors } from '@/lib/theme';
 
 import type { PricingPalette } from './theme';
 import type { PlanView } from './use-pricing';
 
 type Props = {
   plan: PlanView;
+  /** Every plan, for the folder tabs along the top of the frame. */
+  plans: PlanView[];
+  onPick: (tier: string) => void;
   t: AppColors;
   p: PricingPalette;
   ctaLabel: string;
@@ -21,11 +24,11 @@ type Props = {
   onSubscribe: () => void;
 };
 
-/** One card's colours. The featured plan (Growth) is the immersive one: a
- *  solid ink card on the white theme, a brand-gradient ring on dark. */
+/** Card and frame colours. Every plan uses the same immersive dark card in
+ *  a striped frame: orange on the white theme, the accent on dark. */
 type Skin = {
+  frame: string;
   bg: string;
-  border: string;
   text: string;
   sub: string;
   rule: string;
@@ -35,61 +38,19 @@ type Skin = {
   ctaText: string;
 };
 
-function skinFor(plan: PlanView, t: AppColors, p: PricingPalette): Skin {
-  const featured = plan.popular && !plan.current;
-  if (p.dark) {
-    return {
-      bg: featured ? '#1A1A1D' : '#121214',
-      border: plan.current ? p.currentBorder : 'rgba(255,255,255,0.10)',
-      text: '#F6F7FA',
-      sub: 'rgba(255,255,255,0.58)',
-      rule: 'rgba(255,255,255,0.12)',
-      price: t.accent,
-      check: p.success,
-      ctaBg: '#FFFFFF',
-      ctaText: '#0B0B0C',
-    };
-  }
-  if (featured) {
-    return {
-      bg: '#0B0B0C',
-      border: '#0B0B0C',
-      text: '#FFFFFF',
-      sub: 'rgba(255,255,255,0.62)',
-      rule: 'rgba(255,255,255,0.16)',
-      price: '#FF7A2F',
-      check: '#3DD68C',
-      ctaBg: '#F2600C',
-      ctaText: '#FFFFFF',
-    };
-  }
+function skinFor(t: AppColors, p: PricingPalette): Skin {
   return {
-    bg: plan.current ? p.currentBg : '#FFFFFF',
-    border: plan.current ? p.currentBorder : '#E7E7E4',
-    text: '#0B0B0C',
-    sub: '#5C5D63',
-    rule: '#E7E7E4',
-    price: '#F2600C',
-    check: '#12A150',
-    ctaBg: '#0B0B0C',
-    ctaText: '#FFFFFF',
+    frame: p.dark ? t.accent : '#F2600C',
+    bg: p.dark ? '#18181B' : '#141416',
+    text: '#FFFFFF',
+    sub: 'rgba(255,255,255,0.6)',
+    rule: 'rgba(255,255,255,0.16)',
+    price: p.dark ? t.accent : '#FF8A3D',
+    check: '#3DD68C',
+    ctaBg: '#FFFFFF',
+    ctaText: '#0B0B0C',
   };
 }
-
-/** "Save 17%" corner tag on diagonal stripes. */
-function SaveTag({ pct, color }: { pct: number; color: string }) {
-  // Diagonal stripes as thin rotated bars, clipped by the tag.
-  return (
-    <View style={[st.save, { backgroundColor: color }]}>
-      {STRIPES.map((i) => (
-        <View key={i} style={[st.stripe, { left: i * 12 - 20 }]} />
-      ))}
-      <Text style={st.saveText}>Save {pct}%</Text>
-    </View>
-  );
-}
-
-const STRIPES = Array.from({ length: 10 }, (_, i) => i);
 
 function Price({ plan, k }: { plan: PlanView; k: Skin }) {
   if (plan.free) return <Text style={[st.big, { color: k.text }]}>Free</Text>;
@@ -260,25 +221,18 @@ function Cta({
 }
 
 function Body(props: Props & { k: Skin }) {
-  const { plan, t, p, k } = props;
+  const { plan, p, k } = props;
   return (
     <>
       <View style={st.nameRow}>
         <Text style={[st.name, { color: k.text }]}>{plan.name}</Text>
         {plan.current ? (
-          <View style={[st.badge, { backgroundColor: p.currentInk }]}>
+          <View style={[st.badge, { backgroundColor: k.frame }]}>
             <Text style={[st.badgeText, { color: '#FFFFFF' }]}>YOUR PLAN</Text>
           </View>
         ) : plan.popular ? (
-          <View
-            style={[
-              st.badge,
-              { backgroundColor: p.dark ? t.accent : '#FFFFFF' },
-            ]}
-          >
-            <Text
-              style={[st.badgeText, { color: p.dark ? '#FFFFFF' : '#0B0B0C' }]}
-            >
+          <View style={[st.badge, { backgroundColor: '#FFFFFF' }]}>
+            <Text style={[st.badgeText, { color: '#0B0B0C' }]}>
               MOST POPULAR
             </Text>
           </View>
@@ -292,96 +246,218 @@ function Body(props: Props & { k: Skin }) {
       <Price plan={plan} k={k} />
       <View style={[st.dash, { borderColor: k.rule }]} />
       <Features plan={plan} k={k} accent={k.price} />
-      <Cta {...props} />
+      <Cta {...props} p={p} />
     </>
   );
 }
 
-/** One plan, in the immersive style: name and badge, the struck-through
- *  monthly price beside the per-month price, a dashed rule, the features as
- *  a ticked list and a pill CTA. A yearly saving shows as a striped corner
- *  tag. The user's own plan gets the orange ring and "Your plan". */
-export function PlanCard(props: Props) {
-  const { plan, t, p } = props;
-  const k = skinFor(plan, t, p);
-  const tag = plan.savePct ? (
-    <SaveTag pct={plan.savePct} color={p.dark ? t.accent : '#F2600C'} />
-  ) : null;
-  const card = (
-    <View
-      style={[
-        st.card,
-        !p.dark && st.shadow,
-        {
-          backgroundColor: k.bg,
-          borderColor: k.border,
-          borderWidth: plan.current ? 2 : 1,
-        },
-      ]}
-    >
-      {tag}
-      <Body {...props} k={k} />
-    </View>
-  );
-  // Dark: the featured plan sits in a brand-gradient ring.
-  if (p.dark && plan.popular && !plan.current) {
-    return (
-      <LinearGradient
-        colors={brandGradient()}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={st.ring}
-      >
-        {React.cloneElement(card, {
-          style: [card.props.style, { borderWidth: 0 }],
-        })}
-      </LinearGradient>
+const PAD = 6; // striped frame around the card
+const TAB = 54; // height of the folder tabs
+const RADIUS = 22; // card corners
+const TAB_R = 16; // tab top corners
+const FLARE = 14; // concave shoulder where the tab meets the card
+
+/** The card outline: a rounded body whose top rises into a folder tab
+ *  spanning [a, b] (a = 0 / b = w put the tab flush on that corner). */
+function folderPath(
+  { w, h }: { w: number; h: number },
+  [a, b]: [number, number]
+) {
+  const x0 = PAD;
+  const top = PAD;
+  const body = PAD + TAB;
+  const right = PAD + w;
+  const bottom = PAD + h;
+  const R = RADIUS;
+  const r = TAB_R;
+  const c = FLARE;
+  const d: string[] = [];
+  if (a <= 0) {
+    d.push(`M${x0},${top + r}`, `Q${x0},${top} ${x0 + r},${top}`);
+  } else {
+    d.push(
+      `M${x0},${body + R}`,
+      `Q${x0},${body} ${x0 + R},${body}`,
+      `L${x0 + a - c},${body}`,
+      `Q${x0 + a},${body} ${x0 + a},${body - c}`,
+      `L${x0 + a},${top + r}`,
+      `Q${x0 + a},${top} ${x0 + a + r},${top}`
     );
   }
-  return card;
+  d.push(`L${x0 + b - r},${top}`);
+  if (b >= w) {
+    d.push(`Q${right},${top} ${right},${top + r}`);
+  } else {
+    d.push(
+      `Q${x0 + b},${top} ${x0 + b},${top + r}`,
+      `L${x0 + b},${body - c}`,
+      `Q${x0 + b},${body} ${x0 + b + c},${body}`,
+      `L${right - R},${body}`,
+      `Q${right},${body} ${right},${body + R}`
+    );
+  }
+  d.push(
+    `L${right},${bottom - R}`,
+    `Q${right},${bottom} ${right - R},${bottom}`,
+    `L${x0 + R},${bottom}`,
+    `Q${x0},${bottom} ${x0},${bottom - R}`,
+    'Z'
+  );
+  return d.join(' ');
+}
+
+/** The frame: brand colour with diagonal stripes, the card cut as a folder
+ *  whose raised tab is the selected plan. */
+function Frame({
+  size,
+  k,
+  index,
+  count,
+}: {
+  size: { w: number; h: number };
+  k: Skin;
+  index: number;
+  count: number;
+}) {
+  const { w, h } = size;
+  if (!w || !h) return null;
+  const inner = w - PAD * 2;
+  const step = inner / count;
+  const lines: number[] = [];
+  for (let x = -h; x < w; x += 13) lines.push(x);
+  return (
+    <Svg style={StyleSheet.absoluteFill} width={w} height={h}>
+      <Rect width={w} height={h} fill={k.frame} />
+      {lines.map((x) => (
+        <Line
+          key={x}
+          x1={x}
+          y1={h}
+          x2={x + h}
+          y2={0}
+          stroke="#FFFFFF"
+          strokeOpacity={0.2}
+          strokeWidth={5}
+        />
+      ))}
+      <Path
+        d={folderPath({ w: inner, h: h - PAD * 2 }, [
+          index * step,
+          (index + 1) * step,
+        ])}
+        fill={k.bg}
+      />
+    </Svg>
+  );
+}
+
+/** Basic / Growth / 100X as folder tabs: the picked one is part of the card,
+ *  the others sit on the stripes. Each says what yearly saves. */
+function FolderTabs({
+  plans,
+  value,
+  onPick,
+  k,
+}: {
+  plans: PlanView[];
+  value: string;
+  onPick: (tier: string) => void;
+  k: Skin;
+}) {
+  return (
+    <View style={st.tabs}>
+      {plans.map((plan) => {
+        const on = plan.tier === value;
+        const note = plan.savePct
+          ? `Save ${plan.savePct}%`
+          : plan.popular
+            ? 'Popular'
+            : null;
+        return (
+          <PressableScale
+            key={plan.tier}
+            onPress={() => onPick(plan.tier)}
+            haptic="tap"
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            style={st.tab}
+          >
+            <View style={st.tabRow}>
+              <Text
+                style={[
+                  st.tabName,
+                  { color: '#FFFFFF', opacity: on ? 1 : 0.92 },
+                ]}
+                numberOfLines={1}
+              >
+                {plan.name}
+              </Text>
+              {plan.current ? (
+                <View style={[st.dot, { backgroundColor: k.check }]} />
+              ) : null}
+            </View>
+            {note ? (
+              <Text
+                style={[
+                  st.tabNote,
+                  on ? { color: k.price } : { color: '#FFFFFF', opacity: 0.85 },
+                ]}
+              >
+                {note}
+              </Text>
+            ) : null}
+          </PressableScale>
+        );
+      })}
+    </View>
+  );
+}
+
+/** One plan in the immersive folder style: a striped brand frame whose
+ *  top edge carries the plan tabs, the picked tab rising out of a dark
+ *  card with the struck-through monthly price, the per-month price, the
+ *  yearly saving, a ticked feature list and a white pill CTA. */
+export function PlanCard(props: Props) {
+  const { plan, plans, onPick, t, p } = props;
+  const k = skinFor(t, p);
+  const [size, setSize] = React.useState({ w: 0, h: 0 });
+  const index = Math.max(
+    0,
+    plans.findIndex((v) => v.tier === plan.tier)
+  );
+  return (
+    <View
+      style={st.frame}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        if (width !== size.w || height !== size.h)
+          setSize({ w: width, h: height });
+      }}
+    >
+      <Frame size={size} k={k} index={index} count={plans.length || 1} />
+      <FolderTabs plans={plans} value={plan.tier} onPick={onPick} k={k} />
+      <View style={st.card}>
+        <Body {...props} k={k} />
+      </View>
+    </View>
+  );
 }
 
 const st = StyleSheet.create({
+  frame: { borderRadius: RADIUS + PAD, overflow: 'hidden', padding: PAD },
+  tabs: { flexDirection: 'row', height: TAB },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1 },
+  tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  tabName: { fontFamily: F.sans800, fontSize: 15, letterSpacing: -0.2 },
+  tabNote: { fontFamily: F.sans700, fontSize: 11 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
   card: {
-    borderRadius: 24,
     paddingHorizontal: 18,
-    paddingTop: 20,
+    paddingTop: 18,
     paddingBottom: 18,
     gap: 12,
-    overflow: 'hidden',
   },
-  shadow: {
-    shadowColor: '#0B0B0C',
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-  },
-  ring: { borderRadius: 25, padding: 1.5 },
-  save: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderBottomLeftRadius: 16,
-    overflow: 'hidden',
-  },
-  stripe: {
-    position: 'absolute',
-    top: -20,
-    width: 4,
-    height: 80,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    transform: [{ rotate: '35deg' }],
-  },
-  saveText: { fontFamily: F.sans800, fontSize: 12, color: '#FFFFFF' },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingRight: 84,
-  },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { fontFamily: F.display900, fontSize: 22, letterSpacing: -0.5 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 7 },
   badgeText: { fontFamily: F.sans800, fontSize: 9.5, letterSpacing: 0.6 },
