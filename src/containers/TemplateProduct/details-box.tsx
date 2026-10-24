@@ -12,6 +12,7 @@ import type { MarketTemplate } from '@/api/templates';
 
 import { DetailsPanel } from './details-panel';
 import { BOX_RADIUS, type Geometry } from './geometry';
+import type { Device } from './live-url';
 import type { PageTheme } from './theme';
 import type { ProductMotion } from './use-product-transition';
 
@@ -37,6 +38,8 @@ type Props = {
   dark: boolean;
   gesture: GestureType;
   onMore: (template: MarketTemplate) => void;
+  device: Device;
+  onDevice: (d: Device) => void;
 };
 
 export function DetailsBox(p: Props) {
@@ -91,6 +94,8 @@ export function DetailsBox(p: Props) {
             of={p.placeOf(i).of}
             swiped={p.swiped}
             onMore={p.onMore}
+            device={p.device}
+            onDevice={p.onDevice}
           />
         ))}
       </Animated.View>

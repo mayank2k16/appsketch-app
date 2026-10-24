@@ -7,10 +7,10 @@ import type { TileRect } from '@/lib/template-transition';
  *
  *   ┌──────────────────────── status bar ────────────────────────┐
  *   │▐ ┌─ hero: a website's live site, edge to edge ───────┐ ▐│
- *   │▐ │ (X)          [ Mobile | Tablet | Desktop ]         │ ▐│
+ *   │▐ │ (X)                                                │ ▐│
  *   │▐ │                                                    │ ▐│
  *   │▐ └─────────────── down to the box ─────────────────────┘ ▐│
- *   │ ┌─ box (frosted glass): highlights · count / blurb / CTAs ┐ │
+ *   │ ┌─ box (frosted glass): kind · tags · devices / blurb / CTAs ┐│
  *   │ └─────────────────────────────────────────────────────────┘ │
  *   └─────────────────────── home indicator ─────────────────────┘
  *
@@ -54,8 +54,6 @@ export type Geometry = {
   phone: TileRect;
   /** Page-to-page distance: one hero plus one gap. */
   stride: number;
-  /** The device pills, inside the hero's top edge, right-aligned. */
-  bar: TileRect;
   /** The close button, over the hero's top-left corner. */
   close: TileRect;
   /** An app's close button, just left of the phone's rim. */
@@ -79,7 +77,6 @@ export function pageGeometry(W: number, H: number, insets: Insets): Geometry {
   const ph = Math.round(pw * PHONE_ASPECT);
   const phone = { x: Math.round((W - pw) / 2), y, width: pw, height: ph };
   const closeX = x + CLOSE_INSET;
-  const barX = closeX + CLOSE_SIZE + 8;
   return {
     W,
     H,
@@ -88,12 +85,6 @@ export function pageGeometry(W: number, H: number, insets: Insets): Geometry {
     hero: { x, y, width, height },
     phone,
     stride: width + PAGE_GAP,
-    bar: {
-      x: barX,
-      y: y + CLOSE_INSET,
-      width: x + width - CLOSE_INSET - barX,
-      height: CLOSE_SIZE,
-    },
     close: {
       x: closeX,
       y: y + CLOSE_INSET,

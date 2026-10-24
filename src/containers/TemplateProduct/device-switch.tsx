@@ -15,15 +15,17 @@ import { type Device, DEVICES } from './live-url';
 import { BRAND_ORANGE } from './theme';
 
 /**
- * Mobile | Tablet | Desktop as pills inside a website's hero: a frosted
+ * Mobile | Tablet | Desktop as pills (`compact`: icon-only, in the details
+ * box's top row beside the tags): a frosted
  * glass capsule (the live site blurs through it) with an orange thumb that
  * slides to the chosen device. The live site re-renders at that device's
  * width (live-preview.tsx). Mobile is the default.
  */
 
-const SEG_W = 64; // the capsule clears the close X on a 375pt phone
-const H = 34;
-const PAD = 3;
+const SIZES = {
+  full: { seg: 64, h: 34, pad: 3, icon: 13 },
+  compact: { seg: 36, h: 26, pad: 2, icon: 13 },
+} as const;
 
 const ICONS: Record<Device, React.ComponentProps<typeof Ionicons>['name']> = {
   mobile: 'phone-portrait-outline',
@@ -35,8 +37,8 @@ type Props = {
   value: Device;
   onChange: (d: Device) => void;
   dark: boolean;
-  /** Shown before the segments, inside the capsule (the LIVE status). */
-  lead?: React.ReactNode;
+  /** Icon-only and shorter, to sit in a row of chips. */
+  compact?: boolean;
 };
 
 /** The capsule's frosted fill: a blur plus a light (or graphite) wash. */
@@ -66,12 +68,12 @@ export const DeviceSwitch = React.memo(function DeviceSwitch({
   value,
   onChange,
   dark,
-  lead,
+  compact = false,
 }: Props) {
-  const [leadW, setLeadW] = React.useState(0);
+  const z = SIZES[compact ? 'compact' : 'full'];
   const at = DEVICES.findIndex((d) => d.key === value);
   const pos = useDerivedValue(() =>
-    withTiming(leadW + at * SEG_W, {
+    withTiming(at * z.seg, {
       duration: 200,
       easing: Easing.out(Easing.cubic),
     })
@@ -84,6 +86,7 @@ export const DeviceSwitch = React.memo(function DeviceSwitch({
     <View
       style={[
         s.wrap,
+        { height: z.h, padding: z.pad, borderRadius: z.h / 2 },
         {
           borderColor: dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.08)',
         },
@@ -91,16 +94,19 @@ export const DeviceSwitch = React.memo(function DeviceSwitch({
     >
       <Glass dark={dark} />
       <Animated.View
-        style={[s.thumb, { backgroundColor: BRAND_ORANGE }, thumb]}
+        style={[
+          s.thumb,
+          {
+            top: z.pad,
+            left: z.pad,
+            width: z.seg,
+            height: z.h - z.pad * 2,
+            borderRadius: (z.h - z.pad * 2) / 2,
+            backgroundColor: BRAND_ORANGE,
+          },
+          thumb,
+        ]}
       />
-      {lead ? (
-        <View
-          style={s.lead}
-          onLayout={(e) => setLeadW(e.nativeEvent.layout.width)}
-        >
-          {lead}
-        </View>
-      ) : null}
       {DEVICES.map((d) => {
         const on = d.key === value;
         const color = on ? '#FFFFFF' : ink;
@@ -111,10 +117,13 @@ export const DeviceSwitch = React.memo(function DeviceSwitch({
             accessibilityState={{ selected: on }}
             accessibilityLabel={`${d.label} view`}
             onPress={() => onChange(d.key)}
-            style={s.seg}
+            hitSlop={compact ? 6 : 0}
+            style={[s.seg, { width: z.seg }]}
           >
-            <Ionicons name={ICONS[d.key]} size={13} color={color} />
-            <Text style={[s.label, { color }]}>{d.label}</Text>
+            <Ionicons name={ICONS[d.key]} size={z.icon} color={color} />
+            {compact ? null : (
+              <Text style={[s.label, { color }]}>{d.label}</Text>
+            )}
           </Pressable>
         );
       })}
@@ -125,23 +134,11 @@ export const DeviceSwitch = React.memo(function DeviceSwitch({
 const s = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
-    height: H,
-    padding: PAD,
-    borderRadius: H / 2,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
   },
-  thumb: {
-    position: 'absolute',
-    top: PAD,
-    left: PAD,
-    width: SEG_W,
-    height: H - PAD * 2,
-    borderRadius: (H - PAD * 2) / 2,
-  },
-  lead: { justifyContent: 'center' },
+  thumb: { position: 'absolute' },
   seg: {
-    width: SEG_W,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

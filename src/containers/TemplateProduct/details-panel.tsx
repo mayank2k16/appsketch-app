@@ -14,6 +14,8 @@ import { pillTone } from '@/containers/Home/TemplateReel/pills';
 import { F } from '@/lib/fonts';
 
 import { CtaBar } from './cta-bar';
+import { DeviceSwitch } from './device-switch';
+import { type Device, liveUrlOf } from './live-url';
 import { highlightsOf } from './template-info';
 import type { PageTheme } from './theme';
 import { useCtas } from './use-ctas';
@@ -22,7 +24,8 @@ import type { ProductMotion } from './use-product-transition';
 /**
  * One template's details inside the short box under the hero: what KIND of
  * template it is, as highlight chips (category + its own tags, e.g.
- * "E-commerce", "Fashion" — the name is in the breadcrumb above), a one-line
+ * "E-commerce", "Fashion"), a website's Mobile | Tablet | Desktop switch
+ * (an app shows its "3 / 52" position there instead), a one-line
  * description with "More" (full description, tags, ecosystem apps), and the
  * CTAs at the bottom.
  * Panels of the neighbouring pages sit on top of each other and cross-fade
@@ -44,6 +47,9 @@ type Props = {
   /** The "Swipe ›" cue goes after the first swipe. */
   swiped: boolean;
   onMore: (template: MarketTemplate) => void;
+  /** A website's preview device, switched from the top row. */
+  device: Device;
+  onDevice: (d: Device) => void;
 };
 
 /** "3 / 52 · Swipe ›" — fixed to its own width; the name truncates first. */
@@ -133,7 +139,16 @@ function Highlights(p: Props) {
           <Highlight key={label} label={label} dark={p.dark} />
         ))}
       </View>
-      <Count p={p} />
+      {liveUrlOf(p.template) ? (
+        <DeviceSwitch
+          compact
+          value={p.device}
+          onChange={p.onDevice}
+          dark={p.dark}
+        />
+      ) : (
+        <Count p={p} />
+      )}
     </View>
   );
 }

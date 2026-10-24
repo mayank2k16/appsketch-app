@@ -335,8 +335,6 @@ function Overlays({ s: st, p }: { s: State; p: PageProps }) {
         dark={st.dark}
         onClose={st.close}
         app={isAppShot(current)}
-        device={liveUrlOf(current) ? st.device : null}
-        onDevice={st.setDevice}
       />
       <MoreSheet
         template={st.more}
@@ -378,6 +376,8 @@ function ProductPage(p: PageProps) {
         dark={st.dark}
         gesture={st.gestures.details}
         onMore={st.setMore}
+        device={st.device}
+        onDevice={st.setDevice}
       />
       <Overlays s={st} p={p} />
     </Animated.View>
