@@ -167,7 +167,16 @@ export function PlannerCard({
 }
 
 const st = StyleSheet.create({
-  card: { borderRadius: 26, borderWidth: 1, padding: 14, paddingTop: 16 },
+  // A full-width panel like the plan band: content sits on the screen's 8pt
+  // gutter, so every cell lines up with the plan card's edges.
+  card: {
+    marginHorizontal: -8,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    paddingHorizontal: 8,
+    paddingTop: 16,
+    paddingBottom: 14,
+  },
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3 },
   eyebrow: {

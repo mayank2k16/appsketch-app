@@ -244,20 +244,18 @@ function Body(props: Props & { k: Skin }) {
   const { plan, p, k } = props;
   return (
     <>
-      <View style={st.nameRow}>
-        <Text style={[st.name, { color: k.text }]}>{plan.name}</Text>
-        {plan.current ? (
-          <View style={[st.badge, { backgroundColor: k.frame }]}>
-            <Text style={[st.badgeText, { color: '#FFFFFF' }]}>YOUR PLAN</Text>
-          </View>
-        ) : plan.popular ? (
-          <View style={[st.badge, { backgroundColor: k.badgeBg }]}>
-            <Text style={[st.badgeText, { color: k.badgeText }]}>
-              MOST POPULAR
-            </Text>
-          </View>
-        ) : null}
-      </View>
+      {/* The folder tab already names the plan: no second heading. */}
+      {plan.current ? (
+        <View style={[st.badge, { backgroundColor: k.frame }]}>
+          <Text style={[st.badgeText, { color: '#FFFFFF' }]}>YOUR PLAN</Text>
+        </View>
+      ) : plan.popular ? (
+        <View style={[st.badge, { backgroundColor: k.badgeBg }]}>
+          <Text style={[st.badgeText, { color: k.badgeText }]}>
+            MOST POPULAR
+          </Text>
+        </View>
+      ) : null}
       {plan.description ? (
         <Text style={[st.desc, { color: k.sub }]} numberOfLines={2}>
           {plan.description}
@@ -405,27 +403,26 @@ function FolderTabs({
             accessibilityState={{ selected: on }}
             style={st.tab}
           >
-            <View style={st.tabRow}>
-              <Text
-                style={[st.tabName, { color: on ? k.text : '#FFFFFF' }]}
-                numberOfLines={1}
-              >
-                {plan.name}
-              </Text>
-              {plan.current ? (
-                <View style={[st.dot, { backgroundColor: k.check }]} />
+            {/* Off tabs sit on a solid chip so the stripes never run
+                under the text. */}
+            <View style={[st.tabChip, !on && { backgroundColor: k.frame }]}>
+              <View style={st.tabRow}>
+                <Text
+                  style={[st.tabName, { color: on ? k.text : '#FFFFFF' }]}
+                  numberOfLines={1}
+                >
+                  {plan.name}
+                </Text>
+                {plan.current ? (
+                  <View style={[st.dot, { backgroundColor: k.check }]} />
+                ) : null}
+              </View>
+              {note ? (
+                <Text style={[st.tabNote, { color: on ? k.price : '#FFFFFF' }]}>
+                  {note}
+                </Text>
               ) : null}
             </View>
-            {note ? (
-              <Text
-                style={[
-                  st.tabNote,
-                  on ? { color: k.price } : { color: '#FFFFFF', opacity: 0.85 },
-                ]}
-              >
-                {note}
-              </Text>
-            ) : null}
           </PressableScale>
         );
       })}
@@ -472,6 +469,12 @@ const st = StyleSheet.create({
   },
   tabs: { flexDirection: 'row', height: TAB },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1 },
+  tabChip: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
   tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   tabName: { fontFamily: F.sans800, fontSize: 15, letterSpacing: -0.2 },
   tabNote: { fontFamily: F.sans700, fontSize: 11 },
@@ -482,11 +485,15 @@ const st = StyleSheet.create({
     paddingBottom: 18,
     gap: 12,
   },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { fontFamily: F.display900, fontSize: 22, letterSpacing: -0.5 },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 7 },
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 7,
+  },
   badgeText: { fontFamily: F.sans800, fontSize: 9.5, letterSpacing: 0.6 },
-  desc: { fontFamily: F.sans400, fontSize: 13, lineHeight: 18, marginTop: -6 },
+  desc: { fontFamily: F.sans500, fontSize: 14, lineHeight: 19 },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',

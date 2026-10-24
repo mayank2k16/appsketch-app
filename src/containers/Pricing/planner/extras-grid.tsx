@@ -102,7 +102,9 @@ export function ExtrasGrid({
 const st = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
   cell: { width: '50%', padding: 4 },
+  // flex: tiles in a row share the tallest one's height.
   extra: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
