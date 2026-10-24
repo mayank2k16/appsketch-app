@@ -33,6 +33,8 @@ export type PillSkin = {
 
 const PAD = 5; // bar inset around the pill
 const H = 58; // tab height
+const BAR_R = 14; // squarer corners: reads as tabs, not a capsule
+const PILL_R = BAR_R - PAD;
 
 function Item({
   tab,
@@ -77,7 +79,34 @@ function Item({
   );
 }
 
-/** A rounded bar of tabs with a sliding pill under the picked one. */
+/** Hairlines between the tabs, so they read as tabs; the two beside the
+ *  picked tab are hidden (the pill stands on its own). */
+function Dividers({
+  count,
+  step,
+  index,
+  k,
+}: {
+  count: number;
+  step: number;
+  index: number;
+  k: PillSkin;
+}) {
+  const out: React.ReactNode[] = [];
+  for (let j = 1; j < count; j++) {
+    if (j === index || j === index + 1) continue;
+    out.push(
+      <View
+        key={j}
+        pointerEvents="none"
+        style={[st.divider, { left: PAD + j * step, backgroundColor: k.text }]}
+      />
+    );
+  }
+  return <>{out}</>;
+}
+
+/** A bar of tabs with a sliding pill under the picked one. */
 export function PillTabs({
   tabs,
   value,
@@ -120,6 +149,7 @@ export function PillTabs({
           style={[st.pill, { width: step, backgroundColor: k.pill }, pill]}
         />
       ) : null}
+      {w ? <Dividers count={count} step={step} index={index} k={k} /> : null}
       {tabs.map((tab) => (
         <Item
           key={tab.key}
@@ -137,7 +167,7 @@ const st = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     padding: PAD,
-    borderRadius: (H + PAD * 2) / 2,
+    borderRadius: BAR_R,
     shadowColor: '#000',
     shadowOpacity: 0.14,
     shadowRadius: 14,
@@ -149,7 +179,14 @@ const st = StyleSheet.create({
     top: PAD,
     left: PAD,
     height: H,
-    borderRadius: H / 2,
+    borderRadius: PILL_R,
+  },
+  divider: {
+    position: 'absolute',
+    top: PAD + 14,
+    width: StyleSheet.hairlineWidth * 2,
+    height: H - 28,
+    opacity: 0.18,
   },
   item: {
     flex: 1,

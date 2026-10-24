@@ -114,5 +114,5 @@ const st = StyleSheet.create({
     paddingVertical: 14,
     gap: 12,
   },
-  card: { borderRadius: 22, overflow: 'hidden' },
+  card: { borderRadius: 12, overflow: 'hidden' },
 });
