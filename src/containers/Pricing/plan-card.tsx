@@ -24,8 +24,9 @@ type Props = {
   onSubscribe: () => void;
 };
 
-/** Card and frame colours. Every plan uses the same immersive dark card in
- *  a striped frame: orange on the white theme, the accent on dark. */
+/** Card and frame colours. Every plan uses the same card in a full-width
+ *  striped band: a white card on orange (white theme), a dark card on the
+ *  accent (dark theme). */
 type Skin = {
   frame: string;
   bg: string;
@@ -36,19 +37,38 @@ type Skin = {
   check: string;
   ctaBg: string;
   ctaText: string;
+  badgeBg: string;
+  badgeText: string;
 };
 
 function skinFor(t: AppColors, p: PricingPalette): Skin {
+  if (p.dark) {
+    return {
+      frame: t.accent,
+      bg: '#18181B',
+      text: '#FFFFFF',
+      sub: 'rgba(255,255,255,0.6)',
+      rule: 'rgba(255,255,255,0.16)',
+      price: t.accent,
+      check: '#3DD68C',
+      ctaBg: '#FFFFFF',
+      ctaText: '#0B0B0C',
+      badgeBg: '#FFFFFF',
+      badgeText: '#0B0B0C',
+    };
+  }
   return {
-    frame: p.dark ? t.accent : '#F2600C',
-    bg: p.dark ? '#18181B' : '#141416',
-    text: '#FFFFFF',
-    sub: 'rgba(255,255,255,0.6)',
-    rule: 'rgba(255,255,255,0.16)',
-    price: p.dark ? t.accent : '#FF8A3D',
-    check: '#3DD68C',
-    ctaBg: '#FFFFFF',
-    ctaText: '#0B0B0C',
+    frame: '#F2600C',
+    bg: '#FFFFFF',
+    text: '#0B0B0C',
+    sub: '#5C5D63',
+    rule: '#E7E7E4',
+    price: '#F2600C',
+    check: '#12A150',
+    ctaBg: '#0B0B0C',
+    ctaText: '#FFFFFF',
+    badgeBg: '#0B0B0C',
+    badgeText: '#FFFFFF',
   };
 }
 
@@ -231,8 +251,8 @@ function Body(props: Props & { k: Skin }) {
             <Text style={[st.badgeText, { color: '#FFFFFF' }]}>YOUR PLAN</Text>
           </View>
         ) : plan.popular ? (
-          <View style={[st.badge, { backgroundColor: '#FFFFFF' }]}>
-            <Text style={[st.badgeText, { color: '#0B0B0C' }]}>
+          <View style={[st.badge, { backgroundColor: k.badgeBg }]}>
+            <Text style={[st.badgeText, { color: k.badgeText }]}>
               MOST POPULAR
             </Text>
           </View>
@@ -251,7 +271,10 @@ function Body(props: Props & { k: Skin }) {
   );
 }
 
-const PAD = 6; // striped frame around the card
+const PAD_X = 8; // striped band beside the card (its gutter to the screen)
+const PAD_Y = 14; // striped band above and below the card
+/** The band runs edge to edge: it undoes the plan list's 8pt gutter. */
+const GUTTER = 8;
 const TAB = 54; // height of the folder tabs
 const RADIUS = 22; // card corners
 const TAB_R = 16; // tab top corners
@@ -263,11 +286,11 @@ function folderPath(
   { w, h }: { w: number; h: number },
   [a, b]: [number, number]
 ) {
-  const x0 = PAD;
-  const top = PAD;
-  const body = PAD + TAB;
-  const right = PAD + w;
-  const bottom = PAD + h;
+  const x0 = PAD_X;
+  const top = PAD_Y;
+  const body = PAD_Y + TAB;
+  const right = PAD_X + w;
+  const bottom = PAD_Y + h;
   const R = RADIUS;
   const r = TAB_R;
   const c = FLARE;
@@ -306,7 +329,7 @@ function folderPath(
   return d.join(' ');
 }
 
-/** The frame: brand colour with diagonal stripes, the card cut as a folder
+/** The band: brand colour with diagonal stripes, full width, the card cut as a folder
  *  whose raised tab is the selected plan. */
 function Frame({
   size,
@@ -321,7 +344,7 @@ function Frame({
 }) {
   const { w, h } = size;
   if (!w || !h) return null;
-  const inner = w - PAD * 2;
+  const inner = w - PAD_X * 2;
   const step = inner / count;
   const lines: number[] = [];
   for (let x = -h; x < w; x += 13) lines.push(x);
@@ -341,7 +364,7 @@ function Frame({
         />
       ))}
       <Path
-        d={folderPath({ w: inner, h: h - PAD * 2 }, [
+        d={folderPath({ w: inner, h: h - PAD_Y * 2 }, [
           index * step,
           (index + 1) * step,
         ])}
@@ -384,10 +407,7 @@ function FolderTabs({
           >
             <View style={st.tabRow}>
               <Text
-                style={[
-                  st.tabName,
-                  { color: '#FFFFFF', opacity: on ? 1 : 0.92 },
-                ]}
+                style={[st.tabName, { color: on ? k.text : '#FFFFFF' }]}
                 numberOfLines={1}
               >
                 {plan.name}
@@ -444,7 +464,12 @@ export function PlanCard(props: Props) {
 }
 
 const st = StyleSheet.create({
-  frame: { borderRadius: RADIUS + PAD, overflow: 'hidden', padding: PAD },
+  frame: {
+    overflow: 'hidden',
+    marginHorizontal: -GUTTER,
+    paddingHorizontal: PAD_X,
+    paddingVertical: PAD_Y,
+  },
   tabs: { flexDirection: 'row', height: TAB },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1 },
   tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },

@@ -4,7 +4,7 @@ The launch, from tap to `/welcome` (or `/home`), in both themes.
 
 ## The sequence
 
-1. **Native launch screen: solid brand orange `#FA8F32`, edge to edge.** It has no
+1. **Native launch screen: solid brand orange `#EB4709`, edge to edge.** It has no
    dot and no logo, and the status bar uses light content.
 2. **The in-app splash** (`src/app/splash.tsx`, `src/components/splash/logo-splash.tsx`)
    plays `assets/lottie/splash-logo.json`, which runs 228 frames at 60fps (3.8s):
@@ -51,7 +51,7 @@ cairosvg.
   and keyed every frame. A diagonal-wide trimmed stroke was tried first and
   rejected, because it left antialiasing specks on the solid frames.
 - **Gather.** An ellipse at the centre shrinks from radius 200pt to 8pt, dips
-  to 0.82× and settles back. It is also `#FA8F32`, which is the logo's
+  to 0.82× and settles back. It fades from `#EB4709` to `#FA8F32`, the logo's
   measured dot colour. `#F2600C` is only the wordmark accent.
 - **Logo.** The original 480pt sequence is a precomp (`assets[0]`, `logo`)
   with a start offset of 60 frames. It is still clipped to its 480pt box, as
@@ -66,13 +66,13 @@ cairosvg.
 
 | Where | What |
 | --- | --- |
-| `app.config.ts` `expo-splash-screen` | `backgroundColor: '#FA8F32'`, `image: ./assets/splash-blank.png` (transparent) |
+| `app.config.ts` `expo-splash-screen` | `backgroundColor: '#EB4709'`, `image: ./assets/splash-blank.png` (transparent) |
 | `app.config.ts` `ios.infoPlist` | `UIStatusBarStyle: UIStatusBarStyleLightContent` |
 | `plugins/with-splash-light-status-bar.js` | adds `android:windowLightStatusBar=false` to `Theme.App.SplashScreen`. It is listed before `expo-splash-screen`, because mods on one file run last-registered first |
 | `ios/AppSketch/Images.xcassets/SplashScreenBackground.colorset`, `SplashScreen.storyboard` | orange |
 | `ios/AppSketch/Images.xcassets/SplashScreenLogo.imageset/*.png` | transparent, written by the script |
 | `ios/AppSketch/Info.plist` | `UIStatusBarStyleLightContent` |
-| `android/.../values/colors.xml` `splashscreen_background` | `#FA8F32` |
+| `android/.../values/colors.xml` `splashscreen_background` | `#EB4709` |
 | `android/.../values/styles.xml` | `android:windowLightStatusBar=false` on the splash theme |
 | `android/.../drawable-*/splashscreen_logo.png` | transparent 288dp PNGs, written by the script. They stay PNGs because `drawable/ic_launcher_background.xml` uses them as a `<bitmap>` src |
 

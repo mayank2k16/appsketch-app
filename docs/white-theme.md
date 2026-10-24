@@ -18,7 +18,7 @@ colours change, plus the press feedback that every CTA now has.
 - Native shell:
   - The icon is `assets/icon.png`: an opaque warm-white canvas with the logo
     glyph. Android's adaptive icon uses `assets/adaptive-icon.png` on `#FAFAF8`.
-  - The launch screen is solid brand orange `#FA8F32` (no logo), in both
+  - The launch screen is solid brand orange `#EB4709` (no logo), in both
     themes; the in-app splash sweeps it clockwise to the warm canvas, gathers
     the orange into the logo's dot and draws the logo from it. Full details,
     timings and native files: `docs/splash.md`.

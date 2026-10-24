@@ -53,7 +53,7 @@ from PIL import Image
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 CANVAS = '#FAFAF8'       # appTheme.light.bg: the splash field
 DOT_HEX = '#FA8F32'      # the logo's dot, measured
-ORANGE = DOT_HEX         # the native launch screen: it becomes the dot
+ORANGE = '#EB4709'       # the native launch screen; the gather fades it into the dot
 MARK_PT = 168            # finished logo box on screen, points
 SEED_PT = 16             # the native launch dot, points
 COMP = 480               # logo precomp, drawn 1:1 in points around the centre
@@ -518,11 +518,21 @@ def opening_layers(ind):
                   ks3(centre), op=OPEN + 1)
     size = per_frame(lambda f: [2 * gather_r(f)] * 2, OPEN + 1)
     disc = layer(ind, 'gather', [group('disc', [
-        {'ty': 'el', 'nm': 'disc', 'd': 1, 'p': static([0, 0]), 's': size}, fill(ORANGE)])],
+        {'ty': 'el', 'nm': 'disc', 'd': 1, 'p': static([0, 0]), 's': size}, gather_fill()])],
         ks3(centre), op=OPEN + 1)
     for L in (sweep, disc):
         del L['parent']
     return [disc, sweep]
+
+
+def gather_fill():
+    """The launch orange, eased into the logo's dot colour while it gathers,
+    so the disc hands over to the dot without a colour jump."""
+    ease = {'o': {'x': [0.4], 'y': [0]}, 'i': {'x': [0.6], 'y': [1]}}
+    keys = [{'t': 0, 's': hexc(ORANGE) + [1], **ease},
+            {'t': OPEN, 's': hexc(DOT_HEX) + [1]}]
+    return {'ty': 'fl', 'nm': 'fill', 'c': {'a': 1, 'k': keys}, 'o': static(100),
+            'r': 1, 'bm': 0}
 
 
 def write_lottie():

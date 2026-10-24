@@ -102,7 +102,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       requireFullScreen: true,
       bundleIdentifier: Env.BUNDLE_ID,
       // TestFlight build number: bump before every upload (last: 50).
-      buildNumber: '61',
+      buildNumber: '62',
       // Sign in with Apple (App Store guideline 4.8 — required because the
       // app offers Google sign-in). Prebuild adds
       // com.apple.developer.applesignin; ios/AppSketch/AppSketch.entitlements
@@ -232,7 +232,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           // scripts/make-splash-logo.py, which also writes the prebuilt ios/
           // and android/ copies. Light status bar: ios.infoPlist
           // UIStatusBarStyle + plugins/with-splash-light-status-bar.
-          backgroundColor: '#FA8F32',
+          backgroundColor: '#EB4709',
           image: './assets/splash-blank.png',
           imageWidth: 16,
         },

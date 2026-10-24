@@ -18,7 +18,7 @@ const { width: W, height: H } = Dimensions.get('window');
 export const SPLASH_CANVAS = '#FAFAF8';
 /** The native launch screen's colour (app.config.ts), solid edge to edge;
  *  the Lottie's frame 0 and the logo's dot are the same orange. */
-export const SPLASH_ORANGE = '#FA8F32';
+export const SPLASH_ORANGE = '#EB4709';
 const ACCENT = '#F2600C';
 /** assets/lottie/splash-logo.json, made by scripts/make-splash-logo.py: a
  *  1120x1440pt comp drawn 1:1 around the screen centre (it covers any
