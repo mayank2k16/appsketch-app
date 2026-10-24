@@ -10,7 +10,8 @@ import type { TileRect } from '@/lib/template-transition';
  *   │▐  │ (X)  website: live site · app: its screenshot │  ▐│
  *   │▐  │                                               │  ▐│
  *   │▐  └───────────────────────────────────────────────┘  ▐│
- *   │      [ • LIVE | Mobile | Tablet | Desktop ]  (glass)      │
+ *   │      [ • LIVE | Mobile | Tablet | Desktop ]  (websites only;  │
+ *   │        an app's card runs on down to the box instead)      │
  *   │ ┌─ box (frosted glass): highlights · count / blurb / CTAs ┐ │
  *   │ └─────────────────────────────────────────────────────────┘ │
  *   └─────────────────────── home indicator ─────────────────────┘
@@ -33,7 +34,9 @@ const BOX_H = 132;
 export const BAR_H = 34;
 const BAR_GAP = 8;
 /** The hero's width : height — a phone's shape, like the reference. */
-const HERO_RATIO = 0.5;
+const HERO_RATIO = 0.545;
+/** Between neighbouring pages (so the side cards barely peek in). */
+const PAGE_GAP = 14;
 /** The close button, inside the hero's top-left corner. */
 export const CLOSE_SIZE = 34;
 export const CLOSE_INSET = 10;
@@ -46,7 +49,7 @@ export type Geometry = {
   /** The hero: a phone-shaped card, centred, from just under the status
    *  bar down to the pills row. */
   hero: TileRect;
-  /** The same rect (websites and apps share it). */
+  /** An app's hero (no pills row): the same card, down to the box. */
   heroTall: TileRect;
   /** Page-to-page distance: one hero plus one gutter. */
   stride: number;
@@ -62,25 +65,30 @@ type Insets = { top: number; bottom: number };
 
 export function pageGeometry(W: number, H: number, insets: Insets): Geometry {
   const full = W - GUTTER * 2;
-  const y = insets.top + 6;
+  const y = insets.top + 4;
   // Down to the home indicator (it may overlap the box's bottom padding).
   const boxBottom = H - Math.max(GUTTER, insets.bottom - 12);
   const boxY = boxBottom - BOX_H;
   const barY = boxY - BAR_GAP - BAR_H;
-  const height = barY - BAR_GAP - y;
-  const width = Math.min(full, Math.round(height * HERO_RATIO));
-  const hero = { x: Math.round((W - width) / 2), y, width, height };
+  // An app (screenshot, no device pills) runs down to the box; a website
+  // stops above the pills row. Both share the width, from the tall height.
+  const tallH = boxY - BAR_GAP - y;
+  const width = Math.min(full, Math.round(tallH * HERO_RATIO));
+  const x = Math.round((W - width) / 2);
+  const hero = { x, y, width, height: barY - BAR_GAP - y };
+  const heroTall = { x, y, width, height: tallH };
   return {
     W,
     H,
     insetTop: insets.top,
     insetBottom: insets.bottom,
     hero,
-    heroTall: hero,
-    stride: width + GUTTER,
+    heroTall,
+    // A wide gap between pages: the neighbours only just show at the edges.
+    stride: width + PAGE_GAP,
     bar: { x: GUTTER, y: barY, width: full, height: BAR_H },
     close: {
-      x: hero.x + CLOSE_INSET,
+      x: x + CLOSE_INSET,
       y: y + CLOSE_INSET,
       width: CLOSE_SIZE,
       height: CLOSE_SIZE,
