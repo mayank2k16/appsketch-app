@@ -24,12 +24,10 @@ import type { ProductMotion } from './use-product-transition';
 
 /**
  * The page's fixed controls (they do not move with the pager): the close X
- * in the hero's top-left corner, and — for websites only — one slim capsule
- * centred in the 6/32/6pt row between the hero and the details box: LIVE
- * status, then the Mobile | Tablet | Desktop switch — flanked by ‹ and ›
- * buttons at the row's ends that page to the previous / next template. Apps have no row (their
- * hero runs down to 8pt above the box). Panel-coloured with the panels'
- * edge; no shadows.
+ * in the hero's top-left corner and — for websites only — the device pills
+ * centred along the hero's top edge, level with the X: LIVE status, then
+ * Mobile | Tablet | Desktop on frosted glass. Paging is by swipe (the next
+ * and previous templates peek in at the edges).
  */
 
 type LeadProps = {
@@ -97,48 +95,7 @@ type Props = {
   /** null = the centred template has no live site (no switch). */
   device: Device | null;
   onDevice: (d: Device) => void;
-  /** Page one template back / forward (the ‹ › buttons). */
-  onStep: (dir: 1 | -1) => void;
-  canPrev: boolean;
-  canNext: boolean;
 };
-
-type StepProps = {
-  dir: 1 | -1;
-  enabled: boolean;
-  t: PageTheme;
-  onStep: (dir: 1 | -1) => void;
-};
-
-/** A ‹ / › capsule at one end of the switch row, in the switch's own panel
- *  colour and edge; dimmed (still tappable, it bumps) at the list's end. */
-const StepButton = React.memo(function StepButton({
-  dir,
-  enabled,
-  t,
-  onStep,
-}: StepProps) {
-  return (
-    <PressableScale
-      accessibilityRole="button"
-      accessibilityLabel={dir < 0 ? 'Previous template' : 'Next template'}
-      accessibilityState={{ disabled: !enabled }}
-      hitSlop={8}
-      onPress={() => onStep(dir)}
-      style={[
-        s.step,
-        { backgroundColor: t.panel, borderColor: t.panelEdge },
-        !enabled && s.stepOff,
-      ]}
-    >
-      <Ionicons
-        name={dir < 0 ? 'chevron-back' : 'chevron-forward'}
-        size={17}
-        color={t.ink}
-      />
-    </PressableScale>
-  );
-});
 
 /** The close button, a small panel-coloured circle inside the hero's
  *  top-left corner. It follows a pull-down with the hero. */
@@ -175,7 +132,7 @@ function CloseButton({ g, m, t, onClose }: Props) {
 }
 
 export const HeroChrome = React.memo(function HeroChrome(p: Props) {
-  const { g, m, t } = p;
+  const { g, m } = p;
   const { bar } = g;
   const fade = useAnimatedStyle(() => ({
     opacity: m.reveal.value * (1 - Math.min(m.drag.value / 220, 1)),
@@ -193,11 +150,9 @@ export const HeroChrome = React.memo(function HeroChrome(p: Props) {
             fade,
           ]}
         >
-          <StepButton dir={-1} enabled={p.canPrev} t={t} onStep={p.onStep} />
           <DeviceSwitch
             value={p.device}
             onChange={p.onDevice}
-            t={t}
             dark={p.dark}
             lead={
               <LiveLead
@@ -209,7 +164,6 @@ export const HeroChrome = React.memo(function HeroChrome(p: Props) {
               />
             }
           />
-          <StepButton dir={1} enabled={p.canNext} t={t} onStep={p.onStep} />
         </Animated.View>
       ) : null}
     </>
@@ -222,17 +176,8 @@ const s = StyleSheet.create({
     position: 'absolute',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  step: {
-    width: 42,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    alignItems: 'center',
     justifyContent: 'center',
   },
-  stepOff: { opacity: 0.4 },
   close: {
     borderWidth: 1.5,
     alignItems: 'center',

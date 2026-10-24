@@ -9,19 +9,22 @@ import Animated, {
 
 import type { MarketTemplate } from '@/api/templates';
 import { PressableScale } from '@/components/ui';
-import { categoryOf, titleOf } from '@/containers/Home/TemplateReel/layout';
+import { categoryOf } from '@/containers/Home/TemplateReel/layout';
+import { pillTone } from '@/containers/Home/TemplateReel/pills';
 import { F } from '@/lib/fonts';
 
 import { CtaBar } from './cta-bar';
-import { Pill, pillsOf } from './template-info';
+import { highlightsOf } from './template-info';
 import type { PageTheme } from './theme';
 import { useCtas } from './use-ctas';
 import type { ProductMotion } from './use-product-transition';
 
 /**
- * One template's details inside the box under the hero, compact enough to
- * never scroll: name, pills (+ "More" for the full description, tags and
- * ecosystem apps), a two-line description, and the CTAs at the bottom.
+ * One template's details inside the short box under the hero: what KIND of
+ * template it is, as highlight chips (category + its own tags, e.g.
+ * "E-commerce", "Fashion" — the name is in the breadcrumb above), a one-line
+ * description with "More" (full description, tags, ecosystem apps), and the
+ * CTAs at the bottom.
  * Panels of the neighbouring pages sit on top of each other and cross-fade
  * with a short parallax as the pager moves; only the centred one takes
  * touches.
@@ -83,15 +86,40 @@ function usePanelStyle({ i, x, m }: Props) {
   });
 }
 
-function PillsRow(p: Props) {
-  const { template, t } = p;
+/** One highlight: the label's own category colour, bolder than a pill. */
+function Highlight({ label, dark }: { label: string; dark: boolean }) {
+  const tone = pillTone(label, dark);
   return (
-    <View style={s.pillsRow}>
-      <View style={s.pills}>
-        {pillsOf(template).map((label) => (
-          <Pill key={label} label={label} dark={p.dark} />
+    <View
+      style={[s.chip, { backgroundColor: tone.bg, borderColor: tone.edge }]}
+    >
+      <Text numberOfLines={1} style={[s.chipText, { color: tone.fg }]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function Highlights(p: Props) {
+  return (
+    <View style={s.topRow}>
+      <View style={s.chips}>
+        {highlightsOf(p.template).map((label) => (
+          <Highlight key={label} label={label} dark={p.dark} />
         ))}
       </View>
+      <Count p={p} />
+    </View>
+  );
+}
+
+function BlurbRow(p: Props & { blurb: string }) {
+  const { template, t } = p;
+  return (
+    <View style={s.blurbRow}>
+      <Text numberOfLines={1} style={[s.body, { color: t.muted }]}>
+        {p.blurb}
+      </Text>
       <PressableScale
         accessibilityLabel="More about this template"
         hitSlop={8}
@@ -114,18 +142,8 @@ export const DetailsPanel = React.memo(function DetailsPanel(p: Props) {
       pointerEvents={p.current ? 'box-none' : 'none'}
       style={[s.fill, style]}
     >
-      <View style={s.titleRow}>
-        <Text numberOfLines={1} style={[s.title, { color: t.ink }]}>
-          {titleOf(template)}
-        </Text>
-        <Count p={p} />
-      </View>
-      <PillsRow {...p} />
-      {blurb ? (
-        <Text numberOfLines={2} style={[s.body, { color: t.muted }]}>
-          {blurb}
-        </Text>
-      ) : null}
+      <Highlights {...p} />
+      <BlurbRow {...p} blurb={blurb} />
       <View style={s.flex} />
       <CtaBar t={t} primary={ctas.primary} secondary={ctas.secondary} />
     </Animated.View>
@@ -143,18 +161,28 @@ const s = StyleSheet.create({
     paddingTop: 13,
   },
   flex: { flex: 1, minHeight: 8 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  title: {
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  // One line of WHOLE chips: one that does not fit wraps onto a second
+  // line, which the fixed height hides (never a chip cut mid-word).
+  chips: {
     flex: 1,
-    fontFamily: F.display900,
-    fontSize: 21,
-    lineHeight: 26,
-    letterSpacing: -0.5,
-    marginLeft: 2,
+    height: 30,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    overflow: 'hidden',
   },
+  chip: {
+    height: 30,
+    paddingHorizontal: 12,
+    borderRadius: 15,
+    borderWidth: 1,
+    justifyContent: 'center',
+  },
+  chipText: { fontFamily: F.sans700, fontSize: 13, letterSpacing: -0.1 },
   count: {
     flexShrink: 0,
-    height: 26,
+    height: 30,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -165,17 +193,11 @@ const s = StyleSheet.create({
     fontSize: 12.5,
     fontVariant: ['tabular-nums'],
   },
-  pillsRow: {
+  blurbRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 7,
-    gap: 8,
-  },
-  pills: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 6,
-    overflow: 'hidden',
+    marginTop: 9,
+    gap: 10,
   },
   more: {
     height: 24,
@@ -186,10 +208,10 @@ const s = StyleSheet.create({
   },
   moreText: { fontFamily: F.sans600, fontSize: 12 },
   body: {
+    flex: 1,
     fontFamily: F.sans400,
     fontSize: 13.5,
     lineHeight: 19,
-    marginTop: 8,
-    marginHorizontal: 2,
+    marginLeft: 2,
   },
 });

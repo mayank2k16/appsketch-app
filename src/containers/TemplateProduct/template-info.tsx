@@ -76,6 +76,26 @@ export function pillsOf(template: MarketTemplate) {
   return out;
 }
 
+/** The details box's highlight chips: what kind of template this is —
+ *  its category, then its own tags ("E-commerce", "Fashion"…), then
+ *  App / Website. Deduplicated, case-insensitively; the row clips what
+ *  does not fit. */
+export function highlightsOf(template: MarketTemplate) {
+  const category = categoryOf(template);
+  const tags = template.kind === 'code' ? (template.tags ?? []) : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of [category, ...tags, kindOf(template)]) {
+    const label = (raw || '').trim();
+    const k = label.toLowerCase();
+    if (!label || seen.has(k)) continue;
+    seen.add(k);
+    // Tags are often lower-case ("food"); chips read as titles.
+    out.push(label[0].toUpperCase() + label.slice(1));
+  }
+  return out;
+}
+
 function tagsOf(template: MarketTemplate, pills: string[]) {
   const seen = new Set(pills.map((x) => x.toLowerCase()));
   return (template.tags ?? []).filter((x) => {

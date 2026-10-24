@@ -372,9 +372,6 @@ function Overlays({ s: st, p }: { s: State; p: PageProps }) {
         index={st.index}
         device={liveUrlOf(current) ? st.device : null}
         onDevice={st.setDevice}
-        onStep={st.step}
-        canPrev={st.index > 0}
-        canNext={st.index < st.list.length - 1}
       />
       <BreadCrumbs
         g={st.g}
