@@ -53,6 +53,15 @@ export type PlanView = {
 
 type Products = ReturnType<typeof useIapStore.getState>['products'];
 
+/** The plans API's amount in its `currency` (`display_price`; `price` is
+ *  always INR — "$1,499" was the bug). */
+function amountOf(
+  opt: { price: number | string; display_price?: string } | null
+): number {
+  if (!opt) return 0;
+  return Number(opt.display_price ?? opt.price) || 0;
+}
+
 function priceNumber(
   plan: SubscriptionPlan,
   cycle: PlanInterval,
@@ -62,7 +71,7 @@ function priceNumber(
     const v = Number(products[appleProductId(plan.tier, cycle)]?.price);
     return Number.isFinite(v) && v > 0 ? v : null;
   }
-  return Number(option(plan, cycle)?.price) || null;
+  return amountOf(option(plan, cycle)) || null;
 }
 
 /** Best yearly saving vs 12 × monthly, from the prices this platform shows. */
@@ -111,8 +120,8 @@ function backendPrice(plan: SubscriptionPlan, cycle: PlanInterval) {
       maximumFractionDigits: 0,
     }).format(n);
   return {
-    price: fmt(Number(opt.price)),
-    monthlyEquivalent: yearly ? perMonth(Number(opt.price), code) : null,
+    price: fmt(amountOf(opt)),
+    monthlyEquivalent: yearly ? perMonth(amountOf(opt), code) : null,
   };
 }
 
@@ -144,7 +153,7 @@ function compare(
   const num = (c: PlanInterval) =>
     fromStore
       ? Number(products[appleProductId(plan.tier, c)]?.price)
-      : Number(option(plan, c)?.price);
+      : amountOf(option(plan, c));
   const m = num('monthly');
   const y = num('yearly');
   if (!(m > 0) || !(y > 0) || y / 12 >= m) return none;

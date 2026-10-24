@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
+import { useGeoCurrency } from '@/lib/geo-currency';
+
 import {
   attachDomain,
   connectDomain,
@@ -26,9 +28,10 @@ export const SETTLED_STAGES: DomainStage[] = ['live', 'failed'];
 /** `q` must already be debounced (useDebouncedValue). */
 export function useDomainSearch(q: string) {
   const query = q.trim().toLowerCase();
+  const currency = useGeoCurrency((s) => s.currency);
   return useQuery({
-    queryKey: appDomainKeys.search(query),
-    queryFn: () => searchDomains(query),
+    queryKey: [...appDomainKeys.search(query), currency],
+    queryFn: () => searchDomains(query, currency),
     enabled: query.length > 1,
     staleTime: 60_000,
     retry: false,

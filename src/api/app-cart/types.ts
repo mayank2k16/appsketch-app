@@ -42,6 +42,8 @@ export type CheckoutBody = {
    *  line, e.g. `{"label": "BUILD20 · 20% off app builds", "amount_inr":
    *  -3000}`, and `total_inr` is after the discount. */
   discount_code?: string | null;
+  /** "INR" | "USD"; the client sends the launch-time geo currency. */
+  currency?: string;
   /** The total on screen, in the cart currency (else `expected_total_inr`). */
   expected_total?: number;
 };

@@ -14,10 +14,13 @@ function expect<T>(ok: boolean, data: T): T {
 const isDomain = (d: unknown): d is DomainView =>
   !!d && typeof d === 'object' && typeof (d as DomainView).domain === 'string';
 
-export async function searchDomains(q: string): Promise<DomainSearchResponse> {
+export async function searchDomains(
+  q: string,
+  currency?: string
+): Promise<DomainSearchResponse> {
   const { data } = await accountClient.get<DomainSearchResponse>(
     `${BASE}search/`,
-    { params: { q } }
+    { params: { q, currency } }
   );
   return expect(Array.isArray(data?.results), data);
 }

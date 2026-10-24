@@ -23,6 +23,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { APIProvider } from '@/api';
 import { hydrateAuth } from '@/hooks/useAuth';
 import { loadSelectedTheme } from '@/lib';
+import { resolveGeoCurrency } from '@/lib/geo-currency';
 import { LOGIN_MONTAGE_IMAGES } from '@/lib/login-montage-images';
 import { hydrateStudio } from '@/lib/store/studio-store';
 import { TenantProvider } from '@/lib/tenant';
@@ -40,6 +41,9 @@ export const unstable_settings = {
 hydrateAuth();
 loadSelectedTheme();
 hydrateStudio();
+// INR in India, USD elsewhere: settled while the splash plays, used by
+// every price request (plans, services, domains, checkout).
+resolveGeoCurrency();
 // Fire at app-launch time (splash is shown for ~2.6s regardless), so the
 // login montage's images are already decoded and disk/memory-cached by the
 // time the login screen mounts — whichever path gets there (splash, sign-out,

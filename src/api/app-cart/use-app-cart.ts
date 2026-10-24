@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { useGeoCurrency } from '@/lib/geo-currency';
+
 import { fetchCatalogue, fetchOrder } from './client';
 import type { OrderStatus } from './types';
 
@@ -9,9 +11,10 @@ export const appCartKeys = {
 };
 
 export function useCatalogue() {
+  const currency = useGeoCurrency((s) => s.currency);
   return useQuery({
-    queryKey: appCartKeys.catalogue,
-    queryFn: fetchCatalogue,
+    queryKey: [...appCartKeys.catalogue, currency],
+    queryFn: () => fetchCatalogue(currency),
     staleTime: 10 * 60_000,
     retry: 1,
   });

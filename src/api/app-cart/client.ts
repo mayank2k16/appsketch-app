@@ -1,4 +1,5 @@
 import { accountClient } from '@/api/common/client';
+import { type AppCurrency, geoCurrency } from '@/lib/geo-currency';
 
 import type {
   CartOrder,
@@ -16,8 +17,12 @@ function expect<T>(ok: boolean, data: T): T {
   return data;
 }
 
-export async function fetchCatalogue(): Promise<Catalogue> {
-  const { data } = await accountClient.get<Catalogue>(`${BASE}catalogue/`);
+export async function fetchCatalogue(
+  currency: AppCurrency
+): Promise<Catalogue> {
+  const { data } = await accountClient.get<Catalogue>(`${BASE}catalogue/`, {
+    params: { currency },
+  });
   return expect(Array.isArray(data?.builds) && Array.isArray(data?.extras), {
     ...data,
     included: data.included ?? [],
@@ -27,7 +32,8 @@ export async function fetchCatalogue(): Promise<Catalogue> {
 export async function checkout(body: CheckoutBody): Promise<CheckoutResponse> {
   const { data } = await accountClient.post<CheckoutResponse>(
     `${BASE}checkout/`,
-    body,
+    // Charged in the launch-time geo currency, like everything shown.
+    { currency: geoCurrency(), ...body },
     { timeout: 30000 }
   );
   return expect(!!data?.razorpay?.order_id, data);
