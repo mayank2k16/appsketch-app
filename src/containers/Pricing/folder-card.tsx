@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import type { AppColors } from '@/lib/theme';
 
@@ -82,29 +81,7 @@ const PAD = 8; // band around the bar and the card
 
 export type { PillTab as FolderTab };
 
-const STRIPE = 10; // stripe and gap width, points (45°)
-
-/** Diagonal stripes over the band: one path of parallelograms, sized from
- *  the band's layout (no SVG <Pattern>, which drew unreliably). */
-function Stripes({ w, h }: { w: number; h: number }) {
-  if (!w || !h) return null;
-  const d: string[] = [];
-  for (let x = -h; x < w; x += STRIPE * 2) {
-    d.push(`M${x},${h}L${x + h},0L${x + h + STRIPE},0L${x + STRIPE},${h}Z`);
-  }
-  return (
-    <Svg
-      pointerEvents="none"
-      style={StyleSheet.absoluteFill}
-      width={w}
-      height={h}
-    >
-      <Path d={d.join('')} fill="rgba(255,255,255,0.13)" />
-    </Svg>
-  );
-}
-
-/** A full-width striped brand band: the pill tab bar, then the card for
+/** A full-width solid brand band: the pill tab bar, then the card for
  *  the picked tab (`children`). */
 export function FolderCard({
   t,
@@ -122,17 +99,8 @@ export function FolderCard({
   children: React.ReactNode;
 }) {
   const k = skinFor(t, p);
-  const [size, setSize] = React.useState({ w: 0, h: 0 });
   return (
-    <View
-      style={[st.band, { backgroundColor: k.frame }]}
-      onLayout={(e) => {
-        const { width, height } = e.nativeEvent.layout;
-        if (width !== size.w || height !== size.h)
-          setSize({ w: width, h: height });
-      }}
-    >
-      <Stripes w={size.w} h={size.h} />
+    <View style={[st.band, { backgroundColor: k.frame }]}>
       <PillTabs tabs={tabs} value={value} onPick={onPick} k={k.tabs} />
       <View style={[st.card, { backgroundColor: k.bg }]}>{children}</View>
     </View>

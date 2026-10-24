@@ -251,10 +251,8 @@ function SectionHead({
   );
 }
 
-const WEBSITE_PRICING = 'https://appsketch.ai/pricing';
-
-/** Under the heading: custom plans go to Contact us (in the app) or the
- *  website's pricing page. */
+/** Under the heading: custom plans go to Contact us (in the app). No
+ *  website link — App Review 3.1.1 treats it as steering. */
 function CustomPricing({ t }: { t: AppColors }) {
   const router = useRouter();
   return (
@@ -267,14 +265,6 @@ function CustomPricing({ t }: { t: AppColors }) {
           style={[st.customLink, { color: '#EB4709' }]}
         >
           Contact us
-        </Text>
-        {' or '}
-        <Text
-          onPress={() => void Linking.openURL(WEBSITE_PRICING)}
-          accessibilityRole="link"
-          style={[st.customLink, { color: '#EB4709' }]}
-        >
-          visit our website
         </Text>
       </Text>
     </View>
