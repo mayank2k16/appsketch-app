@@ -21,6 +21,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
+import { EtaOverlay } from '@/components/eta';
 import { hydrateAuth } from '@/hooks/useAuth';
 import { loadSelectedTheme } from '@/lib';
 import { resolveGeoCurrency } from '@/lib/geo-currency';
@@ -159,6 +160,7 @@ function Providers({ children }: { children: React.ReactNode }) {
             <TenantProvider>
               <BottomSheetModalProvider>
                 {children}
+                <EtaOverlay />
                 <ToastContainer />
               </BottomSheetModalProvider>
             </TenantProvider>

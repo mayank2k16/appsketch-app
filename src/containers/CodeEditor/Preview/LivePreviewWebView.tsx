@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import type WebViewType from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
 
+import { EtaCanvas } from '@/components/eta';
 import { PressableScale } from '@/components/ui';
 import type { AppColors } from '@/lib/theme';
 import { toast } from '@/lib/toast';
@@ -107,6 +109,7 @@ export function LivePreviewWebView({
   tenantId: string;
 }) {
   const { send } = useCodeEditor();
+  const { colorScheme } = useColorScheme();
 
   const [status, setStatus] = React.useState<'loading' | 'loaded' | 'error'>(
     'loading'
@@ -204,9 +207,16 @@ export function LivePreviewWebView({
 
       {status === 'loading' && (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <DotFieldLoader colors={colors} label="Loading your preview…" />
+          <DotFieldLoader colors={colors} />
         </View>
       )}
+      <EtaCanvas
+        kind="site"
+        label="Loading your preview"
+        dark={colorScheme === 'dark'}
+        loading={status === 'loading'}
+        done={status === 'loaded'}
+      />
 
       {status === 'error' && (
         <View

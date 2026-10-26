@@ -40,3 +40,24 @@ export type TenantSummary = {
   created_at?: string;
   created_on?: string;
 };
+
+/** One app inside an ecosystem (`GET builder/groups/`). */
+export type AppGroupMember = {
+  app_id: number;
+  uuid: string;
+  title: string;
+  app_type: string;
+  label?: string;
+  signup_role?: string;
+  is_home: boolean;
+};
+
+/** An ecosystem: several apps sharing one backend, one chat and one set of
+ *  user roles (`builder/agent/dynamic/groups.py`). */
+export type AppGroup = {
+  id: number;
+  name: string;
+  home_app_id: number;
+  roles: Record<string, { approval?: boolean }>;
+  apps: AppGroupMember[];
+};

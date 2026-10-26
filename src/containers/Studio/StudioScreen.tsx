@@ -5,10 +5,10 @@ import * as React from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { PressableScale } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { BRAND_MID, useBrandedCoderTheme } from '@/lib/theme';
 
 import { AppsScreen } from './Apps/AppsScreen';
@@ -29,10 +29,10 @@ const SECTIONS: {
   label: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
 }[] = [
-    { key: 'apps', label: 'Apps', icon: 'grid-outline' },
-    { key: 'discover', label: 'Discover', icon: 'compass-outline' },
-    { key: 'settings', label: 'Settings', icon: 'settings-outline' },
-  ];
+  { key: 'apps', label: 'Apps', icon: 'grid-outline' },
+  { key: 'discover', label: 'Discover', icon: 'compass-outline' },
+  { key: 'settings', label: 'Settings', icon: 'settings-outline' },
+];
 
 /** Narrow enough that the store cards keep almost the full width — the rail is
  *  a navigation strip, not a panel. */
@@ -99,7 +99,7 @@ export function StudioScreen() {
             <TextInput
               value={search}
               onChangeText={setSearch}
-              placeholder="Search your stores…"
+              placeholder="Search your apps…"
               placeholderTextColor={t.textMuted}
               style={[st.searchInput, { color: t.text }]}
               returnKeyType="search"
@@ -114,7 +114,7 @@ export function StudioScreen() {
         <View style={[st.gate, { paddingBottom: tabBarH }]}>
           <Ionicons name="lock-closed-outline" size={36} color={t.textMuted} />
           <Text style={[st.gateTitle, { color: t.text }]}>
-            Sign in to view your stores
+            Sign in to view your apps
           </Text>
           <PressableScale onPress={() => router.push('/login' as never)}>
             <View style={[st.gateBtn, { backgroundColor: w.ctaBg }]}>

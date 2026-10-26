@@ -18,7 +18,7 @@ export function StoreCardSkeleton({ t }: { t: AppColors }) {
       ]}
     >
       <View style={st.topRow}>
-        <Skeleton t={t} width={44} height={44} borderRadius={5} />
+        <Skeleton t={t} width={44} height={44} borderRadius={12} />
         <View style={st.titleWrap}>
           <Skeleton t={t} height={14} width="60%" borderRadius={4} />
           <Skeleton
@@ -31,13 +31,13 @@ export function StoreCardSkeleton({ t }: { t: AppColors }) {
         </View>
       </View>
       <View style={st.actionsRow}>
-        {[0, 1, 2].map((i) => (
+        {[0, 1].map((i) => (
           <Skeleton
             key={i}
             t={t}
             height={38}
             style={st.actionSlot}
-            borderRadius={5}
+            borderRadius={12}
           />
         ))}
       </View>
@@ -47,7 +47,7 @@ export function StoreCardSkeleton({ t }: { t: AppColors }) {
 
 const st = StyleSheet.create({
   card: {
-    borderRadius: 10,
+    borderRadius: 18,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,

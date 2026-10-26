@@ -7,6 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import type { MarketTemplate } from '@/api/templates';
+import { EtaCanvas } from '@/components/eta';
 import { thumbOf } from '@/containers/Home/TemplateReel/layout';
 import {
   phoneScreenOf,
@@ -163,12 +164,8 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
   );
   const on = p.load === 'on';
   const spin = on && p.active && !live;
-  const rect = {
-    left: hero.x,
-    top: hero.y,
-    width: hero.width,
-    height: hero.height,
-  };
+  const { x: left, y: top, width, height } = hero;
+  const rect = { left, top, width, height };
   const tint = (
     <Animated.View
       pointerEvents="none"
@@ -206,6 +203,15 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
         <LiveLoader seed={template.key} dark={p.dark} animate={spin} />
       )}
       <HeroBody {...p} onLive={onLive} />
+      {liveUrlOf(template) ? (
+        <EtaCanvas
+          kind="site"
+          label="Loading the live site"
+          dark={p.dark}
+          loading={on && p.active}
+          done={live}
+        />
+      ) : null}
       {tint}
     </Animated.View>
   );

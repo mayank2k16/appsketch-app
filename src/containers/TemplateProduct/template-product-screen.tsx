@@ -11,6 +11,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MarketTemplate } from '@/api/templates';
+import { EtaOverlay } from '@/components/eta';
 import { thumbOf } from '@/containers/Home/TemplateReel/layout';
 import { type PendingTemplate } from '@/lib/template-transition';
 
@@ -380,6 +381,8 @@ function ProductPage(p: PageProps) {
         onDevice={st.setDevice}
       />
       <Overlays s={st} p={p} />
+      {/* This page is a native modal, above the root's overlay. */}
+      <EtaOverlay />
     </Animated.View>
   );
 }

@@ -1,210 +1,148 @@
+/* eslint-disable unicorn/filename-case --
+   Matches the PascalCase convention of its sibling components. */
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 
 import type { TenantSummary } from '@/api/studio';
 import { PressableScale } from '@/components/ui';
-import { useCoderTheme } from '@/lib/theme';
 
-import { STUDIO_ACCENT } from '../../StudioScreen';
+import { useAppsPalette } from '../palette';
+import { isMobileApp } from '../use-app-actions';
 
-const ACTIONS: {
-  key: 'store' | 'cms' | 'remix';
-  label: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  iconAfter?: boolean;
-}[] = [
-    { key: 'store', label: 'View Store', icon: 'open-outline', iconAfter: true },
-    { key: 'cms', label: 'View CMS', icon: 'arrow-forward', iconAfter: true },
-    { key: 'remix', label: 'Remix', icon: 'code-slash-outline' },
-  ];
+type Props = {
+  tenant: TenantSummary;
+  busy: boolean;
+  onView: () => void;
+  onEdit: () => void;
+};
 
-/** `en-GB`-style day/month/year — locale-neutral and unambiguous, unlike
- *  `MM/DD` which reads differently depending on the reader's region. */
-function formatCreated(value?: string): string | null {
-  if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+/** `https://foo.com/` → `foo.com` — the link line is a label, not a URL. */
+const hostOf = (url?: string) =>
+  (url || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+/** One of your apps: logo, name, where it lives, and the two things you do
+ *  with it — View app (orange) and Edit. */
+export function StoreCard({ tenant, busy, onView, onEdit }: Props) {
+  const p = useAppsPalette();
+  const mobile = isMobileApp(tenant);
+  const host = hostOf(tenant.website_url);
+  return (
+    <View style={[st.card, { backgroundColor: p.card, borderColor: p.border }]}>
+      <View style={st.top}>
+        <View style={[st.logoWrap, { backgroundColor: p.soft }]}>
+          {tenant.logo ? (
+            <Image source={{ uri: tenant.logo }} style={st.logo} />
+          ) : (
+            <Ionicons
+              name={mobile ? 'phone-portrait-outline' : 'globe-outline'}
+              size={22}
+              color={p.orange}
+            />
+          )}
+        </View>
+        <View style={st.titleWrap}>
+          <Text style={[st.title, { color: p.ink }]} numberOfLines={1}>
+            {tenant.title || 'Untitled app'}
+          </Text>
+          <View style={st.metaRow}>
+            <View style={[st.kind, { backgroundColor: p.soft }]}>
+              <Text style={[st.kindText, { color: p.orange }]}>
+                {mobile ? 'Mobile app' : 'Website'}
+              </Text>
+            </View>
+            {host ? (
+              <Text style={[st.host, { color: p.sub }]} numberOfLines={1}>
+                {host}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </View>
+      <CardActions busy={busy} onView={onView} onEdit={onEdit} />
+    </View>
+  );
 }
 
-export function StoreCard({
-  tenant,
-  loading,
-  onViewCms,
-  onViewStore,
-  onViewCustomStore,
+export function CardActions({
+  busy,
+  onView,
+  onEdit,
+  compact,
 }: {
-  tenant: TenantSummary;
-  loading: boolean;
-  onViewCms: () => void;
-  onViewStore: () => void;
-  onViewCustomStore: () => void;
+  busy: boolean;
+  onView: () => void;
+  onEdit: () => void;
+  compact?: boolean;
 }) {
-  const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
-  // White: no brand tint on the card — the store glyph is ink and the link
-  // line is secondary ink. Dark keeps the ramp accent.
-  const accent = colorScheme === 'dark' ? STUDIO_ACCENT : t.textSub;
-
-  const handlers = {
-    store: onViewStore,
-    cms: onViewCms,
-    remix: onViewCustomStore,
-  } as const;
-  // Only CMS depends on the attach-tenant call the parent tracks with
-  // `loading` — Store and Remix just navigate.
-  const busyKeys = new Set<(typeof ACTIONS)[number]['key']>(['cms']);
-  const created = formatCreated(tenant.created_at ?? tenant.created_on);
-
+  const p = useAppsPalette();
+  const h = compact ? 34 : 40;
   return (
-    <View
-      style={[
-        st.card,
-        { backgroundColor: t.card, borderColor: t.studioCardBorder },
-      ]}
-    >
-      <View style={st.topRow}>
+    <View style={st.actions}>
+      <PressableScale style={st.slot} onPress={onView} disabled={busy}>
+        <View style={[st.btn, { height: h, backgroundColor: p.orange }]}>
+          {busy ? (
+            <ActivityIndicator size="small" color={p.onOrange} />
+          ) : (
+            <>
+              <Ionicons name="play" size={13} color={p.onOrange} />
+              <Text style={[st.btnText, { color: p.onOrange }]}>View app</Text>
+            </>
+          )}
+        </View>
+      </PressableScale>
+      <PressableScale style={st.slot} onPress={onEdit}>
         <View
           style={[
-            st.logoWrap,
-            {
-              backgroundColor: t.studioCardLogoBg,
-              borderColor: t.studioCardBorder,
-            },
+            st.btn,
+            { height: h, borderWidth: 1, borderColor: p.border },
+            { backgroundColor: p.card },
           ]}
         >
-          {tenant.logo ? (
-            <Image
-              source={{ uri: tenant.logo }}
-              style={st.logo}
-              resizeMode="cover"
-            />
-          ) : (
-            <Ionicons name="storefront-outline" size={22} color={accent} />
-          )}
+          <Ionicons name="create-outline" size={14} color={p.ink} />
+          <Text style={[st.btnText, { color: p.ink }]}>Edit</Text>
         </View>
-
-        <View style={st.titleWrap}>
-          <Text style={[st.title, { color: t.text }]} numberOfLines={1}>
-            {(tenant.title || 'Untitled store').slice(0, 40)}
-          </Text>
-          {!!tenant.website_url && (
-            <Text
-              style={[st.subtitle, { color: accent }]}
-              numberOfLines={1}
-            >
-              {tenant.website_url}
-            </Text>
-          )}
-          {/* <Text style={[st.meta, { color: t.textMuted }]} numberOfLines={1}>
-            ID {tenant.id}
-            {created ? `  ·  Created ${created}` : ''}
-          </Text> */}
-        </View>
-      </View>
-
-      {/* Same shape, fill and border on all four — the old pair of solid
-          `accent`-filled pills next to a pair of outlined ones made CMS/CRM
-          read as the "real" actions and Store/Remix as secondary, which
-          isn't true; all four are equally valid next steps. */}
-      <View style={st.actionsRow}>
-        {ACTIONS.map((action) => {
-          const busy = loading && busyKeys.has(action.key);
-          const linkColor = t.text;
-          return (
-            <PressableScale
-              key={action.key}
-              style={st.actionSlot}
-              onPress={handlers[action.key]}
-              disabled={busyKeys.has(action.key) && loading}
-              disabledOpacity={1}
-            >
-              <View style={[st.actionBtn, { borderColor: t.studioCardBorder }]}>
-                {busy ? (
-                  <ActivityIndicator size="small" color={linkColor} />
-                ) : (
-                  <>
-                    {!action.iconAfter && (
-                      <Ionicons name={action.icon} size={14} color={linkColor} />
-                    )}
-                    <Text style={[st.actionText, { color: linkColor }]}>
-                      {action.label}
-                    </Text>
-                    {action.iconAfter && (
-                      <Ionicons name={action.icon} size={14} color={linkColor} />
-                    )}
-                  </>
-                )}
-              </View>
-            </PressableScale>
-          );
-        })}
-      </View>
+      </PressableScale>
     </View>
   );
 }
 
 const st = StyleSheet.create({
   card: {
-    borderRadius: 10,
+    borderRadius: 18,
     padding: 14,
-    marginHorizontal: 0,
-    marginBottom: 10,
+    marginBottom: 12,
     borderWidth: 1,
-    gap: 18,
-    overflow: 'hidden',
+    gap: 14,
+    shadowColor: '#F2600C',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logoWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 5,
-    borderWidth: 1,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   logo: { width: '100%', height: '100%' },
-  titleWrap: { flex: 1 },
-  title: { fontSize: 14.5, fontWeight: '700' },
-  subtitle: { fontSize: 12, marginTop: 2 },
-  meta: { fontSize: 11, marginTop: 3 },
-  actionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  // The Pressable owns the grid slot; the View inside owns the skin. NativeWind's
-  // JSX transform drops `style` callbacks on Pressable, so visual styling never
-  // goes on the Pressable itself in this codebase.
-  actionSlot: {
-    flexBasis: '47%',
-    flexGrow: 1,
-  },
-  actionBtn: {
+  titleWrap: { flex: 1, gap: 5 },
+  title: { fontSize: 15.5, fontWeight: '700' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  kind: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  kindText: { fontSize: 10.5, fontWeight: '700' },
+  host: { flex: 1, fontSize: 12 },
+  actions: { flexDirection: 'row', gap: 8 },
+  slot: { flex: 1 },
+  btn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    height: 38,
-    borderRadius: 5,
-    borderWidth: 1,
+    gap: 6,
+    borderRadius: 12,
   },
-  actionText: { fontSize: 12.5, fontWeight: '700' },
+  btnText: { fontSize: 13, fontWeight: '700' },
 });

@@ -1,31 +1,50 @@
-import { useColorScheme } from 'nativewind';
-import * as Clipboard from 'expo-clipboard';
-import * as React from 'react';
-import { ActivityIndicator, Animated, Easing, Linking, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
+import * as React from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Linking,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUseTemplate } from '@/api/templates';
+import { EtaCanvas, type EtaKind } from '@/components/eta';
 import { PressableScale } from '@/components/ui';
 import { haptic } from '@/lib/haptics';
-import { toast } from '@/lib/toast';
 import { useAppTheme } from '@/lib/theme';
+import { toast } from '@/lib/toast';
 
 // `react-native-webview` has no RN-Web implementation (same guard as the CMS's
 // email-template preview) — the web build uses a plain DOM `<iframe>` instead,
 // which browsers support natively for cross-origin content.
 let WebView: React.ComponentType<any> | null = null;
 if (Platform.OS !== 'web') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   WebView = require('react-native-webview').WebView;
 }
 const isWeb = Platform.OS === 'web';
 
-const CREATE_STEPS = ['Fetching your template…', 'Spinning up your workspace…', 'Publishing your app…'];
+const CREATE_STEPS = [
+  'Fetching your template…',
+  'Spinning up your workspace…',
+  'Publishing your app…',
+];
 
 export function AppPreviewScreen() {
-  const { uuid: uuidParam, templateId, name, url: urlParam } = useLocalSearchParams<{
+  const {
+    uuid: uuidParam,
+    templateId,
+    name,
+    url: urlParam,
+  } = useLocalSearchParams<{
     uuid?: string;
     templateId?: string;
     name?: string;
@@ -45,7 +64,9 @@ export function AppPreviewScreen() {
   const [uuid, setUuid] = React.useState<string | undefined>(uuidParam);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
-  const [webStatus, setWebStatus] = React.useState<'loading' | 'loaded' | 'error'>('loading');
+  const [webStatus, setWebStatus] = React.useState<
+    'loading' | 'loaded' | 'error'
+  >('loading');
   const [reloadKey, setReloadKey] = React.useState(0);
   // Only the very first load blocks the screen — once the site's shown once,
   // in-app link taps re-fire the WebView's loading events too, and covering
@@ -53,7 +74,9 @@ export function AppPreviewScreen() {
   // app had frozen (a full opaque overlay, with nothing to dismiss it if the
   // event never resolves on flaky WebView navigations, e.g. Android).
   const [hasLoadedOnce, setHasLoadedOnce] = React.useState(false);
-  const navStallTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navStallTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const hasStartedRef = React.useRef(false);
 
@@ -72,8 +95,16 @@ export function AppPreviewScreen() {
         },
         onError: (error) => {
           const message =
-            (error.response?.data as { detail?: string; message?: string } | undefined)?.detail ??
-            (error.response?.data as { detail?: string; message?: string } | undefined)?.message ??
+            (
+              error.response?.data as
+                | { detail?: string; message?: string }
+                | undefined
+            )?.detail ??
+            (
+              error.response?.data as
+                | { detail?: string; message?: string }
+                | undefined
+            )?.message ??
             'Something went wrong while creating your app.';
           haptic.error();
           setErrorMessage(message);
@@ -90,7 +121,13 @@ export function AppPreviewScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const url = urlParam || (uuid ? `https://appsketch.ai/app/${uuid}/` : undefined);
+  const url =
+    urlParam || (uuid ? `https://appsketch.ai/app/${uuid}/` : undefined);
+  // A mobile app's web render can cold-start a server (tens of seconds); a
+  // published site is seconds. Each kind keeps its own learned ETA.
+  const etaKind: EtaKind = url?.includes('/preview/') ? 'app-web' : 'site';
+  const etaLabel =
+    etaKind === 'app-web' ? 'Starting the app' : 'Loading the live site';
 
   function handleOpenInBrowser() {
     if (url) Linking.openURL(url);
@@ -99,7 +136,9 @@ export function AppPreviewScreen() {
   async function handleCopyUrl() {
     if (!url) return;
     await Clipboard.setStringAsync(url);
-    toast.success("Store link copied. Paste it into your browser to open the store.");
+    toast.success(
+      'Store link copied. Paste it into your browser to open the store.'
+    );
   }
 
   function handleRetryLoad() {
@@ -130,36 +169,126 @@ export function AppPreviewScreen() {
 
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={t.statusBar} />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={t.statusBar}
+      />
 
-      <View style={[st.header, { paddingTop: insets.top + 10, borderColor: t.border }]}>
-        <PressableScale onPress={() => router.back()} hitSlop={10} style={st.backBtn}>
+      <View
+        style={[
+          st.header,
+          { paddingTop: insets.top + 10, borderColor: t.border },
+        ]}
+      >
+        <PressableScale
+          onPress={() => router.back()}
+          hitSlop={10}
+          style={st.backBtn}
+        >
           <Ionicons name="chevron-back" size={22} color={t.text} />
         </PressableScale>
         <Text style={[st.title, { color: t.text }]} numberOfLines={1}>
           {name || 'Preview'}
         </Text>
-        <PressableScale onPress={handleCopyUrl} hitSlop={10} style={st.headerIconBtn} disabled={!url} disabledOpacity={isDark ? 1 : 0.5}>
-          <Ionicons name="copy-outline" size={19} color={url ? t.text : t.textMuted} />
+        <PressableScale
+          onPress={handleCopyUrl}
+          hitSlop={10}
+          style={st.headerIconBtn}
+          disabled={!url}
+          disabledOpacity={isDark ? 1 : 0.5}
+        >
+          <Ionicons
+            name="copy-outline"
+            size={19}
+            color={url ? t.text : t.textMuted}
+          />
         </PressableScale>
-        <PressableScale onPress={handleOpenInBrowser} hitSlop={10} style={st.headerIconBtn} disabled={!url} disabledOpacity={isDark ? 1 : 0.5}>
-          <Ionicons name="open-outline" size={20} color={url ? t.text : t.textMuted} />
+        <PressableScale
+          onPress={handleOpenInBrowser}
+          hitSlop={10}
+          style={st.headerIconBtn}
+          disabled={!url}
+          disabledOpacity={isDark ? 1 : 0.5}
+        >
+          <Ionicons
+            name="open-outline"
+            size={20}
+            color={url ? t.text : t.textMuted}
+          />
         </PressableScale>
       </View>
 
       <View style={st.body}>
         {phase === 'creating' && <CreatingState t={t} name={name} />}
+        {templateId ? (
+          <View
+            pointerEvents="none"
+            style={[st.createEta, { bottom: insets.bottom + 28 }]}
+          >
+            <EtaCanvas
+              kind="create"
+              label="Building your app"
+              dark={isDark}
+              loading={phase === 'creating'}
+              done={phase === 'ready'}
+            />
+          </View>
+        ) : null}
 
         {phase === 'error' && (
           <View style={st.center}>
-            <View style={[st.errorIconWrap, { backgroundColor: isDark ? 'rgba(255,92,92,0.14)' : 'rgba(229,72,77,0.08)' }]}>
-              <Ionicons name="alert-circle-outline" size={28} color={isDark ? '#FF5C5C' : '#E5484D'} />
+            <View
+              style={[
+                st.errorIconWrap,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255,92,92,0.14)'
+                    : 'rgba(229,72,77,0.08)',
+                },
+              ]}
+            >
+              <Ionicons
+                name="alert-circle-outline"
+                size={28}
+                color={isDark ? '#FF5C5C' : '#E5484D'}
+              />
             </View>
-            <Text style={{ color: t.text, fontWeight: '700', fontSize: 15, marginBottom: 4 }}>Couldn't create your app</Text>
-            <Text style={{ color: t.textSub, fontSize: 12.5, marginBottom: 20, textAlign: 'center' }}>{errorMessage}</Text>
+            <Text
+              style={{
+                color: t.text,
+                fontWeight: '700',
+                fontSize: 15,
+                marginBottom: 4,
+              }}
+            >
+              Couldn't create your app
+            </Text>
+            <Text
+              style={{
+                color: t.textSub,
+                fontSize: 12.5,
+                marginBottom: 20,
+                textAlign: 'center',
+              }}
+            >
+              {errorMessage}
+            </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <PressableScale onPress={() => router.back()} style={[st.retryBtn, { backgroundColor: t.templatesChipBg, borderWidth: 1, borderColor: t.templatesChipBorder }]}>
-                <Text style={[st.retryBtnText, { color: t.text }]}>Back to templates</Text>
+              <PressableScale
+                onPress={() => router.back()}
+                style={[
+                  st.retryBtn,
+                  {
+                    backgroundColor: t.templatesChipBg,
+                    borderWidth: 1,
+                    borderColor: t.templatesChipBorder,
+                  },
+                ]}
+              >
+                <Text style={[st.retryBtnText, { color: t.text }]}>
+                  Back to templates
+                </Text>
               </PressableScale>
               <PressableScale
                 onPress={handleRetryCreate}
@@ -181,15 +310,27 @@ export function AppPreviewScreen() {
               {React.createElement('iframe', {
                 key: reloadKey,
                 src: url,
-                style: { ...StyleSheet.absoluteFill, border: 0, width: '100%', height: '100%' },
+                style: {
+                  ...StyleSheet.absoluteFill,
+                  border: 0,
+                  width: '100%',
+                  height: '100%',
+                },
                 onLoad: () => setWebStatus('loaded'),
               })}
               {webStatus === 'loading' && (
-                <View style={[st.center, StyleSheet.absoluteFill, { backgroundColor: t.bg }]} pointerEvents="none">
-                  <DotsLoader color={t.accent} />
-                  <Text style={{ color: t.textSub, marginTop: 8 }}>Loading your app…</Text>
-                </View>
+                <View
+                  style={[StyleSheet.absoluteFill, { backgroundColor: t.bg }]}
+                  pointerEvents="none"
+                />
               )}
+              <EtaCanvas
+                kind={etaKind}
+                label={etaLabel}
+                dark={isDark}
+                loading={webStatus === 'loading'}
+                done={webStatus === 'loaded'}
+              />
             </>
           ) : WebView ? (
             <>
@@ -215,17 +356,51 @@ export function AppPreviewScreen() {
                 onHttpError={() => setWebStatus('error')}
               />
               {webStatus === 'loading' && !hasLoadedOnce && (
-                <View style={[st.center, StyleSheet.absoluteFill, { backgroundColor: t.bg }]} pointerEvents="none">
-                  <DotsLoader color={t.accent} />
-                  <Text style={{ color: t.textSub, marginTop: 8 }}>Loading your app…</Text>
-                </View>
+                <View
+                  style={[StyleSheet.absoluteFill, { backgroundColor: t.bg }]}
+                  pointerEvents="none"
+                />
               )}
-              {webStatus === 'loading' && hasLoadedOnce && <TopProgressBar t={t} />}
+              <EtaCanvas
+                kind={etaKind}
+                label={etaLabel}
+                dark={isDark}
+                loading={!hasLoadedOnce && webStatus !== 'error'}
+                done={hasLoadedOnce}
+              />
+              {webStatus === 'loading' && hasLoadedOnce && (
+                <TopProgressBar t={t} />
+              )}
               {webStatus === 'error' && (
-                <View style={[st.center, StyleSheet.absoluteFill, { backgroundColor: t.bg }]}>
-                  <Text style={{ color: t.text, fontWeight: '700', marginBottom: 4 }}>Couldn't load this app</Text>
-                  <Text style={{ color: t.textSub, fontSize: 12.5, marginBottom: 16 }}>Check your connection and try again.</Text>
-                  <PressableScale onPress={handleRetryLoad} style={[st.retryBtn, { backgroundColor: t.accent }]}>
+                <View
+                  style={[
+                    st.center,
+                    StyleSheet.absoluteFill,
+                    { backgroundColor: t.bg },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      color: t.text,
+                      fontWeight: '700',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Couldn't load this app
+                  </Text>
+                  <Text
+                    style={{
+                      color: t.textSub,
+                      fontSize: 12.5,
+                      marginBottom: 16,
+                    }}
+                  >
+                    Check your connection and try again.
+                  </Text>
+                  <PressableScale
+                    onPress={handleRetryLoad}
+                    style={[st.retryBtn, { backgroundColor: t.accent }]}
+                  >
                     <Text style={st.retryBtnText}>Retry</Text>
                   </PressableScale>
                 </View>
@@ -233,11 +408,26 @@ export function AppPreviewScreen() {
             </>
           ) : (
             <View style={st.center}>
-              <Text style={{ color: t.text, fontWeight: '700', marginBottom: 4 }}>Preview unavailable here</Text>
-              <Text style={{ color: t.textSub, fontSize: 12.5, marginBottom: 16, textAlign: 'center', paddingHorizontal: 32 }}>
+              <Text
+                style={{ color: t.text, fontWeight: '700', marginBottom: 4 }}
+              >
+                Preview unavailable here
+              </Text>
+              <Text
+                style={{
+                  color: t.textSub,
+                  fontSize: 12.5,
+                  marginBottom: 16,
+                  textAlign: 'center',
+                  paddingHorizontal: 32,
+                }}
+              >
                 Open it in your browser instead.
               </Text>
-              <PressableScale onPress={handleOpenInBrowser} style={[st.retryBtn, { backgroundColor: t.accent }]}>
+              <PressableScale
+                onPress={handleOpenInBrowser}
+                style={[st.retryBtn, { backgroundColor: t.accent }]}
+              >
                 <Text style={st.retryBtnText}>Open in Browser</Text>
               </PressableScale>
             </View>
@@ -250,7 +440,13 @@ export function AppPreviewScreen() {
 /** Creative "building your app" state shown the instant the user taps
  * Preview — the create-tenant chain runs in the background while this is
  * on screen, so it owns all the perceived-progress feedback. */
-function CreatingState({ t, name }: { t: ReturnType<typeof useAppTheme>; name?: string }) {
+function CreatingState({
+  t,
+  name,
+}: {
+  t: ReturnType<typeof useAppTheme>;
+  name?: string;
+}) {
   const [stepIndex, setStepIndex] = React.useState(0);
   const pulse1 = React.useRef(new Animated.Value(0)).current;
   const pulse2 = React.useRef(new Animated.Value(0)).current;
@@ -270,13 +466,29 @@ function CreatingState({ t, name }: { t: ReturnType<typeof useAppTheme>; name?: 
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(val, { toValue: 1, duration: 1600, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-          Animated.timing(val, { toValue: 0, duration: 0, useNativeDriver: true }),
+          Animated.timing(val, {
+            toValue: 1,
+            duration: 1600,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(val, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
         ])
       );
     const p1 = makePulse(pulse1, 0);
     const p2 = makePulse(pulse2, 800);
-    const rot = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 2600, easing: Easing.linear, useNativeDriver: true }));
+    const rot = Animated.loop(
+      Animated.timing(spin, {
+        toValue: 1,
+        duration: 2600,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
     p1.start();
     p2.start();
     rot.start();
@@ -287,7 +499,10 @@ function CreatingState({ t, name }: { t: ReturnType<typeof useAppTheme>; name?: 
     };
   }, [pulse1, pulse2, spin]);
 
-  const spinDeg = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const spinDeg = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
     <View style={st.center}>
@@ -300,20 +515,39 @@ function CreatingState({ t, name }: { t: ReturnType<typeof useAppTheme>; name?: 
               st.pulseRing,
               {
                 borderColor: t.accent,
-                opacity: val.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
-                transform: [{ scale: val.interpolate({ inputRange: [0, 1], outputRange: [1, 1.9] }) }],
+                opacity: val.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.45, 0],
+                }),
+                transform: [
+                  {
+                    scale: val.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 1.9],
+                    }),
+                  },
+                ],
               },
             ]}
           />
         ))}
-        <Animated.View style={[st.orbRing, { borderColor: t.accent, transform: [{ rotate: spinDeg }] }]} />
+        <Animated.View
+          style={[
+            st.orbRing,
+            { borderColor: t.accent, transform: [{ rotate: spinDeg }] },
+          ]}
+        />
         <View style={[st.orbCore, { backgroundColor: t.accent }]}>
           <Ionicons name="sparkles" size={22} color="#FFFFFF" />
         </View>
       </View>
 
-      <Text style={[st.creatingTitle, { color: t.text }]}>Building {name ? `"${name}"` : 'your app'}</Text>
-      <Text style={[st.creatingSub, { color: t.textSub }]}>This usually takes a few seconds.</Text>
+      <Text style={[st.creatingTitle, { color: t.text }]}>
+        Building {name ? `"${name}"` : 'your app'}
+      </Text>
+      <Text style={[st.creatingSub, { color: t.textSub }]}>
+        This usually takes a few seconds.
+      </Text>
 
       <View style={st.stepList}>
         {CREATE_STEPS.map((label, i) => {
@@ -324,58 +558,31 @@ function CreatingState({ t, name }: { t: ReturnType<typeof useAppTheme>; name?: 
               <View
                 style={[
                   st.stepDot,
-                  { borderColor: done || active ? t.accent : t.templatesChipBorder },
+                  {
+                    borderColor:
+                      done || active ? t.accent : t.templatesChipBorder,
+                  },
                   done && { backgroundColor: t.accent },
                 ]}
               >
-                {done ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : active ? <ActivityIndicator size="small" color={t.accent} /> : null}
+                {done ? (
+                  <Ionicons name="checkmark" size={11} color="#FFFFFF" />
+                ) : active ? (
+                  <ActivityIndicator size="small" color={t.accent} />
+                ) : null}
               </View>
-              <Text style={[st.stepLabel, { color: done || active ? t.text : t.textMuted }]}>{label}</Text>
+              <Text
+                style={[
+                  st.stepLabel,
+                  { color: done || active ? t.text : t.textMuted },
+                ]}
+              >
+                {label}
+              </Text>
             </View>
           );
         })}
       </View>
-    </View>
-  );
-}
-
-/** Three-dot bouncing loader — replaces the plain circular ActivityIndicator
- * on the "Loading your app…" cover (both the web `<iframe>` and native
- * WebView first-load states). Each dot's rise-and-fall is staggered off the
- * one before it, same offset-loop trick as CreatingState's pulse rings. */
-function DotsLoader({ color }: { color: string }) {
-  const anims = React.useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
-
-  React.useEffect(() => {
-    const loops = anims.map((val, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(i * 140),
-          Animated.timing(val, { toValue: 1, duration: 320, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-          Animated.timing(val, { toValue: 0, duration: 320, easing: Easing.in(Easing.ease), useNativeDriver: true }),
-          Animated.delay((anims.length - 1 - i) * 140),
-        ])
-      )
-    );
-    loops.forEach((l) => l.start());
-    return () => loops.forEach((l) => l.stop());
-  }, [anims]);
-
-  return (
-    <View style={st.dotsRow}>
-      {anims.map((val, i) => (
-        <Animated.View
-          key={i}
-          style={[
-            st.dot,
-            {
-              backgroundColor: color,
-              transform: [{ translateY: val.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }],
-              opacity: val.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
-            },
-          ]}
-        />
-      ))}
     </View>
   );
 }
@@ -389,8 +596,16 @@ function TopProgressBar({ t }: { t: ReturnType<typeof useAppTheme> }) {
   React.useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 500, useNativeDriver: true }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.4,
+          duration: 500,
+          useNativeDriver: true,
+        }),
       ])
     );
     loop.start();
@@ -399,7 +614,9 @@ function TopProgressBar({ t }: { t: ReturnType<typeof useAppTheme> }) {
 
   return (
     <View pointerEvents="none" style={st.topBarTrack}>
-      <Animated.View style={[st.topBarFill, { backgroundColor: t.accent, opacity: pulse }]} />
+      <Animated.View
+        style={[st.topBarFill, { backgroundColor: t.accent, opacity: pulse }]}
+      />
     </View>
   );
 }
@@ -414,21 +631,60 @@ const st = StyleSheet.create({
     borderBottomWidth: 1,
     gap: 2,
   },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  headerIconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  backBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerIconBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: { flex: 1, fontSize: 15, fontWeight: '700', textAlign: 'center' },
   body: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  retryBtn: { height: 38, paddingHorizontal: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  createEta: { position: 'absolute', left: 0, right: 0, height: 110 },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  retryBtn: {
+    height: 38,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   retryBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  errorIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  errorIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
   topBarTrack: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
   topBarFill: { flex: 1 },
-  dotsRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 7, height: 7, borderRadius: 3.5 },
 
-  orbWrap: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  pulseRing: { position: 'absolute', width: 72, height: 72, borderRadius: 36, borderWidth: 1.5 },
+  orbWrap: {
+    width: 96,
+    height: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 1.5,
+  },
   orbRing: {
     position: 'absolute',
     width: 84,
@@ -438,11 +694,29 @@ const st = StyleSheet.create({
     borderStyle: 'dashed',
     opacity: 0.5,
   },
-  orbCore: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  creatingTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4, textAlign: 'center' },
+  orbCore: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  creatingTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
   creatingSub: { fontSize: 12.5, marginBottom: 28 },
   stepList: { width: '100%', maxWidth: 280, gap: 14 },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  stepDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  stepDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stepLabel: { fontSize: 12.5, fontWeight: '600' },
 });

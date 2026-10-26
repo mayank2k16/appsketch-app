@@ -1,143 +1,148 @@
-/* eslint-disable unicorn/filename-case, max-lines-per-function, import/no-cycle --
-   Pre-existing: predates the kebab-case rule; the list/loading/empty states
-   for one screen don't split cleanly; and StoreCard importing STUDIO_ACCENT
-   back from StudioScreen is a type-only-adjacent constant re-export, not a
-   real circular dependency. */
+/* eslint-disable unicorn/filename-case --
+   Pre-existing name; StudioScreen imports it by this path. */
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { useAttachTenant, useUserTenants } from '@/api/';
-import type { TenantSummary } from '@/api/studio';
-import { useStudio } from '@/lib/store/studio-store';
-import { useCoderTheme } from '@/lib/theme';
+import { useAppGroups, useUserTenants } from '@/api/';
+import type { AppGroup, TenantSummary } from '@/api/studio';
 
+import { EcosystemCard } from './components/EcosystemCard';
 import { StoreCard } from './components/StoreCard';
 import { StoreCardSkeleton } from './components/StoreCardSkeleton';
+import { useAppsPalette } from './palette';
+import { useAppActions } from './use-app-actions';
 
-const SKELETON_COUNT = 4;
-const skeletonData = Array.from({ length: SKELETON_COUNT }, (_, i) => i);
+const skeletonData = [0, 1, 2, 3];
 
-// Search now lives in StudioScreen's header, above the rail — it stays put
-// across a section switch instead of scrolling away with the Apps list, so
-// it's passed down as a controlled value rather than owned here.
-export function AppsScreen({ search }: { search: string }) {
-  const router = useRouter();
+function matches(query: string, ...texts: (string | undefined)[]) {
+  return !query || texts.join(' ').toLowerCase().includes(query);
+}
+
+/** Ecosystems first (each with its apps), then every app that isn't in one.
+ *  Search narrows both: an ecosystem stays when its name or any of its apps
+ *  match. */
+function useLists(search: string) {
   const tenantsQuery = useUserTenants();
-  const attachTenant = useAttachTenant();
-  const setAttachedTenant = useStudio.use.setAttachedTenant();
-  const { colorScheme } = useColorScheme();
-  const t = useCoderTheme(colorScheme);
+  const groupsQuery = useAppGroups();
+  const query = search.trim().toLowerCase();
+  return React.useMemo(() => {
+    const groups: AppGroup[] = (groupsQuery.data ?? []).filter((g) =>
+      matches(query, g.name, ...g.apps.map((a) => a.title))
+    );
+    const grouped = new Set(
+      (groupsQuery.data ?? []).flatMap((g) =>
+        g.apps.map((a) => String(a.app_id))
+      )
+    );
+    // Newest first — `id` is auto-increment, so this is creation order.
+    const apps: TenantSummary[] = [...(tenantsQuery.data ?? [])]
+      .filter((t) => !grouped.has(String(t.id)))
+      .filter((t) => matches(query, t.title, t.description))
+      .sort((a, b) => Number(b.id) - Number(a.id));
+    return {
+      groups,
+      apps,
+      loading: tenantsQuery.isLoading,
+      error: tenantsQuery.isError,
+      query,
+    };
+  }, [
+    tenantsQuery.data,
+    tenantsQuery.isLoading,
+    tenantsQuery.isError,
+    groupsQuery.data,
+    query,
+  ]);
+}
 
-  const [attachingId, setAttachingId] = React.useState<
-    TenantSummary['id'] | null
-  >(null);
+function SectionTitle({ label, count }: { label: string; count: number }) {
+  const p = useAppsPalette();
+  return (
+    <View style={st.sectionRow}>
+      <View style={[st.sectionDot, { backgroundColor: p.orange }]} />
+      <Text style={[st.section, { color: p.ink }]}>{label}</Text>
+      <Text style={[st.sectionCount, { color: p.sub }]}>{count}</Text>
+    </View>
+  );
+}
 
-  function handleViewCms(tenant: TenantSummary) {
-    setAttachingId(tenant.id);
-    attachTenant.mutate(tenant.id, {
-      onSuccess: () => {
-        setAttachedTenant(tenant);
-        router.push('/cms' as never);
-      },
-      onSettled: () => setAttachingId(null),
-    });
-  }
+export function AppsScreen({ search }: { search: string }) {
+  const p = useAppsPalette();
+  const { groups, apps, loading, error, query } = useLists(search);
+  const { view, edit, busyId } = useAppActions();
 
-  // Same `/app-preview` route the Marketplace's "Use template" flow opens —
-  // same header/WebView/copy-link behavior, just with an existing tenant's
-  // uuid instead of creating a new one from a template. Falls back to the
-  // tenant's numeric id when the API hasn't returned a `uuid` for it.
-  function handleViewStore(tenant: TenantSummary) {
-    router.push({
-      pathname: '/app-preview',
-      params: { uuid: tenant.uuid || String(tenant.id), name: tenant.title },
-    } as never);
-  }
-
-  // Same `/code-editor/chat` route the hero-prompt flow (AgentScreen) pushes
-  // to when starting a NEW build — the only difference is no `userPrompt` is
-  // passed. `useCoderSocket`'s bootstrap effect resumes the tenant's latest
-  // thread whenever `userPrompt` is absent, so the chat history, file tree,
-  // and preview all restore automatically instead of starting a fresh build.
-  function handleViewCustomStore(tenant: TenantSummary) {
-    router.push({
-      pathname: '/code-editor/chat',
-      params: {
-        tenantId: String(tenant.id),
-        tenantUid: tenant.uuid || String(tenant.id),
-        // A mobile app opened as 'web' got the web preview, not the phone one.
-        appType: tenant.app_type === 'mobile' ? 'mobile' : 'web',
-      },
-    } as never);
-  }
-
-  if (tenantsQuery.isLoading) {
+  if (loading) {
     return (
       <FlatList
         data={skeletonData}
         keyExtractor={(i) => `skeleton-${i}`}
-        renderItem={() => <StoreCardSkeleton t={t} />}
-        contentContainerStyle={{ paddingTop: 0, paddingHorizontal: 1 }}
+        renderItem={() => <StoreCardSkeleton t={p.t} />}
+        contentContainerStyle={st.list}
       />
     );
   }
 
-  // Newest first — `id` is auto-increment, so a plain numeric-descending sort
-  // is creation order without needing `created_at` added to the serializer.
-  const tenants = [...(tenantsQuery.data ?? [])].sort(
-    (a, b) => Number(b.id) - Number(a.id)
-  );
-
-  // Client-side: the list is already fetched whole (`useUserTenants`, 60s
-  // staleTime) and an account's own store count doesn't warrant a round trip
-  // per keystroke. Matches title OR description, whichever the tenant has.
-  const query = search.trim().toLowerCase();
-  const filtered = query
-    ? tenants.filter((tenant) => {
-        const haystack =
-          `${tenant.title || ''} ${tenant.description || ''}`.toLowerCase();
-        return haystack.includes(query);
-      })
-    : tenants;
+  const header = groups.length ? (
+    <View>
+      <SectionTitle label="Ecosystems" count={groups.length} />
+      {groups.map((g) => (
+        <EcosystemCard
+          key={g.id}
+          group={g}
+          busyId={busyId}
+          onView={view}
+          onEdit={edit}
+        />
+      ))}
+      {apps.length ? <SectionTitle label="Apps" count={apps.length} /> : null}
+    </View>
+  ) : null;
 
   return (
     <FlatList
-      data={filtered}
+      data={apps}
       keyExtractor={(item) => String(item.id)}
+      ListHeaderComponent={header}
       renderItem={({ item }) => (
         <StoreCard
           tenant={item}
-          loading={attachingId === item.id}
-          onViewCms={() => handleViewCms(item)}
-          onViewStore={() => handleViewStore(item)}
-          onViewCustomStore={() => handleViewCustomStore(item)}
+          busy={busyId === item.id}
+          onView={() => view(item)}
+          onEdit={() => edit(item)}
         />
       )}
-      contentContainerStyle={{
-        paddingTop: 0,
-        paddingBottom: 24,
-        paddingHorizontal: 1,
-      }}
+      contentContainerStyle={st.list}
       ListEmptyComponent={
-        <View style={st.center}>
-          <Ionicons name="storefront-outline" size={36} color={t.textMuted} />
-          <Text style={[st.emptyText, { color: t.textMuted }]}>
-            {tenantsQuery.isError
-              ? 'Could not load your stores'
-              : query
-                ? `No stores match "${search.trim()}"`
-                : 'No stores on this account yet'}
-          </Text>
-        </View>
+        groups.length ? null : (
+          <View style={st.center}>
+            <Ionicons name="apps-outline" size={36} color={p.sub} />
+            <Text style={[st.emptyText, { color: p.sub }]}>
+              {error
+                ? 'Could not load your apps'
+                : query
+                  ? `No apps match "${search.trim()}"`
+                  : 'No apps on this account yet'}
+            </Text>
+          </View>
+        )
       }
     />
   );
 }
 
 const st = StyleSheet.create({
+  list: { paddingTop: 2, paddingBottom: 24, paddingHorizontal: 1 },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  sectionDot: { width: 6, height: 6, borderRadius: 3 },
+  section: { fontSize: 13, fontWeight: '800', letterSpacing: 0.2 },
+  sectionCount: { fontSize: 12, fontWeight: '600' },
   center: {
     alignItems: 'center',
     justifyContent: 'center',

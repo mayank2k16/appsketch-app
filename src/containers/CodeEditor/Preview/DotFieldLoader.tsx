@@ -64,7 +64,8 @@ export function DotFieldLoader({
   label,
 }: {
   colors: AppColors;
-  label: string;
+  /** A line under the dots; left out when an ETA card sits on top. */
+  label?: string;
 }) {
   const [size, setSize] = React.useState({ w: 0, h: 0 });
   const down = useSweep(SWEEP_DOWN_MS);
@@ -143,12 +144,14 @@ export function DotFieldLoader({
         })}
       </View>
 
-      <View
-        style={[st.labelWrap, { backgroundColor: colors.bg }]}
-        pointerEvents="none"
-      >
-        <Text style={[st.label, { color: colors.text }]}>{label}</Text>
-      </View>
+      {label ? (
+        <View
+          style={[st.labelWrap, { backgroundColor: colors.bg }]}
+          pointerEvents="none"
+        >
+          <Text style={[st.label, { color: colors.text }]}>{label}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }

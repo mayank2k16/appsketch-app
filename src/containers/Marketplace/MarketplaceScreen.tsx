@@ -19,17 +19,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { MarketKind, MarketTemplate } from '@/api/templates';
-import {
-  useCloneTemplate,
-  useMarketTemplates,
-  useTemplateCategories,
-} from '@/api/templates';
+import type { MarketKind } from '@/api/templates';
+import { useMarketTemplates, useTemplateCategories } from '@/api/templates';
 import { PressableScale } from '@/components/ui';
-import { useAuth } from '@/hooks/useAuth';
+import { useCloneAndOpen } from '@/containers/TemplateProduct/use-use-template';
 import { F } from '@/lib/fonts';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { toast } from '@/lib/toast';
 
 import { TwinkleStars } from './components/TwinkleStars';
 import { GalleryCard, GallerySkeleton } from './gallery/gallery-card';
@@ -168,46 +163,10 @@ export function MarketplaceScreen() {
 
   // Shared with Home's template carousel, so both open a template the same way.
   const handlePreview = useTemplatePreview();
-  const clone = useCloneTemplate();
-  const [usingKey, setUsingKey] = React.useState<string | null>(null);
-
-  /** "Use app", as on the web gallery: copy the template into the user's
-   * account (an ecosystem copies every app in it), then open the builder on
-   * the copy with its preview. */
-  function handleUse(template: MarketTemplate) {
-    if (template.kind !== 'code' || usingKey) return;
-    const status = useAuth.getState().status;
-    if (status !== 'signIn') {
-      toast.info('Sign in to use this template.');
-      router.push('/login');
-      return;
-    }
-    setUsingKey(template.key);
-    clone.mutate(template.id, {
-      onSuccess: (app) => {
-        // Straight to the builder's preview tab: the copy, running. The
-        // chat, code and data tabs are one swipe away, as on the web.
-        router.push({
-          pathname: '/code-editor/preview',
-          params: {
-            tenantId: String(app.id),
-            tenantUid: app.uuid,
-            appType: app.app_type ?? template.app_type,
-          },
-        } as never);
-      },
-      onError: (error) => {
-        if (error.response?.status === 401) {
-          toast.info('Sign in to use this template.');
-          router.push('/login');
-          return;
-        }
-        const data = error.response?.data as { error?: string } | undefined;
-        toast.error(data?.error ?? 'Could not copy this template.');
-      },
-      onSettled: () => setUsingKey(null),
-    });
-  }
+  // "Use app", as on the web gallery: copy the template into the user's
+  // account (an ecosystem copies every app in it), then open the builder on
+  // the copy with its preview — shared with the template page.
+  const { use: handleUse, usingKey } = useCloneAndOpen();
 
   const renderCard = (card: Placed, width: number) => (
     <GalleryCard

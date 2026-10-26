@@ -5,7 +5,7 @@
  */
 import { accountClient } from '@/api/common/client';
 
-import type { TenantSummary } from './types';
+import type { AppGroup, TenantSummary } from './types';
 
 export async function fetchUserTenants(): Promise<TenantSummary[]> {
   const { data } = await accountClient.get<TenantSummary[]>('account/tenants/');
@@ -19,4 +19,12 @@ export async function fetchUserTenants(): Promise<TenantSummary[]> {
  */
 export async function attachTenant(tenantId: number | string): Promise<void> {
   await accountClient.post('account/update-tenant/', { tenant_id: tenantId });
+}
+
+/** The account's ecosystems — groups of apps on one backend. */
+export async function fetchAppGroups(): Promise<AppGroup[]> {
+  const { data } = await accountClient.get<{ groups?: AppGroup[] }>(
+    'builder/groups/'
+  );
+  return data?.groups ?? [];
 }
