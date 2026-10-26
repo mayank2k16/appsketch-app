@@ -3,7 +3,6 @@ import * as Clipboard from 'expo-clipboard';
 import { useIsFocused } from 'expo-router';
 import * as React from 'react';
 import {
-  ActivityIndicator,
   Linking,
   Modal,
   Pressable,
@@ -179,15 +178,8 @@ function Status({
   return (
     <>
       <View style={[st.icon, { borderColor: colors.codeEditorBorder }]}>
-        {opening || !ready ? (
-          <ActivityIndicator color="#f2600c" />
-        ) : (
-          <Ionicons
-            name="phone-portrait-outline"
-            size={30}
-            color={colors.text}
-          />
-        )}
+        {/* No spinner: opening shows the app-wide ETA card (guest-app). */}
+        <Ionicons name="phone-portrait-outline" size={30} color={colors.text} />
       </View>
       <Text style={[st.title, { color: colors.text }]}>{title}</Text>
       <Text style={[st.subtitle, { color: colors.textSub }]}>{body}</Text>

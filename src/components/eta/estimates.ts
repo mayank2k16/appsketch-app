@@ -11,7 +11,8 @@ export type EtaKind =
   | 'app-web' // a mobile app's web render (/preview/<uuid>/, may cold-start)
   | 'native' // a mobile app's JS bundles, run natively here
   | 'clone' // copying a template into the account
-  | 'create'; // creating a layout site from a template
+  | 'create' // creating a layout site from a template
+  | 'preview'; // the builder's own dev-server preview (may cold-start)
 
 const DEFAULTS: Record<EtaKind, number> = {
   site: 5000,
@@ -19,6 +20,7 @@ const DEFAULTS: Record<EtaKind, number> = {
   native: 8000,
   clone: 6000,
   create: 6000,
+  preview: 15000,
 };
 
 const KEY = 'eta_estimates_v1';

@@ -13,7 +13,6 @@ import { toast } from '@/lib/toast';
 import { useCodeEditor } from '../CodeEditorProvider';
 import { INSPECTOR_SCRIPT } from '../Inspector/injectedScript';
 import { InspectorOverlay } from '../Inspector/InspectorOverlay';
-import { DotFieldLoader } from './DotFieldLoader';
 
 // `react-native-webview` has no RN-Web implementation (same guard used by
 // `AppPreviewScreen`) — the web build falls back to a plain DOM `<iframe>`.
@@ -55,7 +54,37 @@ const ERROR_CAPTURE_JS = `
 // Both scripts run once per page load — error capture always, the inspector
 // content-script guards itself against double-injection (`if
 // (window.__cwInspector) return;`), so combining them here is safe.
-const COMBINED_INJECTED_JS = `${ERROR_CAPTURE_JS}\n${INSPECTOR_SCRIPT}`;
+/**
+ * Says when the preview is really up. While the dev server starts, the
+ * runner serves a "Starting your preview…" page that refreshes itself every
+ * 2s (web-runner STARTING_HTML); each refresh fires onLoadEnd, so load
+ * events alone would end the loader early and restart it. This reports
+ * `preview:booting` on that page and `preview:ready` once the app has
+ * painted something (or after ~6s, so a blank page never loads forever).
+ */
+const READY_PROBE_JS = `
+(function () {
+  function post(t) {
+    window.ReactNativeWebView &&
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: t }));
+  }
+  if (document.querySelector('meta[http-equiv="refresh"],meta[http-equiv=refresh]')) {
+    post('preview:booting');
+    return;
+  }
+  var n = 0;
+  (function tick() {
+    var b = document.body;
+    var painted =
+      (b && (b.innerText || '').trim().length > 0) ||
+      document.querySelector('img,canvas,svg,video');
+    if (painted || ++n > 40) return post('preview:ready');
+    setTimeout(tick, 150);
+  })();
+})();`;
+
+// The probe runs first so a throw in the scripts after it can't stop it.
+const COMBINED_INJECTED_JS = `${READY_PROBE_JS}\n${ERROR_CAPTURE_JS}\n${INSPECTOR_SCRIPT}`;
 
 /** Pins the page to the device width before first paint.
  *
@@ -130,7 +159,9 @@ export function LivePreviewWebView({
         type: string;
         payload?: Record<string, unknown>;
       };
-      if (msg.type === 'runtime_error' || msg.type === 'console_error') {
+      if (msg.type === 'preview:ready') {
+        setStatus('loaded');
+      } else if (msg.type === 'runtime_error' || msg.type === 'console_error') {
         setPreviewError(
           (msg.payload?.message as string) ?? 'A runtime error occurred.'
         );
@@ -176,8 +207,13 @@ export function LivePreviewWebView({
               injectedJavaScriptBeforeContentLoaded={VIEWPORT_LOCK_JS}
               injectedJavaScript={COMBINED_INJECTED_JS}
               onMessage={handleMessage}
-              onLoadStart={() => setStatus('loading')}
-              onLoadEnd={() => setStatus((s) => (s === 'error' ? s : 'loaded'))}
+              // Only a retry after an error re-covers the canvas; links the
+              // user follows inside a loaded app don't bring the loader back.
+              onLoadStart={() =>
+                setStatus((s) => (s === 'error' ? 'loading' : s))
+              }
+              // 'loaded' comes from READY_PROBE_JS, not onLoadEnd: the
+              // runner's self-refreshing start page would end it early.
               onError={() => setStatus('error')}
               onHttpError={() => setStatus('error')}
               // The dev-server HMR client patches the live DOM in place — no
@@ -205,13 +241,16 @@ export function LivePreviewWebView({
         />
       )}
 
+      {/* Plain cover: hides the runner's start page and half-drawn
+          frames, so the ETA card is the only loader from tap to app. */}
       {status === 'loading' && (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <DotFieldLoader colors={colors} />
-        </View>
+        <View
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]}
+          pointerEvents="none"
+        />
       )}
       <EtaCanvas
-        kind="site"
+        kind="preview"
         label="Loading your preview"
         dark={colorScheme === 'dark'}
         loading={status === 'loading'}
