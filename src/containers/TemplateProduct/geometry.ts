@@ -39,8 +39,8 @@ const HERO_MARGIN = 12;
 const PAGE_GAP = 12;
 /** An app's screens grid: its margin to the screen edge, and the gap to
  *  the next page (so neighbours peek in by WIDE_MARGIN - WIDE_GAP). */
-const WIDE_MARGIN = 30;
-const WIDE_GAP = 12;
+const WIDE_MARGIN = 16;
+const WIDE_GAP = 6;
 /** The close button, inside the hero's top-left corner. */
 export const CLOSE_SIZE = 34;
 export const CLOSE_INSET = 10;
