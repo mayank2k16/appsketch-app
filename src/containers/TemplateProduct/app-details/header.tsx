@@ -26,7 +26,7 @@ function statsOf(t: MarketTemplate, d?: CodeTemplateDetail): Stat[] {
     {
       top: 'LIKES',
       big: String(d?.likes ?? 0),
-      small: 'people',
+      small: d?.likes === 1 ? 'person' : 'people',
       icon: 'heart',
     },
     {
@@ -73,12 +73,18 @@ export function DetailsHeader({
             ]}
           >
             <Text style={[s.statTop, { color: t.muted }]}>{x.top}</Text>
-            {x.icon ? (
-              <Ionicons name={x.icon as never} size={18} color={t.ink} />
-            ) : null}
-            {x.big ? (
-              <Text style={[s.statBig, { color: t.ink }]}>{x.big}</Text>
-            ) : null}
+            <View style={s.bigRow}>
+              {x.icon ? (
+                <Ionicons
+                  name={x.icon as never}
+                  size={x.big ? 16 : 18}
+                  color={t.ink}
+                />
+              ) : null}
+              {x.big ? (
+                <Text style={[s.statBig, { color: t.ink }]}>{x.big}</Text>
+              ) : null}
+            </View>
             <Text style={[s.statSmall, { color: t.muted }]} numberOfLines={1}>
               {x.small}
             </Text>
@@ -103,6 +109,7 @@ const s = StyleSheet.create({
   },
   stat: { flex: 1, alignItems: 'center', gap: 3, paddingHorizontal: 4 },
   statTop: { fontFamily: F.sans700, fontSize: 9.5, letterSpacing: 0.6 },
+  bigRow: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 24 },
   statBig: { fontFamily: F.sans800, fontSize: 18 },
   statSmall: { fontFamily: F.sans500, fontSize: 10.5 },
 });
