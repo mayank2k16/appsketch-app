@@ -20,7 +20,21 @@ export type CartDomain = {
   options: DomainYearPrice[];
 };
 
+/** A template bought with "Buy now": it comes with the Basic plan, and once
+ *  the plan is active the cart copies it and opens the builder. */
+export type TemplateBuy = {
+  id: number;
+  key: string;
+  uuid: string;
+  title: string;
+  thumb: string;
+  app_type?: string;
+  mobile: boolean;
+  ecosystem: boolean;
+};
+
 type Persisted = {
+  templateBuy: TemplateBuy | null;
   addonIds: number[];
   domain: CartDomain | null;
   contact: Partial<RegistrantContact>;
@@ -40,10 +54,12 @@ type AppCartState = Persisted & {
   setDomain: (d: CartDomain | null) => void;
   patchDomain: (p: Partial<CartDomain>) => void;
   setContact: (c: Partial<RegistrantContact>) => void;
+  setTemplateBuy: (t: TemplateBuy | null) => void;
   clear: () => void;
 };
 
 const EMPTY: Persisted = {
+  templateBuy: null,
   addonIds: [],
   domain: null,
   contact: {},
@@ -52,6 +68,7 @@ const EMPTY: Persisted = {
 
 function save(s: Persisted) {
   void setItem<Persisted>(KEY, {
+    templateBuy: s.templateBuy,
     addonIds: s.addonIds,
     domain: s.domain,
     contact: s.contact,
@@ -84,6 +101,7 @@ export const useAppCart = create<AppCartState>((set, get) => {
       if (d) commit({ domain: { ...d, ...p } });
     },
     setContact: (c) => commit({ contact: { ...get().contact, ...c } }),
+    setTemplateBuy: (templateBuy) => commit({ templateBuy }),
     clear: () => {
       set({
         addonIds: [],
@@ -97,5 +115,6 @@ export const useAppCart = create<AppCartState>((set, get) => {
   };
 });
 
-export const cartCount = (s: Pick<Persisted, 'addonIds' | 'domain'>) =>
-  s.addonIds.length + (s.domain ? 1 : 0);
+export const cartCount = (
+  s: Pick<Persisted, 'addonIds' | 'domain' | 'templateBuy'>
+) => s.addonIds.length + (s.domain ? 1 : 0) + (s.templateBuy ? 1 : 0);

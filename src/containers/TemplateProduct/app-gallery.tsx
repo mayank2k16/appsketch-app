@@ -7,20 +7,18 @@ import { PhoneFrame } from '@/containers/Home/TemplateReel/phone-frame';
 import { F } from '@/lib/fonts';
 
 import { AppDetails } from './app-details';
-import { CLOSE_INSET, CLOSE_SIZE } from './geometry';
 
 /**
  * A mobile app's hero when it has several captured screens: each screen in
  * its own iPhone frame, two to a row, captioned ("Home", "Our menu"…), like
  * an App Store screenshot set. It scrolls up and down; the pager's pan is
- * horizontal-only, so left/right still moves between templates. The top
- * row leaves room for the close button. Below the screens come the
+ * horizontal-only, so left/right still moves between templates. It
+ * starts level with a website's hero. Below the screens come the
  * App Store-style details (app-details/).
  */
 
 const COLS = 2;
 const GAP = 10;
-const SIDE = 0;
 
 type Props = {
   template: MarketTemplate;
@@ -30,6 +28,9 @@ type Props = {
   /** Fetch the details (the page is centred or next to it). */
   near: boolean;
   width: number;
+  /** The screens grid's inset from the column's sides (the details below
+   *  use the full width). */
+  inset: number;
   /** Centred page: scrollable. Neighbours just show the grid. */
   interactive: boolean;
   dark: boolean;
@@ -42,11 +43,12 @@ export function AppGallery({
   bottomPad,
   near,
   width,
+  inset,
   interactive,
   dark,
   onShown,
 }: Props) {
-  const w = Math.floor((width - SIDE * 2 - GAP * (COLS - 1)) / COLS);
+  const w = Math.floor((width - inset * 2 - GAP * (COLS - 1)) / COLS);
   React.useEffect(() => {
     onShown();
   }, [onShown]);
@@ -56,13 +58,10 @@ export function AppGallery({
       scrollEnabled={interactive}
       pointerEvents={interactive ? 'auto' : 'none'}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={[s.content, { paddingBottom: bottomPad }]}
+      contentContainerStyle={{ paddingBottom: bottomPad }}
       style={StyleSheet.absoluteFill}
     >
-      <View style={s.head}>
-        <Text style={[s.count, { color: ink }]}>{screens.length} screens</Text>
-      </View>
-      <View style={[s.grid, { gap: GAP }]}>
+      <View style={[s.grid, { gap: GAP, paddingHorizontal: inset }]}>
         {screens.map((shot, i) => (
           <Animated.View
             key={shot.url}
@@ -84,14 +83,6 @@ export function AppGallery({
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SIDE },
-  head: {
-    height: CLOSE_SIZE + CLOSE_INSET * 2,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingRight: 6,
-  },
-  count: { fontFamily: F.sans800, fontSize: 12, letterSpacing: 0.4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   caption: {
     fontFamily: F.sans800,

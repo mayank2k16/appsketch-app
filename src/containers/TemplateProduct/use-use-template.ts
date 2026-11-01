@@ -17,14 +17,17 @@ import { toast } from '@/lib/toast';
  * session is there (Apple accounts included); the copy failed. It says so
  * instead of bouncing a signed-in user to the login screen.
  */
-export function useCloneAndOpen() {
+/** What a copy needs: the code template's id (and key, for busy state). */
+export type CloneTarget = { id: number; key: string; app_type?: string };
+
+export function useCloneAndOpen({ replace = false } = {}) {
   const router = useRouter();
   const clone = useCloneTemplate();
   const [usingKey, setUsingKey] = React.useState<string | null>(null);
 
-  const use = React.useCallback(
-    (template: MarketTemplate) => {
-      if (template.kind !== 'code' || usingKey) return;
+  const copy = React.useCallback(
+    (template: CloneTarget) => {
+      if (usingKey) return;
       if (useAuth.getState().status !== 'signIn') {
         toast.info('Sign in to use this template.');
         router.push('/login');
@@ -35,7 +38,7 @@ export function useCloneAndOpen() {
       clone.mutate(template.id, {
         onSuccess: (app) => {
           endEta(eta, true);
-          router.push({
+          router[replace ? 'replace' : 'push']({
             pathname: '/code-editor/preview',
             params: {
               tenantId: String(app.id),
@@ -56,10 +59,17 @@ export function useCloneAndOpen() {
         onSettled: () => setUsingKey(null),
       });
     },
-    [usingKey, clone, router]
+    [usingKey, clone, router, replace]
   );
 
-  return { use, usingKey };
+  const use = React.useCallback(
+    (template: MarketTemplate) => {
+      if (template.kind === 'code') copy(template);
+    },
+    [copy]
+  );
+
+  return { use, copy, usingKey };
 }
 
 /** The template page's "Use this template", for one template. */

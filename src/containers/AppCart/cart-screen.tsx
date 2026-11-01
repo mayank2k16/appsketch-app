@@ -27,6 +27,7 @@ import { Card, OrderCard, PlanNote } from './cart-sections';
 import { ContactForm } from './contact-form';
 import { OrderSuccess } from './order-success';
 import { PlanStep } from './plan-step';
+import { TemplateBuyCard } from './template-buy';
 import {
   useCartDiscount,
   useCartTotals,
@@ -98,10 +99,12 @@ function PayBar({
 
 function Body({ s }: { s: ServicesPalette }) {
   const domain = useAppCart((c) => c.domain);
+  const services = useAppCart((c) => c.addonIds.length > 0 || !!c.domain);
   const { hasBuild } = useCartTotals();
   return (
     <>
-      <OrderCard s={s} />
+      <TemplateBuyCard s={s} />
+      {services ? <OrderCard s={s} /> : null}
       {domain ? <PlanStep s={s} /> : null}
       {hasBuild ? <PlanNote s={s} /> : null}
       {domain ? (
@@ -113,10 +116,12 @@ function Body({ s }: { s: ServicesPalette }) {
           <ContactForm s={s} />
         </Card>
       ) : null}
-      <Text style={[st.legal, { color: s.muted }]}>
-        Paid securely with Razorpay (card or UPI). Team builds and domains are
-        services; platform plans are billed separately by the App Store.
-      </Text>
+      {services ? (
+        <Text style={[st.legal, { color: s.muted }]}>
+          Paid securely with Razorpay (card or UPI). Team builds and domains are
+          services; platform plans are billed separately by the App Store.
+        </Text>
+      ) : null}
     </>
   );
 }
@@ -125,6 +130,7 @@ function Body({ s }: { s: ServicesPalette }) {
 export function AppCartScreen() {
   const { t, s } = useServicesTheme();
   const n = useAppCart(cartCount);
+  const services = useAppCart((c) => c.addonIds.length > 0 || !!c.domain);
   const [orderId, setOrderId] = React.useState<number | null>(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -147,7 +153,7 @@ export function AppCartScreen() {
           >
             <Body s={s} />
           </KeyboardAwareScrollView>
-          <PayBar s={s} onPaid={setOrderId} />
+          {services ? <PayBar s={s} onPaid={setOrderId} /> : null}
         </>
       ) : (
         <View style={st.body}>

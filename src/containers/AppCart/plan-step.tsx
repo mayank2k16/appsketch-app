@@ -116,7 +116,7 @@ function Tier({
   );
 }
 
-function useSubscribe() {
+export function useSubscribe() {
   const router = useRouter();
   const status = useAuth.use.status();
   return (v: PlanView, cycle: PlanInterval) => {

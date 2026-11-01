@@ -161,7 +161,11 @@ export const heroRectOf = (t: MarketTemplate, g: Geometry) =>
  *  peeking (a peek would overlap the centred page). */
 function GalleryHero(p: Props) {
   const { i, x, g, m, origin, onLive, template } = p;
-  const { x: left, y: top, width } = g.wide;
+  // The column runs 8pt from the screen edges (the details cards use it
+  // all); the screens grid inside keeps g.wide's inset so neighbours peek.
+  const left = EDGE;
+  const top = g.wide.y;
+  const width = g.W - EDGE * 2;
   const card = useAnimatedStyle(() => {
     const d = i - x.value;
     const a = Math.min(1, Math.abs(d));
@@ -184,6 +188,7 @@ function GalleryHero(p: Props) {
         template={template}
         screens={screensOf(template)}
         width={width}
+        inset={g.wide.x - EDGE}
         bottomPad={g.H - g.box.y + 12}
         near={p.load !== 'off'}
         interactive={p.load === 'on'}
@@ -272,6 +277,9 @@ function PanelHero(p: Props) {
 }
 
 const BORDER = 1.5;
+
+/** The app column's margin to the screen edges. */
+const EDGE = 8;
 
 const s = StyleSheet.create({
   gallery: { position: 'absolute', overflow: 'hidden' },

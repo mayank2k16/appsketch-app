@@ -13,7 +13,37 @@ import type { PageTheme } from './theme';
  * A button is only rendered when it can do something — never a dead one.
  */
 
-export type Cta = { label: string; onPress: () => void; busy?: boolean };
+export type Cta = {
+  label: string;
+  onPress: () => void;
+  busy?: boolean;
+  /** The page's focus ("Buy now"): filled brand orange. */
+  accent?: boolean;
+};
+
+/** The brand orange (splash / Pricing band). */
+const ORANGE = '#EB4709';
+
+/** The focus button: filled orange, a little wider than its neighbour. */
+function Accent({ cta }: { cta: Cta }) {
+  return (
+    <PressableScale
+      haptic="press"
+      onPress={cta.onPress}
+      disabled={cta.busy}
+      disabledOpacity={0.8}
+      style={[s.btn, s.accent, { backgroundColor: ORANGE }]}
+    >
+      {cta.busy ? (
+        <ActivityIndicator size="small" color="#FFFFFF" />
+      ) : (
+        <Text numberOfLines={1} style={[s.btnText, s.accentText]}>
+          {cta.label}
+        </Text>
+      )}
+    </PressableScale>
+  );
+}
 
 type Props = {
   t: PageTheme;
@@ -76,6 +106,13 @@ function Secondary({
 export const CtaBar = React.memo(function CtaBar(p: Props) {
   const { t } = p;
   if (!p.primary && !p.secondary) return null;
+  if (p.secondary?.accent)
+    return (
+      <View style={s.row}>
+        {p.primary ? <Secondary cta={p.primary} t={t} alone={false} /> : null}
+        <Accent cta={p.secondary} />
+      </View>
+    );
   return (
     <View style={s.row}>
       {p.primary ? <Primary cta={p.primary} t={t} /> : null}
@@ -96,6 +133,14 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
   },
   grow: { flex: 1 },
-  outline: { borderWidth: 1, flexShrink: 1 },
+  accent: {
+    flex: 1.3,
+    shadowColor: ORANGE,
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  accentText: { color: '#FFFFFF', fontFamily: F.sans800 },
+  outline: { borderWidth: 1, flex: 1 },
   btnText: { fontFamily: F.sans700, fontSize: 14, letterSpacing: -0.1 },
 });
