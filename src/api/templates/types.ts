@@ -98,6 +98,15 @@ export type CodeTemplate = {
   apk_url?: string | null;
   tags?: string[];
   featured?: boolean;
+  /** Up to 6 captured screens of the app, in order (Welcome, Home, …).
+   *  Older backends leave it out. */
+  screenshots?: TemplateScreenshot[];
+};
+
+export type TemplateScreenshot = {
+  url: string;
+  caption?: string;
+  device?: 'phone' | 'tablet' | 'desktop' | string;
 };
 
 export type CodeTemplatesResponse = { count: number; results: CodeTemplate[] };

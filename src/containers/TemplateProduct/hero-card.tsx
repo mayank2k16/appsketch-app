@@ -15,12 +15,19 @@ import {
 } from '@/containers/Home/TemplateReel/phone-frame';
 import { F } from '@/lib/fonts';
 
+import { AppGallery } from './app-gallery';
 import { DotSurface } from './dot-loader';
 import { type Geometry, HERO_RADIUS, PEEK } from './geometry';
 import { HeroShot } from './hero-shot';
 import { LiveLoader, paletteOf } from './live-loader';
 import { LivePreview } from './live-preview';
-import { type Device, isAppShot, liveUrlOf } from './live-url';
+import {
+  type Device,
+  isAppGallery,
+  isAppShot,
+  liveUrlOf,
+  screensOf,
+} from './live-url';
 import type { ProductMotion } from './use-product-transition';
 
 /**
@@ -144,11 +151,45 @@ function HeroBody(p: BodyProps) {
   );
 }
 
-/** An app lands in the phone frame, a website in the hero panel. */
+/** A single-screen app lands in the phone frame; a website, or an app's
+ *  grid of screens, in the hero panel. */
 export const heroRectOf = (t: MarketTemplate, g: Geometry) =>
-  isAppShot(t) ? g.phone : g.hero;
+  isAppShot(t) && !isAppGallery(t) ? g.phone : g.hero;
+
+/** Several phones, one screen each (app-gallery.tsx). */
+function GalleryHero(p: Props) {
+  const st = useHeroStyles(p);
+  const { x: left, y: top, width, height } = p.g.hero;
+  const { onLive, template } = p;
+  const onShown = React.useCallback(
+    () => onLive(template.key, true),
+    [onLive, template.key]
+  );
+  return (
+    <Animated.View
+      pointerEvents={p.load === 'on' ? 'box-none' : 'none'}
+      style={[s.gallery, { left, top, width, height }, st.card]}
+    >
+      <AppGallery
+        screens={screensOf(template)}
+        width={p.g.hero.width}
+        interactive={p.load === 'on'}
+        dark={p.dark}
+        onShown={onShown}
+      />
+    </Animated.View>
+  );
+}
 
 export const HeroCard = React.memo(function HeroCard(p: Props) {
+  return isAppGallery(p.template) ? (
+    <GalleryHero {...p} />
+  ) : (
+    <PanelHero {...p} />
+  );
+});
+
+function PanelHero(p: Props) {
   const st = useHeroStyles(p);
   const hero = heroRectOf(p.template, p.g);
   const { onLive: report, template } = p;
@@ -215,11 +256,12 @@ export const HeroCard = React.memo(function HeroCard(p: Props) {
       {tint}
     </Animated.View>
   );
-});
+}
 
 const BORDER = 1.5;
 
 const s = StyleSheet.create({
+  gallery: { position: 'absolute', overflow: 'hidden' },
   phone: { position: 'absolute' },
   screen: { flex: 1, overflow: 'hidden' },
   card: {

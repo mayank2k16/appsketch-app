@@ -28,6 +28,20 @@ export function isAppShot(t: MarketTemplate): boolean {
   return isMobile(t);
 }
 
+/** An app's captured phone screens (at most 6). */
+export function screensOf(t: MarketTemplate) {
+  if (t.kind !== 'code' || !isMobile(t)) return [];
+  return (t.screenshots ?? [])
+    .filter((x) => x.url && (!x.device || x.device === 'phone'))
+    .slice(0, 6);
+}
+
+/** An app with several screens shows them as a grid of phones
+ *  (app-gallery.tsx) in the full hero; one screen keeps the single phone. */
+export function isAppGallery(t: MarketTemplate): boolean {
+  return screensOf(t).length >= 2;
+}
+
 export function liveUrlOf(t: MarketTemplate): string {
   if (t.kind !== 'code' || isMobile(t)) return '';
   return buildUrl(t.preview_url);

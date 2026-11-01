@@ -20,7 +20,7 @@ import { type Geometry, pageGeometry } from './geometry';
 import { GrowOverlay } from './grow-overlay';
 import { HeroCard, heroRectOf } from './hero-card';
 import { HeroChrome } from './hero-chrome';
-import { type Device, isAppShot, liveUrlOf } from './live-url';
+import { type Device, isAppGallery, isAppShot, liveUrlOf } from './live-url';
 import { MoreSheet } from './more-sheet';
 import { ProductFallback } from './not-found';
 import { PageBackdrop } from './page-backdrop';
@@ -335,7 +335,7 @@ function Overlays({ s: st, p }: { s: State; p: PageProps }) {
         t={st.t}
         dark={st.dark}
         onClose={st.close}
-        app={isAppShot(current)}
+        app={isAppShot(current) && !isAppGallery(current)}
       />
       <MoreSheet
         template={st.more}
