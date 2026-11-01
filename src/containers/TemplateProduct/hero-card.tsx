@@ -154,13 +154,23 @@ function HeroBody(p: BodyProps) {
 /** A single-screen app lands in the phone frame; a website, or an app's
  *  grid of screens, in the hero panel. */
 export const heroRectOf = (t: MarketTemplate, g: Geometry) =>
-  isAppShot(t) && !isAppGallery(t) ? g.phone : g.hero;
+  isAppGallery(t) ? g.wide : isAppShot(t) ? g.phone : g.hero;
 
-/** Several phones, one screen each (app-gallery.tsx). */
+/** Several phones, one screen each (app-gallery.tsx), then the details.
+ *  It is wider than a page stride, so off centre it fades out instead of
+ *  peeking (a peek would overlap the centred page). */
 function GalleryHero(p: Props) {
-  const st = useHeroStyles(p);
-  const { x: left, y: top, width, height } = p.g.hero;
-  const { onLive, template } = p;
+  const { i, x, g, m, origin, onLive, template } = p;
+  const { x: left, y: top, width } = g.wide;
+  const card = useAnimatedStyle(() => {
+    const d = i - x.value;
+    const a = Math.min(1, Math.abs(d));
+    const base = m.solo.value ? 1 : origin ? m.landed.value : m.reveal.value;
+    return {
+      opacity: base * interpolate(a, [0, 0.8], [1, 0], 'clamp'),
+      transform: [{ translateX: d * g.stride }, { scale: 1 - a * 0.05 }],
+    };
+  });
   const onShown = React.useCallback(
     () => onLive(template.key, true),
     [onLive, template.key]
@@ -168,11 +178,14 @@ function GalleryHero(p: Props) {
   return (
     <Animated.View
       pointerEvents={p.load === 'on' ? 'box-none' : 'none'}
-      style={[s.gallery, { left, top, width, height }, st.card]}
+      style={[s.gallery, { left, top, width, height: g.H - top }, card]}
     >
       <AppGallery
+        template={template}
         screens={screensOf(template)}
-        width={p.g.hero.width}
+        width={width}
+        bottomPad={g.H - g.box.y + 12}
+        near={p.load !== 'off'}
         interactive={p.load === 'on'}
         dark={p.dark}
         onShown={onShown}

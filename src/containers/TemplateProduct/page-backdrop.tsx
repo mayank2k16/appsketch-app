@@ -32,7 +32,7 @@ import { CheapGradient, paletteOf } from './live-loader';
 const SHRINK = 8;
 /** Matches the old full-size `blurRadius` 60 on screen (measured side by
  *  side): the small image is magnified ~1.6× more than the 780px one was. */
-const BLUR = 12;
+const BLUR = 28;
 const WASH = { light: 'rgba(255,255,255,0.3)', dark: 'rgba(0,0,0,0.38)' };
 
 type LayerProps = {

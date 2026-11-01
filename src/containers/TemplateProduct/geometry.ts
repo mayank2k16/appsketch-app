@@ -37,6 +37,8 @@ const HERO_RATIO = 0.58;
 const HERO_MARGIN = 12;
 /** Between neighbouring pages (so the side cards barely peek in). */
 const PAGE_GAP = 12;
+/** An app's screens grid's margin to the screen edge. */
+const WIDE_MARGIN = 4;
 /** The close button, inside the hero's top-left corner. */
 export const CLOSE_SIZE = 34;
 export const CLOSE_INSET = 10;
@@ -52,6 +54,9 @@ export type Geometry = {
   hero: TileRect;
   /** An app's iPhone frame: the hero's height, centred in it. */
   phone: TileRect;
+  /** An app's grid of screens: almost edge to edge, the hero's height
+   *  (it scrolls on down behind the details box). */
+  wide: TileRect;
   /** Page-to-page distance: one hero plus one gap. */
   stride: number;
   /** The close button, over the hero's top-left corner. */
@@ -84,6 +89,7 @@ export function pageGeometry(W: number, H: number, insets: Insets): Geometry {
     insetBottom: insets.bottom,
     hero: { x, y, width, height },
     phone,
+    wide: { x: WIDE_MARGIN, y, width: W - WIDE_MARGIN * 2, height },
     stride: width + PAGE_GAP,
     close: {
       x: closeX,

@@ -4,11 +4,14 @@ import type {
   BrowseTemplatesParams,
   BrowseTemplatesResponse,
   ClonedApp,
+  CodeTemplateDetail,
   CodeTemplatesResponse,
   CreateTenantResponse,
   LayoutDetail,
   TemplateCategory,
+  TemplateComment,
   TemplateListItem,
+  TemplateReview,
 } from './types';
 
 export async function fetchTemplateCategories(): Promise<TemplateCategory[]> {
@@ -184,4 +187,36 @@ export async function setTemplateLike(p: {
     { liked: p.liked, visitor: p.visitor }
   );
   return data;
+}
+
+/** One template's product page: long description, ratings, related. */
+export async function fetchTemplateDetail(
+  uuid: string
+): Promise<CodeTemplateDetail> {
+  const { data } = await accountClient.get<CodeTemplateDetail>(
+    `builder/coder/templates/${uuid}/`
+  );
+  return data;
+}
+
+/** A template's comments, newest first. Public. */
+export async function fetchTemplateComments(
+  kind: TemplateKind,
+  id: number
+): Promise<TemplateComment[]> {
+  const { data } = await accountClient.get<{ results?: TemplateComment[] }>(
+    `builder/gallery/${kind}/${id}/comments/`
+  );
+  return data?.results ?? [];
+}
+
+/** A template's reviews, newest first. Public. */
+export async function fetchTemplateReviews(
+  kind: TemplateKind,
+  id: number
+): Promise<TemplateReview[]> {
+  const { data } = await accountClient.get<{ results?: TemplateReview[] }>(
+    `builder/gallery/${kind}/${id}/reviews/`
+  );
+  return data?.results ?? [];
 }

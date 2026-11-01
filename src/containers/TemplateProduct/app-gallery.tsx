@@ -2,10 +2,11 @@ import * as React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import type { TemplateScreenshot } from '@/api/templates';
+import type { MarketTemplate, TemplateScreenshot } from '@/api/templates';
 import { PhoneFrame } from '@/containers/Home/TemplateReel/phone-frame';
 import { F } from '@/lib/fonts';
 
+import { AppDetails } from './app-details';
 import { CLOSE_INSET, CLOSE_SIZE } from './geometry';
 
 /**
@@ -13,15 +14,21 @@ import { CLOSE_INSET, CLOSE_SIZE } from './geometry';
  * its own iPhone frame, two to a row, captioned ("Home", "Our menu"…), like
  * an App Store screenshot set. It scrolls up and down; the pager's pan is
  * horizontal-only, so left/right still moves between templates. The top
- * row leaves room for the close button.
+ * row leaves room for the close button. Below the screens come the
+ * App Store-style details (app-details/).
  */
 
 const COLS = 2;
-const GAP = 12;
-const SIDE = 4;
+const GAP = 10;
+const SIDE = 0;
 
 type Props = {
+  template: MarketTemplate;
   screens: TemplateScreenshot[];
+  /** Room left under the content for the details box floating over it. */
+  bottomPad: number;
+  /** Fetch the details (the page is centred or next to it). */
+  near: boolean;
   width: number;
   /** Centred page: scrollable. Neighbours just show the grid. */
   interactive: boolean;
@@ -30,7 +37,10 @@ type Props = {
 };
 
 export function AppGallery({
+  template,
   screens,
+  bottomPad,
+  near,
   width,
   interactive,
   dark,
@@ -46,7 +56,7 @@ export function AppGallery({
       scrollEnabled={interactive}
       pointerEvents={interactive ? 'auto' : 'none'}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingBottom: bottomPad }]}
       style={StyleSheet.absoluteFill}
     >
       <View style={s.head}>
@@ -68,12 +78,13 @@ export function AppGallery({
           </Animated.View>
         ))}
       </View>
+      <AppDetails template={template} dark={dark} enabled={near} />
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SIDE, paddingBottom: 16 },
+  content: { paddingHorizontal: SIDE },
   head: {
     height: CLOSE_SIZE + CLOSE_INSET * 2,
     justifyContent: 'center',

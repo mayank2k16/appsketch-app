@@ -126,3 +126,37 @@ export type MarketKind = 'all' | 'apps' | 'websites' | 'ecosystems';
 export type MarketTemplate =
   | ({ kind: 'code'; key: string } & CodeTemplate)
   | ({ kind: 'layout'; key: string } & TemplateListItem);
+
+/** `GET builder/coder/templates/<uuid>/`: a template's product page. */
+export type TemplateRatings = {
+  average: number;
+  count: number;
+  histogram: Record<'1' | '2' | '3' | '4' | '5', number>;
+};
+
+export type CodeTemplateDetail = CodeTemplate & {
+  long_description?: string;
+  features?: string[];
+  updated_on?: string;
+  likes?: number;
+  comments?: number;
+  ratings?: TemplateRatings;
+  related?: CodeTemplate[];
+};
+
+export type TemplateComment = {
+  id: number;
+  body: string;
+  author: string;
+  created_on: string;
+  mine?: boolean;
+};
+
+export type TemplateReview = {
+  id: number;
+  rating: number;
+  title?: string;
+  body?: string;
+  author: string;
+  created_on: string;
+};
