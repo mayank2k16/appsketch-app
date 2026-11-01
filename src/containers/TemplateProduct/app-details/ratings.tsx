@@ -53,7 +53,10 @@ export function Ratings({
     >
       <View style={s.summary}>
         <View style={s.avg}>
-          <Text style={[s.avgBig, { color: t.ink }]}>
+          <Text
+            style={[s.avgBig, !count && s.avgNew, { color: t.ink }]}
+            numberOfLines={1}
+          >
             {count ? ratings!.average.toFixed(1) : 'New'}
           </Text>
           <Text style={[s.avgSmall, { color: t.muted }]}>
@@ -95,8 +98,9 @@ export function Ratings({
 
 const s = StyleSheet.create({
   summary: { flexDirection: 'row', alignItems: 'center', gap: 18 },
-  avg: { alignItems: 'center', width: 84 },
+  avg: { alignItems: 'center', width: 92 },
   avgBig: { fontFamily: F.sans900, fontSize: 40, lineHeight: 46 },
+  avgNew: { fontSize: 30, lineHeight: 40 },
   avgSmall: { fontFamily: F.sans600, fontSize: 12 },
   bars: { flex: 1, gap: 4 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

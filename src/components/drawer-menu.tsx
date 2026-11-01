@@ -159,7 +159,10 @@ function DrawerRow({
       <View style={[st.iconWrap, { backgroundColor: dt.iconWrapBg }]}>
         <Ionicons name={icon} size={16} color={iconColor ?? dt.iconColor} />
       </View>
-      <Text style={[st.rowLabel, { color: labelColor ?? dt.labelColor }]}>
+      <Text
+        style={[st.rowLabel, { color: labelColor ?? dt.labelColor }]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
       {right}

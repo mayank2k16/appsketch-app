@@ -50,7 +50,7 @@ export function AppGallery({
   React.useEffect(() => {
     onShown();
   }, [onShown]);
-  const ink = dark ? '#E4E4E7' : '#3F3F46';
+  const ink = dark ? '#FFFFFF' : '#0B0B0C';
   return (
     <ScrollView
       scrollEnabled={interactive}
@@ -91,10 +91,12 @@ const s = StyleSheet.create({
     alignItems: 'flex-end',
     paddingRight: 6,
   },
-  count: { fontFamily: F.sans700, fontSize: 12, letterSpacing: 0.4 },
+  count: { fontFamily: F.sans800, fontSize: 12, letterSpacing: 0.4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   caption: {
-    fontFamily: F.sans700,
+    fontFamily: F.sans800,
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowRadius: 6,
     fontSize: 12,
     textAlign: 'center',
     marginTop: 6,

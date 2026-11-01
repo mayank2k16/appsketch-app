@@ -220,3 +220,16 @@ export async function fetchTemplateReviews(
   );
   return data?.results ?? [];
 }
+
+/** Post a comment on a template (signed in only). */
+export async function postTemplateComment(
+  kind: TemplateKind,
+  id: number,
+  body: string
+): Promise<TemplateComment> {
+  const { data } = await accountClient.post<TemplateComment>(
+    `builder/gallery/${kind}/${id}/comments/`,
+    { body }
+  );
+  return data;
+}

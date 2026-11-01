@@ -13,7 +13,7 @@ import { useSelectedTheme } from '@/lib/hooks/use-selected-theme';
 
 type Scheme = 'light' | 'dark';
 
-const SEG_W = 52;
+const SEG_W = 46;
 const SEG_H = 26;
 const PAD = 2;
 const SPRING = { damping: 20, stiffness: 320, mass: 0.7 };

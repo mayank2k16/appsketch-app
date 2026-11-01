@@ -167,8 +167,8 @@ function GalleryHero(p: Props) {
     const a = Math.min(1, Math.abs(d));
     const base = m.solo.value ? 1 : origin ? m.landed.value : m.reveal.value;
     return {
-      opacity: base * interpolate(a, [0, 0.8], [1, 0], 'clamp'),
-      transform: [{ translateX: d * g.stride }, { scale: 1 - a * 0.05 }],
+      opacity: base * interpolate(a, [0, 1], [1, 0.6], 'clamp'),
+      transform: [{ translateX: d * g.wideStride }, { scale: 1 - a * 0.05 }],
     };
   });
   const onShown = React.useCallback(

@@ -5,16 +5,19 @@ import type { TemplateComment } from '@/api/templates';
 import { F } from '@/lib/fonts';
 
 import type { PageTheme } from '../theme';
+import { CommentComposer } from './composer';
 import { Section, shortDate } from './section';
 
 const initialOf = (name: string) => (name.trim()[0] || '?').toUpperCase();
 
 /** What people said about the template (newest first, up to 8). */
 export function Comments({
+  id,
   comments,
   total,
   t,
 }: {
+  id: number;
   comments: TemplateComment[];
   total: number;
   t: PageTheme;
@@ -22,6 +25,7 @@ export function Comments({
   const count = Math.max(total, comments.length);
   return (
     <Section title="Comments" aside={count ? `${count}` : undefined} t={t}>
+      <CommentComposer id={id} t={t} />
       {comments.length === 0 ? (
         <Text style={[s.empty, { color: t.muted }]}>No comments yet.</Text>
       ) : (

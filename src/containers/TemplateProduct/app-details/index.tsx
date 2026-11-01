@@ -48,7 +48,12 @@ export function AppDetails({
         <ActivityIndicator style={{ marginTop: 20 }} color={t.muted} />
       ) : null}
       <Ratings ratings={detail?.ratings} reviews={reviews} t={t} />
-      <Comments comments={comments} total={detail?.comments ?? 0} t={t} />
+      <Comments
+        id={code.id}
+        comments={comments}
+        total={detail?.comments ?? 0}
+        t={t}
+      />
       <Related items={detail?.related ?? []} t={t} />
       <Info detail={detail} screens={code.screenshots?.length ?? 0} t={t} />
     </View>
