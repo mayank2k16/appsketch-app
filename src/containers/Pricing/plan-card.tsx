@@ -4,7 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
-import { isIos } from '@/lib/iap';
+import { hasStoreBilling } from '@/lib/iap';
 import type { AppColors } from '@/lib/theme';
 
 import { type Skin, skinFor } from './folder-card';
@@ -155,7 +155,7 @@ function Cta({
     );
   }
   // iOS sells through StoreKit only: no App Store product, no Subscribe.
-  const enabled = !!plan.price && !locked && (!isIos() || !!plan.sku);
+  const enabled = !!plan.price && !locked && (!hasStoreBilling() || !!plan.sku);
   return (
     <PressableScale
       onPress={onSubscribe}

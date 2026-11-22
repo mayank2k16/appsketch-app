@@ -12,7 +12,8 @@ import type { PricingPalette } from './theme';
 type Base = { t: AppColors; p: PricingPalette };
 
 /** The signed-in user's plan, front and centre: a tinted brand card with a
- *  ribbon icon, and Apple's subscription management on iOS. */
+ *  ribbon icon, and the store's subscription management (App Store /
+ *  Google Play). */
 export function CurrentPlan({
   t,
   p,

@@ -3,7 +3,6 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   type LayoutChangeEvent,
-  Linking,
   StatusBar,
   StyleSheet,
   Text,
@@ -18,7 +17,12 @@ import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { type ServicesPalette, servicesPalette } from '@/components/services';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { buyPlan, isIos, type PlanInterval, useIapStore } from '@/lib/iap';
+import {
+  buyPlan,
+  hasStoreBilling,
+  type PlanInterval,
+  useIapStore,
+} from '@/lib/iap';
 import { type AppColors, useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -36,7 +40,6 @@ import { type PlanView, usePricing } from './use-pricing';
 
 /** Android keeps the pre-IAP behaviour (plans are bought on the web). iOS
  *  never reaches this — digital plans there are App Store only (3.1.1). */
-const ANDROID_PRICING_URL = 'https://appsketch.ai/pricing';
 
 function usePlanPress(cycle: PlanInterval) {
   const router = useRouter();
@@ -48,8 +51,9 @@ function usePlanPress(cycle: PlanInterval) {
         router.push({ pathname: '/welcome', params: { return: '1' } });
         return;
       }
-      if (isIos()) void buyPlan(plan.tier, cycle);
-      else Linking.openURL(ANDROID_PRICING_URL).catch(() => {});
+      // App Store on iOS, Google Play on Android (store policy for in-app
+      // subscriptions) — never a web checkout.
+      void buyPlan(plan.tier, cycle);
     },
     [cycle, router, status]
   );
@@ -90,7 +94,7 @@ function PlanList({
   }
   return (
     <View style={st.list}>
-      {isIos() && data.storeStatus === 'unavailable' ? (
+      {hasStoreBilling() && data.storeStatus === 'unavailable' ? (
         <StoreUnavailable t={t} p={p} detail={data.storeDetail} />
       ) : null}
       <TabbedPlans
@@ -174,7 +178,7 @@ function TabbedPlans({
           plan={plan}
           t={t}
           p={p}
-          ctaLabel={isIos() ? 'Subscribe' : 'Get the plan'}
+          ctaLabel={hasStoreBilling() ? 'Subscribe' : 'Get the plan'}
           busy={!!plan.sku && busySku === plan.sku}
           locked={!!busySku}
           onSubscribe={() => onPress(plan)}
@@ -212,7 +216,12 @@ function PlansSection({
       <CustomPricing t={t} />
       {signedIn && activePlanName ? (
         <View style={st.pad}>
-          <CurrentPlan t={t} p={p} name={activePlanName} manage={isIos()} />
+          <CurrentPlan
+            t={t}
+            p={p}
+            name={activePlanName}
+            manage={hasStoreBilling()}
+          />
         </View>
       ) : null}
       <View style={st.toggle}>
@@ -343,7 +352,9 @@ export function PricingScreen() {
           <PlansSection t={t} p={p} domainInput={jump.input} />
         </View>
         {/* Restore Purchases, auto-renew terms, Terms of Use, Privacy. */}
-        {isIos() ? <StoreFooter t={t} p={p} signedIn={signedIn} /> : null}
+        {hasStoreBilling() ? (
+          <StoreFooter t={t} p={p} signedIn={signedIn} />
+        ) : null}
       </Animated.ScrollView>
       {/* Solid strip under the clock so scrolled content never sits there. */}
       <View

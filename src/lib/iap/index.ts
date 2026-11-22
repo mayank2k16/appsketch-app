@@ -1,11 +1,3 @@
-export {
-  buyPlan,
-  ensureProducts,
-  isIos,
-  manageSubscriptions,
-  reloadProducts,
-  restorePlans,
-} from './apple-iap';
 export { type StoreStatus, useIapStore } from './iap-store';
 export {
   APPLE_PLAN_TIERS,
@@ -13,4 +5,15 @@ export {
   appleProductId,
   type PlanInterval,
 } from './product-ids';
+export {
+  buyPlan,
+  ensureProducts,
+  hasStoreBilling,
+  isAndroid,
+  isIos,
+  manageSubscriptions,
+  reloadProducts,
+  restorePlans,
+  storeName,
+} from './store';
 export { useAppleIapBootstrap } from './use-apple-iap-bootstrap';

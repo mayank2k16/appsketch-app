@@ -8,7 +8,7 @@ import { getUserSubscription, useAuth } from '@/hooks/useAuth';
 import {
   appleProductId,
   ensureProducts,
-  isIos,
+  hasStoreBilling,
   type PlanInterval,
   reloadProducts,
   type StoreStatus,
@@ -67,7 +67,7 @@ function priceNumber(
   cycle: PlanInterval,
   products: Products
 ) {
-  if (isIos()) {
+  if (hasStoreBilling()) {
     const v = Number(products[appleProductId(plan.tier, cycle)]?.price);
     return Number.isFinite(v) && v > 0 ? v : null;
   }
@@ -91,7 +91,7 @@ function priceFor(
   products: Products
 ) {
   const yearly = cycle === 'yearly';
-  if (isIos()) {
+  if (hasStoreBilling()) {
     const sku = appleProductId(plan.tier, cycle);
     const product = products[sku];
     // Not in the App Store right now: still show the plan's price to
@@ -130,7 +130,7 @@ function currencyOf(
   cycle: PlanInterval,
   products: Products
 ): string {
-  if (isIos()) {
+  if (hasStoreBilling()) {
     const c = products[appleProductId(plan.tier, cycle)]?.currency;
     if (c) return c;
   }
@@ -147,7 +147,7 @@ function compare(
   if (cycle !== 'yearly') return none;
   // Both prices from the same source (StoreKit or the plans API).
   const fromStore =
-    isIos() &&
+    hasStoreBilling() &&
     !!products[appleProductId(plan.tier, 'yearly')] &&
     !!products[appleProductId(plan.tier, 'monthly')];
   const num = (c: PlanInterval) =>
@@ -217,12 +217,12 @@ export function usePricing(cycle: PlanInterval) {
 
   // The tab opening is a natural moment to ask StoreKit again.
   React.useEffect(() => {
-    if (isIos() && useIapStore.getState().status === 'unavailable')
+    if (hasStoreBilling() && useIapStore.getState().status === 'unavailable')
       void reloadProducts();
   }, []);
 
   React.useEffect(() => {
-    if (!isIos() || !plans.length) return;
+    if (!hasStoreBilling() || !plans.length) return;
     void ensureProducts(
       plans.flatMap((p) => [
         appleProductId(p.tier, 'monthly'),

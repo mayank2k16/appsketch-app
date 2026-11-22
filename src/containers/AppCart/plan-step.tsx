@@ -1,13 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import {
-  ActivityIndicator,
-  Linking,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { type ServicesPalette, tint } from '@/components/services';
 import { PressableScale } from '@/components/ui';
@@ -17,6 +11,8 @@ import { F } from '@/lib/fonts';
 import {
   appleProductId,
   buyPlan,
+  hasStoreBilling,
+  isAndroid,
   isIos,
   type PlanInterval,
   reloadProducts,
@@ -28,7 +24,6 @@ import { toast } from '@/lib/toast';
 import { hasPaidPlan, useNeedsPlan } from './use-cart-totals';
 
 /** Android keeps buying plans on the web (as the Pricing tab does). */
-const WEB_PRICING = 'https://appsketch.ai/pricing';
 
 /** "₹4,999.00" → "₹4,999" (whole-unit prices read cleaner in tiles). */
 const trimZeros = (price: string) => price.replace(/[.,]00(?=\D*$)/, '');
@@ -116,6 +111,24 @@ function Tier({
   );
 }
 
+/** "Subscribe with Apple" / "Subscribe with Google Play". */
+export const subscribeLabel = () =>
+  isAndroid() ? 'Subscribe with Google Play' : 'Subscribe with Apple';
+
+/** Who bills the plan, for the fine print. */
+export const billedNote = () =>
+  isAndroid()
+    ? 'Billed by Google Play, cancel anytime in the Play Store.'
+    : 'Billed by the App Store, cancel anytime in Settings.';
+
+/** The store's mark on the Subscribe button (none on web). */
+export function StoreIcon({ color }: { color: string }) {
+  if (isIos()) return <Ionicons name="logo-apple" size={17} color={color} />;
+  if (isAndroid())
+    return <Ionicons name="logo-google-playstore" size={16} color={color} />;
+  return null;
+}
+
 export function useSubscribe() {
   const router = useRouter();
   const status = useAuth.use.status();
@@ -125,8 +138,8 @@ export function useSubscribe() {
       router.push({ pathname: '/welcome', params: { return: '1' } });
       return;
     }
-    if (isIos()) void buyPlan(v.tier, cycle);
-    else Linking.openURL(WEB_PRICING).catch(() => {});
+    // App Store on iOS, Google Play on Android — never a web checkout.
+    void buyPlan(v.tier, cycle);
   };
 }
 
@@ -174,16 +187,14 @@ function SubscribeButton({
           <ActivityIndicator color={s.onInk} />
         ) : (
           <>
-            {isIos() ? (
-              <Ionicons name="logo-apple" size={17} color={s.onInk} />
-            ) : null}
+            <StoreIcon color={s.onInk} />
             <Text
               style={[st.ctaText, { color: s.onInk }]}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.8}
             >
-              {isIos() ? 'Subscribe with Apple' : 'Choose on appsketch.ai'}
+              {subscribeLabel()}
               {picked.price
                 ? ` · ${trimZeros(picked.price)}${picked.period}`
                 : ''}
@@ -192,9 +203,7 @@ function SubscribeButton({
         )}
       </PressableScale>
       <Text style={[st.fine, { color: s.muted }]}>
-        {isIos()
-          ? 'Billed by the App Store, cancel anytime in Settings. The domain is paid below.'
-          : 'Plans are bought on appsketch.ai. The domain is paid below.'}
+        {`${billedNote()} The domain is paid below.`}
       </Text>
     </>
   );
@@ -214,10 +223,13 @@ function Picker({
   const tiers = data.views.filter((v) => !v.free).slice(0, 3);
   const [tier, setTier] = React.useState<string | null>(null);
   const picked = tiers.find((v) => v.tier === tier) ?? tiers[0];
-  if (data.isLoading || (isIos() && data.storeStatus === 'connecting'))
+  if (
+    data.isLoading ||
+    (hasStoreBilling() && data.storeStatus === 'connecting')
+  )
     return <ActivityIndicator color={s.orange} style={st.loading} />;
   const unavailable =
-    isIos() && data.storeStatus === 'unavailable' && !picked?.price;
+    hasStoreBilling() && data.storeStatus === 'unavailable' && !picked?.price;
   if (!picked || unavailable)
     return (
       <Unavailable

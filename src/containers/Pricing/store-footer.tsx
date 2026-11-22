@@ -5,22 +5,29 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
-import { restorePlans, useIapStore } from '@/lib/iap';
+import { isAndroid, restorePlans, useIapStore } from '@/lib/iap';
 import type { AppColors } from '@/lib/theme';
 
 import type { PricingPalette } from './theme';
 
 export const TERMS_OF_USE_URL =
   'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+/** Android has no store EULA: our own terms. */
+const ANDROID_TERMS_URL = 'https://appsketch.ai/tnc';
+
+const LEGAL_IOS =
+  'Payment is charged to your Apple ID account at confirmation of purchase. Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Your account is charged for renewal within 24 hours before the end of the current period. Manage or cancel in your App Store account settings.';
+const LEGAL_ANDROID =
+  'Payment is charged to your Google Play account at confirmation of purchase. Subscription renews automatically until cancelled. Manage or cancel anytime in Google Play › Payments & subscriptions.';
 export const PRIVACY_POLICY_URL = 'https://appsketch.ai/privacy-policy';
 
 const open = (url: string) => {
   WebBrowser.openBrowserAsync(url).catch(() => {});
 };
 
-/** Guideline 3.1.2 block under the plans (iOS): Restore Purchases, the
- *  auto-renew disclosure, and working links to the Terms of Use (Apple's
- *  standard EULA) and the Privacy Policy. */
+/** The subscription block under the plans (iOS guideline 3.1.2; the same on
+ *  Android with Google Play's wording): Restore Purchases, the auto-renew
+ *  disclosure, and links to the Terms of Use and the Privacy Policy. */
 export function StoreFooter({
   t,
   p,
@@ -60,16 +67,14 @@ export function StoreFooter({
         )}
       </PressableScale>
       <Text style={[st.legal, { color: t.textSub }]}>
-        Payment is charged to your Apple ID account at confirmation of purchase.
-        Subscription renews automatically unless cancelled at least 24 hours
-        before the end of the current period. Your account is charged for
-        renewal within 24 hours before the end of the current period. Manage or
-        cancel in your App Store account settings.
+        {isAndroid() ? LEGAL_ANDROID : LEGAL_IOS}
       </Text>
       <View style={st.links}>
         <Text
           accessibilityRole="link"
-          onPress={() => open(TERMS_OF_USE_URL)}
+          onPress={() =>
+            open(isAndroid() ? ANDROID_TERMS_URL : TERMS_OF_USE_URL)
+          }
           style={[st.link, link]}
         >
           Terms of Use

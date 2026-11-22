@@ -9,8 +9,16 @@ Basic / Growth / 100X plans, and what is already in the code.
 | | iOS | Android |
 |---|---|---|
 | Sign-in | Apple + Google + phone/email | Google + phone/email (no Apple) |
-| Plans in the app | StoreKit In-App Purchase (`src/lib/iap/`, expo-iap) | "Choose on appsketch.ai" (web checkout) |
-| Backend | `account/apple.py` verifies + activates, webhook live | nothing for Play yet |
+| Plans in the app | StoreKit In-App Purchase (`src/lib/iap/apple-iap.ts`) | Google Play Billing (`src/lib/iap/play-iap.ts`) — from build 72 |
+| Backend | `account/apple.py` verifies + activates, webhook live | `account/google_play.py` (branch feat/google-play-billing) |
+
+`src/lib/iap/store.ts` picks the store per platform; both export the same
+functions (`buyPlan`, `restorePlans`, `manageSubscriptions`, …). On Android
+each Play base plan is stored under the App Store-style key
+`ai.appsketch.plan.<tier>.<interval>`, so the Pricing tab and cart read prices
+the same way. A plan change on Play replaces the current subscription
+(`subscriptionProductReplacementParams`, with-time-proration) instead of
+adding a second one.
 
 ## App Store (iOS) — code is done; console steps
 
@@ -43,7 +51,7 @@ Product ids (fixed, shared with the backend):
 7. **Test** on TestFlight: purchases there use the sandbox and are free; check
    the plan activates (Profile shows the tier) and Restore works.
 
-## Google Play (Android) — needs code, then console steps
+## Google Play (Android) — code done; console + server steps
 
 **Policy:** Google Play's Payments policy requires digital goods and
 subscriptions sold in an app distributed on Play to use **Google Play
@@ -55,26 +63,29 @@ lower service fee — it needs enrolment in Play Console and Play Billing still
 has to be offered. Real-world services (team builds, domains) are exempt and
 can stay on Razorpay.
 
-### Code still to build
-1. App: the Pricing tab and the cart's plan step buy through Play Billing on
-   Android — expo-iap already supports it (`requestPurchase` with
-   `type: 'subs'` and the base plan's `offerToken`), mirroring
-   `src/lib/iap/apple-iap.ts`.
-2. Backend: `POST account/payment/google/verify/` that checks the
-   `purchaseToken` with the Google Play Developer API
-   (`purchases.subscriptionsv2.get`), activates the same `TenantUserSubscription`
-   as Apple does, and acknowledges the purchase (unacknowledged purchases are
-   refunded after 3 days). Plus a Real-time Developer Notifications endpoint
-   (Pub/Sub push) for renewals, cancellations and refunds.
+### Code (done)
+- App: Pricing tab + cart Subscribe use Play Billing on Android ("Subscribe
+  with Google Play"); Restore and Manage work on both stores.
+- Backend: `payment/google/config/`, `payment/google/verify/` (reads the token
+  from Google, activates the plan, then acknowledges), and
+  `payment/webhook/google/` for Play's real-time notifications — see the
+  backend's docs/GOOGLE_PLAY_BILLING.md.
+
+### Server settings
+- `GOOGLE_PLAY_SERVICE_ACCOUNT` = path to the service account's JSON key (or
+  the JSON itself).
+- `GOOGLE_PLAY_RTDN_TOKEN` = any random string; the Pub/Sub push URL is then
+  `https://appsketch.ai/api/account/payment/webhook/google/?token=<it>`.
 
 ### Console steps
 1. **Payments profile** (Setup → Payments profile) linked to the developer
    account, merchant details complete.
-2. **Monetize → Products → Subscriptions**: create 3 subscriptions
-   `ai.appsketch.plan.basic`, `…growth`, `…100x`, each with two **base plans**
-   `monthly` (auto-renew, 1 month) and `yearly` (auto-renew, 1 year) and an INR
-   price. (Play models monthly/yearly as base plans of one subscription, unlike
-   Apple's one product per period.) Activate them.
+2. **Monetize → Products → Subscriptions**: create 3 subscriptions with
+   product ids exactly `ai.appsketch.plan.basic`, `ai.appsketch.plan.growth`,
+   `ai.appsketch.plan.100x`, each with two **base plans** whose ids are exactly
+   `monthly` (auto-renewing, 1 month) and `yearly` (auto-renewing, 1 year) and
+   an INR price. (Play models monthly/yearly as base plans of one subscription,
+   unlike Apple's one product per period.) Activate them.
 3. **API access**: in Google Cloud create a service account, enable the
    *Google Play Android Developer API*, then in Play Console → Users and
    permissions invite the service account with "View financial data" and

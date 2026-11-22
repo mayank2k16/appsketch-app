@@ -9,10 +9,15 @@ import { usePricing } from '@/containers/Pricing/use-pricing';
 import { useCloneAndOpen } from '@/containers/TemplateProduct/use-use-template';
 import { getUserSubscription, useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
-import { appleProductId, isIos, useIapStore } from '@/lib/iap';
+import { appleProductId, useIapStore } from '@/lib/iap';
 import { type TemplateBuy, useAppCart } from '@/lib/store/app-cart-store';
 
-import { useSubscribe } from './plan-step';
+import {
+  billedNote,
+  StoreIcon,
+  subscribeLabel,
+  useSubscribe,
+} from './plan-step';
 import { hasPaidPlan } from './use-cart-totals';
 
 /** "Buy plan" (template page) puts the Basic plan, billed yearly, in the
@@ -110,11 +115,9 @@ function BuyButton({ s }: { s: ServicesPalette }) {
         <ActivityIndicator color={s.onInk} />
       ) : (
         <>
-          {isIos() ? (
-            <Ionicons name="logo-apple" size={17} color={s.onInk} />
-          ) : null}
+          <StoreIcon color={s.onInk} />
           <Text style={[st.ctaText, { color: s.onInk }]} numberOfLines={1}>
-            {isIos() ? 'Subscribe with Apple' : 'Subscribe on appsketch.ai'}
+            {subscribeLabel()}
           </Text>
         </>
       )}
@@ -152,11 +155,7 @@ export function TemplateBuyCard({ s }: { s: ServicesPalette }) {
         </Text>
       </View>
       <BuyButton s={s} />
-      <Text style={[st.fine, { color: s.muted }]}>
-        {isIos()
-          ? 'Billed by the App Store, cancel anytime in Settings.'
-          : 'Plans are bought on appsketch.ai.'}
-      </Text>
+      <Text style={[st.fine, { color: s.muted }]}>{billedNote()}</Text>
       <PressableScale onPress={() => setTemplateBuy(null)} hitSlop={6}>
         <Text style={[st.remove, { color: s.sub }]}>Remove</Text>
       </PressableScale>
