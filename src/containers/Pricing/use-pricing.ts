@@ -9,8 +9,10 @@ import {
   appleProductId,
   ensureProducts,
   hasStoreBilling,
+  isMonthlyOnly,
   type PlanInterval,
   reloadProducts,
+  storeInterval,
   type StoreStatus,
   useIapStore,
 } from '@/lib/iap';
@@ -49,6 +51,10 @@ export type PlanView = {
   saveAmount: string | null;
   current: boolean;
   popular: boolean;
+  /** Yearly picked but the app sells this plan monthly only (100X: its
+   *  yearly price is above the stores' top price point). Price, period and
+   *  sku are then the monthly ones. */
+  monthlyOnly: boolean;
 };
 
 type Products = ReturnType<typeof useIapStore.getState>['products'];
@@ -178,11 +184,14 @@ function compare(
 
 function toView(
   plan: SubscriptionPlan,
-  cycle: PlanInterval,
+  picked: PlanInterval,
   products: Products
 ) {
+  // In the app 100X is sold monthly only (product-ids.ts MONTHLY_ONLY_TIERS).
+  const cycle = hasStoreBilling() ? storeInterval(plan.tier, picked) : picked;
   return {
     ...compare(plan, cycle, products),
+    monthlyOnly: cycle !== picked,
     tier: plan.tier,
     name: shortName(plan),
     description: plan.description ?? '',
@@ -224,10 +233,14 @@ export function usePricing(cycle: PlanInterval) {
   React.useEffect(() => {
     if (!hasStoreBilling() || !plans.length) return;
     void ensureProducts(
-      plans.flatMap((p) => [
-        appleProductId(p.tier, 'monthly'),
-        appleProductId(p.tier, 'yearly'),
-      ])
+      plans.flatMap((p) =>
+        isMonthlyOnly(p.tier)
+          ? [appleProductId(p.tier, 'monthly')]
+          : [
+              appleProductId(p.tier, 'monthly'),
+              appleProductId(p.tier, 'yearly'),
+            ]
+      )
     );
   }, [plans]);
 

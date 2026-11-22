@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
 
 import * as apple from './apple-iap';
 import * as play from './play-iap';
-import type { PlanInterval } from './product-ids';
+import { type PlanInterval, storeInterval } from './product-ids';
 
 const impl = () => (Platform.OS === 'android' ? play : apple);
 
@@ -23,7 +23,8 @@ export const disconnectStore = () => impl().disconnectStore();
 export const reconcilePending = () => impl().reconcilePending();
 export const ensureProducts = (skus: string[]) => impl().ensureProducts(skus);
 export const reloadProducts = () => impl().reloadProducts();
+/** 100X yearly is not a store product: it is bought monthly (product-ids.ts). */
 export const buyPlan = (tier: string, interval: PlanInterval) =>
-  impl().buyPlan(tier, interval);
+  impl().buyPlan(tier, storeInterval(tier, interval));
 export const restorePlans = () => impl().restorePlans();
 export const manageSubscriptions = () => impl().manageSubscriptions();

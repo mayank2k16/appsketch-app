@@ -197,6 +197,11 @@ function Body(props: Props & { k: Skin }) {
         </Text>
       ) : null}
       <Price plan={plan} k={k} />
+      {plan.monthlyOnly ? (
+        <Text style={[st.monthlyNote, { color: k.sub }]}>
+          {plan.name} is billed monthly in the app.
+        </Text>
+      ) : null}
       <View style={[st.dash, { borderColor: k.rule }]} />
       <Features plan={plan} k={k} accent={k.price} />
       <Cta {...props} p={p} />
@@ -217,6 +222,7 @@ export function PlanCard(props: Props) {
 }
 
 const st = StyleSheet.create({
+  monthlyNote: { fontFamily: F.sans500, fontSize: 12.5, marginTop: 6 },
   card: {
     paddingHorizontal: 18,
     paddingTop: 18,

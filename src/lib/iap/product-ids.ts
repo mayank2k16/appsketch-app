@@ -19,10 +19,28 @@ export function appleProductId(tier: string, interval: PlanInterval): string {
   return `${PREFIX}${tier.toLowerCase()}.${interval}`;
 }
 
-export const APPLE_PRODUCT_IDS: string[] = APPLE_PLAN_TIERS.flatMap((tier) => [
-  appleProductId(tier, 'monthly'),
-  appleProductId(tier, 'yearly'),
-]);
+/**
+ * Tiers sold MONTHLY ONLY in the app. 100X yearly (₹1,99,999) is above the
+ * App Store's and Google Play's highest price point (₹1,00,000), so it is not
+ * a store product: with Yearly picked, the app shows and sells 100X monthly.
+ */
+export const MONTHLY_ONLY_TIERS = new Set(['100x']);
+
+export const isMonthlyOnly = (tier: string) =>
+  MONTHLY_ONLY_TIERS.has(tier.toLowerCase());
+
+/** The interval the app actually sells for this tier and picked cycle. */
+export const storeInterval = (
+  tier: string,
+  cycle: PlanInterval
+): PlanInterval =>
+  cycle === 'yearly' && isMonthlyOnly(tier) ? 'monthly' : cycle;
+
+export const APPLE_PRODUCT_IDS: string[] = APPLE_PLAN_TIERS.flatMap((tier) =>
+  isMonthlyOnly(tier)
+    ? [appleProductId(tier, 'monthly')]
+    : [appleProductId(tier, 'monthly'), appleProductId(tier, 'yearly')]
+);
 
 export function isAppleProductId(id: string | null | undefined): boolean {
   return !!id && id.startsWith(PREFIX);

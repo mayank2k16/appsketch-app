@@ -11,7 +11,6 @@ Group localization (English): Display Name `AppSketch Plans`.
 
 | Level | Reference Name | Product ID | Duration | Price (India) | Display Name | Description |
 |---|---|---|---|---|---|---|
-| 1 | 100X Yearly | `ai.appsketch.plan.100x.yearly` | 1 Year | ₹1,99,999 (nearest point) | 100X Yearly | Scale fast: 30M credits/mo, top AI models |
 | 1 | 100X Monthly | `ai.appsketch.plan.100x.monthly` | 1 Month | ₹19,999 | 100X Monthly | Scale fast: 30M credits/mo, top AI models |
 | 2 | Growth Yearly | `ai.appsketch.plan.growth.yearly` | 1 Year | ₹49,999 | Growth Yearly | For small teams: 6M build credits a month |
 | 2 | Growth Monthly | `ai.appsketch.plan.growth.monthly` | 1 Month | ₹4,999 | Growth Monthly | For small teams: 6M build credits a month |
@@ -27,8 +26,12 @@ Group localization (English): Display Name `AppSketch Plans`.
 - Each subscription also needs: Availability (all countries, or India), a
   Review screenshot (the app's Pricing tab), and Review notes, e.g.
   `Plans are sold only through In-App Purchase. Demo account: <email> / <OTP or password>.`
-- If a price is above Apple's highest price point for INR, pick the highest
-  allowed. The app shows Apple's own price, so nothing needs to change.
+- **No 100X Yearly product.** ₹1,99,999 is above both stores' highest
+  price point (₹1,00,000), so the app sells 100X monthly only
+  (`src/lib/iap/product-ids.ts` `MONTHLY_ONLY_TIERS`): with Yearly picked, the
+  100X tab shows ₹19,999/month and "billed monthly in the app", and Subscribe /
+  Pay now buy `ai.appsketch.plan.100x.monthly`. The website still sells 100X
+  yearly. 5 App Store products in total.
 - App → App Information → App Store Server Notifications, Production and
   Sandbox: `https://appsketch.ai/api/account/payment/webhook/apple/`, Version 2.
 - Submit: the first subscriptions go to review with an app version (Distribution
@@ -45,7 +48,8 @@ Monetize with Play → Products → Subscriptions → Create subscription (3 tim
 | `ai.appsketch.plan.growth` | Growth | `monthly` | Auto-renewing | Monthly | ₹4,999 |
 | | | `yearly` | Auto-renewing | Yearly | ₹49,999 |
 | `ai.appsketch.plan.100x` | 100X | `monthly` | Auto-renewing | Monthly | ₹19,999 |
-| | | `yearly` | Auto-renewing | Yearly | ₹1,99,999 (or highest allowed) |
+
+(No `yearly` base plan on 100X — above Play's price ceiling; the app sells 100X monthly only.)
 
 - Benefits (shown on Play): Basic `1M build credits a month`, `1 app + website`;
   Growth `6M build credits a month`, `2 apps + website`; 100X `30M build credits a month`, `4 apps + website`.
@@ -60,7 +64,7 @@ Monetize with Play → Products → Subscriptions → Create subscription (3 tim
 
 | | iOS | Android |
 |---|---|---|
-| App asks the store for | the 6 Product IDs (+ any new tier from the plans API) | the 3 Product IDs, then reads the `monthly`/`yearly` base plans |
+| App asks the store for | the 5 Product IDs (+ any new tier from the plans API) | the 3 Product IDs, then reads the `monthly`/`yearly` base plans |
 | Purchase sends to backend | `account/payment/apple/verify/` (live) | `account/payment/google/verify/` (needs backend PR feat/google-play-billing deployed) |
 | Server setting | none | `GOOGLE_PLAY_SERVICE_ACCOUNT` (+ optional `GOOGLE_PLAY_RTDN_TOKEN`) |
 | Renewals/refunds | App Store Server Notifications URL above | Pub/Sub push to `https://appsketch.ai/api/account/payment/webhook/google/?token=<RTDN token>` |

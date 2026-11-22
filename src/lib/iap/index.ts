@@ -3,7 +3,9 @@ export {
   APPLE_PLAN_TIERS,
   APPLE_PRODUCT_IDS,
   appleProductId,
+  isMonthlyOnly,
   type PlanInterval,
+  storeInterval,
 } from './product-ids';
 export {
   buyPlan,
