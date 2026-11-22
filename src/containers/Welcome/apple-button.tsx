@@ -1,6 +1,6 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { useAppleSignIn } from '@/hooks/useAuth';
 
@@ -21,6 +21,9 @@ export function AppleButton({
   onSuccess: () => void;
 }) {
   const { signInWithApple, loading } = useAppleSignIn(onSuccess);
+  // Sign in with Apple is an iOS feature here (App Store guideline 4.8).
+  // Android and web never show it, whatever screen renders this button.
+  if (Platform.OS !== 'ios') return null;
   return (
     <View style={st.wrap}>
       <AppleAuthentication.AppleAuthenticationButton
