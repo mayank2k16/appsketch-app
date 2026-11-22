@@ -387,3 +387,12 @@ proven on the simulator.
   settings row (e.g. `brand_name`) with a code fallback — change both. (The
   Monolith copy kept its name because a platform bug wiped those rows' keys on
   partial update; backend fix on `fix/dyn-partial-update-merge`.)
+- Buy plan (2026-11-22): instead of the cart, the template page closes and
+  the Pricing tab opens on `?plan=basic&cycle=yearly` (`pricing-pick.ts`
+  holds the picked tab + cycle for the card, the toggle and the bar). While a
+  template waits (`app-cart-store.templateBuy`), a floating Pay now bar
+  (`Pricing/pay-now-bar.tsx`) above the tab bar shows it with the picked plan
+  ("Basic · ₹14,999/year") and pays through `buyPlan` — App Store on iOS,
+  Google Play on Android. Once the plan is active `useContinueTemplateBuy`
+  (mounted on the Pricing screen) copies the template and opens the builder.
+  The cart no longer shows or counts the template.

@@ -18,9 +18,11 @@ import { useCloneAndOpen } from './use-use-template';
  * "Buy now" on an app or website template.
  * - Signed out: sign in first (back to this page after).
  * - On a paid plan: same as "Use this template" — copy it, open the builder.
- * - Otherwise: the template goes in the cart with the Basic plan (yearly,
- *   ≈ ₹1,250/month, an App Store subscription on iOS). Once the plan is
- *   active the cart copies it and opens the builder (template-buy.tsx).
+ * - Otherwise: the template is remembered (app-cart store) and the Pricing
+ *   tab opens on Basic, billed yearly, with a floating Pay now bar
+ *   (Pricing/pay-now-bar.tsx; App Store on iOS, Google Play on Android).
+ *   Once the plan is active it is copied and the builder opens
+ *   (useContinueTemplateBuy).
  */
 export function useBuyTemplate(template: MarketTemplate) {
   const router = useRouter();
@@ -48,7 +50,14 @@ export function useBuyTemplate(template: MarketTemplate) {
       mobile: isMobile(template),
       ecosystem: !!template.ecosystem,
     });
-    router.push('/cart');
+    // The Pricing tab, on Basic billed yearly, with a floating Pay now
+    // (App Store on iOS, Google Play on Android). The template page is a
+    // modal above the tabs: close it first.
+    if (router.canDismiss()) router.dismissAll();
+    router.navigate({
+      pathname: '/pricing',
+      params: { plan: 'basic', cycle: 'yearly' },
+    } as never);
   }, [template, router, use, setTemplateBuy]);
   return {
     buy,

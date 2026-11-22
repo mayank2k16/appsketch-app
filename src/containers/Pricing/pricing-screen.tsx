@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDiscountOffers, useMoney } from '@/api/app-cart';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { type ServicesPalette, servicesPalette } from '@/components/services';
+import { useContinueTemplateBuy } from '@/containers/AppCart/template-buy';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import {
@@ -23,6 +24,7 @@ import {
   type PlanInterval,
   useIapStore,
 } from '@/lib/iap';
+import { useAppCart } from '@/lib/store/app-cart-store';
 import { type AppColors, useAppTheme } from '@/lib/theme';
 import { toast } from '@/lib/toast';
 
@@ -30,9 +32,11 @@ import { BillingToggle } from './billing-toggle';
 import { CartButton } from './cart-button';
 import { DomainPane } from './domain-pane';
 import { FolderCard, type FolderTab } from './folder-card';
+import { PAY_BAR_SPACE, PayNowBar } from './pay-now-bar';
 import { PlanCard } from './plan-card';
 import { PlanSkeleton } from './plan-skeleton';
 import { pickOffer } from './planner/offer-strip';
+import { sameTier, usePickFromParams, usePricingPick } from './pricing-pick';
 import { CurrentPlan, StoreUnavailable } from './status-notes';
 import { StoreFooter } from './store-footer';
 import { type PricingPalette, pricingPalette } from './theme';
@@ -157,9 +161,14 @@ function TabbedPlans({
     views[0]?.tier ??
     DOMAIN_TAB;
   // null = not picked yet: follow `start` (plans, the user's plan and the
-  // deep link can arrive after the first render).
-  const [key, setKey] = React.useState<string | null>(null);
-  const value = key ?? start;
+  // deep link can arrive after the first render). A `?plan=` link or a tap
+  // picks (pricing-pick.ts); the Pay now bar reads the same pick.
+  const picked = usePricingPick((x) => x.tier);
+  const setKey = usePricingPick((x) => x.setTier);
+  const value =
+    (picked === DOMAIN_TAB
+      ? DOMAIN_TAB
+      : views.find((v) => sameTier(v.tier, picked))?.tier) ?? start;
   const tabs: FolderTab[] = [
     ...views.map((v) => ({
       key: v.tier,
@@ -201,7 +210,8 @@ function PlansSection({
   p: PricingPalette;
   domainInput: React.RefObject<TextInput | null>;
 }) {
-  const [cycle, setCycle] = React.useState<PlanInterval>('yearly');
+  const cycle = usePricingPick((x) => x.cycle);
+  const setCycle = usePricingPick((x) => x.setCycle);
   const signedIn = useAuth.use.status() === 'signIn';
   const { saving, activePlanName } = usePricing(cycle);
   return (
@@ -331,6 +341,11 @@ export function PricingScreen() {
   const scroll = React.useRef<Animated.ScrollView>(null);
   const jump = useDomainJump(scroll);
   const signedIn = useAuth.use.status() === 'signIn';
+  usePickFromParams();
+  // A template bought with "Buy plan" opens in the builder once the plan is
+  // active (the purchase verified, or the user already paid).
+  useContinueTemplateBuy();
+  const buying = useAppCart((c) => !!c.templateBuy);
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>
       <StatusBar
@@ -344,7 +359,8 @@ export function PricingScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + 10,
-          paddingBottom: tabBarH + 28,
+          // Room for the floating Pay now bar while a template is bought.
+          paddingBottom: tabBarH + 28 + (buying ? PAY_BAR_SPACE : 0),
         }}
       >
         <Hero s={s} />
@@ -356,6 +372,7 @@ export function PricingScreen() {
           <StoreFooter t={t} p={p} signedIn={signedIn} />
         ) : null}
       </Animated.ScrollView>
+      {buying ? <PayNowBar t={t} bottom={tabBarH + 10} /> : null}
       {/* Solid strip under the clock so scrolled content never sits there. */}
       <View
         style={[st.statusStrip, { height: insets.top, backgroundColor: t.bg }]}

@@ -27,7 +27,6 @@ import { Card, OrderCard, PlanNote } from './cart-sections';
 import { ContactForm } from './contact-form';
 import { OrderSuccess } from './order-success';
 import { PlanStep } from './plan-step';
-import { TemplateBuyCard } from './template-buy';
 import {
   useCartDiscount,
   useCartTotals,
@@ -103,7 +102,6 @@ function Body({ s }: { s: ServicesPalette }) {
   const { hasBuild } = useCartTotals();
   return (
     <>
-      <TemplateBuyCard s={s} />
       {services ? <OrderCard s={s} /> : null}
       {domain ? <PlanStep s={s} /> : null}
       {hasBuild ? <PlanNote s={s} /> : null}

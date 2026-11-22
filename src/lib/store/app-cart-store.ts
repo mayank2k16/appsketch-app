@@ -115,6 +115,7 @@ export const useAppCart = create<AppCartState>((set, get) => {
   };
 });
 
-export const cartCount = (
-  s: Pick<Persisted, 'addonIds' | 'domain' | 'templateBuy'>
-) => s.addonIds.length + (s.domain ? 1 : 0) + (s.templateBuy ? 1 : 0);
+/** Services in the cart. A template bought with "Buy plan" is not one: it
+ *  waits on the Pricing tab's Pay now bar. */
+export const cartCount = (s: Pick<Persisted, 'addonIds' | 'domain'>) =>
+  s.addonIds.length + (s.domain ? 1 : 0);
