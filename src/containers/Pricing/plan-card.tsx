@@ -199,7 +199,7 @@ function Body(props: Props & { k: Skin }) {
       <Price plan={plan} k={k} />
       {plan.monthlyOnly ? (
         <Text style={[st.monthlyNote, { color: k.sub }]}>
-          {plan.name} is billed monthly in the app.
+          {plan.name} is billed monthly
         </Text>
       ) : null}
       <View style={[st.dash, { borderColor: k.rule }]} />
