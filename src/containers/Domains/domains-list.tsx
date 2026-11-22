@@ -38,18 +38,7 @@ function Actions({ s }: { s: ServicesPalette }) {
   const router = useRouter();
   return (
     <View style={st.actions}>
-      <PressableScale
-        onPress={() =>
-          router.navigate({
-            pathname: '/pricing',
-            params: { section: 'domain' },
-          })
-        }
-        style={[st.btn, { backgroundColor: s.ink }]}
-      >
-        <Ionicons name="search" size={14} color={s.onInk} />
-        <Text style={[st.btnText, { color: s.onInk }]}>Get a domain</Text>
-      </PressableScale>
+      {/* Domains are not sold in the app: connect one you own. */}
       <PressableScale
         onPress={() => router.push('/domains/connect')}
         style={[

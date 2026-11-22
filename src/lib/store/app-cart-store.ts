@@ -84,6 +84,9 @@ export const useAppCart = create<AppCartState>((set, get) => {
   return {
     ...EMPTY,
     ...(getItem<Persisted>(KEY) ?? {}),
+    // Domains are no longer sold in the app: a domain left in a saved cart
+    // from an older build is dropped, never paid for.
+    domain: null,
     planRequired: false,
     setDiscountCode: (code) =>
       commit({ discountCode: code?.trim().toUpperCase() || null }),

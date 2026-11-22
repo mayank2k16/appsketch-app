@@ -1,18 +1,10 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import {
-  type LayoutChangeEvent,
-  StatusBar,
-  StyleSheet,
-  Text,
-  type TextInput,
-  View,
-} from 'react-native';
+import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useDiscountOffers, useMoney } from '@/api/app-cart';
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { type ServicesPalette, servicesPalette } from '@/components/services';
 import { useContinueTemplateBuy } from '@/containers/AppCart/template-buy';
@@ -30,12 +22,10 @@ import { toast } from '@/lib/toast';
 
 import { BillingToggle } from './billing-toggle';
 import { CartButton } from './cart-button';
-import { DomainPane } from './domain-pane';
 import { FolderCard, type FolderTab } from './folder-card';
 import { PAY_BAR_SPACE, PayNowBar } from './pay-now-bar';
 import { PlanCard } from './plan-card';
 import { PlanSkeleton } from './plan-skeleton';
-import { pickOffer } from './planner/offer-strip';
 import { sameTier, usePickFromParams, usePricingPick } from './pricing-pick';
 import { CurrentPlan, StoreUnavailable } from './status-notes';
 import { StoreFooter } from './store-footer';
@@ -67,12 +57,10 @@ function PlanList({
   t,
   p,
   cycle,
-  domainInput,
 }: {
   t: AppColors;
   p: PricingPalette;
   cycle: PlanInterval;
-  domainInput: React.RefObject<TextInput | null>;
 }) {
   const data = usePricing(cycle);
   const busySku = useIapStore((s) => s.busySku);
@@ -107,13 +95,10 @@ function PlanList({
         views={data.views}
         busySku={busySku}
         onPress={onPress}
-        domainInput={domainInput}
       />
     </View>
   );
 }
-
-const DOMAIN_TAB = 'domain';
 
 /** Tab icons: Basic → leaf, Growth → trending up, 100X → rocket. */
 function tierIcon(tier: string) {
@@ -123,52 +108,32 @@ function tierIcon(tier: string) {
   return 'leaf' as const;
 }
 
-/** "50% OFF" / "₹500 OFF" ("$6 OFF" abroad) for the Domain tab, from the
- *  best live offer. */
-function useDomainOff(): string | null {
-  const offers = useDiscountOffers();
-  const { money } = useMoney();
-  const o = pickOffer(offers.data ?? [], ['domain', 'order']);
-  if (!o) return null;
-  return o.type === 'percent' ? `${o.value}% OFF` : `${money(o.value)} OFF`;
-}
-
-/** Basic / Growth / 100X / Domain as a pill tab bar over one card. Opens on
- *  the Domain tab for `/pricing?section=domain`, else the user's plan, else
- *  the popular one. */
+/** Basic / Growth / 100X as a pill tab bar over one card. Opens on the
+ *  user's plan, else the popular one. (Domains are not sold in the app.) */
 function TabbedPlans({
   t,
   p,
   views,
   busySku,
   onPress,
-  domainInput,
 }: {
   t: AppColors;
   p: PricingPalette;
   views: PlanView[];
   busySku: string | null;
   onPress: (plan: PlanView) => void;
-  domainInput: React.RefObject<TextInput | null>;
 }) {
-  const s = servicesPalette(t);
-  const { section } = useLocalSearchParams<{ section?: string }>();
-  const domainOff = useDomainOff();
   const start =
-    (section === DOMAIN_TAB ? DOMAIN_TAB : null) ??
     views.find((v) => v.current)?.tier ??
     views.find((v) => v.popular)?.tier ??
     views[0]?.tier ??
-    DOMAIN_TAB;
+    '';
   // null = not picked yet: follow `start` (plans, the user's plan and the
   // deep link can arrive after the first render). A `?plan=` link or a tap
   // picks (pricing-pick.ts); the Pay now bar reads the same pick.
   const picked = usePricingPick((x) => x.tier);
   const setKey = usePricingPick((x) => x.setTier);
-  const value =
-    (picked === DOMAIN_TAB
-      ? DOMAIN_TAB
-      : views.find((v) => sameTier(v.tier, picked))?.tier) ?? start;
+  const value = views.find((v) => sameTier(v.tier, picked))?.tier ?? start;
   const tabs: FolderTab[] = [
     ...views.map((v) => ({
       key: v.tier,
@@ -177,7 +142,6 @@ function TabbedPlans({
       off: v.savePct ? `${v.savePct}% OFF` : null,
       dot: v.current,
     })),
-    { key: DOMAIN_TAB, name: 'Domain', icon: 'globe' as const, off: domainOff },
   ];
   const plan = views.find((v) => v.tier === value);
   return (
@@ -192,24 +156,14 @@ function TabbedPlans({
           locked={!!busySku}
           onSubscribe={() => onPress(plan)}
         />
-      ) : (
-        <DomainPane s={s} inputRef={domainInput} />
-      )}
+      ) : null}
     </FolderCard>
   );
 }
 
 /** "Build with AI": the App Store plans (Yearly first), compact cards and
  *  the 3.1.2 block (Restore, auto-renew text, Terms, Privacy). */
-function PlansSection({
-  t,
-  p,
-  domainInput,
-}: {
-  t: AppColors;
-  p: PricingPalette;
-  domainInput: React.RefObject<TextInput | null>;
-}) {
+function PlansSection({ t, p }: { t: AppColors; p: PricingPalette }) {
   const cycle = usePricingPick((x) => x.cycle);
   const setCycle = usePricingPick((x) => x.setCycle);
   const signedIn = useAuth.use.status() === 'signIn';
@@ -243,7 +197,7 @@ function PlansSection({
           onChange={setCycle}
         />
       </View>
-      <PlanList t={t} p={p} cycle={cycle} domainInput={domainInput} />
+      <PlanList t={t} p={p} cycle={cycle} />
     </View>
   );
 }
@@ -296,7 +250,7 @@ function Hero({ s }: { s: ServicesPalette }) {
       <View style={st.heroText}>
         <Text style={[st.title, { color: s.text }]}>Pricing</Text>
         <Text style={[st.sub, { color: s.sub }]} numberOfLines={1}>
-          Build your app with AI. Plans and domains.
+          Build your app with AI. Pick a plan.
         </Text>
       </View>
       <CartButton s={s} />
@@ -304,32 +258,9 @@ function Hero({ s }: { s: ServicesPalette }) {
   );
 }
 
-/** `/pricing?section=domain` scrolls to the domain card and focuses search. */
-function useDomainJump(scroll: React.RefObject<Animated.ScrollView | null>) {
-  const { section } = useLocalSearchParams<{ section?: string }>();
-  const input = React.useRef<TextInput>(null);
-  const y = React.useRef(0);
-  React.useEffect(() => {
-    if (section !== 'domain') return;
-    const id = setTimeout(() => {
-      scroll.current?.scrollTo({
-        y: Math.max(0, y.current - 60),
-        animated: true,
-      });
-      input.current?.focus();
-    }, 350);
-    return () => clearTimeout(id);
-  }, [section, scroll]);
-  return {
-    input,
-    onLayout: (e: LayoutChangeEvent) => {
-      y.current = e.nativeEvent.layout.y;
-    },
-  };
-}
-
 /** The Pricing tab: compact hero, then one folder card with the self-serve
- *  plans (App Store on iOS) and a Domain tab, then the 3.1.2 footer. The
+ *  plans (App Store on iOS, Google Play on Android), then the store footer.
+ *  Domains are not sold in the app. The
  *  assisted (team-built) services are not sold in the app. */
 export function PricingScreen() {
   const insets = useSafeAreaInsets();
@@ -339,7 +270,6 @@ export function PricingScreen() {
   const p = pricingPalette(t);
   const s = servicesPalette(t);
   const scroll = React.useRef<Animated.ScrollView>(null);
-  const jump = useDomainJump(scroll);
   const signedIn = useAuth.use.status() === 'signIn';
   usePickFromParams();
   // A template bought with "Buy plan" opens in the builder once the plan is
@@ -364,9 +294,7 @@ export function PricingScreen() {
         }}
       >
         <Hero s={s} />
-        <View onLayout={jump.onLayout}>
-          <PlansSection t={t} p={p} domainInput={jump.input} />
-        </View>
+        <PlansSection t={t} p={p} />
         {/* Restore Purchases, auto-renew terms, Terms of Use, Privacy. */}
         {hasStoreBilling() ? (
           <StoreFooter t={t} p={p} signedIn={signedIn} />
