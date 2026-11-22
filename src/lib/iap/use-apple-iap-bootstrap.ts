@@ -2,12 +2,7 @@ import * as React from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 
-import {
-  connectStore,
-  disconnectStore,
-  hasStoreBilling,
-  reconcilePending,
-} from './store';
+import { connectStore, hasStoreBilling, reconcilePending } from './store';
 
 /** Opens the store connection (StoreKit on iOS, Google Play Billing on
  *  Android) for as long as the main app (tabs) is mounted, and re-runs the
@@ -18,10 +13,9 @@ export function useAppleIapBootstrap() {
   const status = useAuth.use.status();
   React.useEffect(() => {
     if (!hasStoreBilling()) return;
+    // Opened once for the app's life and never closed on unmount: a tabs
+    // remount racing a disconnect used to leave no purchase listener.
     void connectStore();
-    return () => {
-      void disconnectStore();
-    };
   }, []);
   React.useEffect(() => {
     if (hasStoreBilling() && status === 'signIn') void reconcilePending();

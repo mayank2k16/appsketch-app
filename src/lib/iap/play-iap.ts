@@ -28,7 +28,7 @@ import {
   purchaseUpdatedListener,
   requestPurchase,
 } from 'expo-iap';
-import { Linking } from 'react-native';
+import { AppState, Linking } from 'react-native';
 
 import {
   fetchGooglePlayConfig,
@@ -65,6 +65,8 @@ const isPlanProduct = (id?: string | null) => !!id && id.startsWith(PREFIX);
 let connected = false;
 let subs: { remove: () => void }[] = [];
 const inFlight = new Set<string>();
+/** Purchase tokens already settled with the backend. */
+const settled = new Set<string>();
 /** Play product ids to load (one per tier). */
 const wanted = new Set<string>(APPLE_PLAN_TIERS.map((t) => `${PREFIX}${t}`));
 /** The offer token of each base plan, by App Store-style sku. */
@@ -168,10 +170,15 @@ async function handlePurchase(p: Purchase, silent: boolean) {
     return;
   }
   const key = String(p.purchaseToken ?? p.id);
-  if (inFlight.has(key)) return;
+  if (inFlight.has(key) || settled.has(key)) {
+    if (settled.has(key)) setIap({ busySku: null });
+    return;
+  }
   inFlight.add(key);
   try {
     const outcome = await verifyAndFinish(p);
+    if (outcome.kind !== 'retry' && outcome.kind !== 'skipped')
+      settled.add(key);
     if (!silent) announce(outcome);
   } finally {
     inFlight.delete(key);
@@ -266,24 +273,45 @@ export async function reconcilePending() {
   }
 }
 
-export async function connectStore() {
-  if (connected) return;
-  setIap({ status: 'connecting' });
-  try {
-    await initConnection();
-    connected = true;
-  } catch (err) {
-    setIap({ status: 'unavailable', detail: errorText(err) });
-    return;
-  }
+/** Listeners live for the whole app, registered once (see apple-iap.ts:
+ *  a remount racing a disconnect used to leave none). */
+function listen() {
+  if (subs.length) return;
   subs = [
     purchaseUpdatedListener(
       (p) => void handlePurchase(p, !useIapStore.getState().busySku)
     ),
     purchaseErrorListener(onPurchaseError),
   ];
-  await loadProducts();
-  setTimeout(() => void reconcilePending(), 1500);
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') void reconcilePending();
+  });
+}
+
+let connecting: Promise<void> | null = null;
+
+export async function connectStore() {
+  if (connected) {
+    listen();
+    return;
+  }
+  if (connecting) return connecting;
+  connecting = (async () => {
+    setIap({ status: 'connecting' });
+    try {
+      await initConnection();
+      connected = true;
+    } catch (err) {
+      setIap({ status: 'unavailable', detail: errorText(err) });
+      return;
+    }
+    listen();
+    await loadProducts();
+    setTimeout(() => void reconcilePending(), 1500);
+  })().finally(() => {
+    connecting = null;
+  });
+  return connecting;
 }
 
 export async function disconnectStore() {
@@ -343,7 +371,7 @@ export async function buyPlan(tier: string, interval: PlanInterval) {
   const current = await currentPlanPurchase();
   const replacing = current && current.purchaseToken;
   try {
-    await requestPurchase({
+    const result = await requestPurchase({
       request: {
         google: {
           skus: [productId],
@@ -362,9 +390,25 @@ export async function buyPlan(tier: string, interval: PlanInterval) {
       },
       type: 'subs',
     });
+    // A second path besides the listener (de-duplicated in handlePurchase).
+    const got = (Array.isArray(result) ? result : [result]).filter(
+      (x): x is Purchase => !!x && typeof x === 'object' && 'productId' in x
+    );
+    for (const p of got) void handlePurchase(p, false);
   } catch (err) {
     onPurchaseError(err as { message?: string });
+    return;
   }
+  // Never leave the button spinning: re-check, then let go.
+  setTimeout(async () => {
+    if (!useIapStore.getState().busySku) return;
+    await reconcilePending();
+    setTimeout(() => {
+      if (!useIapStore.getState().busySku) return;
+      setIap({ busySku: null });
+      toast.info(RETRY_MSG);
+    }, 15000);
+  }, 8000);
 }
 
 /** "Restore purchases": verify every AppSketch subscription the signed-in

@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTabBarHeight } from '@/components/bottom-tabs/useTabBarHeight';
 import { type ServicesPalette, servicesPalette } from '@/components/services';
-import { useContinueTemplateBuy } from '@/containers/AppCart/template-buy';
 import { useAuth } from '@/hooks/useAuth';
 import { F } from '@/lib/fonts';
 import {
@@ -272,9 +271,6 @@ export function PricingScreen() {
   const scroll = React.useRef<Animated.ScrollView>(null);
   const signedIn = useAuth.use.status() === 'signIn';
   usePickFromParams();
-  // A template bought with "Buy plan" opens in the builder once the plan is
-  // active (the purchase verified, or the user already paid).
-  useContinueTemplateBuy();
   const buying = useAppCart((c) => !!c.templateBuy);
   return (
     <View style={[st.root, { backgroundColor: t.bg }]}>

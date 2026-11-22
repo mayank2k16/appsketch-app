@@ -20,7 +20,7 @@ import {
   requestPurchase,
   restorePurchases,
 } from 'expo-iap';
-import { Linking, Platform } from 'react-native';
+import { AppState, Linking, Platform } from 'react-native';
 
 import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
@@ -42,6 +42,9 @@ let connected = false;
 let subs: { remove: () => void }[] = [];
 /** Transaction ids being verified right now (listener + reconcile overlap). */
 const inFlight = new Set<string>();
+/** Transactions already settled with the backend (listener + the purchase
+ *  `requestPurchase` returns can both deliver the same one). */
+const settled = new Set<string>();
 
 export const isIos = () => Platform.OS === 'ios';
 
@@ -85,10 +88,16 @@ async function handlePurchase(p: Purchase, silent: boolean) {
     return;
   }
   const key = txKey(p);
-  if (inFlight.has(key)) return;
+  if (inFlight.has(key) || settled.has(key)) {
+    if (settled.has(key) && useIapStore.getState().busySku === p.productId)
+      setIap({ busySku: null });
+    return;
+  }
   inFlight.add(key);
   try {
     const outcome = await verifyAndFinish(p);
+    if (outcome.kind !== 'retry' && outcome.kind !== 'skipped')
+      settled.add(key);
     if (!silent) announce(outcome);
   } finally {
     inFlight.delete(key);
@@ -136,16 +145,12 @@ export async function reconcilePending() {
   }
 }
 
-export async function connectStore() {
-  if (!isIos() || connected) return;
-  setIap({ status: 'connecting' });
-  try {
-    await initConnection();
-    connected = true;
-  } catch (err) {
-    setIap({ status: 'unavailable', detail: errorText(err) });
-    return;
-  }
+/** Purchase listeners live for the whole app, registered once. They used
+ *  to be removed with the tabs layout; a remount racing the old
+ *  disconnect left the app connected with no listener, so a paid purchase
+ *  was never verified and the button spun forever. */
+function listen() {
+  if (subs.length) return;
   subs = [
     // Loud only for the purchase the user just started; renewals and other
     // background deliveries are verified quietly.
@@ -155,11 +160,42 @@ export async function connectStore() {
     ),
     purchaseErrorListener(onPurchaseError),
   ];
-  await loadProducts();
-  // StoreKit queues unfinished transactions just after connecting.
-  setTimeout(() => void reconcilePending(), 1500);
+  // Coming back to the app (e.g. from the payment sheet or Settings) is a
+  // natural moment to finish anything StoreKit still holds.
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') void reconcilePending();
+  });
 }
 
+let connecting: Promise<void> | null = null;
+
+export async function connectStore() {
+  if (!isIos()) return;
+  if (connected) {
+    listen();
+    return;
+  }
+  if (connecting) return connecting;
+  connecting = (async () => {
+    setIap({ status: 'connecting' });
+    try {
+      await initConnection();
+      connected = true;
+    } catch (err) {
+      setIap({ status: 'unavailable', detail: errorText(err) });
+      return;
+    }
+    listen();
+    await loadProducts();
+    // StoreKit queues unfinished transactions just after connecting.
+    setTimeout(() => void reconcilePending(), 1500);
+  })().finally(() => {
+    connecting = null;
+  });
+  return connecting;
+}
+
+/** Kept for completeness; the app never disconnects (see `listen`). */
 export async function disconnectStore() {
   subs.forEach((s) => s.remove());
   subs = [];
@@ -204,14 +240,39 @@ export async function buyPlan(tier: string, interval: PlanInterval) {
     );
     return;
   }
+  await connectStore();
   try {
-    await requestPurchase({
+    const result = await requestPurchase({
       request: { apple: { sku, appAccountToken } },
       type: 'subs',
     });
+    // The listener is the main path; the purchase returned here is a second
+    // one (handlePurchase de-duplicates), so a missed event cannot strand a
+    // paid purchase.
+    const got = (Array.isArray(result) ? result : [result]).filter(
+      (x): x is Purchase => !!x && typeof x === 'object' && 'productId' in x
+    );
+    for (const p of got) void handlePurchase(p, false);
   } catch (err) {
     onPurchaseError(err as { message?: string });
+    return;
   }
+  watchdog(sku);
+}
+
+/** If the purchase still has not been confirmed a little after the sheet
+ *  closed, ask StoreKit for unfinished transactions; never leave the button
+ *  spinning. */
+function watchdog(sku: string) {
+  setTimeout(async () => {
+    if (useIapStore.getState().busySku !== sku) return;
+    await reconcilePending();
+    setTimeout(() => {
+      if (useIapStore.getState().busySku !== sku) return;
+      setIap({ busySku: null });
+      toast.info(RETRY_MSG);
+    }, 15000);
+  }, 8000);
 }
 
 function summarizeRestore(outcomes: VerifyOutcome[]) {

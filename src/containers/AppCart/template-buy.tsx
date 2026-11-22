@@ -29,15 +29,19 @@ const CYCLE = 'yearly' as const;
 const trimZeros = (price: string) => price.replace(/[.,]00(?=\D*$)/, '');
 
 /**
- * Once the plan is active (the Apple purchase verified, or the user was
- * already paid), the bought template is copied and the builder opens in
- * place of the cart — the user carries on with their app, not Home.
+ * Once the plan is active (the store purchase verified, or the user was
+ * already paid), the template bought with "Buy plan" is copied and the
+ * builder opens on it — the user carries on with their app. Mounted once,
+ * app-wide, in the tabs layout: the purchase may be confirmed on any screen
+ * (or at the next launch).
  */
 export function useContinueTemplateBuy() {
   const buy = useAppCart((c) => c.templateBuy);
   const setTemplateBuy = useAppCart((c) => c.setTemplateBuy);
   const paid = hasPaidPlan(getUserSubscription(useAuth.use.user()));
-  const { copy, usingKey } = useCloneAndOpen({ replace: true });
+  // Pushed over the tabs (this runs app-wide from the tabs layout), so Back
+  // returns to the app.
+  const { copy, usingKey } = useCloneAndOpen();
   const started = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (!buy || !paid || started.current === buy.key) return;

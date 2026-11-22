@@ -46,6 +46,8 @@ function usePay(view: PlanView | null) {
   const cycle = usePricingPick((x) => x.cycle);
   const busySku = useIapStore((x) => x.busySku);
   const busy = !!view?.sku && busySku === view.sku;
+  // Another plan's purchase is in flight: wait, like the Subscribe buttons.
+  const locked = !!busySku && !busy;
   const ready = !!view?.sku && !!view.price;
   const pay = () => {
     if (!view) return;
@@ -65,7 +67,7 @@ function usePay(view: PlanView | null) {
       ? `${view.name} · ${trimZeros(view.price)}${view.period}`
       : `${view.name} · ${cycle === 'yearly' ? 'Yearly' : 'Monthly'}`
     : 'Pick a plan';
-  return { pay, busy, ready, line };
+  return { pay, busy: busy || locked, ready: ready && !locked, line };
 }
 
 function Thumb({ uri }: { uri?: string | null }) {

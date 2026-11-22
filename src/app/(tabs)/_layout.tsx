@@ -2,12 +2,16 @@ import { Tabs } from 'expo-router';
 import * as React from 'react';
 
 import { GlowTabBar } from '@/components/bottom-tabs/GlowTabBar';
+import { useContinueTemplateBuy } from '@/containers/AppCart/template-buy';
 import { useAppleIapBootstrap } from '@/lib/iap';
 
 export default function TabsLayout() {
   // StoreKit connection + unfinished-transaction sweep (iOS only) for as
   // long as the main app is up — see docs/pricing-and-apple.md.
   useAppleIapBootstrap();
+  // A template bought with "Buy plan" opens in the builder as soon as the
+  // plan is active, whichever screen is open when the purchase confirms.
+  useContinueTemplateBuy();
   return (
     <Tabs
       initialRouteName="home"
