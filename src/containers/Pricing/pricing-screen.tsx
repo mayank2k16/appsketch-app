@@ -122,8 +122,15 @@ function TabbedPlans({
   busySku: string | null;
   onPress: (plan: PlanView) => void;
 }) {
+  // Opens on the plan ABOVE the user's (Basic → Growth, Growth → 100X):
+  // whoever comes here on a plan is here to upgrade. On the top plan, theirs;
+  // with no plan, the popular one.
+  const currentAt = views.findIndex((v) => v.current);
   const start =
-    views.find((v) => v.current)?.tier ??
+    (currentAt >= 0
+      ? (views.slice(currentAt + 1).find((v) => !v.free) ?? views[currentAt])
+          .tier
+      : undefined) ??
     views.find((v) => v.popular)?.tier ??
     views[0]?.tier ??
     '';

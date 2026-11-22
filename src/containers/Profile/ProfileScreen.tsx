@@ -386,7 +386,12 @@ export function ProfileScreen() {
                     )}
 
                     <PressableScale
-                      onPress={() => router.navigate('/pricing')}
+                      onPress={() =>
+                        router.navigate({
+                          pathname: '/pricing',
+                          params: { plan: 'next' },
+                        } as never)
+                      }
                       style={[
                         st.primaryBtn,
                         { backgroundColor: p.keyAction, marginTop: 16 },

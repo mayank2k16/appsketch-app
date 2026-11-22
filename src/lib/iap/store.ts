@@ -21,6 +21,8 @@ export const storeName = () => (isAndroid() ? 'Google Play' : 'the App Store');
 export const connectStore = () => impl().connectStore();
 export const disconnectStore = () => impl().disconnectStore();
 export const reconcilePending = () => impl().reconcilePending();
+/** Verify every active plan subscription the store account holds. */
+export const syncEntitlements = () => impl().syncEntitlements();
 export const ensureProducts = (skus: string[]) => impl().ensureProducts(skus);
 export const reloadProducts = () => impl().reloadProducts();
 /** 100X yearly is not a store product: it is bought monthly (product-ids.ts). */

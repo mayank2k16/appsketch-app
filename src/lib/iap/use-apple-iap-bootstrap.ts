@@ -2,7 +2,12 @@ import * as React from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 
-import { connectStore, hasStoreBilling, reconcilePending } from './store';
+import {
+  connectStore,
+  hasStoreBilling,
+  reconcilePending,
+  syncEntitlements,
+} from './store';
 
 /** Opens the store connection (StoreKit on iOS, Google Play Billing on
  *  Android) for as long as the main app (tabs) is mounted, and re-runs the
@@ -18,6 +23,9 @@ export function useAppleIapBootstrap() {
     void connectStore();
   }, []);
   React.useEffect(() => {
-    if (hasStoreBilling() && status === 'signIn') void reconcilePending();
+    // Unfinished purchases first, then every active subscription (an upgrade
+    // inside the group, or a purchase whose event was missed).
+    if (hasStoreBilling() && status === 'signIn')
+      void reconcilePending().then(() => syncEntitlements());
   }, [status]);
 }

@@ -273,6 +273,19 @@ export async function reconcilePending() {
   }
 }
 
+/** Verify every AppSketch subscription this Google account holds (settled
+ *  ones are skipped) — the Play twin of apple-iap's syncEntitlements. */
+export async function syncEntitlements() {
+  if (!connected || useAuth.getState().status !== 'signIn') return;
+  try {
+    const all = (await getAvailablePurchases()) ?? [];
+    for (const p of all.filter((x) => isPlanProduct(x.productId)))
+      await handlePurchase(p as Purchase, !useIapStore.getState().busySku);
+  } catch {
+    // Best effort.
+  }
+}
+
 /** Listeners live for the whole app, registered once (see apple-iap.ts:
  *  a remount racing a disconnect used to leave none). */
 function listen() {
@@ -307,7 +320,10 @@ export async function connectStore() {
     }
     listen();
     await loadProducts();
-    setTimeout(() => void reconcilePending(), 1500);
+    setTimeout(
+      () => void reconcilePending().then(() => syncEntitlements()),
+      1500
+    );
   })().finally(() => {
     connecting = null;
   });

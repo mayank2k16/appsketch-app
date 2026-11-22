@@ -22,7 +22,14 @@ export default function TemplateLimitRoute() {
       onClose={() => router.back()}
       onUpgrade={() => {
         router.dismissAll();
-        router.navigate('/pricing');
+        // Straight to the plan the sheet offered (e.g. Growth), yearly.
+        router.navigate({
+          pathname: '/pricing',
+          params: {
+            plan: (allowance.next_tier ?? '').toLowerCase() || undefined,
+            cycle: 'yearly',
+          },
+        } as never);
       }}
       onContinue={() => {
         const retry = useTemplateLimit.getState().retry;

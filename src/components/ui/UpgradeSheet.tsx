@@ -28,7 +28,8 @@ type Props = {
 };
 
 const UPGRADE_URL = 'https://appsketch.ai/pricing';
-const IOS = Platform.OS === 'ios';
+// Plans are bought in the app on iOS (App Store) and Android (Google Play).
+const IOS = Platform.OS === 'ios' || Platform.OS === 'android';
 
 // iOS: plans are App Store subscriptions on the Pricing tab (guideline
 // 3.1.1 — no web checkout links or mentions on iOS), so the CTA opens that
@@ -57,7 +58,11 @@ function UpgradeCta({
     <PressableScale
       onPress={() => {
         onClose();
-        if (IOS) router.navigate('/pricing');
+        if (IOS)
+          router.navigate({
+            pathname: '/pricing',
+            params: { plan: 'next' },
+          } as never);
         else Linking.openURL(UPGRADE_URL).catch(() => {});
       }}
       style={[s.cta, IOS && s.ctaIos, { backgroundColor: color }]}

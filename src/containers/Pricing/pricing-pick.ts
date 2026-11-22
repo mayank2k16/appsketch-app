@@ -32,7 +32,10 @@ export function usePickFromParams() {
     cycle?: string;
   }>();
   React.useEffect(() => {
-    if (plan) usePricingPick.getState().setTier(plan);
+    // `plan=next`: "upgrade" — forget any earlier pick so the card opens on
+    // the plan above the user's (see TabbedPlans' start).
+    if (plan === 'next') usePricingPick.getState().setTier(null);
+    else if (plan) usePricingPick.getState().setTier(plan);
     if (cycle === 'yearly' || cycle === 'monthly')
       usePricingPick.getState().setCycle(cycle);
   }, [plan, cycle]);

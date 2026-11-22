@@ -22,6 +22,7 @@ import {
 } from 'expo-iap';
 import { AppState, Linking, Platform } from 'react-native';
 
+import { useAuth } from '@/hooks/useAuth';
 import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 
@@ -163,11 +164,39 @@ function listen() {
   // Coming back to the app (e.g. from the payment sheet or Settings) is a
   // natural moment to finish anything StoreKit still holds.
   AppState.addEventListener('change', (state) => {
-    if (state === 'active') void reconcilePending();
+    if (state !== 'active') return;
+    void reconcilePending().then(() => syncEntitlements());
   });
 }
 
 let connecting: Promise<void> | null = null;
+
+/** Verify every active AppSketch subscription the Apple ID holds. Catches
+ *  what the purchase event alone can miss: an upgrade inside the
+ *  subscription group (Basic → Growth) creates a NEW transaction while
+ *  StoreKit may hand the app the old one first. Already-settled transactions
+ *  are skipped; the backend never lets an older or upgraded-from one roll the
+ *  plan back. */
+export async function syncEntitlements() {
+  if (!connected || useAuth.getState().status !== 'signIn') return;
+  try {
+    const list = await getAvailablePurchases({
+      onlyIncludeActiveItemsIOS: true,
+    });
+    const ours = (list ?? []).filter((p) => isAppleProductId(p.productId));
+    // Newest last, so the plan the user just bought is applied last.
+    ours.sort(
+      (a, b) => Number(a.transactionDate ?? 0) - Number(b.transactionDate ?? 0)
+    );
+    for (const p of ours)
+      await handlePurchase(
+        p as Purchase,
+        useIapStore.getState().busySku !== p.productId
+      );
+  } catch {
+    // Best effort; the next foreground tries again.
+  }
+}
 
 export async function connectStore() {
   if (!isIos()) return;
@@ -188,7 +217,10 @@ export async function connectStore() {
     listen();
     await loadProducts();
     // StoreKit queues unfinished transactions just after connecting.
-    setTimeout(() => void reconcilePending(), 1500);
+    setTimeout(
+      () => void reconcilePending().then(() => syncEntitlements()),
+      1500
+    );
   })().finally(() => {
     connecting = null;
   });
@@ -264,15 +296,21 @@ export async function buyPlan(tier: string, interval: PlanInterval) {
  *  closed, ask StoreKit for unfinished transactions; never leave the button
  *  spinning. */
 function watchdog(sku: string) {
+  const settledNow = () => useIapStore.getState().busySku !== sku;
   setTimeout(async () => {
-    if (useIapStore.getState().busySku !== sku) return;
+    if (settledNow()) return;
     await reconcilePending();
-    setTimeout(() => {
-      if (useIapStore.getState().busySku !== sku) return;
-      setIap({ busySku: null });
-      toast.info(RETRY_MSG);
-    }, 15000);
-  }, 8000);
+    await syncEntitlements();
+    setTimeout(async () => {
+      if (settledNow()) return;
+      await syncEntitlements();
+      setTimeout(() => {
+        if (settledNow()) return;
+        setIap({ busySku: null });
+        toast.info(RETRY_MSG);
+      }, 8000);
+    }, 6000);
+  }, 3000);
 }
 
 function summarizeRestore(outcomes: VerifyOutcome[]) {
