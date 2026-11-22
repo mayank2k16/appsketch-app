@@ -345,3 +345,31 @@ proven on the simulator.
 - CTA row (`use-ctas.ts`, `cta-bar.tsx`): outline **Customise with AI** (sparkles) copies the template and opens the builder on its AI chat (`useCloneAndOpen({ open: 'chat' })` → `/code-editor/chat`), beside the orange two-line **Buy plan** ("Unlock 1000+ templates · from ₹1,250/mo", the yearly Basic `monthlyEquivalent`). Apps keep **Run it live** as a square play button at the row's start; websites lost "Try it live" (the hero already plays the live site).
 - Buy plan = the old Buy now (`use-buy-template.ts`): signed out → /welcome; paid → copy + builder; else /cart with the template + Basic yearly, whose button now reads **Subscribe with Apple** (iOS) / **Subscribe on appsketch.ai**.
 - Home masonry (`Home/Studio`): website tiles are all preview. The browser bar (`BrowserFrame titled`, TITLE_BAR_H 20) carries the name, LIVE and likes; the tall 2-col `large` cell is now two stacked 2-col `site` cells (a whole 16:10 page each). Small 1-col sites are the same titled sheet.
+
+## Customise with AI form (2026-11-22, round 2)
+- Buy plan is back to one button with "Unlock 1000+ templates" inside it; no price line (user removed it).
+- Customise with AI opens `/customise` (`src/app/customise.tsx`, a native `presentation: 'modal'` sheet). React Native's `<Modal>` cannot present over the template page (itself a transparentModal), so it is a route. Fields: logo (optional, image picker), business name (required), short description (optional, 240 chars).
+- Submit hands the form back through `useCustomiseHandoff` (customise-brief.ts) and closes the sheet; the template page, which outlives the sheet, copies the template and opens `/code-editor/chat` with `userPrompt` = `customisePrompt()` and `images` = [logo]. The chat sends that as the coder agent's first message. Signed-out users are sent to /welcome first.
+
+## Round 3 (2026-11-22): compact customise sheet, paid users, template limit
+
+- `/customise` is a native **form sheet** (`presentation: 'formSheet'`,
+  detents 0.66 / 0.94, grabber, 28pt corners; `sheet()` in `_layout.tsx`).
+  New look: gradient mark + "Make it yours", icon fields with an orange focus
+  ring, a character counter, gradient CTA. Its body is a plain View: a
+  ScrollView inside a react-native-screens form sheet lays out at zero height
+  (or over the header) — don't put one back.
+- Logo tile (`customise-logo.tsx`): tap → Take photo / Choose from library
+  (/ Remove), square crop. Camera errors (simulator) toast instead of crashing.
+- Paid users: the Buy plan slot is **Use this template** with their template
+  allowance under it ("3 of 8 used on Basic", "Unlimited on 100X";
+  `template-slot.ts`, `GET builder/coder/template-allowance/`).
+- Every copy (Use this template, Customise with AI before the form opens) goes
+  through `useEnsureSlot`. Allowance used up → `/template-limit` (form sheet):
+  usage meter, "Upgrade to <next tier>" (→ Pricing tab), and the newest 4–8 of
+  their template apps with Delete (`POST builder/coder/template-apps/<id>/delete/`,
+  soft delete, ecosystems whole). Once a slot is free, Continue runs the
+  refused copy (`useTemplateLimit.retry`). The clone endpoint's 402
+  `template_limit` lands in the same sheet (`cloneFailed` in use-use-template.ts).
+- Needs the backend's `template-apps` endpoints (branch feat/template-app-slots);
+  until then the sheet shows the upgrade and an empty list.

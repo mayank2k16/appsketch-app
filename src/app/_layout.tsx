@@ -74,6 +74,16 @@ const FONTS = {
   Inter_900Black,
 };
 
+/** A native form sheet at these heights (fractions of the screen). */
+const sheet = (detents: number[]) =>
+  ({
+    headerShown: false,
+    presentation: 'formSheet',
+    sheetAllowedDetents: detents,
+    sheetGrabberVisible: true,
+    sheetCornerRadius: 28,
+  }) as const;
+
 function RootLayoutContent() {
   const { colorScheme } = useColorScheme();
   const screenBg = appTheme[colorScheme === 'dark' ? 'dark' : 'light'].bg;
@@ -135,6 +145,9 @@ function RootLayoutContent() {
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />
+      {/* "Customise with AI" form: a native sheet over the template page. */}
+      <Stack.Screen name="customise" options={sheet([0.66, 0.94])} />
+      <Stack.Screen name="template-limit" options={sheet([0.72, 0.94])} />
     </Stack>
   );
 }

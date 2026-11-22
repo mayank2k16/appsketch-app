@@ -29,7 +29,8 @@ export type Cta = {
 /** The brand orange (splash / Pricing band). */
 const ORANGE = '#EB4709';
 
-/** The focus button: filled orange, a little wider than its neighbour. */
+/** The focus button: filled orange, a little wider than its neighbour,
+ *  with a small line under its label ("Unlock 1000+ templates"). */
 function Accent({ cta }: { cta: Cta }) {
   return (
     <PressableScale
@@ -38,7 +39,7 @@ function Accent({ cta }: { cta: Cta }) {
       disabled={cta.busy}
       disabledOpacity={0.8}
       accessibilityLabel={cta.sub ? `${cta.label}, ${cta.sub}` : cta.label}
-      style={[s.btn, s.accent, cta.sub && s.tall, { backgroundColor: ORANGE }]}
+      style={[s.btn, s.tall, s.accent, { backgroundColor: ORANGE }]}
     >
       {cta.busy ? (
         <ActivityIndicator size="small" color="#FFFFFF" />
@@ -156,12 +157,11 @@ export const CtaBar = React.memo(function CtaBar(p: Props) {
   const { t } = p;
   if (!p.primary && !p.secondary) return null;
   if (p.secondary?.accent) {
-    const tall = !!p.secondary.sub;
     return (
       <View style={s.row}>
-        {p.run ? <Run cta={p.run} t={t} tall={tall} /> : null}
+        {p.run ? <Run cta={p.run} t={t} tall /> : null}
         {p.primary ? (
-          <Secondary cta={p.primary} t={t} alone={false} tall={tall} />
+          <Secondary cta={p.primary} t={t} alone={false} tall />
         ) : null}
         <Accent cta={p.secondary} />
       </View>
@@ -188,7 +188,7 @@ const s = StyleSheet.create({
   },
   grow: { flex: 1 },
   accent: {
-    flex: 1.3,
+    flex: 1.1,
     shadowColor: ORANGE,
     shadowOpacity: 0.45,
     shadowRadius: 12,
@@ -196,7 +196,7 @@ const s = StyleSheet.create({
   },
   accentText: { color: '#FFFFFF', fontFamily: F.sans800 },
   accentSub: {
-    color: 'rgba(255,255,255,0.86)',
+    color: 'rgba(255,255,255,0.88)',
     fontFamily: F.sans600,
     fontSize: 11,
     marginTop: 1,
