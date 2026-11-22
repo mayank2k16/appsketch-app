@@ -373,3 +373,8 @@ proven on the simulator.
   `template_limit` lands in the same sheet (`cloneFailed` in use-use-template.ts).
 - Needs the backend's `template-apps` endpoints (branch feat/template-app-slots);
   until then the sheet shows the upgrade and an empty list.
+- Chat attachments (the composer and the Customise logo) are sent as `data:`
+  PNG URLs, ≤1024px (`src/lib/media/to-data-urls.ts`): they used to go over the
+  websocket as `file://` URIs the server could not read. The backend saves them
+  into the project (`public/brand/` or `assets/brand/`) and tells the agent to
+  use those files for the logo, favicon and app icon.

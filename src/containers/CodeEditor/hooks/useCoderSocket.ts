@@ -19,6 +19,7 @@ import {
   renameThread as renameThreadApi,
 } from '@/api/coder';
 import { haptic } from '@/lib/haptics';
+import { toDataUrls } from '@/lib/media/to-data-urls';
 import { getItem, setItem } from '@/lib/storage';
 
 function threadStorageKey(tenantId: string) {
@@ -162,9 +163,7 @@ export function useCoderSocket(params: CoderSocketParams) {
   // Set whenever the backend reports the plan's token quota is used up —
   // there's no in-app purchase flow, so the UI just points the user to the
   // web to upgrade (see UpgradeSheet).
-  const [quotaExceeded, setQuotaExceeded] = React.useState<string | null>(
-    null
-  );
+  const [quotaExceeded, setQuotaExceeded] = React.useState<string | null>(null);
   const [openFiles, setOpenFiles] = React.useState<Record<string, string>>({});
   const [lastBuildId, setLastBuildId] = React.useState<number | null>(null);
   // The agent's name for this project, shown as the chat's heading. Arrives on
@@ -610,14 +609,18 @@ export function useCoderSocket(params: CoderSocketParams) {
       // new one — the backend sends a fresh `eta` within the first few steps.
       setEta(null);
       setBackgroundRun(!!opts?.background);
-      wsRef.current.send(
-        JSON.stringify({
-          type: 'message',
-          content,
-          model: opts?.model,
-          images: opts?.images,
-          background: opts?.background || undefined,
-        })
+      const ws = wsRef.current;
+      // Attachments travel as data: URLs (see to-data-urls.ts).
+      void toDataUrls(opts?.images).then((images) =>
+        ws.send(
+          JSON.stringify({
+            type: 'message',
+            content,
+            model: opts?.model,
+            images,
+            background: opts?.background || undefined,
+          })
+        )
       );
     },
     []
@@ -640,13 +643,16 @@ export function useCoderSocket(params: CoderSocketParams) {
         hasSentInitialPromptRef.current = true;
         setBusy(true);
         setTokens({ in: 0, out: 0 });
-        ws.send(
-          JSON.stringify({
-            type: 'message',
-            content: params.userPrompt,
-            model: params.model,
-            images: params.images,
-          })
+        const prompt = params.userPrompt;
+        void toDataUrls(params.images).then((images) =>
+          ws.send(
+            JSON.stringify({
+              type: 'message',
+              content: prompt,
+              model: params.model,
+              images,
+            })
+          )
         );
       }
     };
