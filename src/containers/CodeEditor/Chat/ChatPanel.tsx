@@ -1012,7 +1012,12 @@ export function ChatPanel() {
   function handleSend() {
     const text = input.trim();
     if (!text || !connected || busy) return;
-    send(text, { model, images: images.length > 0 ? images : undefined });
+    const sent = send(text, {
+      model,
+      images: images.length > 0 ? images : undefined,
+    });
+    // Out of tokens: the upgrade sheet opened instead; keep what they typed.
+    if (sent === false) return;
     setInput('');
     setImages([]);
   }

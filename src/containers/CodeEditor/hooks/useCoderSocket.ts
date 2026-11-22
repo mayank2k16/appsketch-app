@@ -13,6 +13,7 @@ import {
   buildCoderWsUrl,
   deleteThread as deleteThreadApi,
   fsOp as fsOpApi,
+  getCoderQuota,
   getLatestThread,
   getTree,
   onboardCoder,
@@ -133,6 +134,9 @@ export type PendingApproval = { id: string; command: string; reason?: string };
  * `CodeEditorProvider` (not per-tab), so switching between the Chat/Code/
  * Preview tabs never reconnects it or loses in-flight state.
  */
+const OUT_OF_TOKENS =
+  "You've used your plan's token allowance for this 30-day period. Upgrade to keep building.";
+
 export function useCoderSocket(params: CoderSocketParams) {
   const { tenantId } = params;
 
@@ -164,6 +168,21 @@ export function useCoderSocket(params: CoderSocketParams) {
   // there's no in-app purchase flow, so the UI just points the user to the
   // web to upgrade (see UpgradeSheet).
   const [quotaExceeded, setQuotaExceeded] = React.useState<string | null>(null);
+  // Known to be out of tokens (from the quota endpoint when the chat opens,
+  // or the server refusing a turn). While set, sending opens the upgrade
+  // sheet instead of posting a message the server would refuse anyway.
+  const quotaBlockedRef = React.useRef(false);
+  React.useEffect(() => {
+    let alive = true;
+    getCoderQuota()
+      .then((q) => {
+        if (alive) quotaBlockedRef.current = q.allowed === false;
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [openFiles, setOpenFiles] = React.useState<Record<string, string>>({});
   const [lastBuildId, setLastBuildId] = React.useState<number | null>(null);
   // The agent's name for this project, shown as the chat's heading. Arrives on
@@ -338,6 +357,7 @@ export function useCoderSocket(params: CoderSocketParams) {
           break;
 
         case 'quota_exceeded':
+          quotaBlockedRef.current = true;
           setBusy(false);
           setEta(null);
           setBackgroundRun(false);
@@ -598,7 +618,18 @@ export function useCoderSocket(params: CoderSocketParams) {
       content: string,
       opts?: { model?: string; images?: string[]; background?: boolean }
     ) => {
-      if (!wsRef.current || !content.trim()) return;
+      if (!wsRef.current || !content.trim()) return false;
+      if (quotaBlockedRef.current) {
+        setQuotaExceeded(OUT_OF_TOKENS);
+        // Ask again in the background: a plan bought meanwhile (or a new
+        // 30-day period) unblocks the next tap.
+        getCoderQuota()
+          .then((q) => {
+            if (q.allowed !== false) quotaBlockedRef.current = false;
+          })
+          .catch(() => {});
+        return false;
+      }
       setMessages((prev) => [
         ...prev,
         { role: 'user', content, images: opts?.images },
@@ -622,6 +653,7 @@ export function useCoderSocket(params: CoderSocketParams) {
           })
         )
       );
+      return true;
     },
     []
   );
