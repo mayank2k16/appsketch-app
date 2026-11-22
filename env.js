@@ -42,6 +42,10 @@ const EXPO_ACCOUNT_OWNER = 'appsketch'; // expo account owner
 const EAS_PROJECT_ID = 'c3e1075b-6fe7-4686-aa49-35b46a229044'; // eas project id
 const SCHEME = 'appsketch-ecommerce'; // app scheme
 const GOOGLE_OAUTH_CLIENT_ID = '515244910109-41eiia8oq553c2d1jrc1j9bsik2hnbim.apps.googleusercontent.com';
+// iOS-type OAuth client (project appsketch-ai-auth, bundle com.appsketch-ai.app).
+// Google rejects app-scheme redirects for Web clients (Error 400
+// invalid_request), so iOS signs in with this one + PKCE instead.
+const GOOGLE_IOS_CLIENT_ID = '515244910109-hgr0msmf0nufg93n4bhe1r27ucs93ols.apps.googleusercontent.com';
 
 /**
  * We declare a function withEnvSuffix that will add a suffix to the variable name based on the APP_ENV
@@ -90,6 +94,7 @@ const client = z.object({
   // a client env var like GOOGLE_MAPS_API_KEY. May be empty in dev — the
   // Google Sign-In button disables itself rather than crashing when unset.
   GOOGLE_OAUTH_CLIENT_ID: z.string(),
+  GOOGLE_IOS_CLIENT_ID: z.string(),
 });
 
 const buildTime = z.object({
@@ -116,6 +121,7 @@ const _clientEnv = {
   VAR_NUMBER: Number(process.env.VAR_NUMBER),
   VAR_BOOL: process.env.VAR_BOOL === 'true',
   GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID || GOOGLE_OAUTH_CLIENT_ID,
+  GOOGLE_IOS_CLIENT_ID: process.env.GOOGLE_IOS_CLIENT_ID || GOOGLE_IOS_CLIENT_ID,
 };
 
 /**

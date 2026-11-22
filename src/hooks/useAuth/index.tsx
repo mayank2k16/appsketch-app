@@ -431,32 +431,68 @@ export function useContinueAuthFlow(initialStep: Step, onVerified: () => void) {
 
 const GOOGLE_AUTHORIZATION_ENDPOINT =
   'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+
+/** iOS uses its own iOS-type OAuth client: Google only accepts the reversed
+ *  client ID as the redirect for it, and only the code flow with PKCE (no
+ *  secret). Web clients reject app-scheme redirects outright (Error 400
+ *  invalid_request), so the Web client stays for platforms without one. */
+function googleClientConfig() {
+  const iosId = Env.GOOGLE_IOS_CLIENT_ID;
+  if (Platform.OS === 'ios' && iosId) {
+    const reversed = `com.googleusercontent.apps.${iosId.replace('.apps.googleusercontent.com', '')}`;
+    return {
+      clientId: iosId,
+      redirectUri: `${reversed}:/oauthredirect`,
+      codeFlow: true,
+    };
+  }
+  return {
+    clientId: Env.GOOGLE_OAUTH_CLIENT_ID,
+    redirectUri: AuthSession.makeRedirectUri(),
+    codeFlow: false,
+  };
+}
 
 export function useGoogleSignIn(onSuccess: () => void) {
   const [loading, setLoading] = React.useState(false);
-  const isConfigured = Boolean(Env.GOOGLE_OAUTH_CLIENT_ID);
-
-  const redirectUri = AuthSession.makeRedirectUri();
+  const cfg = React.useMemo(googleClientConfig, []);
+  const isConfigured = Boolean(cfg.clientId);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: Env.GOOGLE_OAUTH_CLIENT_ID || 'unconfigured',
+      clientId: cfg.clientId || 'unconfigured',
       scopes: ['openid', 'email', 'profile'],
-      responseType: AuthSession.ResponseType.Token,
-      usePKCE: false,
-      redirectUri: redirectUri,
+      responseType: cfg.codeFlow
+        ? AuthSession.ResponseType.Code
+        : AuthSession.ResponseType.Token,
+      usePKCE: cfg.codeFlow,
+      redirectUri: cfg.redirectUri,
     },
     { authorizationEndpoint: GOOGLE_AUTHORIZATION_ENDPOINT }
   );
 
   React.useEffect(() => {
     if (response?.type !== 'success') return;
-    const accessToken = response.params?.access_token;
-    if (!accessToken) return;
 
     (async () => {
       setLoading(true);
       try {
+        let accessToken = response.params?.access_token;
+        const code = response.params?.code;
+        if (!accessToken && code && request?.codeVerifier) {
+          const tokens = await AuthSession.exchangeCodeAsync(
+            {
+              clientId: cfg.clientId,
+              code,
+              redirectUri: cfg.redirectUri,
+              extraParams: { code_verifier: request.codeVerifier },
+            },
+            { tokenEndpoint: GOOGLE_TOKEN_ENDPOINT }
+          );
+          accessToken = tokens.accessToken;
+        }
+        if (!accessToken) throw new Error('no Google access token');
         const data = await continueGoogle({ token: accessToken });
         signInAfterVerify(data);
         toast.success('Welcome to AppSketch! 👋');

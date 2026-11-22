@@ -81,7 +81,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: Env.NAME,
     description: `${Env.NAME} Mobile App`,
     owner: Env.EXPO_ACCOUNT_OWNER,
-    scheme: Env.SCHEME,
+    // Second scheme = reversed iOS Google OAuth client ID (Google Sign-In redirect).
+    scheme: [
+      Env.SCHEME,
+      `com.googleusercontent.apps.${Env.GOOGLE_IOS_CLIENT_ID.replace('.apps.googleusercontent.com', '')}`,
+    ],
     slug: 'appsketch-ai',
     version: Env.VERSION.toString(),
     orientation: 'portrait',
