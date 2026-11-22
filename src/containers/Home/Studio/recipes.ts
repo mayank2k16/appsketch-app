@@ -82,12 +82,12 @@ const r = (name: string, h: number, cols: Recipe['cols']): Recipe => ({
 });
 
 const FEATURE_L = r('feature-l', TALL, [
-  [2, ['large']],
+  [2, ['site', 'site']],
   [1, ['phone']],
 ]);
 const FEATURE_R = r('feature-r', TALL, [
   [1, ['phone']],
-  [2, ['large']],
+  [2, ['site', 'site']],
 ]);
 const TRIO = r('trio', TALL, [
   [1, ['phone']],
@@ -105,12 +105,12 @@ const BENTO_R = r('bento-r', TALL, [
   [1, ['small', 'type']],
 ]);
 const STACK = r('stack', TALL, [
-  [2, ['large']],
+  [2, ['site', 'site']],
   [1, ['small', 'small']],
 ]);
 const STACK_R = r('stack-r', TALL, [
   [1, ['small', 'type']],
-  [2, ['large']],
+  [2, ['site', 'site']],
 ]);
 const STRIP_L = r('strip-l', SHORT, [
   [2, ['site']],

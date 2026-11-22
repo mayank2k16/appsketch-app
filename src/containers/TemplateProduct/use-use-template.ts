@@ -20,7 +20,15 @@ import { toast } from '@/lib/toast';
 /** What a copy needs: the code template's id (and key, for busy state). */
 export type CloneTarget = { id: number; key: string; app_type?: string };
 
-export function useCloneAndOpen({ replace = false } = {}) {
+export function useCloneAndOpen({
+  replace = false,
+  open = 'preview',
+}: {
+  replace?: boolean;
+  /** Where the copy opens: its preview, or the builder's AI chat
+   *  ("Customise with AI"). */
+  open?: 'preview' | 'chat';
+} = {}) {
   const router = useRouter();
   const clone = useCloneTemplate();
   const [usingKey, setUsingKey] = React.useState<string | null>(null);
@@ -39,7 +47,7 @@ export function useCloneAndOpen({ replace = false } = {}) {
         onSuccess: (app) => {
           endEta(eta, true);
           router[replace ? 'replace' : 'push']({
-            pathname: '/code-editor/preview',
+            pathname: `/code-editor/${open}`,
             params: {
               tenantId: String(app.id),
               tenantUid: app.uuid,
@@ -59,7 +67,7 @@ export function useCloneAndOpen({ replace = false } = {}) {
         onSettled: () => setUsingKey(null),
       });
     },
-    [usingKey, clone, router, replace]
+    [usingKey, clone, router, replace, open]
   );
 
   const use = React.useCallback(

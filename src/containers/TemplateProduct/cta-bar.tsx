@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
@@ -8,8 +9,9 @@ import type { PageTheme } from './theme';
 
 /**
  * The CTA row at the bottom of each template's details box.
- * Primary: a dark pill (white in dark) that runs/opens the template.
- * Secondary: an outline "Use this template" (clone, as in the Market).
+ * With an accent ("Buy plan"): an outline "Customise with AI" beside the
+ * orange focus button, and an app's play button ("Run it live") first.
+ * Otherwise a dark primary pill and an outline secondary.
  * A button is only rendered when it can do something — never a dead one.
  */
 
@@ -17,8 +19,11 @@ export type Cta = {
   label: string;
   onPress: () => void;
   busy?: boolean;
-  /** The page's focus ("Buy now"): filled brand orange. */
+  /** The page's focus ("Buy plan"): filled brand orange. */
   accent?: boolean;
+  /** A small second line under the label (what the plan unlocks). */
+  sub?: string;
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
 };
 
 /** The brand orange (splash / Pricing band). */
@@ -32,14 +37,27 @@ function Accent({ cta }: { cta: Cta }) {
       onPress={cta.onPress}
       disabled={cta.busy}
       disabledOpacity={0.8}
-      style={[s.btn, s.accent, { backgroundColor: ORANGE }]}
+      accessibilityLabel={cta.sub ? `${cta.label}, ${cta.sub}` : cta.label}
+      style={[s.btn, s.accent, cta.sub && s.tall, { backgroundColor: ORANGE }]}
     >
       {cta.busy ? (
         <ActivityIndicator size="small" color="#FFFFFF" />
       ) : (
-        <Text numberOfLines={1} style={[s.btnText, s.accentText]}>
-          {cta.label}
-        </Text>
+        <>
+          <Text numberOfLines={1} style={[s.btnText, s.accentText]}>
+            {cta.label}
+          </Text>
+          {cta.sub ? (
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+              style={s.accentSub}
+            >
+              {cta.sub}
+            </Text>
+          ) : null}
+        </>
       )}
     </PressableScale>
   );
@@ -49,7 +67,27 @@ type Props = {
   t: PageTheme;
   primary: Cta | null;
   secondary: Cta | null;
+  /** An app's "Run it live": a square play button at the row's start. */
+  run?: Cta | null;
 };
+
+function Run({ cta, t, tall }: { cta: Cta; t: PageTheme; tall: boolean }) {
+  return (
+    <PressableScale
+      haptic="press"
+      onPress={cta.onPress}
+      disabled={cta.busy}
+      accessibilityLabel={cta.label}
+      style={[s.btn, s.square, tall && s.tall, { borderColor: t.outline }]}
+    >
+      {cta.busy ? (
+        <ActivityIndicator size="small" color={t.ink} />
+      ) : (
+        <Ionicons name={cta.icon ?? 'play'} size={17} color={t.ink} />
+      )}
+    </PressableScale>
+  );
+}
 
 function Primary({ cta, t }: { cta: Cta; t: PageTheme }) {
   return (
@@ -72,10 +110,12 @@ function Secondary({
   cta,
   t,
   alone,
+  tall = false,
 }: {
   cta: Cta;
   t: PageTheme;
   alone: boolean;
+  tall?: boolean;
 }) {
   // On its own it becomes the primary-looking button (still no haptic).
   const fill = alone ? { backgroundColor: t.primaryBg } : null;
@@ -88,6 +128,7 @@ function Secondary({
       style={[
         s.btn,
         alone ? s.grow : s.outline,
+        tall && s.tall,
         { borderColor: t.outline },
         fill,
       ]}
@@ -95,9 +136,17 @@ function Secondary({
       {cta.busy ? (
         <ActivityIndicator size="small" color={fg} />
       ) : (
-        <Text numberOfLines={1} style={[s.btnText, { color: fg }]}>
-          {cta.label}
-        </Text>
+        <View style={s.labelRow}>
+          {cta.icon ? <Ionicons name={cta.icon} size={15} color={fg} /> : null}
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            style={[s.btnText, { color: fg }]}
+          >
+            {cta.label}
+          </Text>
+        </View>
       )}
     </PressableScale>
   );
@@ -106,13 +155,18 @@ function Secondary({
 export const CtaBar = React.memo(function CtaBar(p: Props) {
   const { t } = p;
   if (!p.primary && !p.secondary) return null;
-  if (p.secondary?.accent)
+  if (p.secondary?.accent) {
+    const tall = !!p.secondary.sub;
     return (
       <View style={s.row}>
-        {p.primary ? <Secondary cta={p.primary} t={t} alone={false} /> : null}
+        {p.run ? <Run cta={p.run} t={t} tall={tall} /> : null}
+        {p.primary ? (
+          <Secondary cta={p.primary} t={t} alone={false} tall={tall} />
+        ) : null}
         <Accent cta={p.secondary} />
       </View>
     );
+  }
   return (
     <View style={s.row}>
       {p.primary ? <Primary cta={p.primary} t={t} /> : null}
@@ -141,6 +195,15 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   accentText: { color: '#FFFFFF', fontFamily: F.sans800 },
+  accentSub: {
+    color: 'rgba(255,255,255,0.86)',
+    fontFamily: F.sans600,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  tall: { height: 50, borderRadius: 13 },
+  square: { borderWidth: 1, paddingHorizontal: 0, width: 44 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   outline: { borderWidth: 1, flex: 1 },
   btnText: { fontFamily: F.sans700, fontSize: 14, letterSpacing: -0.1 },
 });

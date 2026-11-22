@@ -5,10 +5,12 @@ import type { MarketTemplate } from '@/api/templates';
 import { F } from '@/lib/fonts';
 
 import { buildUrl } from '../../TemplateProduct/live-url';
+import { titleOf } from '../TemplateReel/layout';
 import { Shot, SHOT_RATIO } from '../TemplateReel/shot';
-import { BAR_H, CARD_EDGE_W, cardEdge } from './geometry';
+import { BAR_H, CARD_EDGE_W, cardEdge, TITLE_BAR_H } from './geometry';
 import { useIsLive } from './live-budget';
 import { LiveSite } from './live-site';
+import { Heart, metaTone } from './tile-meta';
 
 /**
  * A website in a browser sheet: a slim bar (three dots, a LIVE tag once the
@@ -26,6 +28,9 @@ type Props = {
   onPage?: boolean;
   /** On the black showcase: a silver browser frame. */
   silver?: boolean;
+  /** The bar carries the template's name and like count (TITLE_BAR_H
+   *  tall), so the tile needs no title or chips over its preview. */
+  titled?: boolean;
 };
 
 function frameEdge(o: { dark: boolean; onPage: boolean; silver: boolean }) {
@@ -45,6 +50,49 @@ const LiveTag = React.memo(function LiveTag() {
   );
 });
 
+/** Three dots, then (titled) the name, the LIVE tag and the heart. */
+function Bar({
+  template,
+  dark,
+  silver,
+  titled,
+  live,
+}: {
+  template: MarketTemplate;
+  dark: boolean;
+  silver: boolean;
+  titled: boolean;
+  live: boolean;
+}) {
+  return (
+    <View
+      style={[
+        s.bar,
+        titled && s.titledBar,
+        titled && dark && !silver && s.darkBar,
+        silver && s.silverBar,
+      ]}
+    >
+      <View style={[s.dot, { backgroundColor: '#FF6159' }]} />
+      <View style={[s.dot, { backgroundColor: '#FFBD2E' }]} />
+      <View style={[s.dot, { backgroundColor: '#28C941' }]} />
+      {titled ? (
+        <Text
+          numberOfLines={1}
+          allowFontScaling={false}
+          style={[s.title, { color: dark && !silver ? '#F4F4F5' : '#0B0B0C' }]}
+        >
+          {titleOf(template)}
+        </Text>
+      ) : null}
+      {live ? <LiveTag /> : null}
+      {titled ? (
+        <Heart template={template} tone={metaTone(dark && !silver)} />
+      ) : null}
+    </View>
+  );
+}
+
 export const BrowserFrame = React.memo(function BrowserFrame({
   template,
   width,
@@ -52,6 +100,7 @@ export const BrowserFrame = React.memo(function BrowserFrame({
   dark,
   onPage = false,
   silver = false,
+  titled = false,
 }: Props) {
   const url = buildUrl(
     template.kind === 'code' ? template.preview_url : undefined
@@ -79,12 +128,13 @@ export const BrowserFrame = React.memo(function BrowserFrame({
         silver && s.silver,
       ]}
     >
-      <View style={[s.bar, silver && s.silverBar]}>
-        <View style={[s.dot, { backgroundColor: '#FF6159' }]} />
-        <View style={[s.dot, { backgroundColor: '#FFBD2E' }]} />
-        <View style={[s.dot, { backgroundColor: '#28C941' }]} />
-        {live && playing ? <LiveTag /> : null}
-      </View>
+      <Bar
+        template={template}
+        dark={dark}
+        silver={silver}
+        titled={titled}
+        live={live && playing}
+      />
       <View style={{ width: inner, height: pageH }}>
         <Shot uri={thumb || ''} fit={fit} />
         {live && url ? (
@@ -114,6 +164,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     paddingHorizontal: 6,
+  },
+  titledBar: { height: TITLE_BAR_H, gap: 4, paddingRight: 7 },
+  darkBar: { backgroundColor: '#1C1C1F' },
+  title: {
+    flex: 1,
+    marginLeft: 3,
+    fontFamily: F.sans700,
+    fontSize: 10.5,
+    letterSpacing: -0.1,
   },
   silver: { backgroundColor: '#D9D9DE' },
   silverBar: { backgroundColor: '#D9D9DE' },

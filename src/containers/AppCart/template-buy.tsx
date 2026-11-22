@@ -15,7 +15,8 @@ import { type TemplateBuy, useAppCart } from '@/lib/store/app-cart-store';
 import { useSubscribe } from './plan-step';
 import { hasPaidPlan } from './use-cart-totals';
 
-/** "Buy now" sells a template with the Basic plan, billed yearly. */
+/** "Buy plan" (template page) puts the Basic plan, billed yearly, in the
+ *  cart with the template it was bought from. */
 const TIER = 'basic';
 const CYCLE = 'yearly' as const;
 
@@ -103,7 +104,7 @@ function BuyButton({ s }: { s: ServicesPalette }) {
       disabled={busy || !ready}
       disabledOpacity={busy ? 1 : 0.5}
       style={[st.cta, { backgroundColor: s.ink }]}
-      accessibilityLabel="Buy now"
+      accessibilityLabel="Subscribe"
     >
       {busy || data.isLoading ? (
         <ActivityIndicator color={s.onInk} />
@@ -113,7 +114,7 @@ function BuyButton({ s }: { s: ServicesPalette }) {
             <Ionicons name="logo-apple" size={17} color={s.onInk} />
           ) : null}
           <Text style={[st.ctaText, { color: s.onInk }]} numberOfLines={1}>
-            {isIos() ? 'Buy now with Apple' : 'Buy on appsketch.ai'}
+            {isIos() ? 'Subscribe with Apple' : 'Subscribe on appsketch.ai'}
           </Text>
         </>
       )}

@@ -6,20 +6,17 @@ import type { MarketTemplate } from '@/api/templates';
 import { PressableScale } from '@/components/ui';
 import { F } from '@/lib/fonts';
 
-import { isMobile, thumbOf, titleOf } from '../TemplateReel/layout';
+import { thumbOf, titleOf } from '../TemplateReel/layout';
 import { PhoneFrame } from '../TemplateReel/phone-frame';
-import { Shot, SHOT_RATIO } from '../TemplateReel/shot';
 import { BrowserFrame } from './browser-frame';
 import {
-  BAR_H,
   CARD_EDGE_W,
-  cardEdge,
   COL_W,
-  LABEL_H,
   PHONE_W,
   RADIUS,
   SPAN2,
   SPAN3,
+  TITLE_BAR_H,
   WEB_RATIO,
 } from './geometry';
 import { stageOf, useOpenTemplate, useStudioActions } from './studio-context';
@@ -128,7 +125,6 @@ const descOf = (t: MarketTemplate) =>
   t.kind === 'code' ? t.description : undefined;
 
 const LARGE_SHEET_W = SPAN2 - 20;
-const STRIP_W = SPAN2 - 16;
 const LARGE_PAGE_H = LARGE_SHEET_W / WEB_RATIO;
 
 /** 2 columns × a tall row: title on a pastel stage, the live site below. */
@@ -176,80 +172,59 @@ export const LargeSiteTile = React.memo(function LargeSiteTile({
   );
 });
 
-/** 2 columns × a short row: the name, and the site rising off the bottom. */
-export const SiteTile = React.memo(function SiteTile({
+/**
+ * A website tile is all preview: the browser sheet fills the tile and its
+ * bar carries the name and likes — no title, chips or blurb over the page.
+ * 2 columns × a short row is a whole 16:10 page (only a sliver of its
+ * bottom trimmed); one column is the page's top-left, cover-fit.
+ */
+function SiteSheet({
   template,
+  width,
   height,
-}: TileProps & { height: number }) {
+}: TileProps & { width: number; height: number }) {
   const { dark } = useStudioActions();
   const backdrop = React.useMemo(
     () => stageOf(template.key, dark),
     [template.key, dark]
   );
   const { ref, onPress } = useOpenTemplate(template, 'browser', backdrop);
-  // The sheet starts under the name and bleeds 6px off the bottom.
-  const pageH = height - LABEL_H - BAR_H + 4;
   return (
     <PressableScale
       scaleTo={0.98}
       haptic="tap"
       onPress={onPress}
       accessibilityLabel={`Open ${titleOf(template)}`}
-      style={[s.card, s.fill]}
+      style={s.fill}
     >
-      <Stage seed={template.key} dark={dark} />
-      <View style={s.stripHead}>
-        <TileFoot template={template} tone={metaTone(dark)} width={STRIP_W} />
-      </View>
-      <View ref={ref} collapsable={false} style={s.stripSheet}>
+      <View ref={ref} collapsable={false}>
         <BrowserFrame
           template={template}
-          width={SPAN2 - 20}
-          pageH={pageH}
+          width={width}
+          pageH={height - TITLE_BAR_H - CARD_EDGE_W * 2}
           dark={dark}
+          onPage
+          titled
         />
       </View>
     </PressableScale>
   );
+}
+
+/** 2 columns × a short row: one whole site. */
+export const SiteTile = React.memo(function SiteTile({
+  template,
+  height,
+}: TileProps & { height: number }) {
+  return <SiteSheet template={template} width={SPAN2} height={height} />;
 });
 
-/** One column: a square-ish crop of the screenshot's top, name below. */
+/** One column: the site's top-left. */
 export const SmallTile = React.memo(function SmallTile({
   template,
   height,
 }: TileProps & { height: number }) {
-  const { dark } = useStudioActions();
-  const { ref, onPress } = useOpenTemplate(template, 'browser');
-  const mobile = isMobile(template);
-  const fit = React.useMemo(
-    () => ({
-      w: COL_W - CARD_EDGE_W * 2,
-      h: height - LABEL_H - CARD_EDGE_W * 2,
-      ratio: mobile ? SHOT_RATIO.app : SHOT_RATIO.web,
-    }),
-    [height, mobile]
-  );
-  return (
-    <PressableScale
-      scaleTo={0.97}
-      haptic="tap"
-      onPress={onPress}
-      accessibilityLabel={`Open ${titleOf(template)}`}
-      style={s.fill}
-    >
-      <View
-        ref={ref}
-        collapsable={false}
-        style={[
-          s.smallMedia,
-          { height: height - LABEL_H, borderColor: cardEdge(dark) },
-        ]}
-      >
-        <Shot uri={thumbOf(template)} fit={fit} />
-      </View>
-      <TileFoot template={template} tone={metaTone(dark)} width={COL_W} />
-    </PressableScale>
-  );
+  return <SiteSheet template={template} width={COL_W} height={height} />;
 });
 
 const WIDE_PAGE_H = SPAN3 / WEB_RATIO;
@@ -309,13 +284,5 @@ const s = StyleSheet.create({
     fontSize: 12,
     lineHeight: BLURB_LINE,
     letterSpacing: -0.1,
-  },
-  stripHead: { paddingHorizontal: 8 },
-  stripSheet: { position: 'absolute', left: 10, right: 10, bottom: -6 },
-  smallMedia: {
-    borderRadius: RADIUS,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
-    borderWidth: CARD_EDGE_W,
   },
 });

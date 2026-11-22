@@ -340,3 +340,8 @@ Plinth is the site's own intro animation. The part that was ours was the
 auto-scroll's uneven whole-pixel cadence (now eased, sub-pixel). Real-device
 feel (120Hz ProMotion, GPU cost of the blur over a WebView) cannot be
 proven on the simulator.
+
+## Customise with AI + Buy plan (2026-11-22)
+- CTA row (`use-ctas.ts`, `cta-bar.tsx`): outline **Customise with AI** (sparkles) copies the template and opens the builder on its AI chat (`useCloneAndOpen({ open: 'chat' })` → `/code-editor/chat`), beside the orange two-line **Buy plan** ("Unlock 1000+ templates · from ₹1,250/mo", the yearly Basic `monthlyEquivalent`). Apps keep **Run it live** as a square play button at the row's start; websites lost "Try it live" (the hero already plays the live site).
+- Buy plan = the old Buy now (`use-buy-template.ts`): signed out → /welcome; paid → copy + builder; else /cart with the template + Basic yearly, whose button now reads **Subscribe with Apple** (iOS) / **Subscribe on appsketch.ai**.
+- Home masonry (`Home/Studio`): website tiles are all preview. The browser bar (`BrowserFrame titled`, TITLE_BAR_H 20) carries the name, LIVE and likes; the tall 2-col `large` cell is now two stacked 2-col `site` cells (a whole 16:10 page each). Small 1-col sites are the same titled sheet.

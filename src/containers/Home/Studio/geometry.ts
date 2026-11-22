@@ -36,6 +36,9 @@ export const SHORT = (TALL - GAP) / 2;
 /** Web screenshots are 16:10 desktop captures. */
 export const WEB_RATIO = 1.6;
 export const BAR_H = 14;
+/** A feed site's bar when it carries the name and likes (tiles.tsx): the
+ *  page below it is all preview, no title or chips over it. */
+export const TITLE_BAR_H = 20;
 /** Full-width live site: browser bar + a 16:10 page + the name row. */
 export const WIDE_H = BAR_H + SPAN3 / WEB_RATIO + LABEL_H;
 

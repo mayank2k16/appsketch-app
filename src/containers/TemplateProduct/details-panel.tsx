@@ -185,7 +185,12 @@ export const DetailsPanel = React.memo(function DetailsPanel(p: Props) {
       <Highlights {...p} />
       <BlurbRow {...p} blurb={blurb} />
       <View style={s.flex} />
-      <CtaBar t={t} primary={ctas.primary} secondary={ctas.secondary} />
+      <CtaBar
+        t={t}
+        primary={ctas.primary}
+        secondary={ctas.secondary}
+        run={ctas.run}
+      />
     </Animated.View>
   );
 });
