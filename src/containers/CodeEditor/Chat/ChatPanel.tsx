@@ -43,10 +43,12 @@ import { toast } from '@/lib/toast';
 import { useCodeEditor } from '../CodeEditorProvider';
 import { ActivityStream, Lightbox, LiveActivity } from './ActivityStream';
 import { ClarifyBlockView } from './ClarifyBlock';
+import { JumpToLatest } from './jump-to-latest';
 import { PulsingDot } from './PulsingDot';
 import { StatusBanner } from './StatusBanner';
 import { ThinkingDots } from './ThinkingDots';
 import { TokenMeter } from './TokenMeter';
+import { useStickToBottom } from './use-stick-to-bottom';
 
 const MAX_IMAGES = 3;
 type Model = (typeof MODELS)[number];
@@ -973,29 +975,23 @@ export function ChatPanel() {
 
   const needsInput = !!clarifyBlock && !clarifyAnswers;
 
-  // Bottom-anchored, like iMessage/most chat UIs — follows new content as it
-  // streams in, not just on a brand new message (a turn with many activity
-  // steps would otherwise leave the view stuck wherever it last was while
-  // the feed grows well past the fold). `clarifyBlock` is included on its
-  // own — it doesn't touch `messages`/`activity`, so without it the design-
-  // brief card could land off-screen with nothing pulling it into view.
+  // Bottom-anchored like iMessage: follows what streams in while the view is
+  // at the bottom, stops when the user scrolls up to read, and picks up again
+  // once they are back at the bottom (use-stick-to-bottom.ts). A message the
+  // user sends, the design-brief card and the keyboard opening always jump to
+  // the latest.
+  const stick = useStickToBottom(listRef);
+  const { follow, jump } = stick;
   React.useEffect(() => {
-    if (messages.length || activity.length || clarifyBlock)
-      requestAnimationFrame(() =>
-        listRef.current?.scrollToEnd({ animated: true })
-      );
-  }, [messages.length, activity.length, clarifyBlock]);
-
-  // …and again when the keyboard opens. The composer rises by the keyboard's
-  // height, so without this the last message is left sitting behind it and
-  // the user is typing a reply to something they can no longer see.
+    if (messages.length || activity.length) follow();
+  }, [messages.length, activity.length, follow]);
+  const lastRole = messages[messages.length - 1]?.role;
   React.useEffect(() => {
-    if (!keyboardVisible) return;
-    const id = requestAnimationFrame(() =>
-      listRef.current?.scrollToEnd({ animated: true })
-    );
-    return () => cancelAnimationFrame(id);
-  }, [keyboardVisible]);
+    if (lastRole === 'user' || clarifyBlock) jump();
+  }, [messages.length, lastRole, clarifyBlock, jump]);
+  React.useEffect(() => {
+    if (keyboardVisible) jump();
+  }, [keyboardVisible, jump]);
 
   function handleAttach() {
     if (images.length >= MAX_IMAGES) return;
@@ -1099,6 +1095,7 @@ export function ChatPanel() {
           style={st.list}
           contentContainerStyle={st.listContent}
           keyboardShouldPersistTaps="handled"
+          {...stick.scrollProps}
         >
           {messages.length === 0 ? (
             <EmptyState colors={t} />
@@ -1116,6 +1113,7 @@ export function ChatPanel() {
             busy={busy}
           />
         </ScrollView>
+        {stick.pinned ? null : <JumpToLatest onPress={jump} />}
 
         <TokenMeter
           tokens={tokens}

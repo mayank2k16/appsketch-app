@@ -378,3 +378,12 @@ proven on the simulator.
   websocket as `file://` URIs the server could not read. The backend saves them
   into the project (`public/brand/` or `assets/brand/`) and tells the agent to
   use those files for the logo, favicon and app icon.
+- Builder chat scroll (`CodeEditor/Chat/use-stick-to-bottom.ts`): follows
+  streamed content (incl. a step growing, via onContentSizeChange) only while
+  pinned to the bottom; a user drag up unpins, scrolling back to the bottom or
+  the "Latest" pill (`jump-to-latest.tsx`) re-pins. Sending a message, the
+  design-brief card and the keyboard always jump to the latest.
+- Customise brief also tells the agent the brand may live in a content-table
+  settings row (e.g. `brand_name`) with a code fallback — change both. (The
+  Monolith copy kept its name because a platform bug wiped those rows' keys on
+  partial update; backend fix on `fix/dyn-partial-update-merge`.)

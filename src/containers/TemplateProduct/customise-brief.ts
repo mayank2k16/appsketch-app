@@ -25,6 +25,7 @@ export function customisePrompt(templateName: string, f: CustomiseForm) {
       ? "Logo: the attached image. Use it as the logo everywhere the template shows one (header, footer, splash/loading screen, favicon or app icon, emails), replacing the template's logo."
       : "Logo: none provided. Replace the template's logo with a clean text wordmark of the business name.",
     `Replace the template's brand name, taglines, page titles, SEO meta, contact details and sample copy with content that fits ${f.name.trim()}${about ? ' and what it does' : ''}.`,
+    "The brand name and contact details may live in the app's content tables (e.g. a settings row like brand_name, read by the site with a code fallback) as well as in the code: change both, and check the preview really shows the new name.",
     'Keep the existing design, layout, pages and features; only rebrand and rewrite the content. When done, summarise what you changed.'
   );
   return lines.join('\n');
