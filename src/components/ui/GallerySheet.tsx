@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -8,6 +9,7 @@ import {
   Dimensions,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -37,20 +39,69 @@ const PAGE = 90;
  * Selection is ordered — the badge shows 1, 2, 3 — because "which image is the
  * first reference" is meaningful to the agent.
  */
-export function GallerySheet({
-  visible,
-  onClose,
-  onConfirm,
-  t,
-  max = 3,
-}: {
+type GallerySheetProps = {
   visible: boolean;
   onClose: () => void;
   /** Local `file://` uris, in the order the user tapped them. */
   onConfirm: (uris: string[]) => void;
   t: AppColors;
   max?: number;
-}) {
+};
+
+export function GallerySheet(props: GallerySheetProps) {
+  // Android uses the system photo picker: Google Play only allows
+  // READ_MEDIA_IMAGES / READ_MEDIA_VIDEO when a system picker can't do the
+  // job, and the build no longer requests them, so this app cannot read the
+  // gallery itself there. The picker needs no permission and returns the
+  // chosen images in the order picked.
+  return Platform.OS === 'android' ? (
+    <SystemPhotoPicker {...props} />
+  ) : (
+    <PhotoGrid {...props} />
+  );
+}
+
+function SystemPhotoPicker({
+  visible,
+  onClose,
+  onConfirm,
+  max = 3,
+}: GallerySheetProps) {
+  React.useEffect(() => {
+    if (!visible) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsMultipleSelection: max > 1,
+          selectionLimit: max,
+          orderedSelection: true,
+          quality: 1,
+        });
+        if (!cancelled && !res.canceled && res.assets.length > 0) {
+          onConfirm(res.assets.slice(0, max).map((a) => a.uri));
+        }
+      } finally {
+        if (!cancelled) onClose();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Open once per `visible` edge; the callbacks are recreated each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+  return null;
+}
+
+function PhotoGrid({
+  visible,
+  onClose,
+  onConfirm,
+  t,
+  max = 3,
+}: GallerySheetProps) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   // White (docs/white-theme.md): orange marks the one action (✓ / spinner),

@@ -106,7 +106,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       requireFullScreen: true,
       bundleIdentifier: Env.BUNDLE_ID,
       // TestFlight build number: bump before every upload (last: 50).
-      buildNumber: "76",
+      buildNumber: "77",
       // Sign in with Apple (App Store guideline 4.8 — required because the
       // app offers Google sign-in). Prebuild adds
       // com.apple.developer.applesignin; ios/AppSketch/AppSketch.entitlements
@@ -187,9 +187,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'CAMERA',
         'RECEIVE_BOOT_COMPLETED',
         'VIBRATE',
-        // Android 13+ split the old READ_EXTERNAL_STORAGE grant per media type;
-        // without this the gallery returns an empty list instead of an error.
-        'READ_MEDIA_IMAGES',
+      ],
+      // Google Play rejects broad photo/video access when the system photo
+      // picker would do; Android picks images through the picker instead
+      // (GallerySheet), so strip what expo-media-library adds.
+      blockedPermissions: [
+        'android.permission.READ_MEDIA_IMAGES',
+        'android.permission.READ_MEDIA_VIDEO',
+        'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
       ],
     },
     web: {
@@ -280,11 +285,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           recordAudioAndroid: false,
         },
       ],
-      'expo-audio',
+      // No background playback: it adds FOREGROUND_SERVICE_MEDIA_PLAYBACK,
+      // which Google Play only allows with a demo video of background audio,
+      // and nothing in the app plays audio in the background.
+      ['expo-audio', { enableBackgroundPlayback: false }],
       // StoreKit 2 subscriptions on the Pricing tab (iOS only in JS; see
       // docs/pricing-and-apple.md).
       'expo-iap',
       './plugins/with-release-signing',
+      './plugins/with-optional-hardware-features',
       './plugins/with-firebase-modular-headers',
       './plugins/with-guest-network',
       './plugins/with-fcm-notification-color',
