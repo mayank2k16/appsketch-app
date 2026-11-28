@@ -1,12 +1,18 @@
 /**
- * Runs on app start: requests permissions and sets up notifications.
- * Handles all permission states; failures are non-blocking.
+ * Runs on app start: asks for notifications and sets them up.
+ * Location and camera are NOT asked here: the app never uses location, and
+ * every camera feature asks when the user opens it (Google Play flags apps
+ * that ask for permissions at launch without a reason). Failures are
+ * non-blocking.
  */
 
 import * as React from 'react';
 
-import { getFCMToken, setupNotifications } from '@/lib/notifications';
-import { requestAllPermissions } from '@/lib/permissions';
+import {
+  getFCMToken,
+  requestNotificationPermission,
+  setupNotifications,
+} from '@/lib/notifications';
 
 let notificationCleanup: (() => void) | null = null;
 
@@ -17,11 +23,7 @@ export function useAppStartup() {
     async function run() {
       try {
         const [, cleanup] = await Promise.all([
-          requestAllPermissions().then((result) => {
-            if (__DEV__) {
-              console.log('[AppStartup] Permissions:', result);
-            }
-          }),
+          requestNotificationPermission(),
           setupNotifications(),
         ]);
 

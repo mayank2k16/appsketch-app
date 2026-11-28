@@ -16,7 +16,7 @@ import { Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
@@ -53,7 +53,11 @@ ExpoImage.prefetch(LOGIN_MONTAGE_IMAGES, 'memory-disk');
 // The in-memory image cache is unbounded by default and the template feed
 // shows hundreds of screenshots: cap it (bytes of decoded pixels) so a deep
 // scroll recycles old images instead of growing until iOS kills the app.
-ExpoImage.configureCache({ maxMemoryCost: 160 * 1024 * 1024 });
+// iOS only: expo-image has no configureCache on Android, and calling it there
+// crashes the app at launch (Play rejected build 80 for this).
+if (Platform.OS === 'ios') {
+  ExpoImage.configureCache({ maxMemoryCost: 160 * 1024 * 1024 });
+}
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 // Set the animation options. This is optional.
